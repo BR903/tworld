@@ -11,7 +11,7 @@
 
 /* A move is stored as a direction and a time.
  */
-typedef	struct action { ushrt when; uchar dir; } action;
+typedef	struct action { int when:29, dir:3; } action;
 
 /* A list of moves.
  */

@@ -34,6 +34,12 @@
 #  endif
 #endif
 
+/* Return the size of a buffer big enough to hold a pathname.
+ */
+int getpathbufferlen(void)
+{
+    return PATH_MAX;
+}
 
 /* Return a buffer big enough to hold a pathname.
  */

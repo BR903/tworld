@@ -7,12 +7,14 @@
 #include	<stdlib.h>
 #include	"gen.h"
 #include	"cc.h"
+#include	"commands.h"
 #include	"movelist.h"
 #include	"timer.h"
 #include	"random.h"
 #include	"logic.h"
-#include	"userio.h"
+#include	"userout.h"
 #include	"state.h"
+#include	"statestr.h"
 
 /* The current state of the current game.
  */
@@ -23,22 +25,24 @@ static gamestate	state;
  */
 int initgamestate(int playback)
 {
-    translatemapdata(&state);
-
     if (playback) {
 	if (!state.game->savedsolution.count)
 	    return FALSE;
 	state.replay = 0;
 	copymovelist(&state.moves, &state.game->savedsolution);
 	setrandomseed(state.game->savedrndseed);
+	state.rndslidedir = state.game->savedrndslidedir;
     } else {
 	state.replay = -1;
 	initmovelist(&state.moves);
 	state.rndseed = getrandomseed();
+	state.rndslidedir = NIL;
     }
 
     state.currentinput = NIL;
     state.currenttime = 0;
+
+    initgamelogic(&state);
 
     return TRUE;
 }
@@ -47,6 +51,7 @@ int initgamestate(int playback)
  */
 void selectgame(gamesetup *game)
 {
+    memset(&state, 0, sizeof state);
     state.game = game;
     settimer(-1);
     settimer(0);
@@ -71,10 +76,14 @@ int doturn(int m)
     state.soundeffect = NULL;
     state.currenttime = gettickcount();
     if (state.replay < 0) {
-	if (m != NIL)
+	/*if (m != NIL)*/
+	if (m != CmdPreserve)
 	    state.currentinput = m;
     } else {
 	if (state.replay < state.moves.count) {
+	    if (state.currenttime > state.moves.list[state.replay].when)
+		die("Replay: Got ahead of saved solution: %d > %d!",
+		    state.currenttime, state.moves.list[state.replay].when);
 	    if (state.currenttime == state.moves.list[state.replay].when) {
 		state.currentinput = state.moves.list[state.replay].dir;
 		++state.replay;
@@ -84,8 +93,9 @@ int doturn(int m)
     n = advancegame(&state);
     if (n)
 	return n;
-    if (state.game->time && state.currenttime / 10 >= state.game->time)
-	return -5;
+    if (state.game->time)
+	if (state.currenttime / TICKS_PER_SECOND >= state.game->time)
+	    return -1;
     return 0;
 }
 
@@ -108,38 +118,21 @@ int drawscreen(void)
     else
 	currtime = -1;
 
-    return displaygame(state.map, state.currpos, state.currdir,
-		       state.chipsneeded, currtime, (state.currenttime > 0),
-		       state.game->number, state.game->name,
-		       state.game->passwd, besttime, state.game->hinttext,
-		       state.keys, state.boots, state.soundeffect,
-		       state.displayflags);
+    return displaygame(&state, currtime, besttime);
 }
 
-/* Compare the solution currently sitting in the undo list with the
- * user's best solutions (if any). If this solution beats what's
- * there, replace them. If this solution has the same number of moves
- * as the least-moves solution, but fewer steps, then the replacement
- * will be done, and likewise for the least-steps solution. Note that
- * the undo list contains the moves in backwards order, so the list
- * needs to be reversed when it is copied. TRUE is returned if the
- * solution was replaced.
+/* Compare the most recent solution for the current game with the
+ * user's best solution (if any). If this solution beats what's there,
+ * replace it. TRUE is returned if the solution was replaced.
  */
-int replacesolution(int saveinc)
+int replacesolution(void)
 {
-    if (state.game->besttime) {
-	if (saveinc)
-	    return FALSE;
-	if (state.currenttime >= state.game->besttime)
-	    return FALSE;
-	state.game->besttime = state.currenttime;
-    } else {
-	if (!saveinc)
-	    state.game->besttime = state.currenttime;
-    }
+    if (state.game->besttime && state.currenttime >= state.game->besttime)
+	return FALSE;
 
+    state.game->besttime = state.currenttime;
     state.game->savedrndseed = state.rndseed;
+    state.game->savedrndslidedir = state.rndslidedir;
     copymovelist(&state.game->savedsolution, &state.moves);
-
     return TRUE;
 }

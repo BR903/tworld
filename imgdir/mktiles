@@ -30,6 +30,7 @@ sub translatecolor($)
 	my $d = ($r - $vgacolors[$n][0])**2 + ($g - $vgacolors[$n][1])**2
 					    + ($b - $vgacolors[$n][2])**2;
 	($nearest, $bestdiff) = ($n, $d) if $d < $bestdiff;
+	last if $d == 0;
     }
 
     return chr(64 + $nearest);
@@ -189,6 +190,9 @@ bootsslide.xpm
 bootsice.xpm
 bootswater.xpm
 bootsfire.xpm
+watersplash.xpm
+dirtsplash.xpm
+explosion.xpm
 nobody.xpm
 nobody.xpm
 nobody.xpm

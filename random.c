@@ -32,7 +32,7 @@ long	randomval = -1;
  */
 static void nextrandom(void)
 {
-    assert(randomval >= 0 && randomval < 0x80000000UL);
+    assert(randomval >= 0);
     randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
 }
 
@@ -56,6 +56,17 @@ int random4(void)
 {
     nextrandom();
     return randomval >> 29;
+}
+
+/* Randomly select an element from a list of three values.
+ */
+int randomof3(int a, int b, int c)
+{
+    int	n;
+
+    nextrandom();
+    n = (int)((3.0 * (randomval & 0x3FFFFFFF)) / (double)0x40000000);
+    return n < 2 ? n < 1 ? a : b : c;
 }
 
 /* Randomly permute a list of three values. Two random numbers are

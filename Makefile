@@ -1,27 +1,26 @@
 CC = gcc
-CFLAGS = -ggdb -Wall '-DDATADIR="/home/breadbox/c/cc/web"'
-LDFLAGS = -ggdb -Wall
+CFLAGS = -ggdb -Wall -W '-DDATADIR="/home/breadbox/c/cc/web"'
+LDFLAGS = -ggdb -Wall -W
 #LOADLIBES = -lefence
-LOADLIBES = -lvgagl -lvga
+LOADLIBES = -lvgagl -lvga -lefence
 
 OBJS = \
 chips.o state.o logic.o fileread.o parse.o solutions.o movelist.o timer.o \
-random.o dirio.o userio.o help.o
+random.o dirio.o userin.o userout.o help.o
 
 chips: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 	chmod 4755 $@
-	#/home/breadbox/c/svga/mksuid $@
 
 clean:
 	rm -f $(OBJS) chips
 
 
 chips.o    : chips.c gen.h cc.h dirio.h fileread.h movelist.h state.h	\
-	     solutions.h random.h timer.h userio.h help.h
-state.o    : state.c state.h gen.h cc.h movelist.h timer.h random.h	\
-	     logic.h fileread.h userio.h
-logic.o    : logic.c logic.h gen.h cc.h objects.h state.h movelist.h	\
+	     solutions.h random.h timer.h userin.h userout.h help.h
+state.o    : state.c state.h statestr.h gen.h cc.h movelist.h timer.h	\
+	     random.h logic.h fileread.h userin.h userout.h
+logic.o    : logic.c logic.h gen.h cc.h objects.h statestr.h movelist.h	\
 	     fileread.h random.h
 fileread.o : fileread.c fileread.h gen.h cc.h movelist.h dirio.h	\
 	     solutions.h parse.h
@@ -32,8 +31,9 @@ movelist.o : movelist.c movelist.h gen.h
 random.o   : random.c random.h gen.h
 timer.o    : timer.c timer.h gen.h
 dirio.o    : dirio.c dirio.h gen.h
-userio.o   : userio.c cctiles.c userio.h gen.h cc.h objects.h
-help.o     : help.c help.h gen.h cc.h objects.h userio.h
+userin.o   : userin.c userin.h gen.h
+userout.o  : userout.c cctiles.c userout.h gen.h cc.h objects.h statestr.h
+help.o     : help.c help.h gen.h cc.h objects.h userout.h
 
 
 cctiles.c: imgdir/*.xpm

@@ -47,9 +47,10 @@ void waitfortick(void)
 static void sigalrm(int sig)
 {
     ++utick;
+    (void)sig;
 }
 
-int timerinitialize(void)
+int timerinitialize(int sludgefactor)
 {
     struct sigaction	act;
 
@@ -60,7 +61,7 @@ int timerinitialize(void)
 
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 1000000 / TICKS_PER_SECOND;
-    timer.it_interval.tv_usec = 110000;
+    timer.it_interval.tv_usec = (1100000 * sludgefactor) / TICKS_PER_SECOND;
 
     return TRUE;
 }

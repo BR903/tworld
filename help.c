@@ -7,7 +7,8 @@
 #include	<stdlib.h>
 #include	"gen.h"
 #include	"objects.h"
-#include	"userio.h"
+#include	"userin.h"
+#include	"userout.h"
 
 static objhelptext const floors[] = {
     { TRUE, Fire, 0,
@@ -66,9 +67,9 @@ static objhelptext const tools[] = {
     { TRUE, ICChip, 0,
       "IC Chips are what Chip needs to collect"
       " in order to pass through the socket" },
-    { TRUE, Key_Green, Key_Red,
+    { TRUE, Key_Green, Key_Yellow,
       "Keys permit Chip to open doors of the matching color" },
-    { TRUE, Boots_Fire, Boots_Slide,
+    { TRUE, Boots_Water, Boots_Fire,
       "Boots allow Chip to get past fire and water, and to traverse"
       " ice and slide floors as if they were normal floors" },
     { FALSE, Block, 0,
@@ -113,22 +114,13 @@ static objhelptext const monsters[] = {
 void runhelp(void)
 {
     displayhelp("FLOORS", floors, sizeof floors / sizeof *floors);
-    inputwait();
-    if (input() == 'q')
-	return;
+    anykey();
     displayhelp("WALLS", walls, sizeof walls / sizeof *walls);
-    inputwait();
-    if (input() == 'q')
-	return;
+    anykey();
     displayhelp("OBJECTS", objects, sizeof objects / sizeof *objects);
-    inputwait();
-    if (input() == 'q')
-	return;
+    anykey();
     displayhelp("TOOLS & MACHINES", tools, sizeof tools / sizeof *tools);
-    inputwait();
-    if (input() == 'q')
-	return;
+    anykey();
     displayhelp("MONSTERS", monsters, sizeof monsters / sizeof *monsters);
-    inputwait();
-    (void)input();
+    anykey();
 }

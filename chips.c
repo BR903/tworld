@@ -17,7 +17,8 @@
 #include	"timer.h"
 #include	"random.h"
 #include	"help.h"
-#include	"userio.h"
+#include	"userin.h"
+#include	"userout.h"
 
 /* The default directory for the level files.
  */
@@ -30,8 +31,9 @@
 typedef	struct startupdata {
     char       *filename;	/* which puzzle file to use */
     int		level;		/* which puzzle to start at */
-    int		replay;		/* TRUE if playbacks are to be displayed */
+    int		sludge;		/* slowdown factor (1 == normal speed) */
     int		silence;	/* FALSE if we are allowed to ring the bell */
+    int		rawkeys;	/* TRUE if raw keyboard mode is permitted */
     int		listseries;	/* TRUE if the files should be displayed */
 } startupdata;
 
@@ -52,7 +54,7 @@ static char const *yowzitch =
 /* Version information.
  */
 static char const *vourzhon =
-	"chips, version 0.3. Copyright (C) 2001 by Brian Raiter\n"
+	"chips, version 0.6. Copyright (C) 2001 by Brian Raiter\n"
 	"under the terms of the GNU General Public License.\n";
 
 /* The list of available puzzle files.
@@ -71,9 +73,9 @@ static int		currentseries = 0;
  */
 static int		currentgame = 0;
 
-/* TRUE if currently in instant-replay mode.
+/* TRUE if currently in playback mode.
  */
-static int		replay = FALSE;
+static int		playback = FALSE;
 
 /*
  * Game-choosing functions
@@ -195,111 +197,143 @@ static void pickstartinggame(char const *startfile, int startlevel)
  * User interface functions
  */
 
-static int translatekey(int ch, int status)
+static void setplaymode(int playing)
 {
-    switch (ch) {
-      case 'k':		return CmdNorth;
-      case 'h':		return CmdWest;
-      case 'j':		return CmdSouth;
-      case 'l':		return CmdEast;
-      case '\t':	return CmdReplay;
-      case '\016':	return CmdNextLevel;
-      case '\020':	return CmdPrevLevel;
-      case '\022':	return CmdSameLevel;
-      case 'N':		return CmdNextLevel;
-      case 'P':		return CmdPrevLevel;
-      case 'R':		return CmdSameLevel;
-      case 'n':		return status ? CmdNextLevel : CmdNone;
-      case 'p':		return status ? CmdPrevLevel : CmdNone;
-      case 'r':		return status ? CmdSameLevel : CmdNone;
-      case 'q':		return status ? CmdQuit : CmdQuitLevel;
-      case 'Q':		return CmdQuit;
-      case '?':		return CmdHelp;
-      case '\n':
-      case '\r':
-      case ' ':
-	if (status > 0)
-	    return CmdNextLevel;
-	else if (status < 0)
-	    return CmdSameLevel;
-	return CmdNone;
-      case 'd':
-	return CmdDebugDumpMap;
-      case 'D':
-	return CmdDebugCmd;
+    if (playing) {
+	settimer(+1);
+    } else {
+	settimer(0);
     }
-    return CmdNone;
 }
 
 /* Get a keystroke from the user at the completion of the current
- * level. The default behavior of advancing to the next level is
- * overridden by a non-zero return value.
+ * level.
  */
 static int endinput(int status)
 {
     displayendmessage(status > 0);
 
     for (;;) {
-	inputwait();
-	switch (translatekey(input(), status)) {
-	  case CmdPrevLevel:	return -1;
-	  case CmdSameLevel:	return 0;
-	  case CmdNextLevel:	return +1;
+	switch (input(TRUE)) {
+	  case CmdPrevLevel:				return -1;
+	  case CmdSameLevel:				return 0;
+	  case CmdNextLevel:				return +1;
+	  case CmdPrev:					return -1;
+	  case CmdSame:					return 0;
+	  case CmdNext:					return +1;
+	  case CmdPlayback:	playback = !playback;	return 0;
+	  case CmdQuitLevel:				exit(0);
+	  case CmdQuit:					exit(0);
+	  case CmdHelp:		runhelp();		break;
 	  case CmdProceed:	return status > 0 ? +1 : 0;
-	  case CmdReplay:	replay = !replay; return 0;
-	  case CmdQuit:		exit(0);
 	}
     }
 }
+
+#if 0
+/* Play through a single tick of the current game. The return value
+ * indicates if the current game has ended.
+ */
+static int playtick(int *ret)
+{
+    int	cmd;
+
+    cmd = translatekey(input(FALSE), 0);
+
+    switch (cmd) {
+      case CmdHelp:
+	setplaymode(FALSE);
+	runhelp();
+	setplaymode(TRUE);
+	*ret = 0;
+	break;
+      case CmdPrevLevel:		*ret = -1;		return FALSE;
+      case CmdNextLevel:		*ret = +1;		return FALSE;
+      case CmdSameLevel:		*ret = 0;		return FALSE;
+      case CmdQuitLevel:		*ret = -1;		break;
+      case CmdQuit:			exit(0);
+      case CmdNorth: case CmdWest:	*ret = doturn(cmd);	break;
+      case CmdSouth: case CmdEast:	*ret = doturn(cmd);	break;
+      case CmdPreserve:			*ret = doturn(cmd);	break;
+      case CmdDebugCmd:			*ret = doturn(cmd);	break;
+      case CmdDebugDumpMap:		*ret = doturn(cmd);	break;
+      default:				*ret = doturn(NIL);	break;
+    }
+
+    drawscreen();
+    return TRUE;
+}
+#endif
 
 /* Play the current level. Return when the user solves the level or
  * requests a different level.
  */
 static int playgame(void)
 {
-    int	k, n;
+    int	cmd, n;
 
     drawscreen();
-    inputwait();
-    k = translatekey(input(), -1);
-    switch (k) {
-      case CmdPrevLevel:			return -1;
-      case CmdNextLevel:			return +1;
-      case CmdReplay:		replay = TRUE;	return 0;
-      case CmdHelp:		runhelp();	return 0;
-      case CmdQuit:				exit(0);
+    cmd = input(TRUE);
+    switch (cmd) {
+      case CmdNorth: case CmdWest:			break;
+      case CmdSouth: case CmdEast:			break;
+      case CmdPrevLevel:				return -1;
+      case CmdNextLevel:				return +1;
+      case CmdPrev:					return -1;
+      case CmdNext:					return +1;
+      case CmdPlayback:		playback = TRUE;	return 0;
+      case CmdHelp:		runhelp();		return 0;
+      case CmdQuitLevel:				exit(0);
+      case CmdQuit:					exit(0);
+      default:			cmd = NIL;		break;
     }
-    settimer(+1);
+    setplaymode(TRUE);
     for (;;) {
-	n = doturn(k);
+	n = doturn(cmd);
 	drawscreen();
 	if (n)
 	    break;
 	waitfortick();
-	k = translatekey(input(), 0);
-	if (k == CmdQuitLevel) {
+	cmd = input(FALSE);
+	if (cmd == CmdQuitLevel) {
 	    n = -1;
 	    break;
 	}
-	switch (k) {
-	  case CmdPrevLevel:	n = -1;		goto quitloop;
-	  case CmdNextLevel:	n = +1;		goto quitloop;
-	  case CmdSameLevel:	n = 0;		goto quitloop;
-	  case CmdQuitLevel:	n = -1;		goto quitloop;
-	  case CmdQuit:				exit(0);
+	switch (cmd) {
+	  case CmdNorth: case CmdWest:			break;
+	  case CmdSouth: case CmdEast:			break;
+	  case CmdPreserve:				break;
+	  case CmdDebugCmd1:				break;
+	  case CmdDebugCmd2:				break;
+	  case CmdPrevLevel:		n = -1;		goto quitloop;
+	  case CmdNextLevel:		n = +1;		goto quitloop;
+	  case CmdSameLevel:		n = 0;		goto quitloop;
+	  case CmdQuit:					exit(0);
+	  case CmdPauseGame:
+	    setplaymode(FALSE);
+	    anykey();
+	    setplaymode(TRUE);
+	    cmd = NIL;
+	    break;
 	  case CmdHelp:
-	    settimer(0);
+	    setplaymode(FALSE);
 	    runhelp();
-	    settimer(+1);
+	    setplaymode(TRUE);
+	    cmd = NIL;
+	    break;
+	  default:
+	    cmd = NIL;
 	    break;
 	}
     }
+    setplaymode(FALSE);
     settimer(-1);
-    if (n > 0 && replacesolution(FALSE))
+    if (n > 0 && replacesolution())
 	savesolutions(serieslist + currentseries);
     return endinput(n);
 
   quitloop:
+    setplaymode(FALSE);
     settimer(-1);
     return n;
 }
@@ -316,14 +350,14 @@ static int playbackgame(void)
 	if (n)
 	    break;
 	waitfortick();
-	n = translatekey(input(), 0);
+	n = input(FALSE);
 	switch (n) {
-	  case CmdPrevLevel:	n = -1;			goto quitloop;
-	  case CmdNextLevel:	n = +1;			goto quitloop;
-	  case CmdSameLevel:	n = 0;			goto quitloop;
-	  case CmdReplay:	n = 0;	replay = FALSE;	goto quitloop;
-	  case CmdQuitLevel:	n = 0;	replay = FALSE;	goto quitloop;
-	  case CmdQuit:					exit(0);
+	  case CmdPrevLevel:	n = -1;				goto quitloop;
+	  case CmdNextLevel:	n = +1;				goto quitloop;
+	  case CmdSameLevel:	n = 0;				goto quitloop;
+	  case CmdPlayback:	n = 0;	playback = FALSE;	goto quitloop;
+	  case CmdQuitLevel:	n = 0;	playback = FALSE;	goto quitloop;
+	  case CmdQuit:						exit(0);
 	  case CmdHelp:
 	    settimer(0);
 	    runhelp();
@@ -348,44 +382,54 @@ static int playbackgame(void)
  */
 static void initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 {
+    extern int xviewshift, yviewshift;
     char const *dir;
+    int		len;
     int		ch;
 
     programname = argv[0];
+
+    len = getpathbufferlen();
 
     datadir = getpathbuffer();
     copypath(datadir, DATADIR);
 
     savedir = getpathbuffer();
     if ((dir = getenv("CHIPSSAVEDIR"))) {
-	strncpy(savedir, dir, sizeof savedir - 1);
-	savedir[sizeof savedir - 1] = '\0';
+	strncpy(savedir, dir, len - 1);
+	savedir[len - 1] = '\0';
     } else if ((dir = getenv("HOME")))
-	sprintf(savedir, "%.*s/.chips", (int)(sizeof savedir - 11), dir);
+	sprintf(savedir, "%.*s/.chips", len, dir);
 
     start->filename = getpathbuffer();
     *start->filename = '\0';
     start->level = 0;
-    start->replay = FALSE;
+    start->sludge = 0;
+    start->rawkeys = TRUE;
     start->silence = FALSE;
     start->listseries = FALSE;
 
-    while ((ch = getopt(argc, argv, "0123456789D:S:hlqrv")) != EOF) {
+    while ((ch = getopt(argc, argv, "0123456789D:S:hlkqs:vx:y:")) != EOF) {
 	switch (ch) {
 	  case '0': case '1': case '2': case '3': case '4':
 	  case '5': case '6': case '7': case '8': case '9':
 	    start->level = start->level * 10 + ch - '0';
 	    break;
-	  case 'D':	strncpy(datadir, optarg, sizeof datadir - 1);	break;
-	  case 'S':	strncpy(savedir, optarg, sizeof savedir - 1);	break;
+	  case 'D':	strncpy(datadir, optarg, len - 1);		break;
+	  case 'S':	strncpy(savedir, optarg, len - 1);		break;
 	  case 'q':	start->silence = TRUE;				break;
-	  case 'r':	start->replay = TRUE;				break;
+	  case 'k':	start->rawkeys = FALSE;				break;
 	  case 'l':	start->listseries = TRUE;			break;
+	  case 's':	start->sludge = atoi(optarg);			break;
+	  case 'x':	xviewshift = atoi(optarg);			break;
+	  case 'y':	yviewshift = atoi(optarg);			break;
 	  case 'h':	fputs(yowzitch, stdout); 	exit(EXIT_SUCCESS);
 	  case 'v':	fputs(vourzhon, stdout); 	exit(EXIT_SUCCESS);
 	  default:	fputs(yowzitch, stderr); 	exit(EXIT_FAILURE);
 	}
     }
+    if (start->sludge < 1)
+	start->sludge = 1;
 
     if (optind < argc)
 	start->filename = argv[optind++];
@@ -414,19 +458,22 @@ int main(int argc, char *argv[])
 
     pickstartinggame(start.filename, start.level);
 
-    if (!ioinitialize(start.silence) || !timerinitialize()
-				     || !randominitialize())
+    if (!inputinitialize(start.rawkeys) || !outputinitialize(start.silence)
+					|| !timerinitialize(start.sludge)
+					|| !randominitialize())
 	die("Failed to initialize.");
+
+    setkeypolling(TRUE);
 
     for (;;) {
 	selectgame(serieslist[currentseries].games + currentgame);
-	if (replay) {
+	if (playback) {
 	    if (initgamestate(TRUE))
-		playbackgame();
+		n = playbackgame();
 	    else
 		ding();
-	    replay = FALSE;
-	    n = 0;
+	    playback = FALSE;
+	    /*n = 0;*/
 	} else {
 	    initgamestate(FALSE);
 	    n = playgame();
@@ -437,6 +484,8 @@ int main(int argc, char *argv[])
 	    currentgame -= n;
 	}
     }
+
+    setkeypolling(FALSE);
 
     return EXIT_SUCCESS;
 }

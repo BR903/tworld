@@ -16,7 +16,8 @@ Key Commands
 During play:
 
 arrows		move Chip
-h j k l		ditto
+keypad 2 4 6 8	move Chip
+Backspace	pause game
 ?		show online help (game pauses)
 q		quit level
 Q (shift-q)	exit game

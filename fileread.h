@@ -23,7 +23,8 @@ typedef	struct gamesetup {
     int		trapcount;
     int		clonercount;
     int		besttime;
-    unsigned	savedrndseed;
+    unsigned long savedrndseed;
+    char	savedrndslidedir;
     actlist	savedsolution;
     ushrt	creatures[256];
     xyconn	traps[256];
@@ -45,6 +46,7 @@ typedef	struct gameseries {
     char       *filename;		/* the name of the files */
     FILE       *mapfp;			/* the file containing the levels */
     FILE       *solutionfp;		/* the file of the user's solutions */
+    int		solutionflags;		/* settings for the saved solutions */
     int		allmapsread;		/* TRUE if levels are at EOF */
     int		allsolutionsread;	/* TRUE if solutions are at EOF */
     int		solutionsreadonly;	/* TRUE if solutions are readonly */

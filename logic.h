@@ -7,9 +7,9 @@
 #ifndef	_logic_h_
 #define	_logic_h_
 
-#include	"state.h"
+#include	"cc.h"
 
-extern int translatemapdata(gamestate *pstate);
+extern int initgamelogic(gamestate *pstate);
 extern int advancegame(gamestate *pstate);
 
 #endif

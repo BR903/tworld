@@ -17,25 +17,6 @@
 
 #define	DF_SHOWHINT	0x0001
 
-enum {
-    CmdNone = NIL,
-    CmdNorth = NORTH,
-    CmdWest = WEST,
-    CmdSouth = SOUTH,
-    CmdEast = EAST,
-    CmdPrevLevel,
-    CmdSameLevel,
-    CmdNextLevel,
-    CmdProceed,
-    CmdQuitLevel,
-    CmdQuit,
-    CmdHelp,
-    CmdReplay
-    ,
-    CmdDebugDumpMap,
-    CmdDebugCmd
-};
-
 typedef	struct xyconn {
     ushrt	from;
     ushrt	to;
@@ -44,15 +25,18 @@ typedef	struct xyconn {
 typedef	struct mapcell {
     uchar	floor;
     uchar	state;
-    uchar	entity;
 } mapcell;
 
 typedef struct creature {
     short	pos;
     uchar	id;
     uchar	dir;
-    uchar	waits;
     uchar	state;
+    char	moving;
+    char	fdir;
+    char	tdir;
 } creature;
+
+typedef	struct gamestate gamestate;
 
 #endif

@@ -17,6 +17,10 @@ extern char    *savedir;
  */
 extern int	savedirchecked;
 
+/* Read the solution header data for the given file.
+ */
+extern int readsolutionheader(FILE *fp, int *flags);
+
 /* Read the solution for game, if any, from the current file position.
  */
 extern int readsolution(FILE *fp, gamesetup *game);
