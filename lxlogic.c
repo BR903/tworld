@@ -378,6 +378,7 @@ static void removecreature(creature *cr, int animationid)
 	stopsoundeffect(SND_BLOCK_MOVING);
     cr->id = animationid;
     cr->frame = ((currenttime() + stepping) & 1) ? 12 : 11;
+    --cr->frame;
     cr->hidden = FALSE;
     cr->state = 0;
     cr->tdir = NIL;
@@ -403,7 +404,7 @@ static int stopanimationat(int pos)
     creature   *anim;
 
     for (anim = creaturelist() ; anim->id ; ++anim) {
-	if (anim->pos == pos && isanimation(anim->id)) {
+	if (!anim->hidden && anim->pos == pos && isanimation(anim->id)) {
 	    removeanimation(anim);
 	    return TRUE;
 	}
@@ -632,6 +633,7 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
 #define	CMM_EXPOSEWALLS		0x0002
 #define	CMM_PUSHBLOCKS		0x0004
 #define	CMM_PUSHBLOCKSNOW	0x0008
+#define	CMM_CLEARANIMATIONS	0x0010
 
 /* Return TRUE if the given block is allowed to be moved in the given
  * direction. If flags includes CMM_PUSHBLOCKS, then the indicated
@@ -720,6 +722,9 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    return FALSE;
 	if (issomeoneat(to))
 	    return FALSE;
+	if (flags & CMM_CLEARANIMATIONS)
+	    if (ismarkedanimated(to))
+		stopanimationat(to);
     } else {
 	if (!(movelaws[floorfrom].creature & DIR_OUT(dir)))
 	    return FALSE;
@@ -729,6 +734,9 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    return FALSE;
 	if (floorto == Fire && cr->id != Fireball)
 	    return FALSE;
+	if (flags & CMM_CLEARANIMATIONS)
+	    if (ismarkedanimated(to))
+		stopanimationat(to);
     }
 
     return TRUE;
@@ -751,6 +759,7 @@ static void choosecreaturemove(creature *cr)
 
     if (isanimation(cr->id))
 	return;
+
     cr->tdir = NIL;
     if (cr->id == Block)
 	return;
@@ -841,7 +850,7 @@ static void choosecreaturemove(creature *cr)
 	    choices[n] = cw[(lynx_prng() ^ (currenttime() + stepping)) & 3];
 	}
 	cr->tdir = choices[n];
-	if (canmakemove(cr, choices[n], 0))
+	if (canmakemove(cr, choices[n], CMM_CLEARANIMATIONS))
 	    return;
     }
 
@@ -1100,6 +1109,7 @@ static int startmovement(creature *cr, int releasing)
     }
 
     if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKSNOW |
+					CMM_CLEARANIMATIONS |
 					(releasing ? CMM_RELEASING : 0))) {
 	if (cr->id == Chip) {
 	    if (!couldntmove()) {
@@ -1128,8 +1138,10 @@ static int startmovement(creature *cr, int releasing)
 	return -1;
     }
     cr->pos += delta[dir];
+/*
     if (ismarkedanimated(cr->pos))
 	stopanimationat(cr->pos);
+*/
     if (cr->id != Chip)
 	claimlocation(cr->pos);
 
@@ -1189,10 +1201,10 @@ static int endmovement(creature *cr)
     int	floor;
     int	survived = TRUE;
 
-    _assert(cr->moving <= 0);
-
     if (isanimation(cr->id))
 	return TRUE;
+
+    _assert(cr->moving <= 0);
 
     floor = floorat(cr->pos);
 
@@ -1354,7 +1366,7 @@ static int advancecreature(creature *cr, int releasing)
     char	tdir = NIL;
     int		f;
 
-    if (cr->moving <= 0) {
+    if (cr->moving <= 0 && !isanimation(cr->id)) {
 	if (releasing) {
 	    _assert(cr->dir != NIL);
 	    tdir = cr->tdir;
@@ -1505,9 +1517,7 @@ static void initialhousekeeping(void)
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (cr->hidden)
 	    continue;
-	if (isanimation(cr->id) && cr->frame <= 0) {
-	    removeanimation(cr);
-	} else if (cr->state & CS_REVERSE) {
+	if (cr->state & CS_REVERSE) {
 	    cr->state &= ~CS_REVERSE;
 	    if (cr->moving <= 0)
 		cr->dir = back(cr->dir);
@@ -1538,7 +1548,7 @@ static void initialhousekeeping(void)
 	  case CmdCheatWest:		--xviewoffset();		break;
 	  case CmdCheatSouth:		++yviewoffset();		break;
 	  case CmdCheatEast:		++xviewoffset();		break;
-	  case CmdCheatHome:		xviewoffset()=yviewoffset()= 0;	break;
+	  case CmdCheatHome:		xviewoffset()=yviewoffset()=0;	break;
 	  case CmdCheatKeyRed:		++possession(Key_Red);		break;
 	  case CmdCheatKeyBlue:		++possession(Key_Blue);		break;
 	  case CmdCheatKeyYellow:	++possession(Key_Yellow);	break;
@@ -1562,11 +1572,7 @@ static void initialhousekeeping(void)
  */
 static void finalhousekeeping(void)
 {
-    creature   *cr;
-
-    for (cr = creaturelist() ; cr->id ; ++cr)
-	if (!cr->hidden && isanimation(cr->id))
-	    --cr->frame;
+    return;
 }
 
 /* Set the state fields specifically used to produce the output.
@@ -1921,8 +1927,14 @@ static int advancegame(gamelogic *logic)
     for (--cr ; cr >= creaturelist() ; --cr) {
 	setfdir(cr, NIL);
 	cr->tdir = NIL;
-	if (cr->hidden || isanimation(cr->id))
+	if (cr->hidden)
 	    continue;
+	if (isanimation(cr->id)) {
+	    --cr->frame;
+	    if (cr->frame < 0)
+		removeanimation(cr);
+	    continue;
+	}
 	if (cr->moving <= 0)
 	    choosemove(cr);
     }

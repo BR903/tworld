@@ -4,7 +4,7 @@
 </head>
 <body>
 <p>
-2003 Mar 29: version 1.1.4
+2003 Apr 01: version 1.2.0
 <ul>
 <li>
 Fixed another longstanding bug (MS logic) involving a tank indirectly
@@ -15,6 +15,16 @@ Improved some of the behavior of blocks being pushed (Lynx logic).
 <li>
 Added the -f switch (because frame-skipping can kill you when you're
 in the debugger).
+<li>
+Altered animations to run for either 11 or 12 frames, depending on the
+parity of their initial frame, as discovered by ccexplore. (This
+finally killed the nine-lived clone-boosting bug in ICEHOUSE.) Also
+modified the point during the frame when animations get removed.
+<li>
+Changed the Lynx walker to use the original Lynx PRNG, as discovered
+by ccexplore.
+<li>
+You can now quit Tile World while a game is paused.
 </ul>
 <p>
 2003 Mar 15: version 1.1.3

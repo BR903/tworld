@@ -167,7 +167,7 @@ typedef struct creature {
     unsigned char	id;		/* type of creature */
     unsigned char	dir;		/* current direction of creature */
     signed char		moving;		/* positional offset of creature */
-    unsigned char	frame;		/* explicit animation index */
+    signed char		frame;		/* explicit animation index */
     unsigned char	hidden;		/* TRUE if creature is invisible */
     unsigned char	state;		/* internal state value */
     unsigned char	tdir;		/* internal state value */

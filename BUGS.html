@@ -64,20 +64,6 @@ Bugs in the Lynx game logic emulation
 <p>
 <ol>
 <li>
-The pattern of "clone boosting" is not the same as the Lynx game.
-It's hard to find examples that clearly show this; I have only one.
-Play ICE HOUSE (102) on the Lynx. After landing safely on the red
-button, step right to block off the teeth clones. Stay there. When the
-clock reads 130 seconds or so, there will be a fireball clone that is
-boosted. It will cross the ice just before a glider comes through, and
-the glider will continue on its way past the red button. However, in
-the emuluator, the fireball clone is not boosted. As a result, it is
-still squarely on the ice when the glider arrives, and the latter
-bounces off and retreats. The boosting pattern is governed by how
-slots in the creature list come back up for reuse after a creature has
-been killed. Clearly, the emulator is not using the same algorithm as
-the Lynx game.
-<li>
 The Lynx game only permitted 128 creatures (including Chip) to exist
 simultaneously. Thus, a clone machine activated when the population
 was at maximum would "run out". The emulator does not enforce any such
@@ -88,13 +74,8 @@ may be better off as it is....
 Under the real Lynx game it is possible to push a block diagonally
 without moving at all. This is done by pushing against a wall, and
 then pushing diagonally against a neighboring block very briefly. The
-block will get pushed, but Chip doesn't follow.
-<li>
-Under the real Lynx game it is possible, with carefully constructed
-circumstances, to have Chip push a block off of an open toggle wall
-that then closes before Chip can enter it. This is the only situation
-I know of, barring diagonal moves, in which Chip can push a block
-without following it. This is impossible to do in TW.
+block will get pushed, but Chip doesn't follow. This is impossible to
+do in TW.
 <li>
 Under the real Lynx game it is possible, with carefully constructed
 circumstances, for Chip to push a block away from him as it's heading
@@ -108,7 +89,7 @@ Tile World the creature becomes trapped on that teleport, unable to
 move unless and until an exit becomes available. In the real Lynx
 game, Chip becomes trapped permanently, even if an exit opens up on
 the next frame. For other creatures, a teleport with no exits behaves
-just like a normal floor.
+almost entirely like a normal floor.
 </ol>
 <p>
 <hr>
