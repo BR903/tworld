@@ -503,7 +503,8 @@ static int canmakemove(creature const *cr, int dir, int flags)/*noreally, int re
     floorfrom = floorat(cr->pos);
     floorto = floorat(to);
 
-    if ((floorfrom == Beartrap || floorfrom == CloneMachine) && !(flags & CMM_RELEASING))
+    if ((floorfrom == Beartrap || floorfrom == CloneMachine)
+					&& !(flags & CMM_RELEASING))
 	return FALSE;
 
     if (isslide(floorfrom) && (cr->id != Chip || !possession(Boots_Slide)))
@@ -823,10 +824,8 @@ static void springtrap(int pos)
     creature   *cr;
 
     cr = lookupcreature(pos, TRUE);
-    if (cr && cr->dir != NIL) {
+    if (cr && cr->dir != NIL)
 	advancecreature(cr, TRUE);
-	addsoundeffect(SND_TRAP_SPRUNG);
-    }
 }
 
 /*
@@ -1067,6 +1066,9 @@ static int endmovement(creature *cr)
 	break;
       case Teleport:
 	teleportcreature(cr);
+	break;
+      case Beartrap:
+	addsoundeffect(SND_TRAP_ENTERED);
 	break;
       case Button_Blue:
 	turntanks();

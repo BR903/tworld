@@ -24,10 +24,26 @@ LOADLIBES =@LOADLIBES@
 
 OBJS = \
 tworld.o series.o play.o solution.o res.o lxlogic.o mslogic.o help.o score.o \
-random.o cmdline.o fileio.o err.o liboshw.a@otherobjs@
+random.o cmdline.o fileio.o err.o liboshw.a
+
+RESOURCES = tworldres.o
+
+#
+# Binaries
+#
 
 tworld: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
+
+tworld.exe: $(OBJS) $(RESOURCES)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
+
+mklynxcc: mklynxcc.c
+	$(CC) -Wall -W -O -o $@ $^
+
+#
+# Object files
+#
 
 tworld.o   : tworld.c defs.h gen.h err.h series.h res.h play.h score.h \
              solution.h fileio.h help.h oshw.h cmdline.h ver.h
@@ -45,23 +61,36 @@ cmdline.o  : cmdline.c cmdline.h gen.h
 fileio.o   : fileio.c fileio.h defs.h gen.h err.h
 err.o      : err.c oshw.h err.h
 
+#
+# Libraries
+#
+
 liboshw.a: oshw.h defs.h gen.h state.h err.h oshw/*.c oshw/*.h
 	(cd oshw && make)
+
+#
+# Resources
+#
 
 tworldres.o: tworld.ico
 	echo 1 ICON $^ | windres -o $@
 
-mklynxcc: mklynxcc.c
-	$(CC) -Wall -W -o $@ $^
-
-
-all: tworld mklynxcc
-
-clean:
-	rm -f $(OBJS) tworld mklynxcc config.*
-	(cd oshw && make clean)
+#
+# Other
+#
 
 install: tworld
 	cp -i ./tworld $(bindir)/.
 	mkdir -p $(sharedir)/data
 	cp -i ./rc ./*.bmp ./*.psf $(sharedir)/.
+
+clean:
+	rm -f $(OBJS) tworld mklynxcc config.*
+	rm -f tworldres.o tworld.exe mklynxcc.exe
+	(cd oshw && make clean)
+
+spotless:
+	rm -f $(OBJS) tworld mklynxcc config.* configure
+	rm -f tworldres.o tworld.exe mklynxcc.exe
+	(cd oshw && make spotless)
+#	rm -f Makefile

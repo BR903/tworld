@@ -17,63 +17,217 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
-#include	<sys/stat.h>
+#include	<errno.h>
 
-#define	CHIPS_DAT_SIZE		108569
-#define	CHIPS_DAT_CHKSUM	4017580
-#define	CHIPS_DAT_CHKXOR	202
+#ifndef	TRUE
+#define	TRUE	1
+#endif
+#ifndef	FALSE
+#define	FALSE	0
+#endif
 
-static FILE	       *fp = NULL;
-static char const      *file = NULL;
-static unsigned char   *buf = NULL;
-static long		size = 0;
+/* The magic numbers of the .dat file.
+ */
+#define	CHIPS_SIGBYTE_1		0xAC
+#define	CHIPS_SIGBYTE_2		0xAA
+#define	CHIPS_SIGBYTE_3		0x02
 
-static void fixchips(void)
+/* Statistics for the chips.dat file.
+ */
+#define	CHIPS_DAT_SIZE		108569UL
+#define	CHIPS_DAT_CHKSUM_1	4017619UL
+#define	CHIPS_DAT_CHKSUM_2	4017628UL
+#define	CHIPS_DAT_CHKXOR_1	209
+#define	CHIPS_DAT_CHKXOR_2	216
+
+/* Error return values.
+ */
+#define	ERR_BAD_CMDLINE		127
+#define	ERR_NOT_DATFILE		126
+#define	ERR_NOT_MS_DATFILE	125
+#define	ERR_NOT_CHIPS_DATFILE	124
+
+/* Online help.
+ */
+#define YOWZITCH	"Usage: mklynxcc [-x] FILENAME\n"
+
+/* General values that I'm too lazy to pass around as arguments.
+ */
+static FILE		       *fp = NULL;
+static char const	       *file = NULL;
+static unsigned long		size = 0;
+static unsigned long		offset = 0;
+static unsigned long		chksum = 0;
+static int			chkxor = 0;
+
+/* Compute the .dat file's size, checksum, and check-xor values.
+ */
+static int examinefile(void)
 {
-    int	n, y, z;
+    static unsigned char	buf[8192];
+    unsigned char	       *p;
+    long			n;
 
-    buf[0x0EC5C] = 0x09;	/* replace wall in level 88 */
-    buf[0x007F7] = 'P' ^ 0x99;	/* fix level 6 password */
-    buf[0x01128] = 'V' ^ 0x99;	/* fix level 10 password */
-    buf[0x01129] = 'U' ^ 0x99;
-    buf[0x0411C] = 'D' ^ 0x99;	/* fix level 28 password */
-    buf[0x105FE] = 'W' ^ 0x99;	/* fix level 96 password */
-    buf[0x105FF] = 'V' ^ 0x99;
-    buf[0x10600] = 'H' ^ 0x99;
-    buf[0x10601] = 'Y' ^ 0x99;
+    chksum = 0;
+    chkxor = 0;
+    for (;;) {
+	n = fread(buf, 1, sizeof buf, fp);
+	if (n < 0) {
+	    perror(file);
+	    return FALSE;
+	}
+	if (n == 0)
+	    break;
+	offset += n;
+	for (p = buf ; n ; --n, ++p) {
+	    chksum += *p;
+	    chkxor ^= *p;
+	}
+    }
+    size = offset;
 
-    if (size != CHIPS_DAT_SIZE) {
-	fprintf(stderr, "File is the wrong size (expected %u, found %lu).\n",
-			CHIPS_DAT_SIZE, size);
-	exit(1);
-    }
-    y = 0;
-    z = 0;
-    for (n = 0 ; n < size ; ++n) {
-	y ^= buf[n];
-	z += buf[n];
-    }
-    if (z != CHIPS_DAT_CHKSUM) {
-	fprintf(stderr, "File has the wrong checksum (%d instead of %d).\n",
-			z, CHIPS_DAT_CHKSUM);
-	exit(1);
-    }
-    if (y != CHIPS_DAT_CHKXOR) {
-	fprintf(stderr, "File has the wrong check-xor (%d instead of %d).\n",
-			y, CHIPS_DAT_CHKXOR);
-	exit(1);
-    }
+    rewind(fp);
+    offset = 0;
+    return TRUE;
 }
+
+/* Replace one byte in the file.
+ */
+static int changebyte(unsigned long pos, unsigned char byte)
+{
+    long	n;
+
+    n = pos - offset;
+    if (fseek(fp, n, SEEK_CUR)) {
+	perror(file);
+	return FALSE;
+    }
+    fputc(byte, fp);
+    offset = pos + 1;
+    return TRUE;
+}
+
+
+/* Return FALSE if the file is not a .dat file.
+ */
+static int sanitycheck(void)
+{
+    unsigned char	header[4];
+    int			n;
+
+    n = fread(header, 1, 4, fp);
+    if (n < 0) {
+	perror(file);
+	return FALSE;
+    }
+    if (n < 4) {
+	fprintf(stderr, "%s is not a valid .dat file\n", file);
+	errno = ERR_NOT_DATFILE;
+	return FALSE;
+    }
+    if (header[0] != CHIPS_SIGBYTE_1
+     || header[1] != CHIPS_SIGBYTE_2
+     || header[2] != CHIPS_SIGBYTE_3) {
+	fprintf(stderr, "%s is not a valid .dat file\n", file);
+	errno = ERR_NOT_DATFILE;
+	return FALSE;
+    }
+    if (header[3] != 0) {
+	if (header[3] == 1)
+	    fprintf(stderr, "%s is already set to use the Lynx ruleset\n",
+			    file);
+	else
+	    fprintf(stderr, "%s is not set for the MS ruleset\n", file);
+	errno = ERR_NOT_MS_DATFILE;
+	return FALSE;
+    }
+
+    rewind(fp);
+    return TRUE;
+}
+
+/* Return FALSE if the file is not the original MS chips.dat file.
+ */
+static int ischipsdat(void)
+{
+    if (size != CHIPS_DAT_SIZE) {
+	fprintf(stderr, 
+		"File is the wrong size (expected %lu, found %lu).\n",
+		CHIPS_DAT_SIZE, size);
+	errno = ERR_NOT_CHIPS_DATFILE;
+	return FALSE;
+    }
+
+    if (chksum == CHIPS_DAT_CHKSUM_1) {
+	if (chkxor != CHIPS_DAT_CHKXOR_1) {
+	    fprintf(stderr,
+		    "File has the wrong xor (expected %d, found %d).\n",
+		    CHIPS_DAT_CHKXOR_1, chkxor);
+	    errno = ERR_NOT_CHIPS_DATFILE;
+	    return FALSE;
+	}
+    } else if (chksum == CHIPS_DAT_CHKSUM_2) {
+	if (chkxor != CHIPS_DAT_CHKXOR_2) {
+	    fprintf(stderr,
+		    "File has the wrong xor (expected %d, found %d).\n",
+		    CHIPS_DAT_CHKXOR_2, chkxor);
+	    errno = ERR_NOT_CHIPS_DATFILE;
+	    return FALSE;
+	}
+    } else {
+	fprintf(stderr,
+		"File has the wrong sum (expected %lu or %lu, found %lu).\n",
+		CHIPS_DAT_CHKSUM_1, CHIPS_DAT_CHKSUM_2, chksum);
+	errno = ERR_NOT_CHIPS_DATFILE;
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
+/* Change the bytes that differ from the original Lynx data.
+ */
+static int fixchips(void)
+{
+    if (!changebyte(0x007F7UL, 'P' ^ 0x99))	/* fix level 6 password */
+	return FALSE;
+    if (!changebyte(0x01128UL, 'V' ^ 0x99)	/* fix level 10 password */
+     || !changebyte(0x01129UL, 'U' ^ 0x99))
+	return FALSE;
+    if (!changebyte(0x0411CUL, 'D' ^ 0x99))	/* fix level 28 password */
+	return FALSE;
+    if (!changebyte(0x0EC5CUL, 0x09))		/* replace wall in level 88 */
+	return FALSE;
+    if (!changebyte(0x105FEUL, 'W' ^ 0x99)	/* fix level 96 password */
+     || !changebyte(0x105FFUL, 'V' ^ 0x99)
+     || !changebyte(0x10600UL, 'H' ^ 0x99)
+     || !changebyte(0x10601UL, 'Y' ^ 0x99))
+	return FALSE;
+
+    rewind(fp);
+    offset = 0;
+    return TRUE;
+}
+
+/*
+ *
+ */
 
 int main(int argc, char *argv[])
 {
-    struct stat	st;
-    int		fullfix = 0;
+    int		fullfix = FALSE;
     int		n;
+
+    if (argc > 1 && !strcmp(argv[1], "-h")) {
+	fputs(YOWZITCH, stdout);
+	return 0;
+    }
+
+    errno = 0;
 
     n = 1;
     if (argc > n && !strcmp(argv[n], "-x")) {
-	fullfix = 1;
+	fullfix = TRUE;
 	++n;
     }
     if (argc > n) {
@@ -81,34 +235,32 @@ int main(int argc, char *argv[])
 	++n;
     }
     if (argc > n || !file) {
-	fprintf(stderr, "Usage: %s [-x] FILENAME\n", argv[0]);
-	exit(1);
+	fputs(YOWZITCH, stderr);
+	return ERR_BAD_CMDLINE;
     }
 
-    if (stat(file, &st)) {
+    fp = fopen(file, "r+b");
+    if (!fp) {
 	perror(file);
-	exit(1);
+	return errno;
     }
-    size = st.st_size;
+    if (!sanitycheck())
+	return errno;
 
-    if (!(buf = malloc(st.st_size)) || !(fp = fopen(file, "r+b"))
-				    || fread(buf, size, 1, fp) != 1) {
-	perror(file);
-	exit(1);
+    if (fullfix) {
+	examinefile();
+	if (!ischipsdat())
+	    return errno;
+	if (!fixchips()) {
+	    fprintf(stderr, "ERROR: file may have become corrupt\n");
+	    return errno;
+	}
     }
 
-    buf[0x00003] = 0x01;
-
-    if (fullfix)
-	fixchips();
-
-    rewind(fp);
-    if (fwrite(buf, size, 1, fp) != 1) {
-	perror(file);
-	exit(1);
-    }
+    if (!changebyte(3, 1))
+	return errno;
 
     fclose(fp);
-    printf("%s was successfully altered to use the Lynx ruleset\n", file);
-    return 0;
+    printf("%s was successfully altered\n", file);
+    return errno;
 }

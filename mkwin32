@@ -11,9 +11,7 @@ for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
 
 sh ./cross-configure.sh --with-win32
-sh ./cross-make.sh -f Makefile all
-mv tworld tworld.exe
-mv mklynxcc mklynxcc.exe 
+sh ./cross-make.sh tworld.exe
 
 /home/breadbox/p/html2txt < ../../README.html > README.txt
 /home/breadbox/p/html2txt < ../INSTALL.html > INSTALL.txt
@@ -26,7 +24,7 @@ VER=`tr -cd 0123456789. < ver.h`
 
 zip -9 -l tworld-$VER-win32.zip README.txt INSTALL.txt Changelog.txt BUGS.txt
 zip -9 -l tworld-$VER-win32.zip COPYING.txt README-SDL.txt
-zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.exe
+zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.com
 zip -9    tworld-$VER-win32.zip *.bmp *.psf rc data
 
 rm -f ../../tworld-$VER-win32.zip
