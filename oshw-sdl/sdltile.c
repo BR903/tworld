@@ -297,7 +297,7 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
 
     if (!tileptr[top].celcount)
 	die("map element %02X has no suitable image", top);
-    nt = (timerval + tileptr[top].celcount) % tileptr[top].celcount;
+    nt = (timerval + 1) % tileptr[top].celcount;
     if (bot == Nothing || bot == Empty || !tileptr[top].transp[0]) {
 	if (tileptr[top].opaque[nt])
 	    return tileptr[top].opaque[nt];
@@ -310,7 +310,7 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
 
     if (!tileptr[bot].celcount)
 	die("map element %02X has no suitable image", bot);
-    nb = (timerval + tileptr[bot].celcount) % tileptr[bot].celcount;
+    nb = (timerval + 1) % tileptr[bot].celcount;
     dest = tileptr[Overlay_Buffer].opaque[0];
     if (tileptr[bot].opaque[nb])
 	memcpy(dest, tileptr[bot].opaque[nb], sdlg.cbtile);

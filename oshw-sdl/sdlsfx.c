@@ -48,6 +48,7 @@ static void initonomatopoeia(void)
     sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
     sounds[SND_TIME_OUT].textsfx        = "Clang!";
     sounds[SND_TIME_LOW].textsfx        = "Ktick!";
+    sounds[SND_DEREZZ].textsfx		= "Bzont!";
     sounds[SND_CANT_MOVE].textsfx       = "Mnphf!";
     sounds[SND_IC_COLLECTED].textsfx    = "Chack!";
     sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";

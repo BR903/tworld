@@ -355,7 +355,7 @@ static void displaymapview(gamestate const *state)
 	    pos = y * CXGRID + x;
 	    p = getcellimage(state->map[pos].top.id, state->map[pos].bot.id,
 			     (state->statusflags & SF_NOANIMATION) ?
-						0 : state->currenttime);
+						-1 : state->currenttime);
 	    drawopaquetileclipped(xorigin + x * sdlg.wtile,
 				  yorigin + y * sdlg.htile, p);
 	}
