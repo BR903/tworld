@@ -199,6 +199,10 @@ commands are available:
 that password.
 . <Ctrl>-<I>
 . plays back the best solution for that level.
+. <O>
+. toggles between even-step and odd-step offset.
+. <Shift>-<O>
+. (Lynx-mode only) increments the stepping offset by one.
 . <Ctrl>-<X>
 . deprecates the best solution for that level. If the level is then
 succesfully completed again, the saved solution will be replaced with
@@ -214,8 +218,8 @@ At most other points, the <Q> key will abort the current activity
 and return to the start of the current level.
 
 Finally, the program can be exited at any time by pressing
-<Shift>-<Q>. <Ctrl>-<C> or <Alt>-<F4> will also force an immediate
-exit.
+<Shift>-<Q>. (<Ctrl>-<C> or <Alt>-<F4> will also force an immediate
+exit.)
 
 .section Rulesets
 
