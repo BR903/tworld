@@ -754,6 +754,21 @@ static void choosecreaturemove(creature *cr)
 	cr->tdir = pdir;
 }
 
+/* Resolve a diagonal movement command to one of the two directions.
+ */
+static int selectonemove(int vert, int horz)
+{
+    creature   *cr;
+    int		fv, fh;
+
+    cr = getchip();
+    fv = canmakemove(cr, vert, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
+    fh = canmakemove(cr, horz, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
+    if (fv && !fh)
+	return vert;
+    return horz;
+}
+
 /* Determine the direction of Chip's next move. If discard is TRUE,
  * then Chip is not currently permitted to select a direction of
  * movement, and the player's input should not be retained.
@@ -764,6 +779,17 @@ static void choosechipmove(creature *cr, int discard)
 
     dir = currentinput();
     currentinput() = NIL;
+
+    switch (dir) {
+      case CmdNorth | CmdWest:
+      case CmdNorth | CmdEast:
+      case CmdSouth | CmdWest:
+      case CmdSouth | CmdEast:
+	dir = selectonemove(dir & (CmdNorth | CmdSouth),
+			    dir & (CmdWest | CmdEast));
+	break;
+    }
+
     if (dir == NIL || discard) {
 	cr->tdir = NIL;
     } else {
