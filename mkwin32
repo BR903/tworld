@@ -72,8 +72,8 @@ zip -A tworld-$VER-win32-CCLP2.exe
 # Create the image-less version.
 #
 
-cp tworld-$VER-win32.zip tworld-$VER-win32-noimgs.zip
-zip -d tworld-$VER-win32-noimgs.zip 'res/*tiles*.bmp'
+cp tworld-$VER-win32.zip tworld-$VER-noimgs-win32.zip
+zip -d tworld-$VER-noimgs-win32.zip 'res/*tiles*.bmp'
 
 #
 # Copy the zipfiles to the starting directory and clean up.
@@ -81,7 +81,7 @@ zip -d tworld-$VER-win32-noimgs.zip 'res/*tiles*.bmp'
 
 mv tworld-$VER-win32.zip tworld-$VER-win32.exe ../..
 mv tworld-$VER-win32-CCLP2.zip tworld-$VER-win32-CCLP2.exe ../..
-mv tworld-$VER-win32-noimgs.zip ../..
+mv tworld-$VER-noimgs-win32.zip ../..
 cd ..
 rm -rf build
 cd ..
