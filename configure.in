@@ -25,17 +25,6 @@ sharedir="$datadir/tworld"
 otherobjs=""
 
 dnl
-dnl	--with-win32 puts some Windows-specific lines in the Makefile
-dnl
-
-AC_ARG_WITH(win32,
-	    [  --with-win32            Set defaults for a windows build],
-	    [if test $withval = yes ; then
-	       sharedir="."
-	       otherobjs=" tworldres.o"
-	     fi])
-
-dnl
 dnl	--with-sharedir=DIR overrides default value of $datadir/tworld
 dnl	for the shared data directory.
 dnl
@@ -75,6 +64,17 @@ if test "$OSHWDIR" = "sdl" ; then
   OSHWCFLAGS=$OSHWCFLAGS' $(shell sdl-config --cflags)'
   LOADLIBES=$LOADLIBES' $(shell sdl-config --libs)'
 fi
+
+dnl
+dnl	--with-win32 puts some Windows-specific lines in the Makefile
+dnl
+
+AC_ARG_WITH(win32,
+	    [  --with-win32            Set defaults for a windows build],
+	    [if test $withval = yes ; then
+	       sharedir="."
+	       otherobjs=" tworldres.o"
+	     fi])
 
 dnl
 dnl	Done with processing.
