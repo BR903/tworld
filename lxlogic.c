@@ -66,7 +66,7 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
  */
 static int		lastrndslidedir = NORTH;
 
-static int		stepping = 2;
+static int		stepping = 6;
 
 /* The memory used to hold the list of creatures.
  */
@@ -1317,6 +1317,9 @@ static int endmovement(creature *cr)
 	}
 	survived = FALSE;
 	break;
+      case Teleport:
+	teleportcreature(cr);
+	break;
       case Beartrap:
 	addsoundeffect(SND_TRAP_ENTERED);
 	break;
@@ -1325,7 +1328,11 @@ static int endmovement(creature *cr)
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Green:
+#if 0
 	greentoggle() = !greentoggle();
+#else
+	togglewalls();
+#endif
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Red:
@@ -1568,12 +1575,6 @@ static void finalhousekeeping(void)
     for (cr = creaturelist() ; cr->id ; ++cr)
 	if (!cr->hidden && isanimation(cr->id))
 	    --cr->frame;
-    for (--cr ; cr >= creaturelist() ; --cr) {
-	if (cr->hidden || cr->moving || isanimation(cr->id))
-	    continue;
-	if (floorat(cr->pos) == Teleport)
-	    teleportcreature(cr);
-    }
 }
 
 /* Set the state fields specifically used to produce the output.
