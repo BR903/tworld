@@ -59,9 +59,25 @@ static int		fullscreen = FALSE;
 
 /* Coordinates specifying the placement of the various screen elements.
  */
+#if 0
 static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
 static SDL_Rect		promptloc, displayloc, messageloc;
+#endif
 static int		screenw, screenh;
+static SDL_Rect		infoloc;
+static SDL_Rect		locrects[7];
+
+#define	displayloc	(locrects[0])
+#define	titleloc	(locrects[1])
+#define	rinfoloc	(locrects[2])
+#define	invloc		(locrects[3])
+#define	hintloc		(locrects[4])
+#define	messageloc	(locrects[5])
+#define	promptloc	(locrects[6])
+
+/* TRUE means that the screen is in need of a full update.
+ */
+static int		fullredraw = TRUE;
 
 /*
  * Display initialization functions.
@@ -186,7 +202,7 @@ static int layoutscreen(void)
 
     puttext(&rinfoloc, chipstext, -1, PT_CALCSIZE);
     rinfoloc.x = infoloc.x + rinfoloc.w + MARGINW;
-    rinfoloc.y = infoloc.y;
+    rinfoloc.y = infoloc.y + 3 * texth;
     puttext(&rinfoloc, timertext, -1, PT_CALCSIZE);
     rinfoloc.h = 2 * texth;
 
@@ -249,6 +265,7 @@ static int createdisplay(void)
 void cleardisplay(void)
 {
     SDL_FillRect(sdlg.screen, NULL, bkgndcolor(sdlg.textclr));
+    fullredraw = TRUE;
 }
 
 /*
@@ -557,7 +574,13 @@ int displaygame(void const *state, int timeleft, int besttime)
     displaymapview(state);
     displayinfo(state, timeleft, besttime);
     displaymsg(FALSE);
-    SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
+    if (fullredraw) {
+	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
+	fullredraw = FALSE;
+    } else {
+	SDL_UpdateRects(sdlg.screen,
+			sizeof locrects / sizeof *locrects, locrects);
+    }
     return TRUE;
 }
 
