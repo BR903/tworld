@@ -66,7 +66,6 @@ static int		xviewoffset, yviewoffset;
 
 #define	getchip()		(creaturelist())
 #define	chippos()		(getchip()->pos)
-#define	ischipalive()		(!getchip()->hidden)
 
 #define	mainprng()		(&state->mainprng)
 
@@ -724,7 +723,7 @@ static void choosecreaturemove(creature *cr)
       case Teeth:
 	if ((currenttime() >> 2) & 1)
 	    return;
-	if (!ischipalive())
+	if (getchip()->hidden)
 	    return;
 	y = chippos() / CXGRID - cr->pos / CXGRID;
 	x = chippos() % CXGRID - cr->pos % CXGRID;
@@ -964,7 +963,7 @@ static int startmovement(creature *cr, int releasing)
     floorfrom = floorat(cr->pos);
 
     if (cr->id == Chip) {
-	assert(ischipalive());
+	assert(!cr->hidden);
 	resetpushing();
 	if (!possession(Boots_Slide)) {
 	    if (isslide(floorfrom) && cr->tdir == NIL)
@@ -1003,7 +1002,7 @@ static int startmovement(creature *cr, int releasing)
 
     cr->moving += 8;
 
-    if (cr->id != Chip && ischipalive() && cr->pos == chippos()) {
+    if (cr->id != Chip && cr->pos == chippos() && !getchip()->hidden) {
 	removechip(TRUE, cr);
 	return FALSE;
     }
@@ -1123,6 +1122,9 @@ static int endmovement(creature *cr)
 	    break;
 	  case Exit:
 	    setcompleted();
+	    cr->hidden = TRUE;
+	    startendgametimer();
+	    addsoundeffect(SND_CHIP_WINS);
 	    break;
 	}
     } else if (cr->id == Block) {
@@ -1408,7 +1410,7 @@ static void preparedisplay(void)
 	  case EAST:	xviewpos() -= chip->moving;	break;
 	}
     }
-    if (ischipalive() && floor == HintButton && chip->moving <= 0)
+    if (!chip->hidden && floor == HintButton && chip->moving <= 0)
 	showhint();
     else
 	hidehint();
@@ -1714,13 +1716,7 @@ static int advancegame(gamelogic *logic)
     if (inendgame()) {
 	if (!decrendgametimer()) {
 	    resetfloorsounds(TRUE);
-	    return -1;
-	}
-    } else {
-	if (iscompleted()) {
-	    resetfloorsounds(TRUE);
-	    addsoundeffect(SND_CHIP_WINS);
-	    return +1;
+	    return iscompleted() ? +1 : -1;
 	}
     }
 
