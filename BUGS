@@ -1,0 +1,105 @@
+Contents
+--------
+
+I. Bugs in the MS game logic emulation
+II. Bugs in the Lynx game logic emulation
+III. Other bugs and misfeatures
+IV. General non-bugs
+
+I. Bugs in the MS game logic emulation
+--------------------------------------
+
+1. The clone machine "boss" is not set correctly when more than one
+   clone machine is activated simultaneously. (You can see this rather
+   dramatically by playing MONSTER LAB (45).) Actually, I know a way
+   to fix this bug, but it requires that dead creatures not be removed
+   from the creature list. This means that the list can grow
+   arbitrarily large (at least on an untimed level), which seems rather
+   undesirable. I seriously doubt chips.exe does this.
+
+2. A trapped creature's "controller" is not always set correctly on
+   levels where one or more clones have died. This is a secondary
+   effect of the previous bug (and there are probably others as
+   well). Same potential fix, same reason for not wanting to use it.
+
+2. "Slide delay" is not emulated. At all. So far my attempts at doing
+   so have given rather poor results.
+
+3. Chips move's are "quantized" so as to occur exactly on 1/20-second
+   intervals, rather than occuring the moment a key event is
+   received. I believe that this difference does not actually affect
+   game play (though I could well be wrong), but it definitely does
+   affect how the game appears when Chip makes two moves in a single
+   interval.
+
+4. A creature unable to leave a clone machine in its chosen direction
+   can exit at any later time that the direction opens up. In the MS
+   game, I believe there is an upper limit to this, or at least some
+   kind of restriction. I need more data about this.
+
+5. When a tank is temporarily prevented from moving, it will not move
+   again in that direction (until a blue button is pressed). I suspect
+   that in the MS game this is not always true, but I don't know what
+   the rule is.
+
+6. When Chip is on solid ground, and pushes a block that is on ice,
+   Chip follows the block. This is wrong; in the MS game, Chip bounces
+   back. I'm pretty sure this is because the block doesn't start
+   moving right away, as it is on the slip list, causing it to move on
+   the following tick.
+
+7. There are numerous odd cases where blocks do not behave quite
+   correctly. In the MS game, blocks are objects instead of creatures,
+   and thus have different bases for their treatment. I've begun to
+   lay a foundation for treating blocks more like objects in the MS
+   ruleset, and this needs to be continued.
+
+8. There is some weird behavior that occurs with moves that involve
+   multiple levels of side effects (e.g., Chip moves towards a block
+   which causes it to be pushed through a teleport and land on a red
+   button which clones a tank that comes out where the block
+   originally rested). This needs to be investigated further to
+   discern the overall patterns.
+
+II. Bugs in the Lynx game logic emulation
+-----------------------------------------
+
+1. The pattern of "clone boosting" is not the same as the Lynx game.
+   It's hard to find examples that clearly show this; I have only one.
+   Play ICE HOUSE (102) on the Lynx. After landing safely on the red
+   button, step right to block off the teeth clones. Stay there. When
+   the clock reads 130 seconds or so, there will be a fireball clone
+   that is boosted. It will cross the ice just before a glider comes
+   through, and the glider will continue on its way past the red
+   button. However, in the emuluator, the fireball clone is not
+   boosted. As a result, it is still squarely on the ice when the
+   glider arrives, and the latter bounces off and retreats. The
+   boosting pattern is governed by how slots in the creature list come
+   back up for reuse after a creature has been killed. Clearly, the
+   emulator is not using the same algorithm as the Lynx game.
+   Unfortunately, it's a tedious business to collect any amount of
+   data on this that would be necessary to start finding patterns, and
+   there are few levels that have the necessary elements for such
+   investigation. So this one is still up in the air.
+
+III. Other bugs and misfeatures
+-------------------------------
+
+None are known to me at present. I'm sure that will change once other
+people start playing with it.
+
+IV. General non-bugs
+--------------------
+
+[I expect that some intentional features of the program will strike
+other people as perhaps being bugs. This section will be used to list
+these non-bugs.]
+
+1. The MS emulation should have an option for doing smooth scrolling.
+
+   The MS ruleset makes it impossible to have sensible smooth
+   scrolling. Something like boosting is an obvious example of why
+   this can't work. There is no good way to spread Chip's movement out
+   in time when the interval before Chip can make another move can
+   vary all the way down to zero.
+

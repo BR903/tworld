@@ -1,4 +1,4 @@
-/* random.c: The game's random-number generator
+/* random.c: The game's random-number generator.
  *
  * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -14,87 +14,119 @@
  * same sequence of random numbers (for blobs, walkers, and random
  * slide floors) as when it was recorded. Therefore the random-number
  * seed that was originally used is stored in the saved-game file for
- * each level. But this would still fail if the playback occurred on a
- * version compiled with a different generator. Thus, this module.
+ * each level. But this could still fail if the playback occurred on a
+ * version compiled with a different C library's generator. Thus, this
+ * module.
  */
 
-#include	<assert.h>
+#include	<stdlib.h>
 #include	<time.h>
+#include	<assert.h>
 #include	"gen.h"
 #include	"random.h"
 
-/* The random number.
+/* The latest random number is stashed here, so that it can provide the
+ * initial seed of the next PRNG.
  */
-long	randomval = -1;
+static unsigned long	lastvalue = 0x80000000UL;
 
 /* The linear congruential random-number generator needs no
  * introduction.
  */
-static void nextrandom(void)
+static unsigned long nextvalue(unsigned long value)
 {
-    assert(randomval >= 0);
-    randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
+    return ((value * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+}
+
+static void nextrandom(prng *gen)
+{
+    if (gen->shared)
+	gen->value = lastvalue = nextvalue(lastvalue);
+    else
+	gen->value = nextvalue(gen->value);
 }
 
 /* We start off a fresh series by taking the current time. A few
  * numbers are generated and discarded to work out the biases of the
  * seed value.
  */
-int randominitialize(void)
+prng createprng(void)
 {
-    randomval = time(NULL);
-    randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
-    randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
-    randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
-    randomval = ((randomval * 1103515245UL) + 12345UL) & 0x7FFFFFFF;
-    return TRUE;
+    prng	gen;
+
+    if (lastvalue > 0x7FFFFFFFUL) {
+	lastvalue = (unsigned long)time(NULL);
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+    }
+    gen.value = gen.initial = lastvalue;
+    gen.shared = TRUE;
+    return gen;
+}
+
+/* Reset a PRNG to the shared sequence.
+ */
+void resetprng(prng *gen)
+{
+    gen->value = gen->initial = lastvalue;
+    gen->shared = TRUE;
+}
+
+/* Reset a PRNG to an independent sequence.
+ */
+void restartprng(prng *gen, unsigned long seed)
+{
+    gen->value = gen->initial = seed & 0x7FFFFFFFUL;
+    gen->shared = FALSE;
 }
 
 /* Use the top two bits to get a random number between 0 and 3.
  */
-int random4(void)
+int random4(prng *gen)
 {
-    nextrandom();
-    return randomval >> 29;
+    nextrandom(gen);
+    return gen->value >> 29;
 }
 
 /* Randomly select an element from a list of three values.
  */
-int randomof3(int a, int b, int c)
+int randomof3(prng *gen, int a, int b, int c)
 {
     int	n;
 
-    nextrandom();
-    n = (int)((3.0 * (randomval & 0x3FFFFFFF)) / (double)0x40000000);
+    nextrandom(gen);
+    n = (int)((3.0 * (gen->value & 0x3FFFFFFFUL)) / (double)0x40000000UL);
     return n < 2 ? n < 1 ? a : b : c;
 }
 
 /* Randomly permute a list of three values. Two random numbers are
  * used, with the ranges [0,1] and [0,1,2].
  */
-void randomp3(int *array)
+void randomp3(prng *gen, int *array)
 {
     int	n, t;
 
-    nextrandom();
-    n = randomval >> 30;
+    nextrandom(gen);
+    n = gen->value >> 30;
     t = array[n];  array[n] = array[1];  array[1] = t;
-    n = (int)((3.0 * (randomval & 0x3FFFFFFF)) / (double)0x40000000);
+    n = (int)((3.0 * (gen->value & 0x3FFFFFFFUL)) / (double)0x40000000UL);
     t = array[n];  array[n] = array[2];  array[2] = t;
 }
 
 /* Randomly permute a list of four values. Three random numbers are
  * used, with the ranges [0,1], [0,1,2], and [0,1,2,3].
  */
-void randomp4(int *array)
+void randomp4(prng *gen, int *array)
 {
     int	n, t;
 
-    nextrandom();
-    n = randomval >> 30;
+    nextrandom(gen);
+    n = gen->value >> 30;
     t = array[n];  array[n] = array[1];  array[1] = t;
-    n = (int)((3.0 * (randomval & 0x0FFFFFFF)) / (double)0x10000000);
+    n = (int)((3.0 * (gen->value & 0x0FFFFFFFUL)) / (double)0x10000000UL);
     t = array[n];  array[n] = array[2];  array[2] = t;
-    n = (randomval >> 28) & 3;
+    n = (gen->value >> 28) & 3;
     t = array[n];  array[n] = array[3];  array[3] = t;
 }
