@@ -76,6 +76,11 @@ was at maximum would "run out". The emulator does not enforce any such
 maximum. Of course, fixing this would put a limit on the kinds of new
 levels that people could create under the Lynx ruleset -- so this one
 may be better off as it is....
+<li>
+On levels where Chips starts out on a force floor, if he begins the
+level without moving, the force floor doesn't take effect until after
+the first frame. In the emulation, the force floor takes effect from
+the get-go.
 </ol>
 <p>
 <hr>
@@ -86,6 +91,10 @@ Other bugs and misfeatures
 <li>
 There ought to be a way to return to the file list, instead of having
 to shut down and restart the program. That drives me crazy.
+<li>
+The display code needs to be revamped to run more efficiently across
+the various display resolutions (right now it runs well on 32-bit
+displays and poorly on 8-bit displays).
 </ol>
 </body>
 </html>
