@@ -197,9 +197,14 @@ static int scrollinputcallback(int *move)
 
 /* Mark the current level's solution as replaceable.
  */
-static void replaceablesolution(gamespec *gs)
+static void replaceablesolution(gamespec *gs, int change)
 {
-    gs->series.games[gs->currentgame].sgflags ^= SGF_REPLACEABLE;
+    if (change < 0)
+	gs->series.games[gs->currentgame].sgflags ^= SGF_REPLACEABLE;
+    else if (change > 0)
+	gs->series.games[gs->currentgame].sgflags |= SGF_REPLACEABLE;
+    else
+	gs->series.games[gs->currentgame].sgflags &= ~SGF_REPLACEABLE;
 }
 
 /* Mark the current level's password as known to the user.
@@ -384,7 +389,7 @@ static int startinput(gamespec *gs)
 	  case CmdNextLevel:	leveldelta(+1);			return CmdNone;
 	  case CmdNext:		leveldelta(+1);			return CmdNone;
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
-	  case CmdKillSolution:	replaceablesolution(gs);	break;
+	  case CmdKillSolution:	replaceablesolution(gs, -1);	break;
 	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
 	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdHelp:		onlinehelp(Help_KeysBetweenGames); break;
@@ -439,7 +444,7 @@ static int endinput(gamespec *gs)
 	  case CmdGotoLevel:	selectlevelbypassword(gs);	return TRUE;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return TRUE;
 	  case CmdSeeScores:	showscores(gs);			return TRUE;
-	  case CmdKillSolution:	replaceablesolution(gs);	return TRUE;
+	  case CmdKillSolution:	replaceablesolution(gs, -1);	return TRUE;
 	  case CmdHelp:		onlinehelp(Help_KeysBetweenGames); return TRUE;
 	  case CmdQuitLevel:					return FALSE;
 	  case CmdQuit:						exit(0);
@@ -588,6 +593,8 @@ static int playbackgame(gamespec *gs)
     }
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
+    if (n < 0)
+	replaceablesolution(gs, +1);
     if (n > 0) {
 	if (checksolution())
 	    savesolutions(&gs->series);
