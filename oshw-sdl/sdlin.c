@@ -104,6 +104,9 @@ static keycmdmap const gamekeycmds[] = {
     { 0, 0, 0, 0, 0, 0 }
 };
 
+/* The map of key commands used when the program is obtaining input
+ * from the user.
+ */
 static keycmdmap const inputkeycmds[] = {
     { SDLK_UP,                   -1, -1,  0,   CmdNorth,      FALSE },
     { SDLK_LEFT,                 -1, -1,  0,   CmdWest,       FALSE },
@@ -145,9 +148,11 @@ static keycmdmap const inputkeycmds[] = {
     { 0, 0, 0, 0, 0, 0 }
 };
 
-static int mergeable[CmdCount];
-
 static keycmdmap const *keycmds = gamekeycmds;
+
+/* A map of keys that can produce simultaneous commands. 
+ */
+static int mergeable[CmdCount];
 
 /*
  * Running the keyboard's state machine.
