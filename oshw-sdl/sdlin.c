@@ -360,6 +360,8 @@ tablespec const *keyboardhelp(int which)
     static char *twixtgame_items[] = {
 	"1-p", "1-jump to the previous level",
 	"1-n", "1-jump to the next level",
+	"1-PgUp", "1-skip back ten levels",
+	"1-PgDn", "1-skip ahead ten levels",
 	"1-g", "1-go to a level with a password",
 	"1-s", "1-see the current score",
 	"1-q", "1-return to the file list",

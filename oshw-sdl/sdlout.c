@@ -28,9 +28,13 @@
 #define	NXTILES		9
 #define	NYTILES		9
 
-/* Macro to erase a rectangle.
+/* Erase a rectangle.
  */
 #define	fillrect(r)		(puttext((r), NULL, 0, PT_MULTILINE))
+
+/* Get a generic tile image.
+ */
+#define	gettileimage(id)	(getcellimage((id), Empty, 0))
 
 /* Some prompting icons.
  */
@@ -349,11 +353,11 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
+	    p = getcellimage(state->map[pos].top.id, state->map[pos].bot.id,
+			     (state->statusflags & SF_NOANIMATION) ?
+						0 : state->currenttime);
 	    drawopaquetileclipped(xorigin + x * sdlg.wtile,
-				  yorigin + y * sdlg.htile,
-				  getcellimage(state->map[pos].top.id,
-					       state->map[pos].bot.id,
-					       state->currenttime));
+				  yorigin + y * sdlg.htile, p);
 	}
     }
 
@@ -425,9 +429,9 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 
     for (n = 0 ; n < 4 ; ++n) {
 	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y,
-		gettileimage(state->keys[n] ? Key_Red + n : Empty, FALSE));
+		gettileimage(state->keys[n] ? Key_Red + n : Empty));
 	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y + sdlg.htile,
-		gettileimage(state->boots[n] ? Boots_Ice + n : Empty, FALSE));
+		gettileimage(state->boots[n] ? Boots_Ice + n : Empty));
     }
 
     if (state->statusflags & SF_INVALID)
@@ -564,13 +568,13 @@ int displaytiletable(char const *title,
 	    id = rows[i].item1;
 	else
 	    id = crtile(rows[i].item1, EAST);
-	drawopaquetile(left.x + sdlg.wtile, left.y, gettileimage(id, FALSE));
+	drawopaquetile(left.x + sdlg.wtile, left.y, gettileimage(id));
 	if (rows[i].item2) {
 	    if (rows[i].isfloor)
 		id = rows[i].item2;
 	    else
 		id = crtile(rows[i].item2, EAST);
-	    drawopaquetile(left.x, left.y, gettileimage(id, FALSE));
+	    drawopaquetile(left.x, left.y, gettileimage(id));
 	}
 	left.y += sdlg.htile;
 	left.h -= sdlg.htile;

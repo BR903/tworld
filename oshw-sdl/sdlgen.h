@@ -122,10 +122,12 @@ extern oshwglobals sdlg;
 #define	drawtablerow		(*sdlg.drawtablerowfunc)
 #define	createscroll		(*sdlg.createscrollfunc)
 #define	scrollmove		(*sdlg.scrollmovefunc)
-#define	gettileimage		(*sdlg.gettileimagefunc)
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
 #define	getonomatopoeia		(*sdlg.getonomatopoeiafunc)
+
+#define	gettileimage(id)	(getcellimage((id), Empty, 0))
+
 
 /* The initialization functions.
  */
