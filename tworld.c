@@ -75,22 +75,75 @@ static int	mudsucking = 1;
  * The program's text-mode output functions.
  */
 
+/* Find a position to break a string inbetween words. The integer at
+ * breakpos receives the length of the string prefix less than or
+ * equal to len. The string pointer *str is advanced to the first
+ * non-whitespace after the break. The original string pointer is
+ * returned.
+ */
+static char *findstrbreak(char const **str, int maxlen, int *breakpos)
+{
+    char const *start;
+    int		n;
+
+  retry:
+    start = *str;
+    n = strlen(start);
+    if (n <= maxlen) {
+	*str += n;
+	*breakpos = n;
+    } else {
+	n = maxlen;
+	if (isspace(start[n])) {
+	    *str += n;
+	    while (isspace(**str))
+		++*str;
+	    while (n > 0 && isspace(start[n - 1]))
+		--n;
+	    if (n == 0)
+		goto retry;
+	    *breakpos = n;
+	} else {
+	    while (n > 0 && !isspace(start[n - 1]))
+		--n;
+	    if (n == 0) {
+		*str += maxlen;
+		*breakpos = maxlen;
+	    } else {
+		*str = start + n;
+		while (n > 0 && isspace(start[n - 1]))
+		    --n;
+		if (n == 0)
+		    goto retry;
+		*breakpos = n;
+	    }
+	}
+    }
+    return (char*)start;
+}
+
 /* Render a table to standard output.
  */
 void printtable(FILE *out, tablespec const *table)
 {
+    char const *mlstr;
+    char const *p;
     int	       *colsizes;
-    int		len;
-    int		c, n, x, y;
+    int		len, pos;
+    int		mlpos, mllen;
+    int		c, n, x, y, z;
 
     colsizes = malloc(table->cols * sizeof *colsizes);
     for (x = 0 ; x < table->cols ; ++x)
 	colsizes[x] = 0;
+    mlpos = -1;
     n = 0;
     for (y = 0 ; y < table->rows ; ++y) {
 	for (x = 0 ; x < table->cols ; ++n) {
 	    c = table->items[n][0] - '0';
-	    if (c == 1) {
+	    if (table->items[n][1] == '!') {
+		mlpos = x;
+	    } else if (c == 1) {
 		len = strlen(table->items[n] + 2);
 		if (len > colsizes[x])
 		    colsizes[x] = len;
@@ -109,13 +162,18 @@ void printtable(FILE *out, tablespec const *table)
 	if (colsizes[table->collapse] <= n)
 	    return;
 	colsizes[table->collapse] -= n;
+    } else if (mlpos >= 0) {
+	colsizes[mlpos] += 79 - n;
     }
 
     n = 0;
     for (y = 0 ; y < table->rows ; ++y) {
+	mlstr = NULL;
+	mllen = 0;
+	pos = 0;
 	for (x = 0 ; x < table->cols ; ++n) {
 	    if (x)
-		fprintf(out, "%*s", table->sep, "");
+		pos += fprintf(out, "%*s", table->sep, "");
 	    c = table->items[n][0] - '0';
 	    len = -table->sep;
 	    while (c--)
@@ -125,11 +183,25 @@ void printtable(FILE *out, tablespec const *table)
 	    else if (table->items[n][1] == '+')
 		fprintf(out, "%*.*s", len, len, table->items[n] + 2);
 	    else if (table->items[n][1] == '.') {
-		len -= (len - strlen(table->items[n] + 3)) / 2;
-		fprintf(out, "%*.*s", len, len, table->items[n] + 2);
+		z = (len - strlen(table->items[n] + 2)) / 2;
+		if (z < 0)
+		    z = len;
+		fprintf(out, "%*.*s%*s",
+			     len - z, len - z, table->items[n] + 2, z, "");
+	    } else if (table->items[n][1] == '!') {
+		mllen = len;
+		mlpos = pos;
+		mlstr = table->items[n] + 2;
+		p = findstrbreak(&mlstr, len, &z);
+		fprintf(out, "%.*s%*s", z, p, len - z, "");
 	    }
+	    pos += len;
 	}
 	fputc('\n', out);
+	while (mlstr && *mlstr) {
+	    p = findstrbreak(&mlstr, mllen, &len);
+	    fprintf(out, "%*s%.*s\n", mlpos, "", len, p);
+	}
     }
     free(colsizes);
 }

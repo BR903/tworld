@@ -40,34 +40,34 @@ tablespec const *yowzitch = &yowzitch_table;
 /* Version and license information.
  */
 static char *vourzhon_items[] = {
-    "1+=", "1-Tile World: version " VERSION,
+    "1+*", "1-Tile World: version " VERSION,
     "1+",  "1-Copyright (C) 2001,2002 by Brian Raiter",
     "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
-    "1+=", "1-This program is free software; you can redistribute it and/or",
-    "1+",  "1-modify it under the terms of the GNU General Public License as",
-    "1+",  "1-published by the Free Software Foundation; either version 2 of",
-    "1+",  "1-the License, or (at your option) any later version.",
-    "1+=", "1-This program is distributed in the hope that it will be useful,",
-    "1+",  "1-but WITHOUT ANY WARRANTY; without even the implied warranty of",
-    "1+",  "1-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
-    "1+",  "1-GNU General Public License for more details.",
-    "1+=", "1-Bug reports are appreciated, and can be sent to",
-    "1+",  "1-breadbox@muppetlabs.com."
+    "1+*", "1!This program is free software; you can redistribute it and/or"
+	   " modify it under the terms of the GNU General Public License as"
+	   " published by the Free Software Foundation; either version 2 of"
+	   " the License, or (at your option) any later version.",
+    "1+*", "1!This program is distributed in the hope that it will be useful,"
+	   " but WITHOUT ANY WARRANTY; without even the implied warranty of"
+	   " MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the"
+	   " GNU General Public License for more details.",
+    "1+*", "1!Bug reports are appreciated, and can be sent to"
+	   " breadbox@muppetlabs.com."
 };
-static tablespec const vourzhon_table = { 13, 2, 1, -1, vourzhon_items };
+static tablespec const vourzhon_table = { 6, 2, 1, -1, vourzhon_items };
 tablespec const *vourzhon = &vourzhon_table;
 
 /* Descriptions of the different surfaces of the levels.
  */
 static tiletablerow const help_floors[] = {
     { TRUE, Fire, 0,
-      "Fire is fatal unless Chip has firewalking boots." },
+      "Fire is fatal unless Chip has fire boots." },
     { TRUE, Water, 0,
-      "Chip drowns in Water without flippers." },
+      "Chip drowns in Water without water boots." },
     { TRUE, Ice, 0,
-      "Chip slides across Ice without ice skates." },
+      "Chip slides across Ice without ice boots." },
     { TRUE, Slide_East, 0,
-      "Slide floors push Chip along unless he has the suction boots." },
+      "Force floors push Chip along unless he has the force boots." },
     { TRUE, Gravel, 0,
       "Gravel is safe to walk on, and no one but Chip can touch it." },
     { TRUE, Dirt, 0,
@@ -75,7 +75,7 @@ static tiletablerow const help_floors[] = {
       " turns into a normal floor when he steps on it." }
 };
 
-/* Descriptions of the various kinds of obstacles.
+/* Descriptions of the various kinds of wall-like obstacles.
  */
 static tiletablerow const help_walls[] = {
     { TRUE, Wall_North, Wall,
@@ -84,9 +84,6 @@ static tiletablerow const help_walls[] = {
     { TRUE, BlueWall_Fake, 0,
       "Blue Walls can either be real walls, or just mirages. They show"
       " their true nature when Chip tries to walk through them." },
-    { TRUE, Empty, 0,
-      "Hidden Walls will sometimes appear when Chip runs into them,"
-      " and sometimes are permanently invisible." },
     { TRUE, PopupWall, 0,
       "Popup Walls spring up when Chip walks across them, blocking retreat." },
     { TRUE, Door_Green, Door_Red,
@@ -107,7 +104,7 @@ static tiletablerow const help_objects[] = {
     { TRUE, Teleport, 0,
       "A Teleport instantly transports you to another teleport." },
     { TRUE, SwitchWall_Open, Button_Green,
-      "Switching Walls come and go when any Green Button is pressed." },
+      "Toggle Walls come and go when any Green Button is pressed." },
     { TRUE, Button_Blue, 0,
       "A Blue Button causes tanks to turn around." },
     { TRUE, HintButton, 0,
@@ -126,10 +123,10 @@ static tiletablerow const help_tools[] = {
       "Keys permit Chip to open doors of the matching color." },
     { TRUE, Boots_Water, Boots_Fire,
       "Boots allow Chip to get past fire and water, and to traverse"
-      " ice and slide floors as if they were normal floors." },
+      " ice and force floors as if they were normal floors." },
     { TRUE, Block_Static, 0,
-      "Blocks are obstacles, but they can be moved. When pushed into water,"
-      " the water square turns into dirt." },
+      "Blocks are obstacles, but they can be pushed around. When pushed into"
+      " water, the water square turns into dirt." },
     { TRUE, Socket, 0,
       "The Socket can only be passed when Chip has acquired"
       " the necessary number of IC chips." },
@@ -160,7 +157,7 @@ static tiletablerow const help_monsters[] = {
     { FALSE, Blob, 0,
       "Blobs move about completely at random, albeit slowly." },
     { FALSE, Teeth, 0,
-      "Finally, Seekers home in on you; like Blobs, they can be outrun." }
+      "Finally, Teeth home in on you; like Blobs, they can be outrun." }
 };
 
 /*

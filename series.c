@@ -224,8 +224,8 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 /* Assuming that the series passed in is in fact the original
  * chips.dat file, this function undoes the changes that MS introduced
  * to the original Lynx levels. A rather "ad hack" way to accomplish
- * this, but it permits this fixup to occur without requiring the
- * user to make a modified copy of the data file.
+ * this, but it permits this fixup to occur without requiring anything
+ * from the user.
  */
 static int undomschanges(gameseries *series)
 {
