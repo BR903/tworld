@@ -1,0 +1,48 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+use constant DEFFONT => "../font.psf";
+
+my $HEIGHT;
+
+my $filename = $ARGV[0] || DEFFONT;
+open FONT, $filename or die "$filename: $!\n";
+binmode FONT;
+die "$filename: ", ($! || "not a psf file"), "\n"
+    unless sysread(FONT, $_, 4) == 4;
+my @header = map { ord } split //;
+die "$filename: not a psf file\n"
+    unless $header[0] == 0x36 && $header[1] == 0x04;
+warn "$filename: ignoring characters 256-511\n" if $header[2] & 1;
+warn "$filename: ignoring Unicode map\n" if $header[2] & 2;
+$HEIGHT = $header[3];
+
+my @font;
+
+die "$filename: missing data\n"
+    unless sysread(FONT, $_, 256 * $HEIGHT) == 256 * $HEIGHT;
+while (length) {
+    push @font, join ",", map { ord } split //, substr $_, 0, $HEIGHT, "";
+}
+my $font = join ",\n", map { "    $_" } @font;
+
+print <<EOF;
+/* ccfont.c: This file is generated automatically by the mkfont Perl script.
+ */
+
+#ifndef _ccfont_c_
+#define	_ccfont_c_
+
+/* The font bitmap.
+ */
+static unsigned char ccfont_bits[] = {
+$font
+};
+
+/* The font proper.
+ */
+static fontinfo ccfont = { 9, sizeof ccfont_bits / 256, ccfont_bits };
+
+#endif
+EOF
