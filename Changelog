@@ -1,82 +1,90 @@
+2001 Oct 28: version 0.8.0
+
+* Fixed bug introduced in 0.7.2 which caused Chip to "come to rest" when he
+  couldn't make a forced move.
+* Fixed buried beartrap behavior in MS game logic.
+* Altered the solution file format (been wanting to do that for a long
+  time).
+
 2001 Oct 23: version 0.7.2
+
 * Fixed two bugs in MS game logic discovered by Anders Kaesorg (creatures
   entering random slide floors, and Chip causing slide delay).
 * Rewrote the clone machine code to better match the internals of the MS
   game (thanks to recent discoveries). Also fixed the red-button logic so
   that clones do not block their own clone machines.
 
-  2001 Oct 22: version 0.7.1
+2001 Oct 22: version 0.7.1
 
-  * Fixed bug in MS game logic found by Anders Kaesorg (button not
-    recognized when hit by a block being pushed by Chip while on the slip
-    list).
+* Fixed bug in MS game logic found by Anders Kaesorg (button not recognized
+  when hit by a block being pushed by Chip while on the slip list).
 
-  2001 Oct 21: version 0.7.0
+2001 Oct 21: version 0.7.0
 
-  * Altered handling of the slip list in the MS game logic. Creatures on
-    the slip list now have their slip direction stored separately from
-    their pointed direction, and the former is determined at the time they
-    enter a tile, instead of just before moving off of it.
-  * My first serious attempt at implementing slide delay!
-  * Many little tweaks to the MS logic. I think it's getting close....
-  * The tile images are no longer compiled into the binary; instead they
-    are loaded out of an external bitmap file. The rendering code was
-    changed to use 32-bit images internally instead of 8-bit images, so
-    that all types of bitmaps can be accepted.
-  * Added a new shared subdirectory for holding the data files; the main
-    shared directory is now used to hold images.
-  * Altered the onomatopoeia code to ease future introduction of sound.
-  * Fixed the Lynx bug regarding the bequeathing of a slide token, or
-    rather the lack thereof, when Chip is at a force-floor dead end.
+* Altered handling of the slip list in the MS game logic. Creatures on the
+  slip list now have their slip direction stored separately from their
+  pointed direction, and the former is determined at the time they enter a
+  tile, instead of just before moving off of it.
+* My first serious attempt at implementing slide delay!
+* Many little tweaks to the MS logic. I think it's getting close....
+* The tile images are no longer compiled into the binary; instead they are
+  loaded out of an external bitmap file. The rendering code was changed to
+  use 32-bit images internally instead of 8-bit images, so that all types
+  of bitmaps can be accepted.
+* Added a new shared subdirectory for holding the data files; the main
+  shared directory is now used to hold images.
+* Altered the onomatopoeia code to ease future introduction of sound.
+* Fixed the Lynx bug regarding the bequeathing of a slide token, or rather
+  the lack thereof, when Chip is at a force-floor dead end.
 
-  2001 Oct 05: version 0.6.0
+2001 Oct 05: version 0.6.0
 
-  * Rewrote several fundamentals of the MS game logic, in order to bring it
-    more in line with MS's layered map, as well as its treatment of blocks
-    as non-creatures.
-  * Made some general changes to the game internals in order to accommodate
-    the above changes.
-  * Many tweaks and improvements to the MS game logic.
-  * Added the Ctrl-X feature to permit replacement of saved games --
-    something I should have added a long time ago.
+* Rewrote several fundamentals of the MS game logic, in order to bring it
+  more in line with MS's layered map, as well as its treatment of blocks as
+  non-creatures.
+* Made some general changes to the game internals in order to accommodate
+  the above changes.
+* Many tweaks and improvements to the MS game logic.
+* Added the Ctrl-X feature to permit replacement of saved games --
+  something I should have added a long time ago.
 
-  2001 Aug 27: version 0.5.1
+2001 Aug 27: version 0.5.1
 
-  * Made some changes in the game-saving code to avoid an infinite loop
-    that was sometimes happening under Windows.
-  * Fixed two bugs in MS game logic identified by Anders Kaesorg. (1. Chip
-    can only attempt to move once per tick -- a failed move still counts.
-    2. Creatures moving onto the slide list make their first slide move in
-    the same tick.)
+* Made some changes in the game-saving code to avoid an infinite loop that
+  was sometimes happening under Windows.
+* Fixed two bugs in MS game logic identified by Anders Kaesorg. (1. Chip
+  can only attempt to move once per tick -- a failed move still counts. 2.
+  Creatures moving onto the slide list make their first slide move in the
+  same tick.)
 
-  2001 Aug 19: version 0.5
+2001 Aug 19: version 0.5
 
-  * First alpha version.
-  * The SVGAlib layer has been replaced with a much more complete layer for
-    SDL. The program can now be compiled for either X or MS Windows. (All
-    hail SDL and gcc's cross-compiling capabilities!) SDL also works under
-    SVGAlib, but it looks terrible on my hardware.
-  * A version of the game logic implementing the MS ruleset (with lots of
-    bugs) has been added. The program can now switch between the two
-    rulesets.
-  * I ripped the entire code base apart and put it back together again
-    (except for the parts that were thrown out). The code is somewhat
-    better organized now.
-  * Code was added to select data files, display scores, and lots of little
-    things all over the place.
-  * Comments! They're still pretty skeletal, but they're better than what
-    was there before.
+* First alpha version.
+* The SVGAlib layer has been replaced with a much more complete layer for
+  SDL. The program can now be compiled for either X or MS Windows. (All
+  hail SDL and gcc's cross-compiling capabilities!) SDL also works under
+  SVGAlib, but it looks terrible on my hardware.
+* A version of the game logic implementing the MS ruleset (with lots of
+  bugs) has been added. The program can now switch between the two
+  rulesets.
+* I ripped the entire code base apart and put it back together again
+  (except for the parts that were thrown out). The code is somewhat better
+  organized now.
+* Code was added to select data files, display scores, and lots of little
+  things all over the place.
+* Comments! They're still pretty skeletal, but they're better than what was
+  there before.
 
-  2001 Jul 15: version 0.1
+2001 Jul 15: version 0.1
 
-  * The previous game logic has been replaced with a complete game logic
-    module for the Lynx ruleset.
-  * The SVGAlib layer has been heavily rewritten to do raw keyboard polling
-    and smooth-scrolling.
-  * Lots of other changes and bug fixes.
+* The previous game logic has been replaced with a complete game logic
+  module for the Lynx ruleset.
+* The SVGAlib layer has been heavily rewritten to do raw keyboard polling
+  and smooth-scrolling.
+* Lots of other changes and bug fixes.
 
-  2001 May 19: version 0.0
+2001 May 19: version 0.0
 
-  * First limited public release.
-  * Most of the basic infrastructure is in place, including a working draft
-    of a game logic module.
+* First limited public release.
+* Most of the basic infrastructure is in place, including a working draft
+  of a game logic module.

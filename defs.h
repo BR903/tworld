@@ -177,8 +177,6 @@ typedef	struct gameseries {
     fileinfo		solutionfile;	/* the file of the user's solutions */
     int			solutionflags;	/* settings for the saved solutions */
     int			allmapsread;	/* TRUE if levels are at EOF */
-    int			allsolutionsread;  /* TRUE if solutions are at EOF */
-    int			solutionsreadonly; /* TRUE if solutions are readonly */
     char		name[256];	/* the name of the series */
 } gameseries;
 

@@ -3,7 +3,7 @@ Installing
 
 Before compiling Tile World, ensure that you have SDL installed on
 your machine. (If you don't have SDL, you can get it by visiting
-http://www.libsdl.org/download-1.2.html. If you download a precompiled
+http://www.libsdl.org/download.html. If you download a precompiled
 version -- i.e., an .rpm or .deb file -- note that you will need the
 development runtime, as opposed to the binary runtime.)
 
@@ -16,12 +16,7 @@ however, setting an appropriate default value is easier in the long
 run.)
 
 Now, run make and build the binary. There shouldn't be any serious
-warnings from the compiler. If (and only if) you want to be able to
-run Tile World under SVGAlib, you will need to make the binary
-root-owned and set-userid. (However, note that the SDL library's
-support for SVGAlib is still a bit primitive. On my machine it looks
-awful. I may add an SVGAlib-specific port later that is independent of
-SDL, but for now I recommend sticking with X.)
+warnings from the compiler.
 
 Running "make install" as root will do the following:
 
