@@ -37,29 +37,43 @@ mv COPYING COPYING.txt
 mv -i docs/*.html .
 
 #
-# Put everything into a single zipfile.
+# The list of files to include.
+#
+
+TXTFILES="README.txt INSTALL.txt Changelog.txt BUGS.txt COPYING.txt \
+          README-SDL.txt tworld.html sets/*.dac res/rc"
+BINFILES="tworld.exe SDL.dll mklynxcc.com res/*.bmp res/*.wav data/intro.dat"
+
+#
+# Get the current version ID.
 #
 
 VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
-zip -9 -l tworld-$VER-win32.zip README.txt INSTALL.txt Changelog.txt BUGS.txt
-zip -9 -l tworld-$VER-win32.zip COPYING.txt README-SDL.txt
-zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.com
-zip -9 -l tworld-$VER-win32.zip tworld.html sets/*.dac res/rc
-zip -9    tworld-$VER-win32.zip res/*.bmp res/*.wav data/*.dat
 
 #
-# Make a self-extracting archive.
+# Create the main distribution.
 #
 
+zip -9    tworld-$VER-win32.zip $BINFILES
+zip -9 -l tworld-$VER-win32.zip $TXTFILES
 cat ../unzipsfx.exe tworld-$VER-win32.zip > tworld-$VER-win32.exe
 zip -A tworld-$VER-win32.exe
+
+#
+# Create the CCLP2-enabled version.
+#
+
+zip -9    tworld-$VER-win32-CCLP2.zip $BINFILES data/CCLP2.dat *.gif
+zip -9 -l tworld-$VER-win32-CCLP2.zip $TXTFILES CCLP2.html CCLP2-disclaimer.txt
+cat ../unzipsfx.exe tworld-$VER-win32-CCLP2.zip > tworld-$VER-win32-CCLP2.exe
+zip -A tworld-$VER-win32-CCLP2.exe
 
 #
 # Copy the zipfiles to the starting directory and clean up.
 #
 
-rm -f ../../tworld-$VER-win32.zip ../../tworld-$VER-win32.exe
 mv tworld-$VER-win32.zip tworld-$VER-win32.exe ../..
+mv tworld-$VER-win32-CCLP2.zip tworld-$VER-win32-CCLP2.exe ../..
 cd ..
 rm -rf build
 cd ..
