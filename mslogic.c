@@ -731,11 +731,22 @@ static int pushblock(int pos, int dir, int collapse)
 	slipdir = getslipdir(cr);
 	if (dir == slipdir || dir == back(slipdir))
 	    return FALSE;
+#if 0
 	endfloormovement(cr);
+#endif
     }
     if (collapse && cellat(pos)->bot.id == Block_Static)
 	cellat(pos)->bot.id = Empty;
+#if 0
     return advancecreature(cr, dir);
+#else
+    if (advancecreature(cr, dir)) {
+	return TRUE;
+    } else {
+	endfloormovement(cr);
+	return FALSE;
+    }
+#endif
 }
 
 /*
@@ -1516,7 +1527,9 @@ static void endmovement(creature *cr, int dir)
     }
 
     if (cr->id == Chip) {
-	if (iscreature(cell->bot.id) && creatureid(cell->bot.id) != Chip) {
+	if (iscreature(cell->bot.id)
+			 	&& creatureid(cell->bot.id) != Chip
+				&& creatureid(cell->bot.id) != Swimming_Chip) {
 	    chipstatus() = CHIP_COLLIDED;
 	    return;
 	} else if (cell->bot.id == Exit) {
@@ -1540,8 +1553,15 @@ static void endmovement(creature *cr, int dir)
 	startfloormovement(cr, floor);
     else if (isslide(floor) && (cr->id != Chip || !possession(Boots_Slide)))
 	startfloormovement(cr, floor);
+#if 0
     else if (floor != Beartrap || cr->id != Block)
 	cr->state &= ~(CS_SLIP | CS_SLIDE);
+#else
+    else if (floor == Beartrap && cr->id == Block && wasslipping)
+	startfloormovement(cr, floor);
+    else
+	cr->state &= ~(CS_SLIP | CS_SLIDE);
+#endif
 
     if (!wasslipping && (cr->state & (CS_SLIP | CS_SLIDE)) && cr->id != Chip)
 	controllerdir() = getslipdir(cr);
@@ -1603,9 +1623,10 @@ static void floormovements(void)
 {
     creature   *cr;
     int		floor, slipdir;
-    int		n;
+    int		savedcount, n;
 
     for (n = 0 ; n < slipcount ; ++n) {
+	savedcount = slipcount;
 	cr = slips[n].cr;
 	if (!(slips[n].cr->state & (CS_SLIP | CS_SLIDE)))
 	    continue;
@@ -1634,6 +1655,9 @@ static void floormovements(void)
 	}
 	if (checkforending())
 	    return;
+	if (!(cr->state & (CS_SLIP | CS_SLIDE)) && cr->id != Chip
+						&& slipcount == savedcount + 1)
+	    ++n;
     }
 
     for (n = slipcount - 1 ; n >= 0 ; --n)
