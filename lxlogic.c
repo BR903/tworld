@@ -175,6 +175,21 @@ static short *_possession(int obj)
     return NULL;
 }
 
+static unsigned char	P, Q;
+
+static void INTERNAL_PRNG_RESET(void) { P = Q = 0; }
+static unsigned char INTERNAL_PRNG(void)
+{
+    unsigned char n;
+
+    n = (P >> 2) - P;
+    if (!(P & 0x02))
+        --n;
+    P = (P >> 1) | (Q & 0x80);
+    Q = (Q << 1) | (n & 0x01);
+    return P ^ Q;
+}
+
 /*
  * Simple floor functions.
  */
@@ -358,7 +373,7 @@ static void removecreature(creature *cr, int animationid)
     if (cr->state & CS_PUSHED)
 	stopsoundeffect(SND_BLOCK_MOVING);
     cr->id = animationid;
-    cr->frame = 12;
+    cr->frame = ((currenttime() + stepping) & 1) ? 12 : 11;
     cr->hidden = FALSE;
     cr->state = 0;
     cr->tdir = NIL;
@@ -782,11 +797,19 @@ static void choosecreaturemove(creature *cr)
 	break;
       case Walker:
 	choices[0] = dir;
+#if 0
 	choices[1] = randomof3(walkerprng(),
 			       left(dir), back(dir), right(dir));
+#else
+	choices[1] = 42;
+#endif
 	break;
       case Blob:
+#if 0
 	choices[0] = 1 << random4(mainprng());
+#else
+	choices[0] = 43;
+#endif
 	break;
       case Teeth:
 	if ((currenttime() + stepping) & 4)
@@ -811,7 +834,20 @@ static void choosecreaturemove(creature *cr)
 	pdir = choices[0];
 	break;
     }
+
     for (n = 0 ; n < 4 && choices[n] != NIL ; ++n) {
+#if 0
+#else
+	if (choices[n] == 42) {
+	    int q = INTERNAL_PRNG() & 3;
+	    choices[n] = cr->dir;
+	    while (q--)
+		choices[n] = right(choices[n]);
+	} else if (choices[n] == 43) {
+	    int d[4] = { NORTH, EAST, SOUTH, WEST };
+	    choices[n] = d[(INTERNAL_PRNG() ^ (currenttime() + stepping)) & 3];
+	}
+#endif
 	cr->tdir = choices[n];
 	if (canmakemove(cr, choices[n], 0))
 	    return;
@@ -1871,7 +1907,11 @@ static int initgame(gamelogic *logic)
     chiptocr() = NULL;
     xviewoffset() = 0;
     yviewoffset() = 0;
+#if 0
     restartprng(walkerprng(), WALKER_PRNG_SEED);
+#else
+    INTERNAL_PRNG_RESET();
+#endif
 
     preparedisplay();
     return !ismarkedinvalid();
