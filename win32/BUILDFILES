@@ -1,0 +1,6 @@
+INSTALL-win32.html
+Makefile
+README-SDL.txt
+SDL.dll
+cross-make.sh
+tworld.ico

@@ -1,0 +1,70 @@
+<html>
+<head>
+<title>Installing Tile World for Windows</title>
+</head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align="center">
+<center><h1>Installing Tile World for Windows</h1></center>
+<p>
+There's no automatic installer yet, so you will need to do this
+manually.
+<p>
+First of all, you'll want to store the files contained in this archive
+into its own separate directory. So, if you haven't already done so,
+create a new directory (what Windows calls folders) for this --
+something like <tt><samp>c:\tworld</samp></tt> -- and extract the
+files there.
+<p>
+Then, find your copy of the <tt>chips.dat</tt> data file. Copy this to
+the <tt>data</tt> subdirectory:
+<p>
+<blockquote>
+<tt>cd <samp>c:\wherever\my\copy\of\chips\challenge\is\at</samp></tt>
+<br>
+<tt>copy chips.dat <samp>c:\tworld</samp>\data</tt>
+</blockquote>
+<p>
+If you have other data files that you might like to try out in the
+clone, copy those over as well.
+<p>
+(You can probably do all of this more quickly using Windows Explorer,
+but I don't know enough about that program to give you directions
+there.)
+<p>
+That's all that needs to be done to set it up. Run the program as
+<tt><samp>c:\tworld</samp>\tworld</tt>, or create a shortcut for it.
+<p>
+Note that Tile World does not use the mouse; everything is done with
+the keyboard. You can type "?" while a game is being displayed to see
+a description of what the keys do.
+<p>
+<h3>mklynxcc</h3>
+<p>
+A very simple command-line utility is included called
+<tt>mklynxcc</tt>. This program will change a normal data file to one
+that will use the Lynx ruleset when played. By making a copy of a data
+file and running this utility on the copy, you can see how the levels
+work (or don't work) with the Lynx ruleset.
+<p>
+However, the main purpose of this utility is to create a Lynx version
+of the original <tt>chips.dat</tt>, so you can play the original
+version of the game. When you run this utility on your
+<tt>chips.dat</tt> file (or rather, on a separate copy of your
+<tt>chips.dat</tt> file), include the <tt>-x</tt> option, like so:
+<p>
+<blockquote>
+<tt>copy chips.dat <samp>lynxchips.dat</samp></tt>
+<br>
+<tt>mklynxcc -x <samp>lynxchips.dat</samp></tt>
+</blockquote>
+<p>
+This will have the added effect on the data file of restoring the wall
+on level 88 (SPIRALS) that Microsoft removed, assuming your
+<tt>chips.dat</tt> is one of those with a removed wall. (It will also
+fix the four passwords that were changed from the original Lynx codes
+-- levels 7, 10, 28, and 96.) The resulting data file will thus
+provide a more accurate emulation of the original game. (Though not
+perfect -- to be perfect it should remove level 145 and replace it
+with a fractal generator.)
+</body>
+</html>
