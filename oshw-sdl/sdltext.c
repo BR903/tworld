@@ -506,7 +506,7 @@ int loadfontfromfile(char const *filename, int complain)
     }
     if (!makefontfromsurface(&font, bmp)) {
 	if (complain)
-	    errmsg(filename, "couldn't load font");
+	    errmsg(filename, "invalid font file");
 	return FALSE;
     }
     SDL_FreeSurface(bmp);

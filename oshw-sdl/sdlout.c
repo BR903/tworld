@@ -536,7 +536,7 @@ void setcolors(long bkgnd, long text, long bold, long dim)
 
     if (bkgnd == text || bkgnd == bold || bkgnd == dim) {
 	errmsg(NULL, "one or more text colors matches the background color; "
-		     "color scheme unchanged.");
+		     "color scheme left unchanged.");
 	return;
     }
 

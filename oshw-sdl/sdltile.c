@@ -950,7 +950,8 @@ int loadtileset(char const *filename, int complain)
 	    && initsmalltileset(tiles, 7, 16, 4, 0, 3, 16);
     } else {
 	if (complain)
-	    errmsg(filename, "image file has invalid dimensions");
+	    errmsg(filename, "image file has invalid dimensions (%dx%d)",
+			     tiles->w, tiles->h);
 	f = FALSE;
     }
 
