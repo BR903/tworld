@@ -309,6 +309,7 @@ static void resetfloorsounds(int includepushing)
 #define	CS_SLIDETOKEN		0x10	/* can move off of a slide floor */
 #define	CS_REVERSE		0x20	/* needs to turn around */
 #define	CS_PUSHED		0x40	/* block was pushed by Chip */
+#define	CS_TELEPORTED		0x80	/* creature was just teleported */
 
 #define	getfdir(cr)	((cr)->state & CS_FDIRMASK)
 #define	setfdir(cr, d)	((cr)->state = ((cr)->state & ~CS_FDIRMASK) \
@@ -848,7 +849,12 @@ static void choosecreaturemove(creature *cr)
 		choices[n] = right(choices[n]);
 	} else if (choices[n] == BLOB_TURN) {
 	    int cw[4] = { NORTH, EAST, SOUTH, WEST };
+#if 1
 	    choices[n] = cw[(lynx_prng() ^ (currenttime() + stepping)) & 3];
+	    (void)lynx_prng();
+#else
+	    choices[n] = cw[random4(mainprng())];
+#endif
 	}
 	cr->tdir = choices[n];
 	if (canmakemove(cr, choices[n], CMM_CLEARANIMATIONS))
@@ -936,9 +942,16 @@ static int getforcedmove(creature *cr)
 	    return FALSE;
 	setfdir(cr, getslidedir(floor, TRUE));
 	return !(cr->state & CS_SLIDETOKEN);
+#if 0
     } else if (floor == Teleport) {
 	setfdir(cr, cr->dir);
 	return TRUE;
+#else
+    } else if (cr->state & CS_TELEPORTED) {
+	cr->state &= ~CS_TELEPORTED;
+	setfdir(cr, cr->dir);
+	return TRUE;
+#endif
     }
 
     return FALSE;
@@ -1025,6 +1038,7 @@ static int teleportcreature(creature *cr)
 
     if (cr->id == Chip)
 	addsoundeffect(SND_TELEPORTING);
+    cr->state |= CS_TELEPORTED;
     return TRUE;
 }
 
