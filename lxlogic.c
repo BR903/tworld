@@ -347,8 +347,11 @@ static void turntanks(void)
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (cr->hidden)
 	    continue;
-	if (cr->id == Tank && floorat(cr->pos) != CloneMachine)
-	    cr->state ^= CS_REVERSE;
+	if (cr->id != Tank)
+	    continue;
+	if (floorat(cr->pos) == CloneMachine || isice(floorat(cr->pos)))
+	    continue;
+	cr->state ^= CS_REVERSE;
     }
 }
 
