@@ -284,23 +284,26 @@ void playsoundeffects(unsigned long sfx)
     SDL_UnlockAudio();
 }
 
-/* Stop playing all sounds immediately.
+/* If action is negative, stop playing all sounds immediately.
+ * Otherwise, just temporarily pause or unpause sound-playing.
  */
-void clearsoundeffects(void)
+void setsoundeffects(int action)
 {
     int	i;
 
-    if (!hasaudio || !volume) {
-	displaysoundeffects(0, FALSE);
+    if (!hasaudio || !volume)
 	return;
-    }
 
-    SDL_LockAudio();
-    for (i = 0 ; i < SND_COUNT ; ++i) {
-	sounds[i].playing = FALSE;
-	sounds[i].pos = 0;
+    if (action < 0) {
+	SDL_LockAudio();
+	for (i = 0 ; i < SND_COUNT ; ++i) {
+	    sounds[i].playing = FALSE;
+	    sounds[i].pos = 0;
+	}
+	SDL_UnlockAudio();
+    } else {
+	SDL_PauseAudio(!action);
     }
-    SDL_UnlockAudio();
 }
 
 /* Release all memory for the given sound effect.

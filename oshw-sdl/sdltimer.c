@@ -92,6 +92,13 @@ int waitfortick(void)
     return TRUE;
 }
 
+/* Move to the next timer tick without waiting.
+ */
+int advancetick(void)
+{
+    return ++utick;
+}
+
 /* At shutdown time, display the histogram data on stdout.
  */
 static void shutdown(void)
