@@ -495,6 +495,7 @@ static void togglewalls(void)
 /* Creature state flags.
  */
 #define	CS_RELEASED		0x01	/* can leave a beartrap */
+#define	CS_CLONING		0x02	/* cannot move this tick */
 #define	CS_HASMOVED		0x04	/* already used current move */
 #define	CS_TURNING		0x08	/* is turning around */
 #define	CS_SLIP			0x10	/* is on the slip list */
@@ -966,6 +967,8 @@ static void choosecreaturemove(creature *cr)
     if (floor == CloneMachine || floor == Beartrap) {
 	if (floor == Beartrap && !(cr->state & CS_RELEASED))
 	    return;
+	if (floor == CloneMachine && (cr->state & CS_CLONING))
+	    return;
 	switch (cr->id) {
 	  case Tank:
 	  case Ball:
@@ -1199,7 +1202,8 @@ static void activatecloner(int buttonpos)
 	dummy.pos = pos;
 	if (!canmakemove(&dummy, dummy.dir, CMM_CLONECANTBLOCK))
 	    return;
-	cellat(pos)->top.state |= FS_CLONING;
+	cr = awakencreature(pos);
+	cr->state |= CS_CLONING;
 	if (cellat(pos)->bot.id == CloneMachine)
 	    cellat(pos)->bot.state |= FS_CLONING;
     }
@@ -1628,6 +1632,7 @@ static void floormovements(void)
 
 static void createclones(void)
 {
+#if 0
     maptile    *tile;
     int		pos;
 
@@ -1638,6 +1643,13 @@ static void createclones(void)
 	    awakencreature(pos);
 	}
     }
+#else
+    int	n;
+
+    for (n = 0 ; n < creaturecount ; ++n)
+	if (creatures[n]->state & CS_CLONING)
+	    creatures[n]->state &= ~CS_CLONING;
+#endif
 }
 
 /*
@@ -2077,7 +2089,7 @@ int ms_advancegame(gamestate *pstate)
     if (currenttime() && !(currenttime() & 1)) {
 	for (n = 1 ; n < creaturecount ; ++n) {
 	    cr = creatures[n];
-	    if (cr->hidden)
+	    if (cr->hidden || (cr->state & CS_CLONING))
 		continue;
 	    choosemove(cr);
 	    if (cr->tdir != NIL)
