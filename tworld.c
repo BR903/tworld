@@ -732,7 +732,14 @@ static int playgame(gamespec *gs, int firstcmd)
 	      case CmdPauseGame:
 		setgameplaymode(SuspendPlay);
 		setdisplaymsg("(paused)", 1, 1);
-		while (input(TRUE) != CmdPauseGame) ;
+		for (;;) {
+		    switch (input(TRUE)) {
+		      case CmdQuit:		exit(0);
+		      case CmdPauseGame:	break;
+		      default:			continue;
+		    }
+		    break;
+		}
 		setgameplaymode(ResumePlay);
 		cmd = CmdNone;
 		break;
@@ -811,7 +818,14 @@ static int playbackgame(gamespec *gs)
 	  case CmdPauseGame:
 	    setgameplaymode(SuspendPlay);
 	    setdisplaymsg("(paused)", 1, 1);
-	    while (input(TRUE) != CmdPauseGame) ;
+	    for (;;) {
+		switch (input(TRUE)) {
+		  case CmdQuit:		exit(0);
+		  case CmdPauseGame:	break;
+		  default:		continue;
+		}
+		break;
+	    }
 	    setgameplaymode(ResumePlay);
 	    break;
 	  case CmdHelp:
