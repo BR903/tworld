@@ -6,6 +6,7 @@ README
 cmdline.c
 cmdline.h
 configure
+configure.in
 defs.h
 err.c
 err.h
