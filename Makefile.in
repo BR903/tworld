@@ -98,9 +98,9 @@ install: tworld
 	cp -i ./tworld $(bindir)/.
 	cp -i sets/*.dac $(sharedir)/sets/.
 	cp -i data/*.dat $(sharedir)/data/.
-	cp -i resources/rc $(sharedir)/res/.
-	cp -i resources/*.bmp $(sharedir)/res/.
-	cp -i resources/*.wav $(sharedir)/res/.
+	cp -i res/rc $(sharedir)/res/.
+	cp -i res/*.bmp $(sharedir)/res/.
+	cp -i res/*.wav $(sharedir)/res/.
 	cp -i docs/tworld.6 $(mandir)/man6/.
 
 clean:
