@@ -376,6 +376,7 @@ static int stopanimation(int pos)
 static void removechip(int reason, creature *also)
 {
     creature  *chip = getchip();
+    int		pos, moving;
 
     switch (reason) {
       case RMC_DROWNED:
@@ -397,13 +398,14 @@ static void removechip(int reason, creature *also)
 	addsoundeffect(SND_CHIP_LOSES);
 	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
 	if (also) {
-	    removecreature(also);
-	    if (also->moving == 8) {
-		also->pos -= delta[also->dir];
-		also->moving = 0;
+	    pos = also->pos;
+	    moving = also->moving;
+	    if (moving == 8) {
+		pos -= delta[also->dir];
+		moving = 0;
 	    }
-	    addanimation(also->pos, also->dir, also->moving,
-			 Entity_Explosion, 12);
+	    addanimation(pos, also->dir, moving, Entity_Explosion, 12);
+	    removecreature(also);
 	}
 	break;
     }
@@ -948,7 +950,8 @@ static int teleportcreature(creature *cr)
     return TRUE;
 }
 
-/* Cause a clone machine to produce a clone.
+/* Release a creature currently inside a clone machine. If the
+ * creature successfully exits, a new clone is created to replace it.
  */
 static int activatecloner(int pos)
 {
@@ -965,8 +968,7 @@ static int activatecloner(int pos)
 	return FALSE;
     *clone = *cr;
     if (!advancecreature(cr, TRUE)) {
-	if (!cr->hidden)
-	    clone->hidden = TRUE;
+	clone->hidden = TRUE;
 	return FALSE;
     }
     return TRUE;

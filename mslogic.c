@@ -2004,6 +2004,11 @@ static int initgame(gamelogic *logic)
     addtocreaturelist(chip);
     for (n = 0 ; n < game->creaturecount ; ++n) {
 	pos = game->creatures[n];
+	if (pos < 0 || pos >= CXGRID * CYGRID) {
+	    warn("Level %d: Invalid creature location (%d %d)",
+		 game->number, pos % CXGRID, pos / CXGRID);
+	    continue;
+	}
 	if (!layer1[pos] || fileids[layer1[pos]].isfloor) {
 	    warn("Level %d: No creature at location (%d %d)",
 		 game->number, pos % CXGRID, pos / CXGRID);

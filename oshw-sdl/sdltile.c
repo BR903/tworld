@@ -224,20 +224,6 @@ static void addtransparenttile(Uint32 *dest, int id, int n)
 		dest[x] = src[x];
 }
 
-#if 0
-/* Return a pointer to a specific tile image.
- */
-static Uint32 const *_gettileimage(int id, int transp)
-{
-    if (transp)
-	return tileptr[id].transp[0] ? tileptr[id].transp[0]
-				     : tileptr[id].opaque[0];
-    else
-	return tileptr[id].opaque ? tileptr[id].opaque[0]
-				  : tileptr[id].transp[0];
-}
-#endif
-
 /* Return a pointer to a tile image for a creature, completing the
  * fields of the given rect.
  */
@@ -970,9 +956,6 @@ int loadtileset(char const *filename, int complain)
 
 int _sdltileinitialize(void)
 {
-#if 0
-    sdlg.gettileimagefunc = _gettileimage;
-#endif
     sdlg.getcreatureimagefunc = _getcreatureimage;
     sdlg.getcellimagefunc = _getcellimage;
     return TRUE;

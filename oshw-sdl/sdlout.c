@@ -34,7 +34,7 @@
 
 /* Get a generic tile image.
  */
-#define	gettileimage(id)	(getcellimage((id), Empty, 0))
+#define	gettileimage(id)	(getcellimage((id), Empty, -1))
 
 /* Some prompting icons.
  */

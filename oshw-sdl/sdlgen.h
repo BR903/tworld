@@ -92,10 +92,6 @@ typedef	struct oshwglobals
     int (*drawtablerowfunc)(tablespec const *table, SDL_Rect *cols,
 			    int *row, int flags);
 
-    /* Return a pointer to a specific tile image.
-     */
-    Uint32 const* (*gettileimagefunc)(int id, int transp);
-
     /* Return a pointer to a tile image for a creature, completing the
      * fields of the given rect.
      */
