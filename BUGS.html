@@ -85,23 +85,16 @@ maximum. Of course, fixing this would put a limit on the kinds of new
 levels that people could create under the Lynx ruleset -- so this one
 may be better off as it is....
 <li>
-Block pushing is currently not handled correctly. Pushed blocks move
-when Chip does, when in reality they need to retain their own position
-in the ordering.
-<li>
 Under the real Lynx game it is possible to push a block diagonally
 without moving at all. This is done by pushing against a wall, and
 then pushing diagonally against a neighboring block very briefly. The
-block will get pushed, but Chip doesn't follow. (I suspect that this
-is a manifestation of the previous bug, or in any case that it can't
-be fixed before the previous bug is.)
+block will get pushed, but Chip doesn't follow.
 <li>
 Under the real Lynx game it is possible, with carefully constructed
 circumstances, to have Chip push a block off of an open toggle wall
 that then closes before Chip can enter it. This is the only situation
 I know of, barring diagonal moves, in which Chip can push a block
-without following it. This is impossible to do in TW. (This one may be
-just another manifestation of the previous bug.)
+without following it. This is impossible to do in TW.
 <li>
 Under the real Lynx game it is possible, with carefully constructed
 circumstances, for Chip to push a block away from him as it's heading

@@ -288,7 +288,7 @@ static void resetfloorsounds(int includepushing)
 #define	CS_FDIRMASK		0x0F	/* temp storage for forced moves */
 #define	CS_SLIDETOKEN		0x10	/* can move off of a slide floor */
 #define	CS_REVERSE		0x20	/* needs to turn around */
-#define	CS_NOISYMOVEMENT	0x40	/* block was pushed by Chip */
+#define	CS_PUSHED		0x40	/* block was pushed by Chip */
 
 #define	getfdir(cr)	((cr)->state & CS_FDIRMASK)
 #define	setfdir(cr, d)	((cr)->state = ((cr)->state & ~CS_FDIRMASK) \
@@ -331,19 +331,6 @@ static creature *newcreature(void)
     return cr;
 }
 
-/* Mark a creature as dead.
- */
-static void killcreature(creature *cr)
-{
-    cr->hidden = TRUE;
-    if (cr->state & CS_NOISYMOVEMENT)
-	stopsoundeffect(SND_BLOCK_MOVING);
-    if (cr->id != Chip)
-	removeclaim(cr->pos);
-    if (isanimation(cr->id))
-	clearanimated(cr->pos);
-}
-
 /* Turn around any and all tanks not currently inbetween moves.
  */
 static void turntanks(void)
@@ -361,30 +348,33 @@ static void turntanks(void)
     }
 }
 
-/* Start an animation sequence at the spot formerly occupied by the
+/* Start an animation sequence at the spot (formerly) occupied by the
  * given creature.
  */
-static creature *addanimation(creature const *cr, int id)
+static void removecreature(creature *cr, int animationid)
 {
-    creature   *anim;
-
-    anim = newcreature();
-    if (!anim)
-	return NULL;
-    anim->id = id;
-    anim->dir = cr->dir;
-    anim->pos = cr->pos;
-    anim->moving = cr->moving;
-    anim->frame = 12;
-    anim->hidden = FALSE;
-    anim->state = 0;
-    anim->tdir = NIL;
-    if (anim->moving == 8) {
-	anim->pos -= delta[anim->dir];
-	anim->moving = 0;
+    if (cr->id != Chip)
+	removeclaim(cr->pos);
+    if (cr->state & CS_PUSHED)
+	stopsoundeffect(SND_BLOCK_MOVING);
+    cr->id = animationid;
+    cr->frame = 12;
+    cr->hidden = FALSE;
+    cr->state = 0;
+    cr->tdir = NIL;
+    if (cr->moving == 8) {
+	cr->pos -= delta[cr->dir];
+	cr->moving = 0;
     }
     markanimated(cr->pos);
-    return anim;
+}
+
+/* Mark a creature as dead.
+ */
+static void removeanimation(creature *cr)
+{
+    cr->hidden = TRUE;
+    clearanimated(cr->pos);
 }
 
 /* Abort the animation sequence occuring at the given location.
@@ -395,37 +385,11 @@ static int stopanimationat(int pos)
 
     for (anim = creaturelist() ; anim->id ; ++anim) {
 	if (anim->pos == pos && isanimation(anim->id)) {
-	    killcreature(anim);
+	    removeanimation(anim);
 	    return TRUE;
 	}
     }
     return FALSE;
-}
-
-/* Start an animation sequence at the spot formerly occupied by the
- * given creature.
- */
-static void removecreature(creature *cr, int animationid)
-{
-#if 0
-    addanimation(cr, animationid);
-    killcreature(cr);
-#else
-    if (cr->id != Chip)
-	removeclaim(cr->pos);
-    cr->id = animationid;
-    cr->frame = 12;
-    cr->hidden = FALSE;
-    if (cr->state & CS_NOISYMOVEMENT)
-	stopsoundeffect(SND_BLOCK_MOVING);
-    cr->state = 0;
-    cr->tdir = NIL;
-    if (cr->moving == 8) {
-	cr->pos -= delta[cr->dir];
-	cr->moving = 0;
-    }
-    markanimated(cr->pos);
-#endif
 }
 
 /* What happens when Chip dies.
@@ -645,9 +609,10 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
  * case of Chip. CMM_PUSHBLOCKS causes blocks to be pushed when in the
  * way of Chip.
  */
-#define	CMM_EXPOSEWALLS		0x0001
-#define	CMM_PUSHBLOCKS		0x0002
-#define	CMM_RELEASING		0x0004
+#define	CMM_RELEASING		0x0001
+#define	CMM_EXPOSEWALLS		0x0002
+#define	CMM_PUSHBLOCKS		0x0004
+#define	CMM_PUSHBLOCKSNOW	0x0008
 
 /* Return TRUE if the given block is allowed to be moved in the given
  * direction. If flags includes CMM_PUSHBLOCKS, then the indicated
@@ -660,19 +625,16 @@ static int canpushblock(creature *block, int dir, int flags)
     _assert(dir != NIL);
 
     if (!canmakemove(block, dir, flags)) {
-	if (!block->moving && (flags & CMM_PUSHBLOCKS))
+	if (!block->moving && (flags & (CMM_PUSHBLOCKS | CMM_PUSHBLOCKSNOW)))
 	    block->dir = dir;
 	return FALSE;
     }
-    if (flags & CMM_PUSHBLOCKS) {
+    if (flags & (CMM_PUSHBLOCKS | CMM_PUSHBLOCKSNOW)) {
+	block->dir = dir;
 	block->tdir = dir;
-	if (advancecreature(block, FALSE) > 0) {
-	    chippushing() = TRUE;
-	    addsoundeffect(SND_BLOCK_MOVING);
-	    block->state |= CS_NOISYMOVEMENT;
-	} else {
-	    warn("Thought block could move, but it couldn't!");
-	}
+	block->state |= CS_PUSHED;
+	if (flags & CMM_PUSHBLOCKSNOW)
+	    advancecreature(block, FALSE);
     }
 
     return TRUE;
@@ -866,18 +828,43 @@ static void choosecreaturemove(creature *cr)
 static void choosechipmove(creature *cr, int discard)
 {
     int	dir;
+    int	f1, f2;
+
+    chippushing() = FALSE;
 
     dir = currentinput();
     currentinput() = NIL;
 
     if (dir == NIL || discard) {
 	cr->tdir = NIL;
-    } else {
-	lastmove() = dir;
-	cr->tdir = dir;
+	return;
     }
-    if (cr->tdir == NIL)
-	chippushing() = FALSE;
+
+    lastmove() = dir;
+    cr->tdir = dir;
+
+    if (cr->tdir != NIL)
+	dir = cr->tdir;
+    else if (getfdir(cr) != NIL)
+	dir = getfdir(cr);
+    else
+	return;
+
+    if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST))) {
+	if (cr->dir & dir) {
+	    f1 = canmakemove(cr, cr->dir, CMM_PUSHBLOCKS);
+	    f2 = canmakemove(cr, cr->dir ^ dir, CMM_PUSHBLOCKS);
+	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
+	} else {
+	    if (canmakemove(cr, dir & (EAST | WEST), CMM_PUSHBLOCKS))
+		dir &= EAST | WEST;
+	    else
+		dir &= NORTH | SOUTH;
+	}
+	cr->tdir = dir;
+    } else {
+	(void)canmakemove(cr, dir, CMM_PUSHBLOCKS);
+    }
 }
 
 /* This function determines if the given creature is currently being
@@ -984,13 +971,8 @@ static int teleportcreature(creature *cr)
 	    cr->pos = origpos;
 	    if (n)
 		break;
-	    if (pos == origpos) {
-		if (cr->id == Chip) {
-		    addsoundeffect(SND_CANT_MOVE);
-		    chippushing() = TRUE;
-		}
+	    if (pos == origpos)
 		return TRUE;
-	    }
 	}
     }
 
@@ -1057,9 +1039,9 @@ static void springtrap(int pos)
  */
 static int startmovement(creature *cr, int releasing)
 {
-    int	dir;
-    int	floorfrom;
-    int	f1, f2;
+    creature   *other;
+    int		dir;
+    int		floorfrom;
 
     _assert(cr->moving <= 0);
 
@@ -1072,18 +1054,7 @@ static int startmovement(creature *cr, int releasing)
 
     if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST))) {
 	_assert(cr->id == Chip);
-	if (cr->dir & dir) {
-	    f1 = canmakemove(cr, cr->dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
-	    f2 = canmakemove(cr, cr->dir ^ dir,
-			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
-	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
-	} else {
-	    if (canmakemove(cr, dir & (EAST | WEST),
-			    CMM_EXPOSEWALLS | CMM_PUSHBLOCKS))
-		dir &= EAST | WEST;
-	    else
-		dir &= NORTH | SOUTH;
-	}
+	_assert(!"This should never have been able to happen");
     }
 
     cr->dir = dir;
@@ -1092,7 +1063,6 @@ static int startmovement(creature *cr, int releasing)
 
     if (cr->id == Chip) {
 	_assert(!cr->hidden);
-	chippushing() = FALSE;
 	if (!possession(Boots_Slide)) {
 	    if (isslide(floorfrom) && cr->tdir == NIL)
 		cr->state |= CS_SLIDETOKEN;
@@ -1101,8 +1071,8 @@ static int startmovement(creature *cr, int releasing)
 	}
     }
 
-    if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS
-					| (releasing ? CMM_RELEASING : 0))) {
+    if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKSNOW |
+					(releasing ? CMM_RELEASING : 0))) {
 	if (cr->id == Chip) {
 	    if (!couldntmove()) {
 		couldntmove() = TRUE;
@@ -1113,8 +1083,6 @@ static int startmovement(creature *cr, int releasing)
 	if (isice(floorfrom) && (cr->id != Chip || !possession(Boots_Ice))) {
 	    cr->dir = back(dir);
 	    applyicewallturn(cr);
-	    if (cr->id == Chip)
-		chippushing() = FALSE;
 	}
 	return 0;
     }
@@ -1145,11 +1113,16 @@ static int startmovement(creature *cr, int releasing)
     }
     if (cr->id == Chip) {
 	couldntmove() = FALSE;
-	cr = lookupcreature(cr->pos, FALSE);
-	if (cr) {
-	    removechip(CHIP_COLLIDED, cr);
+	other = lookupcreature(cr->pos, FALSE);
+	if (other) {
+	    removechip(CHIP_COLLIDED, other);
 	    return -1;
 	}
+    }
+
+    if (cr->state & CS_PUSHED) {
+	chippushing() = TRUE;
+	addsoundeffect(SND_BLOCK_MOVING);
     }
 
     return +1;
@@ -1498,7 +1471,7 @@ static void initialhousekeeping(void)
 	if (cr->hidden)
 	    continue;
 	if (isanimation(cr->id) && cr->frame <= 0) {
-	    killcreature(cr);
+	    removeanimation(cr);
 	} else if (cr->state & CS_REVERSE) {
 	    cr->state &= ~CS_REVERSE;
 	    if (cr->moving <= 0)
@@ -1506,10 +1479,10 @@ static void initialhousekeeping(void)
 	}
     }
     for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (cr->state & CS_NOISYMOVEMENT) {
+	if (cr->state & CS_PUSHED) {
 	    if (cr->hidden || cr->moving <= 0) {
 		stopsoundeffect(SND_BLOCK_MOVING);
-		cr->state &= ~CS_NOISYMOVEMENT;
+		cr->state &= ~CS_PUSHED;
 	    }
 	}
     }
@@ -1593,7 +1566,7 @@ static void preparedisplay(void)
 	    showhint();
 	else
 	    hidehint();
-	if (chippushing())
+	if (chip->id == Chip && chippushing())
 	    chip->id = Pushing_Chip;
 	if (chip->moving) {
 	    resetfloorsounds(FALSE);
