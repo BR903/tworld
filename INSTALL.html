@@ -1,0 +1,78 @@
+<html>
+<head>
+<title>
+Installing Tile World for Linux
+</title>
+<head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align="center">
+<center><h1>
+Installing Tile World for Linux
+</h1></center>
+<p>
+Before compiling Tile World, ensure that you have SDL installed on
+your machine. (If you don't have SDL, you can get it by visiting
+<a href="http://www.libsdl.org/download.html">http://www.libsdl.org/download.html</a>.
+If you download a precompiled version -- i.e., an .rpm or .deb file --
+note that you will need the development runtime, as opposed to the
+binary runtime.)
+<p>
+By default, the program is set up so that it will look for globally
+shared files under <tt>/usr/local/share/tworld</tt>. If you would
+rather have it look somewhere else, edit the <tt>Makefile</tt> and
+change the definition of <tt>ROOTDIR</tt>. (You can also specify a
+different directory at runtime, either on the command line or via the
+<tt>TWORLDDIR</tt> environment variable; however, setting an
+appropriate default value is easier in the long run.)
+<p>
+Now, run make and build the binary. There shouldn't be any serious
+warnings from the compiler.
+<p>
+Running "make install" as root will do the following:
+<p>
+<ul>
+<li>
+Copy the <tt>tworld</tt> binary to <tt>/usr/local/games</tt>.
+<li>
+Copy the tile bitmap(s) to <tt>/usr/local/share/tworld</tt>.
+<li>
+Create an empty directory <tt>/usr/local/share/tworld/data</tt>.
+</ul>
+<p>
+The latter directory is where you will need to copy the <tt>.dat</tt>
+files that you want to use. (Remember that the first part of the
+directory will be different if you changed the Makefile.)
+<p>
+N.B.: With every alpha release, there is the possibility that one or
+more of your saved games from a previous release will no longer work
+correctly. This happens when your solution, knowingly or not, is
+dependent on a bug in the emulation that has been fixed. When this
+happens, you can use Ctrl-X to mark a solution as "replaceable", and
+then play the level. When you solve it, your new solution will replace
+the old one, whether or not it has a better time.
+<p>
+<h2>
+mklynxcc
+</h2>
+<p>
+A very simple command-line utility is included, called
+<tt>mklynxcc</tt>. This program will change a normal <tt>.dat</tt>
+file to one that will use the Lynx ruleset when played. By making a
+copy of a <tt>.dat</tt> file and running this utility on the copy, you
+can see how the levels work (or don't work) with the Lynx ruleset.
+<p>
+However, the main purpose of this utility is to create a Lynx version
+of the original <tt>chips.dat</tt>, so you can play the original
+version of the game. When you run this utility on your
+<tt>chips.dat</tt> file (or rather, on a separate copy of your
+<tt>chips.dat</tt> file), include the <tt>-x</tt> option. This will
+have the added effect on the <tt>.dat</tt> file of restoring the wall
+on level 88 (SPIRALS) that MS removed, assuming your
+<tt>chips.dat</tt> is one of those with a removed wall. (It will also
+fix the four passwords that were changed from the original Lynx codes
+-- levels 7, 10, 28, and 96.) The resulting .dat file will thus
+provide a more accurate emulation of the original game. (Though not
+perfect -- to be perfect it should remove level 145 and replace it
+with a fractal generator.)
+</body>
+</html>
