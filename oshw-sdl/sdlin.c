@@ -77,12 +77,9 @@ static keycmdmap const gamekeycmds[] = {
     { SDLK_RETURN,               -1, -1,  0,   CmdProceed,    FALSE },
     { SDLK_KP_ENTER,             -1, -1,  0,   CmdProceed,    FALSE },
     { ' ',                       -1, -1,  0,   CmdProceed,    FALSE },
-    { '.',                        0, -1,  0,   CmdProceed,    FALSE },
-    { SDLK_KP_PERIOD,             0, -1,  0,   CmdProceed,    FALSE },
     { 'd',                        0,  0,  0,   CmdDebugCmd1,  FALSE },
     { 'd',                       +1,  0,  0,   CmdDebugCmd2,  FALSE },
     { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
-    { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
     { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
     { SDLK_UP,                   +1,  0,  0,   CmdCheatNorth,         TRUE },
     { SDLK_LEFT,                 +1,  0,  0,   CmdCheatWest,          TRUE },
@@ -142,7 +139,6 @@ static keycmdmap const inputkeycmds[] = {
     { 'y',                       -1,  0,  0,   'y',           FALSE },
     { 'z',                       -1,  0,  0,   'z',           FALSE },
     { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
-    { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
     { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
     { 0, 0, 0, 0, 0, 0 }
 };
