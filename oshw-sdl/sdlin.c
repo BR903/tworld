@@ -94,7 +94,7 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
  * re-pressed, held down, or down but ignored, as appropriate to when
  * they were first pressed and the current behavior settings.
  */
-static void keyeventcallback(int scancode, int down)
+static void _keyeventcallback(int scancode, int down)
 {
     switch (scancode) {
       case KMOD_LSHIFT:
@@ -139,7 +139,7 @@ static void restartkeystates(void)
 	count = SDLK_LAST;
     for (n = 0 ; n < count ; ++n)
 	if (keyboard[n])
-	    keyeventcallback(n, TRUE);
+	    _keyeventcallback(n, TRUE);
 }
 
 /* Update the key states at the start of a polling cycle.
@@ -183,10 +183,10 @@ int anykey(void)
     int	n;
 
     resetkeystates();
-    sdlg.eventupdate(FALSE);
+    eventupdate(FALSE);
     for (;;) {
 	resetkeystates();
-	sdlg.eventupdate(TRUE);
+	eventupdate(TRUE);
 	for (n = 0 ; n < SDLK_LAST ; ++n)
 	    if (keystates[n] == KS_STRUCK || keystates[n] == KS_PRESSED
 					  || keystates[n] == KS_REPRESSED)
@@ -207,7 +207,7 @@ int input(int wait)
 
     for (;;) {
 	resetkeystates();
-	sdlg.eventupdate(wait);
+	eventupdate(wait);
 
 	cmd = CmdNone;
 	for (i = 0 ; i < (int)(sizeof keycmds / sizeof *keycmds) ; ++i) {
@@ -277,7 +277,7 @@ int setkeyboardrepeat(int holdrepeat, int polling)
  */
 int _sdlinputinitialize(void)
 {
-    sdlg.keyeventcallback = keyeventcallback;
+    sdlg.keyeventcallbackfunc = _keyeventcallback;
 
     setkeyboardrepeat(TRUE);
     return TRUE;

@@ -17,7 +17,7 @@ oshwglobals	sdlg;
 
 /* Dispatch all events sitting in the SDL event queue. 
  */
-static void eventupdate(int wait)
+static void _eventupdate(int wait)
 {
     SDL_Event	event;
 
@@ -27,10 +27,10 @@ static void eventupdate(int wait)
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_ALLEVENTS)) {
 	switch (event.type) {
 	  case SDL_KEYDOWN:
-	    sdlg.keyeventcallback(event.key.keysym.sym, TRUE);
+	    keyeventcallback(event.key.keysym.sym, TRUE);
 	    break;
 	  case SDL_KEYUP:
-	    sdlg.keyeventcallback(event.key.keysym.sym, FALSE);
+	    keyeventcallback(event.key.keysym.sym, FALSE);
 	    break;
 	  case SDL_QUIT:
 	    exit(EXIT_SUCCESS);
@@ -63,7 +63,7 @@ static void shutdown(void)
  */
 int oshwinitialize(int silence, int showhistogram)
 {
-    sdlg.eventupdate = eventupdate;
+    sdlg.eventupdatefunc = _eventupdate;
 
     (void)silence;
     atexit(shutdown);

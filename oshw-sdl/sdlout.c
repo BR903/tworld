@@ -28,11 +28,6 @@
 #define	NXTILES		9
 #define	NYTILES		9
 
-/* ccfont: A nice font.
- * (This file is generated automatically.)
- */
-#include	"ccfont.c"
-
 /* The graphic output buffer.
  */
 static SDL_Surface     *screen = NULL;
@@ -116,7 +111,7 @@ static void layoutlistarea(void)
     listloc.x = MARGINW;
     listloc.y = MARGINH;
     listloc.w = (screenw - MARGINW) - listloc.x;
-    listloc.h = (screenh - MARGINH - ccfont.h) - listloc.y;
+    listloc.h = (screenh - MARGINH - sdlg.font.h) - listloc.y;
 }
 
 /* Calculate the positions of all the elements of the game display.
@@ -136,16 +131,16 @@ static int layoutscreen(void)
     titleloc.x = displayloc.x;
     titleloc.y = displayloc.y + displayloc.h + MARGINH;
     titleloc.w = displayloc.w;
-    titleloc.h = ccfont.h;
+    titleloc.h = sdlg.font.h;
 
     w = 4 * sdlg.wtile;
-    if (w < 18 * ccfont.w)
-	w = 18 * ccfont.w;
+    if (w < 18 * sdlg.font.w)
+	w = 18 * sdlg.font.w;
 
     infoloc.x = displayloc.x + displayloc.w + MARGINW;
     infoloc.y = MARGINH;
     infoloc.w = w;
-    infoloc.h = 6 * ccfont.h;
+    infoloc.h = 6 * sdlg.font.h;
 
     invloc.x = infoloc.x;
     invloc.y = infoloc.y + infoloc.h + MARGINH;
@@ -158,9 +153,9 @@ static int layoutscreen(void)
     endmsgloc.h = ENDICONH;
 
     onomatopoeialoc.x = infoloc.x;
-    onomatopoeialoc.y = displayloc.y + displayloc.h - ccfont.h;
+    onomatopoeialoc.y = displayloc.y + displayloc.h - sdlg.font.h;
     onomatopoeialoc.w = infoloc.w;
-    onomatopoeialoc.h = ccfont.h;
+    onomatopoeialoc.h = sdlg.font.h;
 
     hintloc.x = infoloc.x;
     hintloc.y = invloc.y + invloc.h + MARGINH;
@@ -169,7 +164,7 @@ static int layoutscreen(void)
 
     screenw = infoloc.x + infoloc.w + MARGINW;
     screenh = titleloc.y + titleloc.h + MARGINH;
-    w = 48 * ccfont.w + 2 * MARGINW;
+    w = 48 * sdlg.font.w + 2 * MARGINW;
     if (screenw < w)
 	screenw = w;
 
@@ -312,7 +307,7 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
  */
 void cleardisplay(void)
 {
-    SDL_FillRect(sdlg.screen, NULL, ccfont.bkgnd);
+    SDL_FillRect(sdlg.screen, NULL, sdlg.font.bkgnd);
 }
 
 /* Render the view of the visible area of the map to the output
@@ -352,8 +347,8 @@ static void displaymapview(gamestate const *state)
 					       - (xdisppos * sdlg.wtile / 4),
 				  displayloc.y + (y * sdlg.htile)
 					       - (ydisppos * sdlg.htile / 4),
-				  sdlg.getcellimage(state->map[pos].top.id,
-						    state->map[pos].bot.id));
+				  getcellimage(state->map[pos].top.id,
+					       state->map[pos].bot.id));
 	}
     }
 
@@ -380,7 +375,7 @@ static void displaymapview(gamestate const *state)
 					   - (xdisppos * sdlg.wtile / 4),
 			      displayloc.y + (y * sdlg.htile / 4)
 					   - (ydisppos * sdlg.htile / 4),
-			      sdlg.getcreatureimage(cr->id, cr->dir, 0));
+			      getcreatureimage(cr->id, cr->dir, 0));
     }
 }
 
@@ -394,71 +389,61 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     int		color;
     int		n;
 
-    if (state->game->name)
-	sdlg.puttext(&titleloc, state->game->name, PT_CENTER);
-    else
-	sdlg.putblank(&titleloc);
+    puttext(&titleloc, state->game->name, -1, PT_CENTER);
 
     rect = infoloc;
 
     sprintf(buf, "Level %d", state->game->number);
-    sdlg.puttext(&rect, buf, PT_UPDATERECT);
+    puttext(&rect, buf, -1, PT_UPDATERECT);
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);
-	sdlg.puttext(&rect, buf, PT_UPDATERECT);
+	puttext(&rect, buf, -1, PT_UPDATERECT);
     } else
-	sdlg.puttext(&rect, "", PT_UPDATERECT);
+	puttext(&rect, "", 0, PT_UPDATERECT);
 
-    sdlg.puttext(&rect, "", PT_UPDATERECT);
+    puttext(&rect, "", 0, PT_UPDATERECT);
 
     sprintf(buf, "Chips %3d", state->chipsneeded);
-    sdlg.puttext(&rect, buf, PT_UPDATERECT);
+    puttext(&rect, buf, -1, PT_UPDATERECT);
 
     if (timeleft < 0)
 	strcpy(buf, "Time  ---");
     else
 	sprintf(buf, "Time  %3d", timeleft);
-    sdlg.puttext(&rect, buf, PT_UPDATERECT);
+    puttext(&rect, buf, -1, PT_UPDATERECT);
 
     if (besttime) {
 	if (timeleft < 0)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %3d", besttime);
-	color = ccfont.color;
+	color = sdlg.font.color;
 	if (state->game->replacebest)
-	    ccfont.color = clr_gray;
-	sdlg.puttext(&rect, buf, PT_UPDATERECT);
-	ccfont.color = color;
+	    sdlg.font.color = clr_gray;
+	puttext(&rect, buf, -1, PT_UPDATERECT);
+	sdlg.font.color = color;
     }
-    sdlg.putblank(&rect);
+    putblank(&rect);
 
     for (n = 0 ; n < 4 ; ++n) {
 	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y,
-		sdlg.gettileimage(state->keys[n] ? Key_Red + n : Empty,
-				  FALSE));
+		gettileimage(state->keys[n] ? Key_Red + n : Empty, FALSE));
 	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y + sdlg.htile,
-		sdlg.gettileimage(state->boots[n] ? Boots_Ice + n : Empty,
-				  FALSE));
+		gettileimage(state->boots[n] ? Boots_Ice + n : Empty, FALSE));
     }
 
     if (state->statusflags & SF_INVALID)
-	sdlg.putmltext(&hintloc, "This level cannot be played.", 0);
+	putmltext(&hintloc, "This level cannot be played.", 0);
     else if (state->statusflags & SF_SHOWHINT)
-	sdlg.putmltext(&hintloc, state->game->hinttext, 0);
+	putmltext(&hintloc, state->game->hinttext, 0);
     else
-	sdlg.putblank(&hintloc);
+	putblank(&hintloc);
 
-    if (state->statusflags & SF_ONOMATOPOEIA) {
-	if (state->soundeffects)
-	    sdlg.puttext(&onomatopoeialoc,
-			 getonomatopoeia(state->soundeffects), 0);
-	else
-	    sdlg.putblank(&onomatopoeialoc);
-    }
+    if (state->statusflags & SF_ONOMATOPOEIA)
+	puttext(&onomatopoeialoc, getonomatopoeia(state->soundeffects), -1, 0);
 
-    sdlg.putblank(&endmsgloc);
+    putblank(&endmsgloc);
 }
 
 /*
@@ -498,26 +483,24 @@ int displaylist(char const *title, char const *header,
 
     rect = listloc;
     rect.y += listloc.h;
-    rect.h = ccfont.h;
-    sdlg.puttext(&rect, title, 0);
+    rect.h = sdlg.font.h;
+    puttext(&rect, title, -1, 0);
     rect = listloc;
     if (header)
-	sdlg.puttext(&rect, header, PT_UPDATERECT);
-
-    sdlg.createscroll(&scroll, &rect, clr_yellow, itemcount, items);
-    sdlg.scrollsetindex(&scroll, *index);
+	puttext(&rect, header, -1, PT_UPDATERECT);
     SDL_UpdateRect(screen, 0, 0, 0, 0);
 
+    createscroll(&scroll, &rect, clr_yellow, itemcount, items);
+    scrollmove(&scroll, *index);
+
     for (;;) {
-	sdlg.scrollredraw(&scroll);
-	SDL_UpdateRect(screen, rect.x, rect.y, rect.w, rect.h);
 	n = 0;
 	if (!(*inputcallback)(&n))
 	    break;
-	sdlg.scrollmove(&scroll, n);
+	scrollmove(&scroll, n);
     }
     if (n)
-	*index = sdlg.scrollindex(&scroll);
+	*index = scroll.index;
 
     cleardisplay();
     return n;
@@ -558,8 +541,8 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 
     rect = listloc;
     rect.y += listloc.h;
-    rect.h = ccfont.h;
-    sdlg.puttext(&rect, title, 0);
+    rect.h = sdlg.font.h;
+    puttext(&rect, title, -1, 0);
     rect = listloc;
 
     if (type == HELP_TABTEXT) {
@@ -570,20 +553,20 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    if (col < n)
 		col = n;
 	}
-	col = (col + 2) * ccfont.w;
+	col = (col + 2) * sdlg.font.w;
 
 	for (i = 0 ; i < textcount ; ++i) {
 	    n = strchr(tabbedtext[i], '\t') - tabbedtext[i];
-	    sdlg.putntext(&rect, tabbedtext[i], n, 0);
+	    puttext(&rect, tabbedtext[i], n, 0);
 	    rect.x += col;
 	    rect.w -= col;
-	    sdlg.putmltext(&rect, tabbedtext[i] + n + 1, PT_UPDATERECT);
+	    putmltext(&rect, tabbedtext[i] + n + 1, PT_UPDATERECT);
 	    rect.x = listloc.x;
 	    rect.w = listloc.w;
 	}
     } else if (type == HELP_OBJECTS) {
-	rect.x += sdlg.wtile * 2 + ccfont.w;
-	rect.w -= sdlg.wtile * 2 + ccfont.w;
+	rect.x += sdlg.wtile * 2 + sdlg.font.w;
+	rect.w -= sdlg.wtile * 2 + sdlg.font.w;
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
 	    if (objtext[n].isfloor)
@@ -591,17 +574,17 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    else
 		id = crtile(objtext[n].item1, EAST);
 	    drawopaquetile(listloc.x + sdlg.wtile, rect.y,
-			   sdlg.gettileimage(id, FALSE));
+			   gettileimage(id, FALSE));
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
 		    id = objtext[n].item2;
 		else
 		    id = crtile(objtext[n].item2, EAST);
 		drawopaquetile(listloc.x, rect.y,
-			       sdlg.gettileimage(id, FALSE));
+			       gettileimage(id, FALSE));
 	    }
 	    y = rect.y;
-	    sdlg.putmltext(&rect, objtext[n].desc, 0);
+	    putmltext(&rect, objtext[n].desc, 0);
 	    y = sdlg.htile - (rect.y - y);
 	    if (y > 0) {
 		rect.y += y;
@@ -610,10 +593,9 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	}
     }
 
-    displayendmessage(completed);
-
     if (SDL_MUSTLOCK(screen))
 	SDL_UnlockSurface(screen);
+    displayendmessage(completed);
 
     SDL_UpdateRect(screen, 0, 0, 0, 0);
 
@@ -656,9 +638,9 @@ int _sdloutputinitialize(void)
 	sdlg.transpixel &= ~(screen->format->Rmask | screen->format->Gmask
 						   | screen->format->Bmask);
     }
-    ccfont.color = clr_white;
-    ccfont.bkgnd = clr_black;
-    sdlg.font = &ccfont;
+
+    sdlg.font.color = clr_white;
+    sdlg.font.bkgnd = clr_black;
 
     if (!createendmsgicons())
 	return FALSE;

@@ -154,7 +154,7 @@ static tilemap		tileptr[NTILES];
 
 /* Return a pointer to a specific tile image.
  */
-static Uint32 const *gettileimage(int id, int transp)
+static Uint32 const *_gettileimage(int id, int transp)
 {
     if (transp)
 	return tileptr[id].transp ? tileptr[id].transp
@@ -166,7 +166,7 @@ static Uint32 const *gettileimage(int id, int transp)
 
 /* Return a pointer to a tile image for a creature.
  */
-static Uint32 const *getcreatureimage(int id, int dir, int moving)
+static Uint32 const *_getcreatureimage(int id, int dir, int moving)
 {
     (void)moving;
     id += (0x30210 >> (dir * 2)) & 3;
@@ -177,7 +177,7 @@ static Uint32 const *getcreatureimage(int id, int dir, int moving)
  * transparent, the appropriate image is created in the overlay
  * buffer.
  */
-static Uint32 const *getcellimage(int top, int bot)
+static Uint32 const *_getcellimage(int top, int bot)
 {
     Uint32     *src;
     Uint32     *dest;
@@ -361,8 +361,8 @@ int loadlargetileset(char const *filename, int complain)
 
 int _sdltileinitialize(void)
 {
-    sdlg.gettileimage = gettileimage;
-    sdlg.getcreatureimage = getcreatureimage;
-    sdlg.getcellimage = getcellimage;
+    sdlg.gettileimagefunc = _gettileimage;
+    sdlg.getcreatureimagefunc = _getcreatureimage;
+    sdlg.getcellimagefunc = _getcellimage;
     return TRUE;
 }

@@ -1,4 +1,4 @@
-/* sdlres.c: Functions for accessing external resources.
+/* sdlres.c: Functions for loading the program's external resources.
  *
  * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -12,30 +12,69 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 
+/* This automatically-generated file defines a built-in font.
+ */
+#include	"ccfont.c"
+
+#define	PSF_SIG_1	0x36
+#define	PSF_SIG_2	0x04
+
 /* An automatically-generated file.
  */
 #include	"ccicon.c"
 
-#if 0
-
 /*
- *
+ * Reading PSF files.
  */
 
-static int setfontresource(int width, int height, unsigned char *fontdata)
+int loadfontfromfile(char const *filename)
 {
-    memset(fontdata, 0, 32 * height);
-    memset(fontdata + 127 * height, 0, 33 * height);
-    sdlg.font.bits = fontdata;
-    sdlg.font.w = width;
-    sdlg.font.h = height;
-    sdlg.font.color = sdlg.font.bkgnd = 0;
+    fontinfo		font;
+    SDL_RWops	       *file;
+    unsigned char	header[4];
+    int			n;
+
+    file = SDL_RWFromFile(filename, "rb");
+    if (!file) {
+	errmsg(filename, "cannot read font file: %s", SDL_GetError());
+	return FALSE;
+    }
+    n = SDL_RWread(file, header, 1, 4);
+    if (n < 0) {
+	errmsg(filename, "cannot read font file: %s", SDL_GetError());
+	return FALSE;
+    }
+    if (n < 4 || header[0] != PSF_SIG_1 || header[1] != PSF_SIG_2) {
+	errmsg(filename, "not a valid font file");
+	return FALSE;
+    }
+    font.h = header[3];
+    if (font.h < 8 || font.h > 32) {
+	errmsg(filename, "font has invalid height");
+	return FALSE;
+    }
+    font.bits = malloc(256 * font.h);
+    if (!font.bits)
+	memerrexit();
+    n = SDL_RWread(file, font.bits, font.h, 256);
+    if (n < 0) {
+	errmsg(filename, "couldn't read font file: %s", SDL_GetError());
+	return FALSE;
+    } else if (n < 256) {
+	errmsg(filename, "invalid font file");
+	return FALSE;
+    }
+    SDL_RWclose(file);
+
+    sdlg.font.w = 9;
+    sdlg.font.h = font.h;
+    sdlg.font.bits = font.bits;
+
+    return TRUE;
 }
 
-#endif
-
 /*
- *
+ * The exported function.
  */
 
 int _sdlresourceinitialize(void)
@@ -50,6 +89,8 @@ int _sdlresourceinitialize(void)
 	SDL_FreeSurface(icon);
     } else
 	warn("couldn't create icon surface: %s", SDL_GetError());
+
+    sdlg.font = ccfont;
 
     return TRUE;
 }
