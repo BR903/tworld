@@ -200,6 +200,19 @@ static tileidinfo const tileidmap[NTILES] = {
 static Uint32	       *cctiles = NULL;
 static tilemap		tileptr[NTILES];
 
+static int settilesize(int w, int h)
+{
+    if (w % 4 || h % 4) {
+	warn("tile dimensions must be divisible by four");
+	return FALSE;
+    }
+    sdlg.wtile = w;
+    sdlg.htile = h;
+    sdlg.cptile = w * h;
+    sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
+    return TRUE;
+}
+
 /*
  * Functions for obtaining tile images.
  */
@@ -323,6 +336,7 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
  *
  */
 
+#if 0
 /* Translate the given surface to one with the same color layout as
  * the display surface.
  */
@@ -358,6 +372,50 @@ static SDL_Surface *copytilesto32(SDL_Surface *src, int wset, int hset)
 
     return dest;
 }
+#else
+/* Translate the given surface to one with the same color layout as
+ * the display surface.
+ */
+static SDL_Surface *loadtilesto32(char const *filename)
+{
+    SDL_PixelFormat    *fmt;
+    SDL_Surface	       *bmp;
+    SDL_Surface	       *tiles;
+    SDL_Rect		rect;
+
+    bmp = SDL_LoadBMP(filename);
+    if (!bmp)
+	return NULL;
+
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = bmp->w;
+    rect.h = bmp->h;
+
+    if (!sdlg.screen) {
+	warn("copytilesto32() called before creating 32-bit surface");
+	fmt = SDL_GetVideoInfo()->vfmt;
+    } else
+	fmt = sdlg.screen->format;
+
+    tiles = SDL_CreateRGBSurface(SDL_SWSURFACE, rect.w, rect.h, 32,
+				 fmt->Rmask, fmt->Gmask,
+				 fmt->Bmask, fmt->Amask);
+    if (!tiles) {
+	SDL_FreeSurface(bmp);
+	return NULL;
+    }
+
+    if (SDL_BlitSurface(bmp, &rect, tiles, &rect)) {
+	SDL_FreeSurface(bmp);
+	SDL_FreeSurface(tiles);
+	return NULL;
+    }
+    
+    SDL_FreeSurface(bmp);
+    return tiles;
+}
+#endif
 
 /* Extract the mask section of the given image to an 8-bit surface.
  */
@@ -368,19 +426,17 @@ static SDL_Surface *extractmask(SDL_Surface *src,
     SDL_Color		pal[2];
     SDL_Rect		srcrect, destrect;
 
-    mask = SDL_CreateRGBSurface(SDL_SWSURFACE,
-				wmask * sdlg.wtile, hmask * sdlg.htile, 8,
-				0, 0, 0, 0);
+    mask = SDL_CreateRGBSurface(SDL_SWSURFACE, wmask, hmask, 8, 0, 0, 0, 0);
     if (!mask)
 	return NULL;
     pal[0].r = pal[0].g = pal[0].b = 0;
     pal[1].r = pal[1].g = pal[1].b = 255;
     SDL_SetPalette(mask, SDL_LOGPAL, pal, 0, 2);
 
-    srcrect.x = xmask * sdlg.wtile;
-    srcrect.y = ymask * sdlg.htile;
-    srcrect.w = wmask * sdlg.wtile;
-    srcrect.h = hmask * sdlg.htile;
+    srcrect.x = xmask;
+    srcrect.y = ymask;
+    srcrect.w = wmask;
+    srcrect.h = hmask;
     destrect.x = 0;
     destrect.y = 0;
     SDL_BlitSurface(src, &srcrect, mask, &destrect);
@@ -388,14 +444,16 @@ static SDL_Surface *extractmask(SDL_Surface *src,
     return mask;
 }
 
-/* Individually transfer the tiles to a one-dimensional array. If mask
- * is NULL, then magenta pixels in the mask area are made transparent.
+/*
+ *
+ */
+
+/* Individually transfer the tiles to a one-dimensional array. The
+ * magenta pixels in the "clear" area are made transparent.
  */
 static int initsmalltileset(SDL_Surface *tiles, int wset, int hset,
-			    SDL_Surface *maskimage, int wmask, int hmask,
-			    int xmaskdest, int ymaskdest)
+			    int xclear, int yclear, int wclear, int hclear)
 {
-    Uint8	       *mask;
     Uint32	       *src;
     Uint32	       *dest;
     Uint32		magenta;
@@ -404,32 +462,87 @@ static int initsmalltileset(SDL_Surface *tiles, int wset, int hset,
     if (SDL_MUSTLOCK(tiles))
 	SDL_LockSurface(tiles);
 
-    if (maskimage) {
-	if (SDL_MUSTLOCK(maskimage))
-	    SDL_LockSurface(maskimage);
-	mask = (Uint8*)maskimage->pixels;
-	dest = (Uint32*)((char*)tiles->pixels + ymaskdest * tiles->pitch);
-	dest += xmaskdest * sdlg.wtile;
-	for (y = 0 ; y < hmask * sdlg.htile ; ++y) {
-	    for (x = 0 ; x < wmask * sdlg.wtile ; ++x)
-		if (!mask[x])
-		    dest[x] = (Uint32)sdlg.transpixel;
-	    mask = (Uint8*)((char*)mask + maskimage->pitch);
-	    dest = (Uint32*)((char*)dest + tiles->pitch);
-	}
-	if (SDL_MUSTLOCK(maskimage))
-	    SDL_UnlockSurface(maskimage);
-    } else {
-	magenta = SDL_MapRGB(tiles->format, 255, 0, 255);
-	dest = (Uint32*)((char*)tiles->pixels + ymaskdest * tiles->pitch);
-	dest += xmaskdest * sdlg.wtile;
-	for (y = 0 ; y < hmask * sdlg.htile ; ++y) {
-	    for (x = 0 ; x < wmask * sdlg.wtile ; ++x)
-		if (dest[x] == magenta)
-		    dest[x] = sdlg.transpixel;
-	    dest = (Uint32*)((char*)dest + tiles->pitch);
+    magenta = SDL_MapRGB(tiles->format, 255, 0, 255);
+    dest = (Uint32*)((char*)tiles->pixels + yclear * tiles->pitch);
+    dest += xclear * sdlg.wtile;
+    for (y = 0 ; y < hclear * sdlg.htile ; ++y) {
+	for (x = 0 ; x < wclear * sdlg.wtile ; ++x)
+	    if (dest[x] == magenta)
+		dest[x] = sdlg.transpixel;
+	dest = (Uint32*)((char*)dest + tiles->pitch);
+    }
+
+    if (!(cctiles = calloc(wset * hset, sdlg.cbtile)))
+	memerrexit();
+    dest = cctiles;
+    for (x = 0 ; x < wset * sdlg.wtile ; x += sdlg.wtile) {
+	src = (Uint32*)tiles->pixels + x;
+	for (y = hset * sdlg.htile ; y ; --y, dest += sdlg.wtile) {
+	    memcpy(dest, src, sdlg.wtile * sizeof *dest);
+	    src = (Uint32*)((char*)src + tiles->pitch);
 	}
     }
+    if (SDL_MUSTLOCK(tiles))
+	SDL_UnlockSurface(tiles);
+
+    for (n = 0 ; n < NTILES ; ++n) {
+	id = tileidmap[n].id;
+	if (tileidmap[n].xtransp >= 0) {
+	    tileptr[id].celcount = 1;
+	    tileptr[id].opaque[0] = NULL;
+	    tileptr[id].transp[0] = cctiles + (tileidmap[n].xopaque * hset
+					+ tileidmap[n].yopaque) * sdlg.cptile;
+	    tileptr[id].transpsize = 0;
+	} else if (tileidmap[n].xopaque >= 0) {
+	    tileptr[id].celcount = 1;
+	    tileptr[id].opaque[0] = cctiles + (tileidmap[n].xopaque * hset
+					+ tileidmap[n].yopaque) * sdlg.cptile;
+	    tileptr[id].transp[0] = NULL;
+	    tileptr[id].transpsize = 0;
+	} else {
+	    tileptr[id].celcount = 0;
+	    tileptr[id].opaque[0] = NULL;
+	    tileptr[id].transp[0] = NULL;
+	    tileptr[id].transpsize = 0;
+	}
+    }
+
+    return TRUE;
+}
+
+/*
+ *
+ */
+
+/* Individually transfer the tiles to a one-dimensional array. If mask
+ * is NULL, then magenta pixels in the mask area are made transparent.
+ */
+static int initmaskedtileset(SDL_Surface *tiles, int wset, int hset,
+			     SDL_Surface *maskimage, int wmask, int hmask,
+			     int xmaskdest, int ymaskdest)
+{
+    Uint8      *mask;
+    Uint32     *src;
+    Uint32     *dest;
+    int		id, x, y, n;
+
+    if (SDL_MUSTLOCK(tiles))
+	SDL_LockSurface(tiles);
+
+    if (SDL_MUSTLOCK(maskimage))
+	SDL_LockSurface(maskimage);
+    mask = (Uint8*)maskimage->pixels;
+    dest = (Uint32*)((char*)tiles->pixels + ymaskdest * tiles->pitch);
+    dest += xmaskdest * sdlg.wtile;
+    for (y = 0 ; y < hmask * sdlg.htile ; ++y) {
+	for (x = 0 ; x < wmask * sdlg.wtile ; ++x)
+	    if (!mask[x])
+		dest[x] = (Uint32)sdlg.transpixel;
+	mask = (Uint8*)((char*)mask + maskimage->pitch);
+	dest = (Uint32*)((char*)dest + tiles->pitch);
+    }
+    if (SDL_MUSTLOCK(maskimage))
+	SDL_UnlockSurface(maskimage);
 
     if (!(cctiles = calloc(wset * hset * sdlg.cptile, sizeof *cctiles)))
 	memerrexit();
@@ -728,10 +841,8 @@ static int initfreeformtileset(SDL_Surface *tiles)
 	warn("Tiles must have a height divisible by 4.");
 	return FALSE;
     }
-    sdlg.wtile = w;
-    sdlg.htile = h;
-    sdlg.cptile = w * h;
-    sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
+    if (!settilesize(w, h))
+	return FALSE;
 
     size = 1;
     rowcount = 0;
@@ -860,109 +971,46 @@ void freetileset(void)
 
 int loadtileset(char const *filename, int complain)
 {
-    SDL_Surface	       *bmp = NULL;
     SDL_Surface	       *tiles = NULL;
     SDL_Surface	       *mask = NULL;
-    imagelayout		layout;
-    int			x, y;
+    int			f, w, h;
 
-    bmp = SDL_LoadBMP(filename);
-    if (!bmp) {
+    tiles = loadtilesto32(filename);
+    if (!tiles) {
 	if (complain)
 	    errmsg(filename, "cannot read bitmap: %s", SDL_GetError());
 	return FALSE;
     }
 
-    if (bmp->w % 2 != 0) {
-	x = 0;
-	y = 0;
-	layout.wtiles = 0;
-	layout.htiles = 0;
-	layout.xmask = -1;
-	layout.ymask = -1;
-	layout.wmask = 0;
-	layout.hmask = 0;
-	layout.xmaskdest = -1;
-	layout.ymaskdest = -1;
-    } else if (bmp->w % 13 == 0 && bmp->h % 16 == 0) {
-	x = bmp->w / 13;
-	y = bmp->h / 16;
-	layout.wtiles = 10;
-	layout.htiles = 16;
-	layout.xmask = 10;
-	layout.ymask = 0;
-	layout.wmask = 3;
-	layout.hmask = 16;
-	layout.xmaskdest = 7;
-	layout.ymaskdest = 0;
-    } else if (bmp->w % 10 == 0 && bmp->h % 16 == 0) {
-	x = bmp->w / 10;
-	y = bmp->h / 16;
-	layout.wtiles = 10;
-	layout.htiles = 16;
-	layout.xmask = -1;
-	layout.ymask = -1;
-	layout.wmask = 3;
-	layout.hmask = 16;
-	layout.xmaskdest = 7;
-	layout.ymaskdest = 0;
-    } else {
-	errmsg(filename, "image file has invalid dimensions");
-	goto failure;
-    }
-    if (x % 4 || y % 4) {
-	errmsg(filename, "tile dimensions must be divisible by four");
-	goto failure;
-    }
-
-    freetileset();
-    sdlg.wtile = x;
-    sdlg.htile = y;
-    sdlg.cptile = x * y;
-    sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
-
-    tiles = copytilesto32(bmp, layout.wtiles, layout.htiles);
-    if (!tiles) {
-	errmsg(filename, "couldn't create temporary tile surface: %s",
-			 SDL_GetError());
-	goto failure;
-    }
-    if (layout.xmask >= 0) {
-	mask = extractmask(bmp, layout.xmask, layout.ymask,
-				layout.wmask, layout.hmask);
+    if (tiles->w % 2 != 0) {
+	freetileset();
+	f = initfreeformtileset(tiles);
+    } else if (tiles->w % 13 == 0 && tiles->h % 16 == 0) {
+	w = tiles->w / 13;
+	h = tiles->h / 16;
+	mask = extractmask(tiles, 10 * w, 0, 3 * w, tiles->h);
 	if (!mask) {
 	    errmsg(filename, "couldn't create temporary mask surface: %s",
 			     SDL_GetError());
-	    goto failure;
+	    f = FALSE;
+	} else {
+	    freetileset();
+	    f = settilesize(w, h)
+		&& initmaskedtileset(tiles, 10, 16, mask, 3, 16, 7, 0);
+	    SDL_FreeSurface(mask);
+	    mask = NULL;
 	}
-    }
-
-    SDL_FreeSurface(bmp);
-    bmp = NULL;
-
-    if (!x) {
-	if (!initfreeformtileset(tiles))
-	    goto failure;
+    } else if (tiles->w % 7 == 0 && tiles->h % 16 == 0) {
+	freetileset();
+	f = settilesize(tiles->w / 7, tiles->h / 16)
+	    && initsmalltileset(tiles, 7, 16, 4, 0, 3, 16);
     } else {
-	if (!initsmalltileset(tiles, layout.wtiles, layout.htiles,
-			      mask,  layout.wmask, layout.hmask,
-				     layout.xmaskdest, layout.ymaskdest))
-	    goto failure;
+	errmsg(filename, "image file has invalid dimensions");
+	f = FALSE;
     }
 
     SDL_FreeSurface(tiles);
-    if (mask)
-	SDL_FreeSurface(mask);
-    return TRUE;
-
-  failure:
-    if (bmp)
-	SDL_FreeSurface(bmp);
-    if (tiles)
-	SDL_FreeSurface(tiles);
-    if (mask)
-	SDL_FreeSurface(mask);
-    return FALSE;
+    return f;
 }
 
 /*
