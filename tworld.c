@@ -40,13 +40,14 @@ typedef	struct startupdata {
     int		levelnum;	/* a selected initial level */ 
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
+    int		listtimes;	/* TRUE if the times should be listed */
     int		usepasswds;	/* FALSE if passwords are to be ignored */
 } startupdata;
 
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlspqH] [-DLRS DIR] [NAME] [LEVEL]\n"
+	"Usage: tworld [-hvlstpqH] [-DLRS DIR] [NAME] [LEVEL]\n"
 	"   -D  Read data files from DIR instead of the default\n"
 	"   -L  Read level set files from DIR instead of the default\n"
 	"   -R  Read shared resources from DIR instead of the default\n"
@@ -56,6 +57,7 @@ static char const *yowzitch =
 	"   -H  Produce histogram of idle time upon exit\n"
 	"   -l  Display the list of available data files and exit\n"
 	"   -s  Display your scores for the selected data file and exit\n"
+	"   -t  Display your times for the selected data file and exit\n"
 	"   -h  Display this help and exit\n"
 	"   -v  Display version information and exit\n"
 	"NAME specifies which data file to use.\n"
@@ -630,9 +632,10 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->levelnum = 0;
     start->listseries = FALSE;
     start->listscores = FALSE;
+    start->listtimes = FALSE;
     start->usepasswds = TRUE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:hlpqsv");
+    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:hlpqstv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -655,6 +658,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'q':	silence = !silence;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
+	  case 't':	start->listtimes = TRUE;			break;
 	  case 'h':	fputs(yowzitch, stdout); 	   exit(EXIT_SUCCESS);
 	  case 'v':	fputs(vourzhon, stdout); 	   exit(EXIT_SUCCESS);
 	  case ':':
@@ -671,8 +675,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	}
     }
 
-    if ((start->listscores || start->levelnum) && !*start->filename)
-	strcpy(start->filename, "chips.dat");
+    if (start->listscores || start->listtimes || start->levelnum)
+	if (!*start->filename)
+	    strcpy(start->filename, "chips.dat");
     start->filename[getpathbufferlen() - 1] = '\0';
 
     initdirs(optseriesdir, optseriesdatdir, optresdir, optsavedir);
@@ -733,6 +738,13 @@ static int startup(gamespec *gs, startupdata const *start)
 	    freeserieslist(&table);
 	    if (!createscorelist(&gs->series, gs->usepasswds,
 				 NULL, NULL, &table))
+		return FALSE;
+	    printtable(&table);
+	    exit(EXIT_SUCCESS);
+	}
+	if (start->listtimes) {
+	    freeserieslist(&table);
+	    if (!createtimelist(&gs->series, NULL, NULL, &table))
 		return FALSE;
 	    printtable(&table);
 	    exit(EXIT_SUCCESS);

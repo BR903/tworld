@@ -84,7 +84,7 @@ int createscorelist(gameseries const *series, int usepasswds,
 	    memerrexit();
     }
     ptrs = malloc((series->count + 2) * 5 * sizeof *ptrs);
-    textheap = malloc((series->count + 2) * 96);
+    textheap = malloc((series->count + 2) * 128);
     if (!ptrs || !textheap)
 	memerrexit();
     totalscore = 0;
@@ -109,18 +109,12 @@ int createscorelist(gameseries const *series, int usepasswds,
     for (j = 0, game = series->games ; j < series->count ; ++j, ++game) {
 	if (j >= series->allocated)
 	    break;
-#if 0
-	if (usepasswds && !(game->sgflags & SGF_HASPASSWD))
-	    continue;
-	if (plevellist)
-	    levellist[count] = j;
-	++count;
-#endif
+
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used, "1+%d", game->number);
 	if (hassolution(game)) {
 	    ptrs[n++] = textheap + used;
-	    used += 1 + sprintf(textheap + used, "1-%s", game->name);
+	    used += 1 + sprintf(textheap + used, "1-%.64s", game->name);
 	    ptrs[n++] = textheap + used;
 	    levelscore = 500 * game->number;
 	    used += 1 + sprintf(textheap + used, "1+%s", commify(levelscore));
@@ -139,16 +133,10 @@ int createscorelist(gameseries const *series, int usepasswds,
 	    used += 1 + sprintf(textheap + used, "1+%s",
 				commify(levelscore + timescore));
 	    totalscore += levelscore + timescore;
-#if 1
 	    if (plevellist)
 		levellist[count] = j;
 	    ++count;
-#endif
 	} else {
-#if 0
-	    ptrs[n++] = textheap + used;
-	    used += 1 + sprintf(textheap + used, "4-%s", game->name);
-#else
 	    if (!usepasswds || (game->sgflags & SGF_HASPASSWD)) {
 		ptrs[n++] = textheap + used;
 		used += 1 + sprintf(textheap + used, "4-%s", game->name);
@@ -160,7 +148,6 @@ int createscorelist(gameseries const *series, int usepasswds,
 		    levellist[count] = -1;
 	    }
 	    ++count;
-#endif
 	}
     }
 
@@ -184,6 +171,85 @@ int createscorelist(gameseries const *series, int usepasswds,
 
     table->rows = count + 1;
     table->cols = 5;
+    table->sep = 2;
+    table->collapse = 1;
+    table->items = ptrs;
+
+    return TRUE;
+}
+
+/* Produce a table that lists the player's times.
+ */
+int createtimelist(gameseries const *series,
+		   int **plevellist, int *pcount, tablespec *table)
+{
+    gamesetup	       *game;
+    char	      **ptrs;
+    char	       *textheap;
+    char	       *untimed;
+    int		       *levellist = NULL;
+    long		leveltime;
+    int			count;
+    int			used, j, n;
+
+    if (plevellist) {
+	levellist = malloc((series->count + 1) * sizeof *levellist);
+	if (!levellist)
+	    memerrexit();
+    }
+    ptrs = malloc((series->count + 1) * 4 * sizeof *ptrs);
+    textheap = malloc((series->count + 1) * 128);
+    if (!ptrs || !textheap)
+	memerrexit();
+
+    n = 0;
+    used = 0;
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Level");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1-Name");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Time");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Solution");
+
+    untimed = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+---");
+
+    count = 0;
+    for (j = 0, game = series->games ; j < series->count ; ++j, ++game) {
+	if (j >= series->allocated)
+	    break;
+	if (!hassolution(game))
+	    continue;
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used, "1+%d", game->number);
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used, "1-%.64s", game->name);
+	if (game->time) {
+	    leveltime = (game->time + 1) * TICKS_PER_SECOND;
+	    leveltime -= game->besttime + 1;
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "1+%d", game->time);
+	} else {
+	    leveltime = 1000 * TICKS_PER_SECOND - (game->besttime + 1);
+	    ptrs[n++] = untimed;
+	}
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used, "1+%.2f",
+					(double)leveltime / TICKS_PER_SECOND);
+	if (plevellist)
+	    levellist[count] = j;
+	++count;
+    }
+
+    if (plevellist)
+	*plevellist = levellist;
+    if (pcount)
+	*pcount = count;
+
+    table->rows = count + 1;
+    table->cols = 4;
     table->sep = 2;
     table->collapse = 1;
     table->items = ptrs;
