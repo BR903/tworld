@@ -297,7 +297,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	len = strlen(text);
 
     area = *rect;
-    brkw = 0;
+    brkw = brkn = 0;
     index = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
 	w += sdlg.font.w[text[n]];

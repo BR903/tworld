@@ -86,8 +86,7 @@ int oshwinitialize(int silence, int showhistogram)
 
     setsubtitle(NULL);
 
-    return _sdlresourceinitialize()
-	&& _sdltimerinitialize(showhistogram)
+    return _sdltimerinitialize(showhistogram)
 	&& _sdltextinitialize()
 	&& _sdltileinitialize()
 	&& _sdlinputinitialize()

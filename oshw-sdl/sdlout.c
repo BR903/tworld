@@ -597,7 +597,7 @@ int displaylist(char const *title, void const *tab, int *idx,
     topitem = 0;
     linecount = area.h / sdlg.font.h - 1;
 
-    n = *idx;
+    index = n = *idx;
     for (;;) {
 	switch (n) {
 	  case SCROLL_NOP:						break;
@@ -631,7 +631,7 @@ int displaylist(char const *title, void const *tab, int *idx,
 	drawtablerow(table, colstmp, &n, 0);
 	for (j = 0 ; j < topitem ; ++j)
 	    drawtablerow(table, NULL, &n, 0);
-	for ( ; j < topitem + linecount ; ++j)
+	for ( ; j < topitem + linecount && j < itemcount ; ++j)
 	    drawtablerow(table, colstmp, &n, j == index ? PT_HILIGHT : 0);
 
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
