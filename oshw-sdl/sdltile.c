@@ -179,9 +179,8 @@ static tileidinfo const tileidmap[NTILES] = {
     { Paramecium + 2,	 6,  2,  9,  2, 0, 0, 1, 0, TILEIMG_IMPLICIT },
     { Paramecium + 3,	 6,  3,  9,  3, 0, 0, 1, 0, TILEIMG_IMPLICIT },
     { Water_Splash,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
-    { Dirt_Splash,	 3,  7, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
     { Bomb_Explosion,	 3,  6, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
-    { Entity_Explosion,	 3,  8, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION }
+    { Entity_Explosion,	 3,  7, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION }
 };
 
 static Uint32	       *cctiles = NULL;
