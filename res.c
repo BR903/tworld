@@ -22,6 +22,7 @@
 #define	RES_SND_CHIP_WINS	(RES_SND_BASE + SND_CHIP_WINS)
 #define	RES_SND_TIME_OUT	(RES_SND_BASE + SND_TIME_OUT)
 #define	RES_SND_TIME_LOW	(RES_SND_BASE + SND_TIME_LOW)
+#define	RES_SND_DEREZZ		(RES_SND_BASE + SND_DEREZZ)
 #define	RES_SND_CANT_MOVE	(RES_SND_BASE + SND_CANT_MOVE)
 #define	RES_SND_IC_COLLECTED	(RES_SND_BASE + SND_IC_COLLECTED)
 #define	RES_SND_ITEM_COLLECTED	(RES_SND_BASE + SND_ITEM_COLLECTED)
@@ -64,6 +65,7 @@ static rcitem rclist[] = {
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
     { "ticksound",		FALSE },
+    { "derezzsound",		FALSE },
     { "blockedmovesound",	FALSE },
     { "pickupchipsound",	FALSE },
     { "pickuptoolsound",	FALSE },

@@ -362,7 +362,7 @@ static void removechip(int explode, creature *also)
     removecreature(chip);
     if (explode) {
 	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
-	/*addsoundeffect(SND_DEREZZ);*/
+	addsoundeffect(SND_DEREZZ);
     }
     resetfloorsounds(FALSE);
     startendgametimer();
