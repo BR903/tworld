@@ -1316,7 +1316,7 @@ static void endmovement(creature *cr, int dir)
 
     oldpos = cr->pos;
     newpos = cr->pos + delta[dir];
-    cr->pos = newpos;
+    /*cr->pos = newpos;*/
 
     cell = cellat(newpos);
     tile = &cell->top;
@@ -1405,10 +1405,8 @@ static void endmovement(creature *cr, int dir)
 	    addsoundeffect(SND_BOMB_EXPLODES);
 	    break;
 	  case Teleport:
-	    if (!(tile->state & FS_BROKEN)) {
+	    if (!(tile->state & FS_BROKEN))
 		newpos = teleportcreature(cr, newpos);
-		cr->pos = newpos;
-	    }
 	    break;
 	}
     } else {
@@ -1431,10 +1429,8 @@ static void endmovement(creature *cr, int dir)
 	    addsoundeffect(SND_BOMB_EXPLODES);
 	    break;
 	  case Teleport:
-	    if (!(tile->state & FS_BROKEN)) {
+	    if (!(tile->state & FS_BROKEN))
 		newpos = teleportcreature(cr, newpos);
-		cr->pos = newpos;
-	    }
 	    break;
 	}
     }
@@ -1445,6 +1441,18 @@ static void endmovement(creature *cr, int dir)
 	removecreature(cr);
 	return;
     }
+
+    if (cr->id == Chip && floor == Teleport && !(tile->state & FS_BROKEN)) {
+	i = newpos;
+	newpos = teleportcreature(cr, newpos);
+	if (newpos != i)
+	    addsoundeffect(SND_TELEPORTING);
+    }
+
+    cr->pos = newpos;
+    addcreaturetomap(cr);
+    cr->pos = oldpos;
+    tile = &cell->bot;
 
     switch (floor) {
       case Button_Blue:
@@ -1474,18 +1482,9 @@ static void endmovement(creature *cr, int dir)
 	    springtrap(newpos);
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
-      case Teleport:
-	if (cr->id == Chip && !(tile->state & FS_BROKEN)) {
-	    i = newpos;
-	    newpos = teleportcreature(cr, newpos);
-	    if (newpos != i)
-		addsoundeffect(SND_TELEPORTING);
-	    cr->pos = newpos;
-	}
-	break;
     }
 
-    addcreaturetomap(cr);
+    cr->pos = newpos;
 
     if (cellat(oldpos)->bot.id == CloneMachine)
 	cellat(oldpos)->bot.state &= ~FS_CLONING;
@@ -2085,14 +2084,6 @@ int ms_advancegame(gamestate *pstate)
 	if ((r = checkforending()))
 	    goto done;
     }
-
-#if 0
-    if (currenttime() && !(currenttime() & 1)) {
-	createclones();
-	if ((r = checkforending()))
-	    goto done;
-    }
-#endif
 
     cr = getchip();
     choosemove(cr);
