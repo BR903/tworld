@@ -960,21 +960,20 @@ static int startmovement(creature *cr, int releasing)
     else
 	return FALSE;
 
-    switch (dir) {
-      case CmdNorth | CmdWest:
-      case CmdNorth | CmdEast:
-      case CmdSouth | CmdWest:
-      case CmdSouth | CmdEast:
+    if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST))) {
 	assert(cr->id == Chip);
-	if (!(cr->dir & dir)) {
-	    dir &= CmdEast | CmdWest;
-	} else {
+	if (cr->dir & dir) {
 	    f1 = canmakemove(cr, cr->dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    f2 = canmakemove(cr, dir ^ cr->dir,
 			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
+	} else {
+	    if (canmakemove(cr, dir & (EAST | WEST),
+			    CMM_EXPOSEWALLS | CMM_PUSHBLOCKS))
+		dir &= EAST | WEST;
+	    else
+		dir &= NORTH | SOUTH;
 	}
-	break;
     }
 
     cr->dir = dir;
