@@ -62,4 +62,6 @@ extern int hassolution(gamesetup const *game);
 extern int replacesolution(void);
 extern int checksolution(void);
 
+extern int setmudsuckingfactor(int mud);
+
 #endif

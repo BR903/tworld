@@ -1968,9 +1968,9 @@ static int initgame(gamelogic *logic)
     }
 
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	if (layer1[pos] >= 0x70)
+	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids))
 	    layer1[pos] = 0x01;
-	if (layer2[pos] >= 0x70)
+	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids))
 	    layer2[pos] = 0x01;
 	cell = cellat(pos);
 	cell->top.state = 0;

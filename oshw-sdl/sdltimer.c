@@ -33,9 +33,6 @@ static unsigned	hist[100];
 void settimersecond(int ms)
 {
     mspertick = (ms ? ms : 1000) / TICKS_PER_SECOND;
-#if SLUDGE_FACTOR
-    mspertick *= SLUDGE_FACTOR;
-#endif
 }
 
 /* Control the timer depending on the value of action. A negative

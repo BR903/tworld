@@ -67,6 +67,10 @@ static int	usepasswds = TRUE;
  */
 static int	showhistogram = FALSE;
 
+/* Slowdown factor.
+ */
+static int	mudsucking = 1;
+
 /*
  * The program's text-mode output functions.
  */
@@ -800,8 +804,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listscores = FALSE;
     start->listtimes = FALSE;
     listdirs = FALSE;
+    mudsucking = 1;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:Vdhlpqstv");
+    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:Vdhlm:pqstv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -826,6 +831,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
 	  case 't':	start->listtimes = TRUE;			break;
+	  case 'm':	mudsucking = atoi(opts.val);			break;
 	  case 'h':	printtable(stdout, yowzitch); 	   exit(EXIT_SUCCESS);
 	  case 'v':	puts(VERSION);		 	   exit(EXIT_SUCCESS);
 	  case 'V':	printtable(stdout, vourzhon); 	   exit(EXIT_SUCCESS);
@@ -861,6 +867,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
  */
 static int initializesystem(void)
 {
+    setmudsuckingfactor(mudsucking);
     if (!oshwinitialize(silence, showhistogram))
 	return FALSE;
     if (!initresources())

@@ -550,6 +550,18 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     { ALL_IN_OUT, ALL_OUT, ALL_OUT },
     /* Block_Static */
     { 0, 0, 0 },
+    /* Burned_Chip */
+    { 0, 0, 0 },
+    /* Bombed_Chip */
+    { 0, 0, 0 },
+    /* Exited_Chip */
+    { 0, 0, 0 },
+    /* Exit_Extra_1 */
+    { 0, 0, 0 },
+    /* Exit_Extra_2 */
+    { 0, 0, 0 },
+    /* Overlay_Buffer */
+    { 0, 0, 0 },
     /* Floor_Reserved3 */
     { 0, 0, 0 },
     /* Floor_Reserved2 */
@@ -1625,6 +1637,10 @@ static int initgame(gamelogic *logic)
 
     n = -1;
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
+	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids))
+	    layer1[pos] = 0x01;
+	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids))
+	    layer2[pos] = 0x01;
 	state->map[pos].bot.id = Empty;
 	if (layer2[pos])
 	    floorat(pos) = fileids[layer2[pos]].id;
@@ -1643,7 +1659,6 @@ static int initgame(gamelogic *logic)
 		    die("Multiple Chips on the map!");
 		n = cr - creaturelist();
 		cr->state = 0;
-		/*cr->state = CS_SLIDETOKEN;*/
 	    } else {
 		cr->state = 0;
 		claimlocation(pos);

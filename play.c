@@ -23,6 +23,20 @@ static gamestate	state;
  */
 static gamelogic       *logic = NULL;
 
+/* How much mud to make the timer suck (i.e., slowdown factor).
+ */
+static int		mudsucking = 1;
+
+/*
+ */
+int setmudsuckingfactor(int mud)
+{
+    if (mud < 1)
+	return FALSE;
+    mudsucking = mud;
+    return TRUE;
+}
+
 /* Configure the game logic, and some of the OS/hardware layer, to the
  * behavior expected for the given ruleset.
  */
@@ -43,14 +57,14 @@ static int setrulesetbehavior(int ruleset)
 	if (!logic)
 	    return FALSE;
 	setkeyboardarrowsrepeat(TRUE);
-	settimersecond(1000);
+	settimersecond(1000 * mudsucking);
 	break;
       case Ruleset_MS:
 	logic = mslogicstartup();
 	if (!logic)
 	    return FALSE;
 	setkeyboardarrowsrepeat(FALSE);
-	settimersecond(1100);
+	settimersecond(1100 * mudsucking);
 	break;
       default:
 	die("Unknown ruleset requested");
