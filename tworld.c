@@ -1206,6 +1206,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
  */
 static int initializesystem(void)
 {
+#ifdef NDEBUG
+    mudsucking = 1;
+#endif
     setmudsuckingfactor(mudsucking);
     if (!oshwinitialize(silence, soundbufsize, showhistogram, fullscreen))
 	return FALSE;
