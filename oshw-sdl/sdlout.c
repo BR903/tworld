@@ -685,6 +685,8 @@ int displayinputprompt(char const *prompt, char *input, int maxlen,
     inputrect.w = promptrect.w;
 
     len = strlen(input);
+    if (len > maxlen)
+	len = maxlen;
     for (;;) {
 	SDL_FillRect(screen, &area, textcolor(sdlg.textclr));
 	++area.x;
