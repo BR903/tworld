@@ -34,8 +34,7 @@ solution.h
 state.h
 tworld.c
 ver.h
-data/intro-lynx.dat
-data/intro-ms.dat
+data/intro.dat
 docs/tworld.6
 docs/tworld.html
 oshw-sdl/Makefile.in
@@ -83,3 +82,5 @@ resources/whisk.wav
 sets/CCLP2.dac
 sets/cc-lynx.dac
 sets/cc-ms.dac
+sets/intro-lynx.dac
+sets/intro-ms.dac

@@ -506,8 +506,10 @@ static int getseriesfile(char *filename, void *data)
 	fileclose(&file, NULL);
 	if (datfilename) {
 	    if (openfileindir(&series->mapfile, seriesdatdir,
-			      datfilename, "rb", "unknown error"))
+			      datfilename, "rb", NULL))
 		f = readseriesheader(series);
+	    else
+		warn("cannot use %s: %s unavailable", filename, datfilename);
 	    fileclose(&series->mapfile, NULL);
 	    clearfileinfo(&series->mapfile);
 	    if (f)
