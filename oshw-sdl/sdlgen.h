@@ -97,15 +97,17 @@ typedef	struct oshwglobals
      */
     Uint32 const* (*gettileimagefunc)(int id, int transp);
 
-    /* Return a pointer to a tile image for a creature.
+    /* Return a pointer to a tile image for a creature, completing the
+     * fields of the given rect.
      */
-    Uint32 const* (*getcreatureimagefunc)(int id, int dir, int moving);
+    Uint32 const* (*getcreatureimagefunc)(SDL_Rect *rect,
+					  int id, int dir, int moving);
 
     /* Return a pointer to a tile image for a cell. If the top image
      * is transparent, the appropriate image is created in the overlay
      * buffer.
      */
-    Uint32 const* (*getcellimagefunc)(int top, int bot);
+    Uint32 const* (*getcellimagefunc)(int top, int bot, int timerval);
 
 } oshwglobals;
 

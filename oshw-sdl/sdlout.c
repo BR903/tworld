@@ -280,7 +280,7 @@ static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
     }
 }
 
-static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
+static void drawtransptileclipped(SDL_Rect const *rect, Uint32 const *src)
 {
     unsigned char      *line;
     Uint32	       *dest;
@@ -290,20 +290,20 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
     int			bclip = displayloc.y + displayloc.h;
     int			x, y;
 
-    if (xpos > lclip)			lclip = xpos;
-    if (ypos > tclip)			tclip = ypos;
-    if (xpos + sdlg.wtile < rclip)	rclip = xpos + sdlg.wtile;
-    if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
+    if (rect->x > lclip)			lclip = rect->x;
+    if (rect->y > tclip)			tclip = rect->y;
+    if (rect->x + rect->w < rclip)		rclip = rect->x + rect->w;
+    if (rect->y + rect->h < bclip)		bclip = rect->y + rect->h;
     if (lclip >= rclip || tclip >= bclip)
 	return;
-    src += (tclip - ypos) * sdlg.wtile - xpos;
+    src += (tclip - rect->y) * rect->w - rect->x;
     line = (unsigned char*)sdlg.screen->pixels + tclip * sdlg.screen->pitch;
     for (y = bclip - tclip ; y ; --y) {
 	for (x = lclip, dest = (Uint32*)line ; x < rclip ; ++x)
 	    if (src[x] != sdlg.transpixel)
 		dest[x] = src[x];
 	line += sdlg.screen->pitch;
-	src += sdlg.wtile;
+	src += rect->w;
     }
 }
 
@@ -312,13 +312,16 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
  */
 
 /* Render the view of the visible area of the map to the output
- * buffer, including all visible creatures, with Chip centered on the
- * display as much as possible.
+ * buffer, including all visible creatures, with the view position
+ * centered on the display as much as possible.
  */
 static void displaymapview(gamestate const *state)
 {
+    SDL_Rect		rect;
     creature const     *cr;
+    Uint32 const       *p;
     int			xdisppos, ydisppos;
+    int			xorigin, yorigin;
     int			lmap, tmap, rmap, bmap;
     int			pos, x, y;
 
@@ -332,6 +335,8 @@ static void displaymapview(gamestate const *state)
 	xdisppos = (CXGRID - NXTILES) * 4;
     if (ydisppos > (CYGRID - NYTILES) * 4)
 	ydisppos = (CYGRID - NYTILES) * 4;
+    xorigin = displayloc.x - (xdisppos * sdlg.wtile / 4);
+    yorigin = displayloc.y - (ydisppos * sdlg.htile / 4);
 
     lmap = xdisppos / 4;
     tmap = ydisppos / 4;
@@ -344,39 +349,29 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
-	    drawopaquetileclipped(displayloc.x + (x * sdlg.wtile)
-					       - (xdisppos * sdlg.wtile / 4),
-				  displayloc.y + (y * sdlg.htile)
-					       - (ydisppos * sdlg.htile / 4),
+	    drawopaquetileclipped(xorigin + x * sdlg.wtile,
+				  yorigin + y * sdlg.htile,
 				  getcellimage(state->map[pos].top.id,
-					       state->map[pos].bot.id));
+					       state->map[pos].bot.id,
+					       state->currenttime));
 	}
     }
 
-    lmap = (lmap - 1) * 4;
-    tmap = (tmap - 1) * 4;
-    rmap = (rmap + 1) * 4;
-    bmap = (bmap + 1) * 4;
+    lmap -= 2;
+    tmap -= 2;
+    rmap += 2;
+    bmap += 2;
     for (cr = state->creatures ; cr->id ; ++cr) {
 	if (cr->hidden)
 	    continue;
-	x = (cr->pos % CXGRID) * 4;
-	y = (cr->pos / CXGRID) * 4;
-	if (cr->moving > 0) {
-	    switch (cr->dir) {
-	      case NORTH:	y += cr->moving / 2;	break;
-	      case WEST:	x += cr->moving / 2;	break;
-	      case SOUTH:	y -= cr->moving / 2;	break;
-	      case EAST:	x -= cr->moving / 2;	break;
-	    }
-	}
+	x = cr->pos % CXGRID;
+	y = cr->pos / CXGRID;
 	if (x < lmap || x >= rmap || y < tmap || y >= bmap)
 	    continue;
-	drawtransptileclipped(displayloc.x + (x * sdlg.wtile / 4)
-					   - (xdisppos * sdlg.wtile / 4),
-			      displayloc.y + (y * sdlg.htile / 4)
-					   - (ydisppos * sdlg.htile / 4),
-			      getcreatureimage(cr->id, cr->dir, 0));
+	rect.x = xorigin + x * sdlg.wtile;
+	rect.y = yorigin + y * sdlg.htile;
+	p = getcreatureimage(&rect, cr->id, cr->dir, cr->moving);
+	drawtransptileclipped(&rect, p);
     }
 }
 

@@ -168,11 +168,22 @@ static Uint32 const *_gettileimage(int id, int transp)
 				  : tileptr[id].transp;
 }
 
-/* Return a pointer to a tile image for a creature.
+/* Return a pointer to a tile image for a creature, completing the
+ * fields of the given rect.
  */
-static Uint32 const *_getcreatureimage(int id, int dir, int moving)
+static Uint32 const *_getcreatureimage(SDL_Rect *rect,
+				       int id, int dir, int moving)
 {
-    (void)moving;
+    rect->w = sdlg.wtile;
+    rect->h = sdlg.htile;
+    if (moving > 0) {
+	switch (dir) {
+	  case NORTH:	rect->y += moving * rect->h / 8;	break;
+	  case WEST:	rect->x += moving * rect->w / 8;	break;
+	  case SOUTH:	rect->y -= moving * rect->h / 8;	break;
+	  case EAST:	rect->x -= moving * rect->w / 8;	break;
+	}
+    }
     id += diridx(dir);
     return tileptr[id].transp ? tileptr[id].transp : tileptr[id].opaque;
 }
@@ -181,12 +192,13 @@ static Uint32 const *_getcreatureimage(int id, int dir, int moving)
  * transparent, the appropriate image is created in the overlay
  * buffer.
  */
-static Uint32 const *_getcellimage(int top, int bot)
+static Uint32 const *_getcellimage(int top, int bot, int timerval)
 {
     Uint32     *src;
     Uint32     *dest;
     int		n;
 
+    (void)timerval;
     if (bot == Nothing || bot == Empty || tileptr[top].transp == 0)
 	return tileptr[top].opaque;
     src = tileptr[bot].opaque;
@@ -287,6 +299,82 @@ static int inittileswithmask(SDL_Surface *bmp, int wset, int hset,
 	    }
 	}
     }
+    if (SDL_MUSTLOCK(temp))
+	SDL_UnlockSurface(temp);
+    SDL_FreeSurface(temp);
+
+    for (n = 0 ; n < NTILES ; ++n) {
+	if (small_tileidmap[n].opaque >= 0)
+	    tileptr[n].opaque = cctiles
+			+ small_tileidmap[n].opaque * sdlg.cptile;
+	else
+	    tileptr[n].opaque = NULL;
+	if (small_tileidmap[n].transp >= 0)
+	    tileptr[n].transp = cctiles
+			+ small_tileidmap[n].transp * sdlg.cptile;
+	else
+	    tileptr[n].transp = NULL;
+    }
+
+    return TRUE;
+}
+
+/* First, the tiles are transferred from the bitmap surface to a
+ * 32-bit surface. Then, the tiles are individually transferred to a
+ * one-dimensional array, replacing magenta pixels with the
+ * transparency value.
+ */
+static int inittileswithclrkey(SDL_Surface *bmp, int wset, int hset)
+{
+    SDL_PixelFormat    *fmt;
+    SDL_Surface	       *temp;
+    Uint32	       *src;
+    Uint32	       *dest;
+    Uint32		magenta;
+    SDL_Rect		srcrect;
+    SDL_Rect		destrect;
+    int			x, y, i, j, n;
+
+    if (!sdlg.screen) {
+	warn("inittileswithmask() called before creating 32-bit screen");
+	fmt = SDL_GetVideoInfo()->vfmt;
+    } else
+	fmt = sdlg.screen->format;
+
+    temp = SDL_CreateRGBSurface(SDL_SWSURFACE,
+				wset * sdlg.wtile, hset * sdlg.htile, 32,
+				fmt->Rmask, fmt->Gmask,
+				fmt->Bmask, fmt->Amask);
+    if (!temp)
+	die("couldn't create intermediate tile surface: %s", SDL_GetError());
+
+    srcrect.x = 0;
+    srcrect.y = 0;
+    srcrect.w = wset * sdlg.wtile;
+    srcrect.h = hset * sdlg.htile;
+    destrect = srcrect;
+    SDL_BlitSurface(bmp, &srcrect, temp, &destrect);
+
+    magenta = SDL_MapRGB(temp->format, 255, 0, 255);
+    if (SDL_MUSTLOCK(temp))
+	SDL_LockSurface(temp);
+
+    if (!(cctiles = calloc(wset * hset * sdlg.cptile, sizeof *cctiles)))
+	memerrexit();
+    dest = cctiles;
+    for (x = 0 ; x < wset * sdlg.wtile ; x += sdlg.wtile) {
+	for (y = 0 ; y < hset * sdlg.htile ; y += sdlg.htile) {
+	    src = (Uint32*)((char*)temp->pixels + y * temp->pitch) + x;
+	    for (j = 0 ; j < sdlg.htile ; ++j, dest += sdlg.wtile) {
+		for (i = 0 ; i < sdlg.wtile ; ++i)
+		    dest[i] = src[i] == magenta ? sdlg.transpixel : src[i];
+		src = (Uint32*)((char*)src + temp->pitch);
+	    }
+	}
+    }
+    if (SDL_MUSTLOCK(temp))
+	SDL_UnlockSurface(temp);
+    SDL_FreeSurface(temp);
 
     for (n = 0 ; n < NTILES ; ++n) {
 	if (small_tileidmap[n].opaque >= 0)
@@ -322,6 +410,7 @@ void freetileset(void)
 int loadsmalltileset(char const *filename, int complain)
 {
     SDL_Surface	       *bmp;
+    int			mask;
     int			x, y;
 
     bmp = SDL_LoadBMP(filename);
@@ -330,12 +419,23 @@ int loadsmalltileset(char const *filename, int complain)
 	    errmsg(filename, "cannot read bitmap: %s", SDL_GetError());
 	return FALSE;
     }
-    if (bmp->w % 13 || bmp->h % 16) {
+    if (bmp->h % 16) {
 	errmsg(filename, "image file has invalid dimensions");
 	return FALSE;
     }
-    x = bmp->w / 13;
     y = bmp->h / 16;
+
+    if (bmp->w % 13 == 0) {
+	x = bmp->w / 13;
+	mask = TRUE;
+    } else if (bmp->w % 10 == 0) {
+	x = bmp->w / 10;
+	mask = FALSE;
+    } else {
+	errmsg(filename, "image file has invalid dimensions");
+	return FALSE;
+    }
+
     if (x % 4 || y % 4) {
 	errmsg("%s: invalid images: tile dimensions must be divisible by four",
 	       filename);
@@ -347,7 +447,11 @@ int loadsmalltileset(char const *filename, int complain)
     sdlg.htile = y;
     sdlg.cptile = x * y;
     sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
-    inittileswithmask(bmp, 10, 16, 10, 0, 3, 16, 7, 0);
+
+    if (mask)
+	inittileswithmask(bmp, 10, 16, 10, 0, 3, 16, 7, 0);
+    else
+	inittileswithclrkey(bmp, 10, 16);
 
     SDL_FreeSurface(bmp);
     return cctiles != NULL;
