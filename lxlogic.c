@@ -777,21 +777,6 @@ static void choosecreaturemove(creature *cr)
 	cr->tdir = pdir;
 }
 
-/* Resolve a diagonal movement command to one of the two directions.
- */
-static int selectonemove(int vert, int horz)
-{
-    creature   *cr;
-    int		fv, fh;
-
-    cr = getchip();
-    fv = canmakemove(cr, vert, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
-    fh = canmakemove(cr, horz, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
-    if (fv && !fh)
-	return vert;
-    return horz;
-}
-
 /* Determine the direction of Chip's next move. If discard is TRUE,
  * then Chip is not currently permitted to select a direction of
  * movement, and the player's input should not be retained.
@@ -802,16 +787,6 @@ static void choosechipmove(creature *cr, int discard)
 
     dir = currentinput();
     currentinput() = NIL;
-
-    switch (dir) {
-      case CmdNorth | CmdWest:
-      case CmdNorth | CmdEast:
-      case CmdSouth | CmdWest:
-      case CmdSouth | CmdEast:
-	dir = selectonemove(dir & (CmdNorth | CmdSouth),
-			    dir & (CmdWest | CmdEast));
-	break;
-    }
 
     if (dir == NIL || discard) {
 	cr->tdir = NIL;
@@ -972,6 +947,7 @@ static int startmovement(creature *cr, int releasing)
     static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
     int			dir;
     int			floorfrom;
+    int			f1, f2;
 
     assert(cr->moving <= 0);
 
@@ -981,6 +957,27 @@ static int startmovement(creature *cr, int releasing)
 	dir = cr->fdir;
     else
 	return FALSE;
+
+    switch (dir) {
+      case CmdNorth | CmdWest:
+      case CmdNorth | CmdEast:
+      case CmdSouth | CmdWest:
+      case CmdSouth | CmdEast:
+	assert(cr->id == Chip);
+	warn("resolving diagonal movement %02X", dir);
+	if (!(cr->dir & dir)) {
+	    dir &= CmdEast | CmdWest;
+	    warn("taking horizontal %02X", dir);
+	} else {
+	    f1 = canmakemove(cr, cr->dir,
+			      CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
+	    f2 = canmakemove(cr, dir ^ cr->dir,
+			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
+	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
+	    warn("taking %02X after testing both directions", dir);
+	}
+	break;
+    }
 
     cr->dir = dir;
 
@@ -998,7 +995,7 @@ static int startmovement(creature *cr, int releasing)
     }
 
     if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS
-		     | (releasing ? CMM_RELEASING : 0))) {
+					| (releasing ? CMM_RELEASING : 0))) {
 	if (isice(floorfrom) && (cr->id != Chip || !possession(Boots_Ice))) {
 	    cr->dir = back(dir);
 	    applyicewallturn(cr);
@@ -1334,6 +1331,8 @@ static void initialhousekeeping(void)
     creature   *chip;
     creature   *cr;
 
+    verifymap();
+
     if (currenttime() == 0) {
 	if (state->initrndslidedir == NIL)
 	    state->initrndslidedir = lastrndslidedir;
@@ -1345,9 +1344,23 @@ static void initialhousekeeping(void)
     if (chip->id == Pushing_Chip)
 	chip->id = Chip;
 
+    if (!inendgame() && timelimit() && currenttime() >= timelimit())
+	removechip(RMC_OUTOFTIME, NULL);
+
     if (isgreentoggleset())
 	togglewalls();
     resetgreentoggle();
+
+    for (cr = creaturelist() ; cr->id ; ++cr) {
+	if (!cr->hidden && isanimation(cr->id) && cr->frame <= 0)
+	    removecreature(cr);
+	if (cr->state & CS_NOISYMOVEMENT) {
+	    if (cr->hidden || cr->moving <= 0) {
+		stopsoundeffect(SND_BLOCK_MOVING);
+		cr->state &= ~CS_NOISYMOVEMENT;
+	    }
+	}
+    }
 
     if (currentinput() == CmdDebugCmd2) {
 	dumpmap();
@@ -1377,19 +1390,6 @@ static void initialhousekeeping(void)
 	}
 	currentinput() = NIL;
 	setnosaving();
-    }
-
-    verifymap();
-
-    for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (!cr->hidden && isanimation(cr->id) && cr->frame <= 0)
-	    removecreature(cr);
-	if (cr->state & CS_NOISYMOVEMENT) {
-	    if (cr->hidden || cr->moving <= 0) {
-		stopsoundeffect(SND_BLOCK_MOVING);
-		cr->state &= ~CS_NOISYMOVEMENT;
-	    }
-	}
     }
 }
 
@@ -1701,9 +1701,6 @@ static int advancegame(gamelogic *logic)
     creature   *cr;
 
     setstate(logic);
-
-    if (!inendgame() && timelimit() && currenttime() >= timelimit())
-	removechip(RMC_OUTOFTIME, NULL);
 
     initialhousekeeping();
 
