@@ -6,6 +6,7 @@
 
 #include	<stdlib.h>
 #include	"defs.h"
+#include	"err.h"
 #include	"state.h"
 #include	"oshw.h"
 #include	"ver.h"
@@ -257,12 +258,33 @@ void onlinemainhelp(int topic)
     cleardisplay();
 }
 
-/* Display the list of help topics and allow the user to select which
- * ones to view.
+/* Display help explaining the purpose of the initial level set
+ * selection screen.
  */
-void onlinelisthelp(void)
+void onlinefirsthelp(void)
 {
-    displaytable("KEYS", keyboardhelp(KEYHELP_FILELIST), -1);
+    static char *items[] = {
+	"1!Welcome to Tile World!",
+	"1-",
+	"1!In order to begin, you must first decide which level set you"
+	" wish to play. The opening screen shows you the list of all the"
+	" level sets that are currently available. Use the up and down"
+	" arrows to move the selection. When the level set of your choice"
+	" is selected, press Enter to begin.",
+	"1-",
+	"1!If the list is long, you may also use the PgUp and PgDn keys to"
+	" scroll one windowful at a time.",
+	"1-",
+	"1!At any point in the program, you may use the Q key to quit the"
+	" current activity and go back up one step. Typing Shift-Q will"
+	" exit Tile World completely. Typing ? at any time will bring up"
+	" a list of online help topics.",
+	"1-",
+	"1!Now, press any key to go back to the list of level sets."
+    };
+    static tablespec const table = { 9, 1, 0, 1, items };
+
+    displaytable("HELP", &table, -1);
     anykey();
     cleardisplay();
 }

@@ -25,10 +25,14 @@ extern tablespec const *yowzitch;
  */
 extern tablespec const *vourzhon;
 
+/* Display an online help screen, explaining the purpose of the
+ * initial level set list and how to use Tile World.
+ */
+extern void onlinefirsthelp(void);
+
 /* Display online help screens for the game, using the given topic as
  * the default topic.
  */
 extern void onlinemainhelp(int topic);
-extern void onlinelisthelp(void);
 
 #endif

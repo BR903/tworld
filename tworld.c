@@ -948,7 +948,7 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 		    break;
 	}
 	for (;;) {
-	    f = displaylist(" Welcome to Tile World. Select your destination.",
+	    f = displaylist("    Welcome to Tile World. Type ? for help.",
 			    &series->table, &n, scrollinputcallback);
 	    if (f == CmdProceed) {
 		getseriesfromlist(&gs->series, series->list, n);
@@ -958,7 +958,9 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 		okay = FALSE;
 		break;
 	    } else if (f == CmdHelp) {
-		onlinelisthelp();
+		pushsubtitle("Help");
+		onlinefirsthelp();
+		popsubtitle();
 	    }
 	}
     }

@@ -7,6 +7,9 @@
 2004 ??? ??: version 1.2.0
 <ul>
 <li>
+Fixed a bug (MS logic) preventing cloned tanks from turning around
+when they hadn't yet left the clone machine.
+<li>
 Fixed another longstanding bug (MS logic) involving a tank indirectly
 pushing a blue button. Again, the bug was fixed explicitly instead of
 trying to make the behavior arise naturally from the code.
@@ -21,8 +24,8 @@ parity of their initial frame, as discovered by ccexplore. (This
 finally killed the nine-lived clone-boosting bug in ICEHOUSE.) Also
 modified the point during the frame when animations get removed.
 <li>
-Changed the Lynx walker to use the original Lynx PRNG, as discovered
-by ccexplore.
+Changed the Lynx walker to use a PRNG equivalent to the original, as
+worked out by ccexplore.
 <li>
 Fixed bug (MS logic) in how a block is removed from the slip list when
 being pushed by Chip (reported by Shmuel Siegel).
@@ -40,8 +43,7 @@ Fixed keyboard routines so that they now understand characters as well
 as keystrokes (thus e.g. the program recognizes "?" when entered on a
 European keyboard).
 <li>
-Added a small help screen for the initial file menu. (This needs
-improvement to be more welcoming to the first-time user.)
+Added a small help screen for the initial file menu.
 <li>
 A few other minor bug fixes and miscellaneous improvements.
 </ul>
