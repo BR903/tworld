@@ -73,6 +73,10 @@ static int	showhistogram = FALSE;
  */
 static int	mudsucking = 1;
 
+/* The sound buffer scaling factor.
+ */
+static int	soundbufsize = -1;
+
 /* The top of the stack of subtitles.
  */
 static void   **subtitlestack = NULL;
@@ -1091,8 +1095,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listtimes = FALSE;
     listdirs = FALSE;
     mudsucking = 1;
+    soundbufsize = 0;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:dHhL:lm:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dHhL:lm:pqR:S:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1113,6 +1118,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'H':	showhistogram = !showhistogram;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
+	  case 'a':	++soundbufsize;					break;
 	  case 'd':	listdirs = TRUE;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
@@ -1154,7 +1160,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 static int initializesystem(void)
 {
     setmudsuckingfactor(mudsucking);
-    if (!oshwinitialize(silence, showhistogram))
+    if (!oshwinitialize(silence, soundbufsize, showhistogram))
 	return FALSE;
     if (!initresources())
 	return FALSE;

@@ -40,9 +40,10 @@ static int advancecreature(creature *cr, int dir);
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
  */
-static gamestate       *state;
+static gamestate	       *state;
+static int			controllerdir = NIL;
 
-static int		xviewoffset, yviewoffset;
+static int			xviewoffset, yviewoffset;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
@@ -83,6 +84,9 @@ static int		xviewoffset, yviewoffset;
 #define	getchipstatus()		(state->statusflags & SF_CHIPSTATUSMASK)
 #define	setchipstatus(s)	\
     (state->statusflags = (state->statusflags & ~SF_CHIPSTATUSMASK) | (s))
+
+#define	getcontrollerdir(c)	(controllerdir)
+#define setcontrollerdir(c, d)	(controllerdir = (d))
 
 #define	resetchipwait()		(state->statusflags &= ~SF_CHIPWAITMASK)
 #define	getchipwait()		(state->statusflags & SF_CHIPWAITMASK)
@@ -417,7 +421,7 @@ static maptile *getfloorat(int pos)
     if (!iskey(cell->bot.id) && !isboots(cell->bot.id)
 			     && !iscreature(cell->bot.id))
 	return &cell->bot;
-    return &cell->bot; /*???*/
+    return &cell->bot; /* ? */
 }
 
 static int issomeoneat(int pos)
@@ -606,31 +610,6 @@ static void addcreaturetomap(creature const *cr)
     updatecreature(cr);
 }
 
-/* Given a creature (presumably in an open beartrap), return the
- * direction of its controller, or NIL if the creature has no living
- * controller.
- */
-static int getcontrollerdir(creature const *cr)
-{
-    int	n;
-
-    _assert(cr != getchip());
-    for (n = 0 ; n < creaturecount && creatures[n] != cr ; ++n) ;
-    _assert(n < creaturecount);
-    for (--n ; n >= 0 ; --n) {
-	if (creatures[n]->hidden)
-	    continue;
-	if (cellat(creatures[n]->pos)->bot.id == CloneMachine)
-	    continue;
-	if (creatures[n] == getchip())
-	    continue;
-	break;
-    }
-    if (n < 0)
-	return NIL;
-    return creatures[n]->dir;
-}
-
 /* Enervate an inert creature.
  */
 static creature *awakencreature(int pos)
@@ -658,7 +637,6 @@ static void removecreature(creature *cr)
 	    setchipstatus(SF_CHIPNOTOKAY);
     } else
 	cr->hidden = TRUE;
-
 }
 
 /* Turn around any and all tanks.
@@ -670,7 +648,8 @@ static void turntanks(creature const *inmidmove)
     for (n = 0 ; n < creaturecount ; ++n) {
 	if (creatures[n]->hidden || creatures[n]->id != Tank)
 	    continue;
-	if (cellat(creatures[n]->pos)->bot.id == CloneMachine)
+	if (cellat(creatures[n]->pos)->bot.id == CloneMachine
+				&& !(creatures[n]->state & CS_CLONING))
 	    continue;
 	creatures[n]->dir = back(creatures[n]->dir);
 	if (!(creatures[n]->state & CS_TURNING))
@@ -968,7 +947,11 @@ static void choosecreaturemove(creature *cr)
 	cr->state &= ~(CS_TURNING | CS_HASMOVED);
 	updatecreature(cr);
     }
-    if (cr->state & (CS_HASMOVED | CS_SLIP | CS_SLIDE))
+    if (cr->state & CS_HASMOVED) {
+	setcontrollerdir(cr, NIL);
+	return;
+    }
+    if (cr->state & (CS_SLIP | CS_SLIDE))
 	return;
 
     floor = floorat(cr->pos);
@@ -976,10 +959,12 @@ static void choosecreaturemove(creature *cr)
     pdir = dir = cr->dir;
 
     if (floor == CloneMachine || floor == Beartrap) {
+/*
 	if (floor == Beartrap && !(cr->state & CS_RELEASED))
 	    return;
 	if (floor == CloneMachine && (cr->state & CS_CLONING))
 	    return;
+*/
 	switch (cr->id) {
 	  case Tank:
 	  case Ball:
@@ -999,7 +984,8 @@ static void choosecreaturemove(creature *cr)
 	  case Paramecium:
 	  case Teeth:
 	    choices[0] = getcontrollerdir(cr);
-	    pdir = NIL;
+	    cr->tdir = getcontrollerdir(cr);
+	    return;
 	    break;
 	  default:
 	    warn("Non-creature %02X trying to move", cr->id);
@@ -1069,7 +1055,7 @@ static void choosecreaturemove(creature *cr)
 		choices[0] = n;
 		choices[1] = m;
 	    }
-	    pdir = choices[0];
+	    pdir = choices[2] = choices[0];
 	    break;
 	  default:
 	    warn("Non-creature %02X trying to move", cr->id);
@@ -1080,12 +1066,16 @@ static void choosecreaturemove(creature *cr)
 
     for (n = 0 ; n < 4 && choices[n] != NIL ; ++n) {
 	cr->tdir = choices[n];
+	setcontrollerdir(cr, cr->tdir);
 	if (canmakemove(cr, choices[n], 0))
 	    return;
     }
 
-    if (cr->id == Tank)
-	cr->state |= CS_HASMOVED;
+    if (cr->id == Tank) {
+	if ((cr->state & CS_RELEASED)
+			|| (floor != Beartrap && floor != CloneMachine))
+	    cr->state |= CS_HASMOVED;
+    }
 
     cr->tdir = pdir;
 }
@@ -1674,7 +1664,7 @@ static void dumpmap(void)
     for (y = 0 ; y < creaturecount ; ++y) {
 	cr = creatures[y];
 	fprintf(stderr, "%02X%c (%d %d)",
-			cr->id, "-^<?v???>"[(int)cr->dir],
+			cr->id, "-^<?v?\?\?>"[(int)cr->dir],
 			cr->pos % CXGRID, cr->pos / CXGRID);
 	for (x = 0 ; x < slipcount ; ++x) {
 	    if (cr == slips[x].cr) {
@@ -1689,13 +1679,14 @@ static void dumpmap(void)
 			cr->state & CS_SLIP ? " slipping" : "",
 			cr->state & CS_SLIDE ? " sliding" : "");
 	if (x < slipcount)
-	    fprintf(stderr, " %c", "-^<?v???>"[(int)slips[x].dir]);
+	    fprintf(stderr, " %c", "-^<?v?\?\?>"[(int)slips[x].dir]);
 	fputc('\n', stderr);
     }
     for (y = 0 ; y < blockcount ; ++y) {
 	cr = blocks[y];
 	fprintf(stderr, "block %d: (%d %d) %c", y,
-		cr->pos % CXGRID, cr->pos / CXGRID, "-^<?v???>"[(int)cr->dir]);
+			cr->pos % CXGRID, cr->pos / CXGRID,
+			"-^<?v?\?\?>"[(int)cr->dir]);
 	for (x = 0 ; x < slipcount ; ++x) {
 	    if (cr == slips[x].cr) {
 		fprintf(stderr, " [%d]", x + 1);
@@ -1709,7 +1700,7 @@ static void dumpmap(void)
 			cr->state & CS_SLIP ? " slipping" : "",
 			cr->state & CS_SLIDE ? " sliding" : "");
 	if (x < slipcount)
-	    fprintf(stderr, " %c", "-^<?v???>"[(int)slips[x].dir]);
+	    fprintf(stderr, " %c", "-^<?v?\?\?>"[(int)slips[x].dir]);
 	fputc('\n', stderr);
     }
 }
@@ -1952,6 +1943,7 @@ static int initgame(gamelogic *logic)
     unsigned char	layer1[CXGRID * CYGRID];
     unsigned char	layer2[CXGRID * CYGRID];
     mapcell	       *cell;
+    xyconn	       *traps;
     creature	       *cr;
     creature	       *chip;
     gamesetup	       *game;
@@ -1964,22 +1956,36 @@ static int initgame(gamelogic *logic)
 
     memset(layer1, 0, sizeof layer1);
     memset(layer2, 0, sizeof layer2);
-    for (n = pos = 0 ; n < game->map1size ; ++n) {
+    for (n = pos = 0 ; n < game->map1size && pos < CXGRID * CYGRID ; ++n) {
 	if (game->map1[n] == 0xFF) {
+	    if (pos + game->map1[n + 1] > CXGRID * CYGRID) {
+		memset(layer1 + pos, game->map1[n + 2], CXGRID * CYGRID - pos);
+		break;
+	    }
 	    memset(layer1 + pos, game->map1[n + 2], game->map1[n + 1]);
 	    pos += game->map1[n + 1];
 	    n += 2;
 	} else
 	    layer1[pos++] = game->map1[n];
     }
-    for (n = pos = 0 ; n < game->map2size ; ++n) {
+    if (n < game->map1size)
+	warn("Level %d: %d extra bytes in upper map layer",
+	     game->number, game->map1size - n);
+    for (n = pos = 0 ; n < game->map2size && pos < CXGRID * CYGRID ; ++n) {
 	if (game->map2[n] == 0xFF) {
+	    if (pos + game->map2[n + 1] > CXGRID * CYGRID) {
+		memset(layer2 + pos, game->map2[n + 2], CXGRID * CYGRID - pos);
+		break;
+	    }
 	    memset(layer2 + pos, game->map2[n + 2], game->map2[n + 1]);
 	    pos += game->map2[n + 1];
 	    n += 2;
 	} else
 	    layer2[pos++] = game->map2[n];
     }
+    if (n < game->map2size)
+	warn("Level %d: %d extra bytes in lower map layer",
+	     game->number, game->map2size - n);
 
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
 	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids))
@@ -2067,6 +2073,11 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Fire)
 			  = possession(Boots_Water) = 0;
 
+    traps = traplist();
+    for (n = traplistsize() ; n ; ++traps, --n)
+	if (isoccupied(traps->from))
+	    springtrap(traps->from);
+
     xviewoffset = yviewoffset = 0;
 
     preparedisplay();
@@ -2087,6 +2098,7 @@ static int advancegame(gamelogic *logic)
     initialhousekeeping();
 
     if (currenttime() && !(currenttime() & 1)) {
+	setcontrollerdir(cr, NIL);
 	for (n = 1 ; n < creaturecount ; ++n) {
 	    cr = creatures[n];
 	    if (cr->hidden || (cr->state & CS_CLONING))

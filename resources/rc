@@ -1,8 +1,8 @@
 Font=font.bmp
 BackgroundColor=000000
-TextColor=DDDDDD
+TextColor=CCCCCC
 BoldTextColor=FFFFFF
-DimTextColor=BBBBBB
+DimTextColor=999999
 LevelCompleteSound=tada.wav
 PickupToolSound=ting.wav
 ThiefSound=thief.wav

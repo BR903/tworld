@@ -225,7 +225,7 @@ static int createdisplay(void)
 	sdlg.screen = NULL;
     }
     if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh,
-					 32, SDL_HWSURFACE))) {
+					 32, SDL_SWSURFACE))) {
 	errmsg(NULL, "cannot open %dx%d display: %s\n",
 		     screenw, screenh, SDL_GetError());
 	return FALSE;

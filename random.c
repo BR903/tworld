@@ -68,6 +68,13 @@ prng createprng(void)
  */
 void resetprng(prng *gen)
 {
+    if (lastvalue > 0x7FFFFFFFUL) {
+	lastvalue = (unsigned long)time(NULL);
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
+    }
     gen->value = gen->initial = lastvalue;
     gen->shared = TRUE;
 }

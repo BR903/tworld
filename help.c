@@ -17,13 +17,14 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "3-Usage: tworld [-hvVdlstpqH] [-DLRS DIR] [NAME] [LEVEL]",
+    "3-Usage: tworld [-hvVdlstpqaH] [-DLRS DIR] [NAME] [LEVEL]",
     "1-", "1+-D", "1-Read data files from DIR instead of the default.",
     "1-", "1+-L", "1-Read level sets from DIR instead of the default.",
     "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
     "1-", "1+-S", "1-Save games in DIR instead of the default.",
     "1-", "1+-p", "1-Disable password checking.",
     "1-", "1+-q", "1-Run quietly.",
+    "1-", "1+-a", "1-Double the size of the sound buffer (can be repeated).",
     "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
     "1-", "1+-l", "1-Display the list of available data files and exit.",
     "1-", "1+-s", "1-Display scores for the selected data file and exit.",
@@ -35,14 +36,14 @@ static char *yowzitch_items[] = {
     "3-NAME specifies which data file to use.",
     "3-LEVEL specifies which level to start at."
 };
-static tablespec const yowzitch_table = { 17, 3, 2, -1, yowzitch_items };
+static tablespec const yowzitch_table = { 18, 3, 2, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
 
 /* Version and license information.
  */
 static char *vourzhon_items[] = {
     "1+\267", "1-Tile World: version " VERSION,
-    "1+",     "1-Copyright \251 2001,2002 by Brian Raiter",
+    "1+",     "1-Copyright \251 2001, 2002, 2003 by Brian Raiter",
     "1+",     "1-compiled " COMPILE_TIME,
     "1+\267", "1!This program is free software; you can redistribute it and/or"
 	      " modify it under the terms of the GNU General Public License as"

@@ -85,7 +85,8 @@
  * 4 = NORTH | WEST = 0011 = 3
  * 5 = SOUTH | WEST = 0110 = 6
  * 6 = NORTH | EAST = 1001 = 9
- * 7 = SOUTH | EAST = 1100 = 12 */
+ * 7 = SOUTH | EAST = 1100 = 12
+ */
 static int const diridx8[16] = {
     -1,  0,  1,  4,  2, -1,  5, -1,  3,  6, -1, -1,  7, -1, -1, -1
 };

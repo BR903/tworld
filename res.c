@@ -141,24 +141,6 @@ static void initresourcedefaults(void)
     strcpy(allresources[Ruleset_None][RES_CLR_TEXT].str, "FFFFFF");
     strcpy(allresources[Ruleset_None][RES_CLR_BOLD].str, "FFFF00");
     strcpy(allresources[Ruleset_None][RES_CLR_DIM].str, "C0C0C0");
-#if 0
-    strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
-    strcpy(globalresources[RES_IMG_FONT].str, "font.bmp");
-    strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
-    strcpy(globalresources[RES_SND_CHIP_WINS].str, "ditty1.wav");
-    strcpy(globalresources[RES_SND_TIME_OUT].str, "bell.wav");
-    strcpy(globalresources[RES_SND_TIME_LOW].str, "click1.wav");
-    strcpy(globalresources[RES_SND_CANT_MOVE].str, "oof3.wav");
-    strcpy(globalresources[RES_SND_IC_COLLECTED].str, "click3.wav");
-    strcpy(globalresources[RES_SND_ITEM_COLLECTED].str, "blip2.wav");
-    strcpy(globalresources[RES_SND_BOOTS_STOLEN].str, "strike.wav");
-    strcpy(globalresources[RES_SND_TELEPORTING].str, "teleport.wav");
-    strcpy(globalresources[RES_SND_DOOR_OPENED].str, "door.wav");
-    strcpy(globalresources[RES_SND_SOCKET_OPENED].str, "chimes.wav");
-    strcpy(globalresources[RES_SND_BUTTON_PUSHED].str, "pop2.wav");
-    strcpy(globalresources[RES_SND_BOMB_EXPLODES].str, "hit3.wav");
-    strcpy(globalresources[RES_SND_WATER_SPLASH].str, "water2.wav");
-#endif
     memcpy(&allresources[Ruleset_MS], globalresources,
 				sizeof allresources[Ruleset_MS]);
     memcpy(&allresources[Ruleset_Lynx], globalresources,

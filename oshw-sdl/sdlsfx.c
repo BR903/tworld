@@ -14,7 +14,7 @@
 
 /* Some generic default settings for the audio output.
  */
-#define DEFAULT_SND_FMT		AUDIO_S16LSB
+#define DEFAULT_SND_FMT		AUDIO_S16SYS
 #define DEFAULT_SND_FREQ	22050
 #define	DEFAULT_SND_CHAN	1
 
@@ -47,6 +47,10 @@ static int		hasaudio = FALSE;
 /* The volume level.
  */
 static int		volume = SDL_MIX_MAXVOLUME;
+
+/* The sound buffer size scaling factor.
+ */
+static int		soundbufsize = 0;
 
 
 /* Initialize the textual sound effects.
@@ -115,6 +119,7 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
     int	i, n;
 
     (void)data;
+    memset(wave, spec.silence, len);
     for (i = 0 ; i < SND_COUNT ; ++i) {
 	if (!sounds[i].wave)
 	    continue;
@@ -184,7 +189,7 @@ int setaudiosystem(int active)
     des.callback = sfxcallback;
     des.userdata = NULL;
     for (n = 1 ; n <= des.freq / TICKS_PER_SECOND ; n <<= 1) ;
-    des.samples = n >> 2;
+    des.samples = (n << soundbufsize) >> 2;
     if (SDL_OpenAudio(&des, &spec) < 0) {
 	warn("can't access audio output: %s\n", SDL_GetError());
 	return FALSE;
@@ -271,8 +276,10 @@ void playsoundeffects(unsigned long sfx)
 	    sounds[i].playing = TRUE;
 	    if (sounds[i].pos && i < SND_ONESHOT_COUNT)
 		sounds[i].pos = 0;
-	} else
-	    sounds[i].playing = FALSE;
+	} else {
+	    if (i >= SND_ONESHOT_COUNT)
+		sounds[i].playing = FALSE;
+	}
     }
     SDL_UnlockAudio();
 }
@@ -349,10 +356,11 @@ static void shutdown(void)
 /* Initialize the module. If silence is TRUE, then the program will
  * leave sound output disabled.
  */
-int _sdlsfxinitialize(int silence)
+int _sdlsfxinitialize(int silence, int _soundbufsize)
 {
     atexit(shutdown);
     enabled = !silence;
+    soundbufsize = _soundbufsize;
     initonomatopoeia();
     if (enabled)
 	setaudiosystem(TRUE);

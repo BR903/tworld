@@ -641,6 +641,8 @@ static int canpushblock(creature *block, int dir, int flags)
 	    setpushing();
 	    addsoundeffect(SND_BLOCK_MOVING);
 	    block->state |= CS_NOISYMOVEMENT;
+	} else {
+	    warn("Thought block could move, but it couldn't!");
 	}
     }
 
@@ -1342,7 +1344,7 @@ static void dumpmap(void)
     fputc('\n', stderr);
     for (cr = creaturelist() ; cr->id ; ++cr)
 	fprintf(stderr, "%02X%c%1d (%d %d)%s%s%s\n",
-			cr->id, "-^<?v???>"[(int)cr->dir],
+			cr->id, "-^<?v?\?\?>"[(int)cr->dir],
 			cr->moving, cr->pos % CXGRID, cr->pos / CXGRID,
 			cr->hidden ? " dead" : "",
 			cr->state & CS_SLIDETOKEN ? " slide-token" : "",
@@ -1369,10 +1371,11 @@ static void verifymap(void)
     }
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (isanimation(state->map[pos].top.id)) {
+	if (isanimation(state->map[cr->pos].top.id)) {
 	    if (cr->moving > 12)
 		warn("%d: Too-large animation frame %02X at (%d %d)",
-		     currenttime(), cr->moving, pos % CXGRID, pos / CXGRID);
+		     currenttime(), cr->moving,
+		     cr->pos % CXGRID, cr->pos / CXGRID);
 	    continue;
 	}
 	if (cr->id < 0x40 || cr->id >= 0x80)
@@ -1769,6 +1772,7 @@ static int initgame(gamelogic *logic)
 		    markinvalid();
 		}
 		n = cr - creaturelist();
+		cr->dir = SOUTH;
 		cr->state = 0;
 	    } else {
 		cr->state = 0;
@@ -1830,6 +1834,7 @@ static int initgame(gamelogic *logic)
     resetgreentoggle();
     restartprng(&walkerprng, WALKER_PRNG_SEED);
 
+#if 0
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
 				    && !canmakemove(cr, cr->dir, 0)) {
@@ -1837,6 +1842,7 @@ static int initgame(gamelogic *logic)
 	     applyicewallturn(cr);
 	}
     }
+#endif
 
     xviewoffset = yviewoffset = 0;
 

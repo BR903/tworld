@@ -237,15 +237,16 @@ static int undomschanges(gameseries *series)
 {
     if (series->total != 149)
 	return FALSE;
+
     series->games[5].passwd[3] = 'P';
     series->games[9].passwd[0] = 'V';
     series->games[9].passwd[1] = 'U';
     series->games[27].passwd[3] = 'D';
-    series->games[87].map1[318] = 0x09;
     series->games[95].passwd[0] = 'W';
     series->games[95].passwd[1] = 'V';
     series->games[95].passwd[2] = 'H';
     series->games[95].passwd[3] = 'Y';
+
     series->games[98].traps[5].to = 14 * CXGRID + 8;
     series->games[98].traps[6].to = 14 * CXGRID + 23;
     series->games[98].traps[7].to = 16 * CXGRID + 8;
@@ -255,10 +256,19 @@ static int undomschanges(gameseries *series)
     series->games[98].traps[11].to = 20 * CXGRID + 16;
     series->games[98].traps[12].to = 23 * CXGRID + 23;
     series->games[98].traps[13].to = 25 * CXGRID + 23;
+    series->games[110].traps[0].to = 11 * CXGRID + 22;
+    series->games[110].traps[1].to = 6 * CXGRID + 15;
+
+    series->games[87].map1[318] = 0x09;
+    series->games[120].map1[395] = 0x00;
+
+    free(series->games[144].map1);
+    free(series->games[144].map2);
     memmove(series->games + 144, series->games + 145,
 	    4 * sizeof *series->games);
     --series->total;
     --series->count;
+
     return TRUE;
 }
 

@@ -16,9 +16,12 @@
  * showhistogram is TRUE, then during shutdown the timer module will
  * send a histogram to stdout describing the amount of time the
  * program explicitly yielded to other processes. (This feature is for
- * debugging purposes.)
+ * debugging purposes.) soundbufsize is a number between 0 and 3 which
+ * is used to scale the size of the sound buffer. A larger number is
+ * more efficient, but pushes the sound effects farther out of
+ * synchronization with the video.
  */
-extern int oshwinitialize(int silence, int showhistogram);
+extern int oshwinitialize(int silence, int soundbufsize, int showhistogram);
 
 /*
  * Timer functions.

@@ -72,6 +72,9 @@ most notably when Chip tries to move against a force floor. I do not
 believe that this optimization ever has an real effect on the
 gameplay. It is still a bit of an open question in my mind, however,
 which is why it is mentioned here.
+<li>
+There are several other bugs currently for which I lack a good
+description.
 </ol>
 <p>
 <hr>
@@ -103,6 +106,13 @@ was at maximum would "run out". The emulator does not enforce any such
 maximum. Of course, fixing this would put a limit on the kinds of new
 levels that people could create under the Lynx ruleset -- so this one
 may be better off as it is....
+<li>
+Block pushing is currently not handled correctly. Pushed blocks move
+when Chip does, when in reality they need to retain their own position
+in the ordering.
+<li>
+There are several other bugs currently for which I lack a good
+description.
 </ol>
 <p>
 <hr>
@@ -110,7 +120,8 @@ may be better off as it is....
 Other bugs and misfeatures
 <p>
 <ol>
-None known at this time.
+<li>The video display is too slow on some machines. It needs to be
+made more efficient.
 </ol>
 <p>
 <hr>

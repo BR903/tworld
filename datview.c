@@ -55,8 +55,8 @@ typedef	struct cclevel {
     ccmapcell	map[32][32];
     uchar	map1[32][32];
     uchar	map2[32][32];
-    uchar	name[32];
-    uchar	pass[8];
+    uchar	name[256];
+    uchar	pass[256];
     uchar	hint[256];
     int		creaturecount;
     int		trapcount;
@@ -116,7 +116,7 @@ static char const *objects[] = {
 /* 28 blue button		*/	"\033[1;34m.\033[0m",
 /* 29 teleport			*/	"\033[36m*\033[0m",
 /* 2A bomb			*/	"\033[1;31m\362\033[0m",
-/* 2B trap			*/	"\033[33m*\033[0m",
+/* 2B trap			*/	"\033[31m*\033[0m",
 /* 2C invisible wall, temp.	*/	"\033[33m\033(U\260\033(B\033[0m",
 /* 2D gravel			*/	"\033(U\261\033(B",
 /* 2E pass once			*/	"*",
@@ -186,6 +186,7 @@ static char const *objects[] = {
 /* 6E Chip S			*/	"\251",
 /* 6F Chip E			*/	"\251",
 /* 70 Hiding space		*/	"]",
+/* 71 Working trap		*/	"\033[33m*\033[0m",
 };
 
 /*
@@ -281,12 +282,24 @@ static void fixmapfield(field *f)
 
     map = malloc(32 * 32);
     for (i = j = 0 ; i < f->size ; ++i) {
+	if (j == 32 * 32) {
+	    printf("warning: RLE encoding overrun: bailing early.\n");
+	    break;
+	}
 	if (f->data[i] == 0xFF) {
+	    if (j + f->data[i + 1] > 32 * 32) {
+		printf("warning: RLE encoding overrun: (%02X %02X %02X)"
+		       " extends %d bytes past end.\n",
+		       f->data[i], f->data[i + 1], f->data[i + 2],
+		       j + f->data[i + 1] - 32 * 32);
+		f->data[i + 1] = 32 * 32 - j;
+	    }
 	    memset(map + j, f->data[i + 2], f->data[i + 1]);
 	    j += f->data[i + 1];
 	    i += 2;
-	} else
+	} else {
 	    map[j++] = f->data[i];
+	}
     }
     if (j != 32 * 32) {
 	printf("RLE decoding failed.\n");
@@ -378,6 +391,7 @@ static cclevel makelevel(cclevelhead lhead, field fields[16])
 	    level.traps[i].from.y = fields[4].data[i * 10 + 2];
 	    level.traps[i].to.x   = fields[4].data[i * 10 + 4];
 	    level.traps[i].to.y   = fields[4].data[i * 10 + 6];
+	    level.map[level.traps[i].to.y][level.traps[i].to.x].floor = 0x71;
 	}
 	free(fields[4].data);
 	memset(fields + 4, 0, sizeof fields[4]);
@@ -509,7 +523,7 @@ int main(int argc, char *argv[])
     cclevelhead	lhead;
     field	fields[16];
     ushrt	levelcount;
-    int		from, to;
+    int		from = 0, to = 0;
     int		i, x, y;
 
     if (argc < 2) {
@@ -545,14 +559,14 @@ int main(int argc, char *argv[])
 
     while (!(i = readlevel(fp, &lhead, fields))) {
 	level = makelevel(lhead, fields);
-	printf("%3u  time ", level.num);
+	x = printf("%3u  time ", level.num);
 	if (level.time)
-	    printf("%03u", level.time);
+	    x += printf("%03u", level.time);
 	else
-	    printf("---");
-	printf("  chips %03u  pass %s", level.chips, level.pass);
-	printf("  size%5u", lhead.off_next);
-	printf("  \"%s\"\n", level.name);
+	    x += printf("---");
+	x += printf("  chips %03u  pass %s", level.chips, level.pass);
+	x += printf(" (%u) ", lhead.off_next);
+	printf("\"%s\"\n", level.name);
 
 	if (level.num >= from && level.num <= to) {
 	    for (y = 0 ; y < 32 ; ++y) {
@@ -596,3 +610,43 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+
+#if 0
+ 196    FF A4 00   FF 0F 01   FF 11 00
+   6    01  00  0A  03  02  01
+ 229    FF E5 00
+   5    01  00  15  00  01
+  17    FF 11 00
+   6    01  00  0A  01  01  01 
+   4    FF 04 03
+   5    01  00  22  00  01
+  17    FF 11 00
+  14    01  00  0A  03  02  22  00  04  03  01  01  03  01  01
+  18    FF 0E 00   FF 04 01
+   5    00  0A  01  01  01
+   4    FF 04 00
+   5    01  00  00  00  01
+  14    FF 0E 00
+   8    01  6E  00  2F  00  0A  00  00
+   6    FF 06 0C
+   4    00  00  00  01
+  18    FF 0E 00   FF 04 01
+   5    00  0A  01  01  01 
+   4    FF 04 00
+   5    01  00  00  00  01
+  17    FF 11 00
+   6    01  00  0A  03  02  01 
+   4    FF 04 03
+   5    01  01  03  01  01
+  17    FF 11 00
+   6    01  00  0A  01  01  01
+   4    FF 04 03
+   5    01  00  22  00  01
+  17    FF 11 00
+   6    01  00  0A  03  02  01
+   4    FF 04 03
+   5    01  00  15  00  01
+ 557    FF 11 00   FF 0F 01   FF FF 00   FF FF 00   FF 0F 00
+1248
+#endif

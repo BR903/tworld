@@ -67,7 +67,7 @@ static void shutdown(void)
 /* Initialize SDL, create the program's icon, and then initialize
  * the other modules of the library.
  */
-int oshwinitialize(int silence, int showhistogram)
+int oshwinitialize(int silence, int soundbufsize, int showhistogram)
 {
     SDL_Surface	       *icon;
 
@@ -95,5 +95,5 @@ int oshwinitialize(int silence, int showhistogram)
 	&& _sdltileinitialize()
 	&& _sdlinputinitialize()
 	&& _sdloutputinitialize()
-	&& _sdlsfxinitialize(silence);
+	&& _sdlsfxinitialize(silence, soundbufsize);
 }
