@@ -4,3 +4,11 @@ cross-configure.sh
 cross-make.sh
 mklynxcc.com
 tworld.ico
+data/CCLP2.dat
+docs/2.gif
+docs/C.gif
+docs/CCLP2.html
+docs/L.gif
+docs/P.gif
+docs/CCLP2-disclaimer.txt
+sets/CCLP2.dac
