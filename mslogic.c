@@ -28,6 +28,7 @@
 #define	SF_CHIPNOTOKAY		0x0070
 #define	SF_CHIPSTATUSMASK	0x0070
 #define	SF_DEFERBUTTONS		0x0080
+#define	SF_COMPLETED		0x0100
 
 #define	creatureid(id)		((id) & ~3)
 #define	creaturedirid(id)	(idxdir((id) & 3))

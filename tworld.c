@@ -340,6 +340,7 @@ static int doenddisplay(gamespec *gs)
     initgamestate(enddisplaylevel(), gs->series.ruleset);
     setsubtitle(NULL);
     drawscreen();
+    displayendmessage(0, 0, 0, 0);
     endgamestate();
     for (;;) {
 	cmd = input(TRUE);

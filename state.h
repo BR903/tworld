@@ -217,11 +217,10 @@ typedef struct gamestate {
 
 /* General status flags.
  */
-#define	SF_COMPLETED		0x40000000	/* level has been completed */
-#define	SF_NOSAVING		0x20000000	/* solution won't be saved */
-#define	SF_INVALID		0x10000000	/* level is not playable */
-#define	SF_SHOWHINT		0x08000000	/* display the hint text */
-#define	SF_NOANIMATION		0x04000000	/* suppress tile animation */
+#define	SF_NOSAVING		0x40000000	/* solution won't be saved */
+#define	SF_INVALID		0x20000000	/* level is not playable */
+#define	SF_SHOWHINT		0x10000000	/* display the hint text */
+#define	SF_NOANIMATION		0x08000000	/* suppress tile animation */
 
 /* gamestate accessor macros.
  */

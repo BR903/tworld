@@ -60,6 +60,11 @@ extern int hassolution(gamesetup const *game);
  * no solution was replaced.
  */
 extern int replacesolution(void);
+
+/* Double-checks the timing for a solution that has just been played
+ * back. If the timing is off, and the cause of the discrepancy can be
+ * reasonably ascertained to be benign, the return value will be TRUE.
+ */
 extern int checksolution(void);
 
 extern int setmudsuckingfactor(int mud);

@@ -38,6 +38,7 @@ enum {
 #define	SF_GREENTOGGLE		0x0010	/* green button has been toggled */
 #define	SF_COULDNTMOVE		0x0020	/* can't-move sound has been played */
 #define	SF_CHIPPUSHING		0x0040	/* Chip is pushing against something */
+#define	SF_COMPLETED		0x0080	/* level completed successfully */
 
 /* Declarations of (indirectly recursive) functions.
  */
@@ -1196,9 +1197,8 @@ static int endmovement(creature *cr)
 	    addsoundeffect(SND_SOCKET_OPENED);
 	    break;
 	  case Exit:
-	    setcompleted();
 	    cr->hidden = TRUE;
-	    startendgametimer();
+	    setcompleted();
 	    addsoundeffect(SND_CHIP_WINS);
 	    break;
 	}
@@ -1403,8 +1403,14 @@ static void initialhousekeeping(void)
     if (chip->id == Pushing_Chip)
 	chip->id = Chip;
 
-    if (!inendgame() && timelimit() && currenttime() >= timelimit())
-	removechip(RMC_OUTOFTIME, NULL);
+    if (!inendgame()) {
+	if (timelimit() && currenttime() >= timelimit())
+	    removechip(RMC_OUTOFTIME, NULL);
+	if (iscompleted()) {
+	    startendgametimer();
+	    state->timeoffset = 1;
+	}
+    }
 
     if (isgreentoggleset())
 	togglewalls();
@@ -1823,11 +1829,11 @@ static int advancegame(gamelogic *logic)
     preparedisplay();
 
     if (inendgame()) {
+	--state->timeoffset;
 	if (!decrendgametimer()) {
 	    resetfloorsounds(TRUE);
 	    return iscompleted() ? +1 : -1;
 	}
-	--state->timeoffset;
     }
 
     return 0;

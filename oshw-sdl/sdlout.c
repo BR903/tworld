@@ -541,7 +541,7 @@ int displayendmessage(int basescore, int timescore, int totalscore,
     SDL_Rect	rect;
     int		n;
 
-    if (completed >= 0) {
+    if (totalscore) {
 	rect = hintloc;
 	puttext(&rect, "Level Completed", -1, PT_CENTER | PT_UPDATERECT);
 	puttext(&rect, "", 0, PT_CENTER | PT_UPDATERECT);
