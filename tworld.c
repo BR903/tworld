@@ -47,9 +47,9 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlspqH] [-CDRS DIR] [NAME] [LEVEL]\n"
-	"   -C  Read configured data files from DIR instead of the default\n"
+	"Usage: tworld [-hvlspqH] [-DLRS DIR] [NAME] [LEVEL]\n"
 	"   -D  Read data files from DIR instead of the default\n"
+	"   -L  Read level set files from DIR instead of the default\n"
 	"   -R  Read shared resources from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
 	"   -p  Disable password checking\n"
@@ -522,10 +522,31 @@ static void noplaygame(gamespec *gs)
 static void initdirs(char const *series, char const *seriesdat,
 		     char const *res, char const *save)
 {
-    unsigned int	maxpath = getpathbufferlen() - 1;
+    unsigned int	maxpath;
     char const	       *root = NULL;
     char const	       *dir;
 
+    maxpath = getpathbufferlen() - 1;
+    if (series && strlen(series) >= maxpath) {
+	errmsg(NULL, "Data (-D) directory name is too long;"
+		     " using default value instead");
+	series = NULL;
+    }
+    if (seriesdat && strlen(seriesdat) >= maxpath) {
+	errmsg(NULL, "Configured data (-C) directory name is too long;"
+		     " using default value instead");
+	seriesdat = NULL;
+    }
+    if (res && strlen(res) >= maxpath) {
+	errmsg(NULL, "Resource (-R) directory name is too long;"
+		     " using default value instead");
+	res = NULL;
+    }
+    if (save && strlen(save) >= maxpath) {
+	errmsg(NULL, "Save (-S) directory name is too long;"
+		     " using default value instead");
+	save = NULL;
+    }
     if (!save && (dir = getenv("TWORLDSAVEDIR")) && *dir) {
 	if (strlen(dir) < maxpath)
 	    save = dir;
@@ -559,13 +580,13 @@ static void initdirs(char const *series, char const *seriesdat,
     if (series)
 	strcpy(seriesdir, series);
     else
-	combinepath(seriesdir, root, "data");
+	combinepath(seriesdir, root, "sets");
 
     seriesdatdir = getpathbuffer();
     if (seriesdat)
 	strcpy(seriesdatdir, seriesdat);
     else
-	combinepath(seriesdatdir, root, "config");
+	combinepath(seriesdatdir, root, "data");
 
     savedir = getpathbuffer();
     if (!save) {
@@ -602,7 +623,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listscores = FALSE;
     start->usepasswds = TRUE;
 
-    initoptions(&opts, argc - 1, argv + 1, "C:D:HR:S:hlpqsv");
+    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:hlpqsv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -616,8 +637,8 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    else
 		strncpy(start->filename, opts.val, getpathbufferlen() - 1);
 	    break;
-	  case 'C':	optseriesdatdir = opts.val;			break;
-	  case 'D':	optseriesdir = opts.val;			break;
+	  case 'D':	optseriesdatdir = opts.val;			break;
+	  case 'L':	optseriesdir = opts.val;			break;
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = !showhistogram;			break;
