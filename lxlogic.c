@@ -47,13 +47,13 @@ struct lxstate {
     unsigned char	couldntmove;	/* can't-move sound has been played */
     unsigned char	pushing;	/* Chip is pushing against something */
     unsigned char	stuck;		/* Chip is stuck on a teleport */
-    unsigned char	completed;	/* level completed successfully */
     creature	       *chiptocr;	/* is Chip colliding with a creature */
     short		chiptopos;	/*   just starting to move itself? */
     unsigned char	prng1;		/* the values used to make the */
     unsigned char	prng2;		/*   pseudorandom number sequence */
     signed char		xviewoffset;	/* offset of map view center */
     signed char		yviewoffset;	/*   position from position of Chip */
+    unsigned char	completed;	/* level completed successfully */
 };
 
 /* Declarations of (indirectly recursive) functions.
@@ -1064,7 +1064,16 @@ static int activatecloner(int pos)
 
     if (pos < 0)
 	return FALSE;
-    _assert(floorat(pos) == CloneMachine);
+    if (pos >= CXGRID * CYGRID) {
+	warn("Off-map cloning attempted: (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return FALSE;
+    }
+    if (floorat(pos) != CloneMachine) {
+	warn("Red button not connected to a clone machine at (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return FALSE;
+    }
     cr = lookupcreature(pos, TRUE);
     if (!cr)
 	return FALSE;
@@ -1088,6 +1097,16 @@ static void springtrap(int pos)
 
     if (pos < 0)
 	return;
+    if (pos >= CXGRID * CYGRID) {
+	warn("Off-map trap opening attempted: (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return;
+    }
+    if (floorat(pos) != Beartrap) {
+	warn("Brown button not connected to a beartrap at (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return;
+    }
     cr = lookupcreature(pos, TRUE);
     if (cr && cr->dir != NIL)
 	advancecreature(cr, TRUE);
