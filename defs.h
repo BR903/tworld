@@ -81,6 +81,7 @@ enum {
     CmdNextLevel,
     CmdSameLevel,
     CmdQuitLevel,
+    CmdGotoLevel,
     CmdPrev,
     CmdNext,
     CmdSame,

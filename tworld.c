@@ -145,6 +145,50 @@ void printtable(tablespec const *table)
     free(colsizes);
 }
 
+/* A callback functions for handling the keyboard while collecting
+ * input.
+ */
+static int keyinputcallback(void)
+{
+    int	ch;
+
+    ch = input(TRUE);
+    if (ch >= 'a' && ch <= 'z')
+	return toupper(ch);
+    else if (ch == CmdWest)
+	return '\b';
+    else if (ch == CmdProceed)
+	return '\n';
+    else if (ch == CmdQuitLevel)
+	return '[' - '@';
+    else if (ch == CmdQuit)
+	exit(0);
+    return 0;
+}
+
+/* Obtain a password from the user and move to the requested level.
+ */
+static int selectlevelbypassword(gamespec *gs)
+{
+    char	passwd[5];
+    int		n;
+
+    setgameplaymode(BeginInput);
+    n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
+    setgameplaymode(EndInput);
+    if (!n)
+	return FALSE;
+
+    n = findlevelinseries(&gs->series, 0, passwd);
+    if (n < 0) {
+	bell();
+	return FALSE;
+    }
+
+    gs->currentgame = n;
+    return TRUE;
+}
+
 /* A callback function for handling the keyboard while displaying a
  * scrolling list.
  */
@@ -293,6 +337,7 @@ static void endinput(gamespec *gs, int status)
 	  case CmdNext10:	changecurrentgame(gs, +10);	return;
 	  case CmdProceed:	if (status > 0) changecurrentgame(gs, +1); return;
 #endif
+	  case CmdGotoLevel:	selectlevelbypassword(gs);	return;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return;
 	  case CmdHelp:		gameplayhelp();			return;
 	  case CmdSeeScores:	showscores(gs);			return;
@@ -332,6 +377,7 @@ static void playgame(gamespec *gs)
       case CmdNext:		changecurrentgame(gs, +1);	return;
       case CmdNext10:		changecurrentgame(gs, +10);	return;
 #endif
+      case CmdGotoLevel:	selectlevelbypassword(gs);	return;
       case CmdPlayback:		gs->playback = TRUE;		return;
       case CmdSeeScores:	showscores(gs);			return;
       case CmdKillSolution:	replaceablesolution(gs);	return;

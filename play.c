@@ -101,10 +101,12 @@ int initgamestate(gamesetup *game, int ruleset, int replay)
 void setgameplaymode(int mode)
 {
     switch (mode) {
-      case BeginPlay:	settimer(+1);	setkeyboardrepeat(FALSE);	break;
-      case SuspendPlay:	settimer(0);	setkeyboardrepeat(TRUE);	break;
-      case ResumePlay:	settimer(+1);	setkeyboardrepeat(FALSE);	break;
-      case EndPlay:	settimer(-1);	setkeyboardrepeat(TRUE);	break;
+      case BeginPlay:	setkeyboardrepeat(FALSE);	settimer(+1);	break;
+      case SuspendPlay:	setkeyboardrepeat(TRUE);	settimer(0);	break;
+      case ResumePlay:	setkeyboardrepeat(FALSE);	settimer(+1);	break;
+      case EndPlay:	setkeyboardrepeat(TRUE);	settimer(-1);	break;
+      case BeginInput:	setkeyboardinputmode(TRUE);			break;
+      case EndInput:	setkeyboardinputmode(FALSE);			break;
     }
 }
 

@@ -11,7 +11,7 @@
 
 /* The different modes of the program with respect to game-play.
  */
-enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay };
+enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay, BeginInput, EndInput };
 
 /* Initialize the current state to the starting position of the
  * given level.

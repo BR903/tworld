@@ -440,3 +440,35 @@ void freeserieslist(tablespec *table)
     free((void*)table->items[0]);
     free(table->items);
 }
+
+/* A function for looking up a specific level in a series by number
+ * and/or password.
+ */
+int findlevelinseries(gameseries const *series, int number, char const *passwd)
+{
+    int	i, n;
+
+    n = -1;
+    if (number) {
+	for (i = 0 ; i < series->total ; ++i) {
+	    if (series->games[i].number == number) {
+		if (!passwd || !strcmp(series->games[i].passwd, passwd)) {
+		    if (n >= 0)
+			return -1;
+		    n = i;
+		}
+	    }
+	}
+    } else if (passwd) {
+	for (i = 0 ; i < series->total ; ++i) {
+	    if (!strcmp(series->games[i].passwd, passwd)) {
+		if (n >= 0)
+		    return -1;
+		n = i;
+	    }
+	}
+    } else {
+	return -1;
+    }
+    return n;
+}

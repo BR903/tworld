@@ -9,11 +9,22 @@
 #include	"sdlgen.h"
 #include	"../defs.h"
 
+/* Structure describing a mapping of a key event to a game command.
+ */
+typedef	struct keycmdmap {
+    int		scancode;	/* the key's scan code */
+    int		shift;		/* the shift key's state */
+    int		ctl;		/* the ctrl key's state */
+    int		alt;		/* the alt keys' state */
+    int		cmd;		/* the command */
+    int		hold;		/* TRUE for repeating joystick-mode keys */
+} keycmdmap;
+
 /* The states of keys.
  */
 enum { KS_OFF = 0,		/* key is not currently pressed */
        KS_ON = 1,		/* key is down (shift-type keys only) */
-       KS_DOWN,			/* key is down */
+       KS_DOWN,			/* key is being held down */
        KS_STRUCK,		/* key was pressed and released in one cycle */
        KS_PRESSED,		/* key was pressed in this cycle */
        KS_DOWNBUTOFF1,		/* key was pressed in the previous cycle */
@@ -31,9 +42,11 @@ static char	keystates[SDLK_LAST];
 static int	joystickstyle = FALSE;
 
 /* The complete list of key commands recognized by the game. hold is
- * TRUE for keys that are to be forced to repeat.
+ * TRUE for keys that are to be forced to repeat. shift, ctl and alt
+ * are positive if the key must be down, zero if the key must be up,
+ * or negative if it doesn't matter.
  */
-static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
+static keycmdmap const gamekeycmds[] = {
     { SDLK_UP,                    0,  0,  0,   CmdNorth,      TRUE },
     { SDLK_LEFT,                  0,  0,  0,   CmdWest,       TRUE },
     { SDLK_DOWN,                  0,  0,  0,   CmdSouth,      TRUE },
@@ -46,6 +59,7 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { 'p',                        0, +1,  0,   CmdPrevLevel,  FALSE },
     { 'r',                        0, +1,  0,   CmdSameLevel,  FALSE },
     { 'n',                        0, +1,  0,   CmdNextLevel,  FALSE },
+    { 'g',                        0, +1,  0,   CmdGotoLevel,  FALSE },
     { 'q',                       +1,  0,  0,   CmdQuit,       FALSE },
     { SDLK_PAGEUP,                0,  0,  0,   CmdPrev10,     FALSE },
     { 'p',                        0,  0,  0,   CmdPrev,       FALSE },
@@ -88,7 +102,52 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { '\t',                       0, -1,  0,   CmdNextUndone, FALSE },
     { '\t',                      +1, -1,  0,   CmdPrevUndone, FALSE },
 #endif
+    { 0, 0, 0, 0, 0, 0 }
 };
+
+static keycmdmap const inputkeycmds[] = {
+    { SDLK_UP,                   -1, -1,  0,   CmdNorth,      FALSE },
+    { SDLK_LEFT,                 -1, -1,  0,   CmdWest,       FALSE },
+    { SDLK_DOWN,                 -1, -1,  0,   CmdSouth,      FALSE },
+    { SDLK_RIGHT,                -1, -1,  0,   CmdEast,       FALSE },
+    { '\b',                      -1, -1,  0,   CmdWest,       FALSE },
+    { ' ',                       -1, -1,  0,   CmdEast,       FALSE },
+    { SDLK_RETURN,               -1, -1,  0,   CmdProceed,    FALSE },
+    { SDLK_KP_ENTER,             -1, -1,  0,   CmdProceed,    FALSE },
+    { SDLK_ESCAPE,               -1, -1,  0,   CmdQuitLevel,  FALSE },
+    { 'a',                       -1,  0,  0,   'a',           FALSE },
+    { 'b',                       -1,  0,  0,   'b',           FALSE },
+    { 'c',                       -1,  0,  0,   'c',           FALSE },
+    { 'd',                       -1,  0,  0,   'd',           FALSE },
+    { 'e',                       -1,  0,  0,   'e',           FALSE },
+    { 'f',                       -1,  0,  0,   'f',           FALSE },
+    { 'g',                       -1,  0,  0,   'g',           FALSE },
+    { 'h',                       -1,  0,  0,   'h',           FALSE },
+    { 'i',                       -1,  0,  0,   'i',           FALSE },
+    { 'j',                       -1,  0,  0,   'j',           FALSE },
+    { 'k',                       -1,  0,  0,   'k',           FALSE },
+    { 'l',                       -1,  0,  0,   'l',           FALSE },
+    { 'm',                       -1,  0,  0,   'm',           FALSE },
+    { 'n',                       -1,  0,  0,   'n',           FALSE },
+    { 'o',                       -1,  0,  0,   'o',           FALSE },
+    { 'p',                       -1,  0,  0,   'p',           FALSE },
+    { 'q',                       -1,  0,  0,   'q',           FALSE },
+    { 'r',                       -1,  0,  0,   'r',           FALSE },
+    { 's',                       -1,  0,  0,   's',           FALSE },
+    { 't',                       -1,  0,  0,   't',           FALSE },
+    { 'u',                       -1,  0,  0,   'u',           FALSE },
+    { 'v',                       -1,  0,  0,   'v',           FALSE },
+    { 'w',                       -1,  0,  0,   'w',           FALSE },
+    { 'x',                       -1,  0,  0,   'x',           FALSE },
+    { 'y',                       -1,  0,  0,   'y',           FALSE },
+    { 'z',                       -1,  0,  0,   'z',           FALSE },
+    { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
+    { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
+    { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
+    { 0, 0, 0, 0, 0, 0 }
+};
+
+static keycmdmap const *keycmds = gamekeycmds;
 
 /*
  * Running the keyboard's state machine.
@@ -116,7 +175,6 @@ static void _keyeventcallback(int scancode, int down)
 	keystates[scancode] = down ? KS_ON : KS_OFF;
 	break;
       default:
-#if 0
 	if (down) {
 	    keystates[scancode] = keystates[scancode] == KS_OFF ? KS_PRESSED
 								: KS_REPRESSED;
@@ -124,19 +182,6 @@ static void _keyeventcallback(int scancode, int down)
 	    keystates[scancode] = keystates[scancode] == KS_PRESSED ? KS_STRUCK
 								    : KS_OFF;
 	}
-#else
-	if (down) {
-	    if (keystates[scancode] == KS_OFF)
-		keystates[scancode] = KS_PRESSED;
-	    else
-		keystates[scancode] = KS_REPRESSED;
-	} else {
-	    if (keystates[scancode] == KS_PRESSED)
-		keystates[scancode] = KS_STRUCK;
-	    else
-		keystates[scancode] = KS_OFF;
-	}
-#endif
 	break;
     }
 }
@@ -161,63 +206,37 @@ static void restartkeystates(void)
  */
 static void resetkeystates(void)
 {
-#if 0
     /* The transition table for resetkeystates() in joystick behavior mode.
      */
     static char const joystick_trans[KS_count] = {
-	/* KS_OFF		=> */	KS_OFF,
-	/* KS_ON		=> */	KS_ON,
-	/* KS_DOWN		=> */	KS_DOWN,
-	/* KS_STRUCK		=> */	KS_OFF,
-	/* KS_PRESSED		=> */	KS_DOWN,
-	/* KS_DOWNBUTOFF1	=> */	KS_DOWN,
-	/* KS_DOWNBUTOFF2	=> */	KS_DOWN,
-	/* KS_REPRESSED		=> */	KS_DOWN
+	/* KS_OFF         => */	KS_OFF,
+	/* KS_ON          => */	KS_ON,
+	/* KS_DOWN        => */	KS_DOWN,
+	/* KS_STRUCK      => */	KS_OFF,
+	/* KS_PRESSED     => */	KS_DOWN,
+	/* KS_DOWNBUTOFF1 => */	KS_DOWN,
+	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
+	/* KS_REPRESSED   => */	KS_DOWN
     };
     /* The transition table for resetkeystates() in keyboard behavior mode.
      */
     static char const keyboard_trans[KS_count] = {
-	/* KS_OFF		=> */	KS_OFF,
-	/* KS_ON		=> */	KS_ON,
-	/* KS_DOWN		=> */	KS_DOWN,
-	/* KS_STRUCK		=> */	KS_OFF,
-	/* KS_PRESSED		=> */	KS_DOWNBUTOFF1,
-	/* KS_DOWNBUTOFF1	=> */	KS_DOWNBUTOFF2,
-	/* KS_DOWNBUTOFF2	=> */	KS_DOWN,
-	/* KS_REPRESSED		=> */	KS_DOWN
+	/* KS_OFF         => */	KS_OFF,
+	/* KS_ON          => */	KS_ON,
+	/* KS_DOWN        => */	KS_DOWN,
+	/* KS_STRUCK      => */	KS_OFF,
+	/* KS_PRESSED     => */	KS_DOWNBUTOFF1,
+	/* KS_DOWNBUTOFF1 => */	KS_DOWNBUTOFF2,
+	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
+	/* KS_REPRESSED   => */	KS_DOWN
     };
 
-    char       *newstate;
+    char const *newstate;
     int		n;
 
     newstate = joystickstyle ? joystick_trans : keyboard_trans;
     for (n = 0 ; n < SDLK_LAST ; ++n)
 	keystates[n] = newstate[(int)keystates[n]];
-#else
-    int	n;
-
-    if (joystickstyle) {
-	for (n = 0 ; n < SDLK_LAST ; ++n) {
-	    switch (keystates[n]) {
-	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
-	      case KS_PRESSED:		keystates[n] = KS_DOWN;		break;
-	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWN;		break;
-	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
-	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
-	    }
-	}
-    } else {
-	for (n = 0 ; n < SDLK_LAST ; ++n) {
-	    switch (keystates[n]) {
-	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
-	      case KS_PRESSED:		keystates[n] = KS_DOWNBUTOFF1;	break;
-	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWNBUTOFF2;	break;
-	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
-	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
-	    }
-	}
-    }
-#endif
 }
 
 /*
@@ -239,10 +258,8 @@ int anykey(void)
 	for (n = 0 ; n < SDLK_LAST ; ++n)
 	    if (keystates[n] == KS_STRUCK || keystates[n] == KS_PRESSED
 					  || keystates[n] == KS_REPRESSED)
-		goto finish;
+		return n != 'q' && n != SDLK_ESCAPE;
     }
-  finish:
-    return n != 'q' && n != SDLK_ESCAPE;
 }
 
 /* Poll the keyboard and return the command associated with the
@@ -259,7 +276,7 @@ int input(int wait)
 	eventupdate(wait);
 
 	cmd = CmdNone;
-	for (i = 0 ; i < (int)(sizeof keycmds / sizeof *keycmds) ; ++i) {
+	for (i = 0 ; keycmds[i].scancode ; ++i) {
 	    n = keystates[keycmds[i].scancode];
 	    if (!n)
 		continue;
@@ -291,6 +308,8 @@ int input(int wait)
     return cmd;
 }
 
+/* Turn key-repeating on and off.
+ */
 int setkeyboardrepeat(int enable)
 {
     if (enable)
@@ -299,10 +318,20 @@ int setkeyboardrepeat(int enable)
 	return SDL_EnableKeyRepeat(0, 0) == 0;
 }
 
+/* Turn joystick behavior mode on or off.
+ */
 int setkeyboardarrowsrepeat(int enable)
 {
     joystickstyle = enable;
     restartkeystates();
+    return TRUE;
+}
+
+/* Turn input mode on or off.
+ */
+int setkeyboardinputmode(int enable)
+{
+    keycmds = enable ? inputkeycmds : gamekeycmds;
     return TRUE;
 }
 

@@ -10,6 +10,7 @@
 #include	"defs.h"
 #include	"err.h"
 #include	"fileio.h"
+#include	"series.h"
 #include	"solution.h"
 
 /* The solution file uses the following format:
@@ -82,42 +83,6 @@ char		       *savedir = NULL;
  */
 int			savedirchecked = FALSE;
 
-/* A function for looking up a specific level in a series by number
- * and/or password. If number is -1, only the password will be
- * searched for; if passwd is NULL, only the number will be used.  The
- * function returns the index of the game in the series, or -1 if the
- * data could not be matched, or if it matched more than one level
- * (ugh).
- */
-static int findlevelinseries(gameseries const *series,
-			     int number, char const *passwd)
-{
-    int	i, n;
-
-    n = -1;
-    if (number) {
-	for (i = 0 ; i < series->total ; ++i) {
-	    if (series->games[i].number == number) {
-		if (!passwd || !strcmp(series->games[i].passwd, passwd)) {
-		    if (n >= 0)
-			return -1;
-		    n = i;
-		}
-	    }
-	}
-    } else if (passwd) {
-	for (i = 0 ; i < series->total ; ++i) {
-	    if (!strcmp(series->games[i].passwd, passwd)) {
-		if (n >= 0)
-		    return -1;
-		n = i;
-	    }
-	}
-    } else {
-	return -1;
-    }
-    return n;
-}
 
 /*
  * Functions for manipulating move lists.

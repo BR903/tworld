@@ -20,7 +20,7 @@ void ding(void)
 }
 
 /* Display a message box. If action is NOTIFY_LOG, the text of the
- * message is written to a logfile instead.
+ * message is written to stderr instead.
  */
 void usermessage(int action, char const *prefix,
 		 char const *cfile, unsigned long lineno,

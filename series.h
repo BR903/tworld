@@ -35,4 +35,14 @@ extern int createserieslist(char const *preferredfile,
  */
 extern void freeserieslist(tablespec *table);
 
+/* A function for looking up a specific level in a series by number
+ * and/or password. If number is -1, only the password will be
+ * searched for; if passwd is NULL, only the number will be used.  The
+ * function returns the index of the game in the series, or -1 if the
+ * data could not be matched, or if it matched more than one level
+ * (ugh).
+ */
+extern int findlevelinseries(gameseries const *series,
+			     int number, char const *passwd);
+
 #endif

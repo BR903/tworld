@@ -54,6 +54,11 @@ extern int setkeyboardrepeat(int enable);
  */
 extern int setkeyboardarrowsrepeat(int enable);
 
+/* Turn input mode on or off. In input mode, only the arrow and letter
+ * keys are recognized.
+ */
+extern int setkeyboardinputmode(int enable);
+
 /* Return the latest/current keystroke. If wait is TRUE and no
  * keystrokes are pending, the function blocks until a keystroke
  * arrives.
@@ -147,6 +152,9 @@ enum {
     SCROLL_ALLTHEWAY_UP		= -8,
     SCROLL_ALLTHEWAY_DN		= -9
 };
+
+extern int displayinputprompt(char const *prompt, char *input, int maxlen,
+			      int (*inputcallback)(void));
 
 /*
  * Sound functions.

@@ -7,6 +7,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<ctype.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
 #include	"../err.h"
@@ -647,6 +648,74 @@ int displaylist(char const *title, void const *tab, int *idx,
     cleardisplay();
     return n;
 }
+
+int displayinputprompt(char const *prompt, char *input, int maxlen,
+		       int (*inputcallback)(void))
+{
+    SDL_Rect	area, promptrect, inputrect;
+    int		len, ch;
+
+    puttext(&inputrect, "W", 1, PT_CALCSIZE);
+    inputrect.w *= maxlen + 1;
+    puttext(&promptrect, prompt, -1, PT_CALCSIZE);
+    area.h = inputrect.h + promptrect.h + 2 * MARGINH;
+    if (inputrect.w > promptrect.w)
+	area.w = inputrect.w;
+    else
+	area.w = promptrect.w;
+    area.w += 2 * MARGINW;
+    area.x = (screenw - area.w) / 2;
+    area.y = (screenh - area.h) / 2;
+    promptrect.x = area.x + MARGINW;
+    promptrect.y = area.y + MARGINH;
+    promptrect.w = area.w - 2 * MARGINW;
+    inputrect.x = promptrect.x;
+    inputrect.y = promptrect.y + promptrect.h;
+    inputrect.w = promptrect.w;
+
+    len = strlen(input);
+    for (;;) {
+	SDL_FillRect(screen, &area, textcolor(sdlg.textclr));
+	++area.x;
+	++area.y;
+	area.w -= 2;
+	area.h -= 2;
+	SDL_FillRect(screen, &area, bkgndcolor(sdlg.textclr));
+	--area.x;
+	--area.y;
+	area.w += 2;
+	area.h += 2;
+	puttext(&promptrect, prompt, -1, PT_CENTER);
+	input[len] = '_';
+	puttext(&inputrect, input, len + 1, PT_CENTER);
+	input[len] = '\0';
+	SDL_UpdateRect(screen, area.x, area.y, area.w, area.h);
+	ch = (*inputcallback)();
+	if (ch == '\n' || ch == '[' - '@')
+	    break;
+	if (ch == 'U' - '@') {
+	    len = 0;
+	    input[0] = '\0';
+	} else if (ch == '\b') {
+	    if (len)
+		--len;
+	    input[len] = '\0';
+	} else if (isprint(ch)) {
+	    input[len] = ch;
+	    if (len < maxlen)
+		++len;
+	    input[len] = '\0';
+	} else {
+	    /* no op */
+	}
+    }
+    cleardisplay();
+    return ch == '\n';
+}
+
+/*
+ *
+ */
 
 /* Create a display surface appropriate to the requirements of the
  * game.
