@@ -1,4 +1,4 @@
-tworld / Tile World / Tile World
+tworld / Tile World / Oct 2004 / Tile World
 
 .section Synopsis
 
@@ -213,8 +213,9 @@ program.
 At most other points, the <Q> key will abort the current activity
 and return to the start of the current level.
 
-Finally, the program can be exited at any time by pressing either
-<Ctrl>-<C> or <Alt>-<F4>.
+Finally, the program can be exited at any time by pressing
+<Shift>-<Q>. <Ctrl>-<C> or <Alt>-<F4> will also force an immediate
+exit.
 
 .section Rulesets
 
@@ -509,7 +510,7 @@ the resource, level set, and data file directories.
 
 .section License
 
-Tile World is copyright (C) 2001, 2002 by Brian Raiter.
+Tile World is copyright (C) 2001-2004 by Brian Raiter.
 
 This program is free software; you can redistribute it and/or  
 modify it under the terms of the GNU General Public License as 
@@ -629,11 +630,11 @@ glyphs in the bitmap. The height of each pixel in the left column
 indicates the height of the row of pixels above each row of glyphs.
 All other pixels in the left column will have the background color.
 
-The glyphs in a given will be separated from each other by a single
-column of pixels. This column will be indicated by a glyph-colored
-pixel directly above it, in the row of pixels. All other pixels in the
-rows will have the background color. There will also be a
-glyph-colored pixel immediately after the last glyph in a row. (The
+The glyphs in a given row will be separated from each other by a
+single column of pixels. This column will be indicated by a
+glyph-colored pixel directly above it, in the row of pixels. All other
+pixels in the rows will have the background color. There will also be
+a glyph-colored pixel immediately after the last glyph in a row. (The
 net result is that every glyph will have a glyph-colored pixel on
 either side.) Each row can contain any number of glyphs; anything to
 the right of the last glyph in a row is ignored.
@@ -716,11 +717,11 @@ tiles are laid out in a 7x16 grid. The first four columns are the same
 as with the masked format. The remaining three columns contain the
 creatures, boots, and keys (again, as with the small format) with a
 solid background of magenta pixels (RGB=255,0,255). When the bitmap is
-read by Tile World, all magenta pixels in the will be made
-transparent. (Magenta pixels in the first four columns will not be
-altered.) If you wish to use magenta in any of these tiles (e.g., for
-the balls), then you will have to use one of the other formats
-instead.
+read by Tile World, all magenta pixels in the last three columns will
+be made transparent. (Magenta pixels in the first four columns will
+not be altered.) If you wish to use magenta in any of these tiles
+(e.g., for the balls), then you will have to use one of the other
+formats instead.
 
 The %large format% is the only format that permits inclusion of animated
 tiles. This format has a less rigid layout. Tiles are arranged in rows
@@ -815,10 +816,15 @@ The possible "sub-layouts" of the images of these 12 tiles are:
 .list
 . 1x1: A single image. The lone image is used to display the creature,
 regardless of its movement or orientation.
+. 1x2: Two images side by side. The left image shows the creature
+moving N and S, and the right image shows the creature moving W and E.
 . 1x4: Four images in a single row, showing the creature moving N, W,
 S, and E, respectively.
-. 2x2: Four images as before, but arranged in a square. The top two
-images show N and W movement, and S and E constitute the bottom row.
+. 2x1: Two images, arranged in a column. The top image shows the
+creature moving N and S, and the bottom image shows the creature
+moving W and E.
+. 2x2: Four images arranged in a square. The top two images show N and
+W movement, and S and E constitute the bottom row.
 . 2x8: Sixteen images, giving four animated images per direction. The
 top row contains the four N images followed by the four W images,
 and the bottom row contains the four S images followed by the four E
