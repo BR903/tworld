@@ -1,6 +1,4 @@
-TileImages=tiles.bmp
 Font=font.bmp
-
 ChipDeathSound=death.wav
 LevelCompleteSound=tada.wav
 PickupChipSound=chack.wav
@@ -14,11 +12,13 @@ BombSound=bomb.wav
 SplashSound=splash.wav
 
 [MS]
+TileImages=tiles.bmp
 BlockedMoveSound=oof.wav
 ChipDeathByTimeSound=ding.wav
 TickSound=tick.wav
 
 [Lynx]
+TileImages=atiles.bmp
 BlockedMoveSound=bump.wav
 TileEmptiedSound=whisk.wav
 WallCreatedSound=popup.wav
