@@ -181,6 +181,8 @@ static int extracttiles(SDL_Surface *tilesrc,
 	if (spec[n].id < 0)
 	    continue;
 	srcrect.x = spec[n].xpos * cxtile;
+	if (spec[n].xmaskpos >= 0)
+	    srcrect.x -= 3 * cxtile;
 	srcrect.y = spec[n].ypos * cytile;
 	destrect.x = 0;
 	destrect.y = spec[n].id * cytile;
@@ -192,18 +194,19 @@ static int extracttiles(SDL_Surface *tilesrc,
 	    continue;
 
 	transparency[spec[n].id] = TRUE;
-	srcrect.x = spec[n].xmaskpos * cxtile;
-	srcrect.y = spec[n].ymaskpos * cytile;
+	srcrect.x += 3 * cxtile;
+	destrect.y += NTILES * cytile;
+	SDL_BlitSurface(tilesrc, &srcrect, cctilesurface, &destrect);
+	srcrect.x += 3 * cxtile;
 	destrect.x = 0;
 	destrect.y = 0;
-	srcrect.w = destrect.w = cxtile;
-	srcrect.h = destrect.h = cytile;
 	SDL_BlitSurface(tilesrc, &srcrect, maskbuf, &destrect);
 	if (SDL_MUSTLOCK(cctilesurface))
 	    SDL_LockSurface(cctilesurface);
 	if (SDL_MUSTLOCK(maskbuf))
 	    SDL_LockSurface(maskbuf);
-	p = (Uint32*)cctilesurface->pixels + spec[n].id * cxtile * cytile;
+	p = (Uint32*)cctilesurface->pixels +
+				(spec[n].id + NTILES) * cxtile * cytile;
 	for (m = 0 ; m < cxtile * cytile ; ++m)
 	    if (((Uint8*)(maskbuf->pixels))[m] == 0)
 		p[m] = transparentpixel;
@@ -249,7 +252,7 @@ static int loadtileset(char const *filename, int nxtiles, int nytiles,
 	destfmt = SDL_GetVideoInfo()->vfmt;
     }
     cctilesurface = SDL_CreateRGBSurface(SDL_SWSURFACE,
-					 cxtile, cytile * NTILES,
+					 cxtile, 2 * NTILES * cytile,
 					 destfmt->BitsPerPixel,
 					 destfmt->Rmask, destfmt->Gmask,
 					 destfmt->Bmask, destfmt->Amask);

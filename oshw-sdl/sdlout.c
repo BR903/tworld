@@ -234,49 +234,48 @@ static char const *getonomatopoeia(unsigned long sfx)
  * Tile functions.
  */
 
-static Uint32 *tileptr(int tn)
-{
-    static Uint32     *badtile = NULL;
-
-    if (tn >= 0 && tn < NTILES)
-	return cctiles + tn * cxtile * cytile;
-    if (!badtile && screen) {
-	badtile = malloc(cxtile * cytile * sizeof *badtile);
-	memset(badtile, clr_red, cxtile * cytile * sizeof *badtile);
-    }
-    return badtile;
-}
-
 /*
  * Game display functions.
  */
 
-/* Transfer the given tile to another tile-size buffer.
- */
-static void copytile(Uint32 *dest, int tn)
+static Uint32 const *getcellimageptr(int top, int bot)
 {
-    Uint32 const       *src;
-    int			n;
+    Uint32     *dest;
+    Uint32     *src;
+    int		n;
 
-    src = tileptr(tn);
-    if (transparency[tn]) {
-	for (n = 0 ; n < cxtile * cytile ; ++n)
-	    if (src[n] != clr_transparent)
-		dest[n] = src[n];
-    } else {
-	memcpy(dest, src, cxtile * cytile * sizeof *dest);
-    }
+    src = cctiles + top * cxtile * cytile;
+    if (bot == Nothing || bot == Empty || !transparency[top])
+	return src;
+    dest = cctiles + Overlay_Buffer * cxtile * cytile;
+    memcpy(dest, cctiles + bot * cxtile * cytile,
+	   cxtile * cytile * sizeof *dest);
+    src += NTILES * cxtile * cytile;
+    for (n = 0 ; n < cxtile * cytile ; ++n)
+	if (src[n] != clr_transparent)
+	    dest[n] = src[n];
+    return dest;
+}
+
+static Uint32 const *getcreatureimageptr(int id, int dir)
+{
+    int	tileid;
+
+    tileid = entitydirtile(id, dir);
+    if (transparency[tileid])
+	tileid += NTILES;
+    return cctiles + tileid * cxtile * cytile;
 }
 
 /* Render the given tile to a screen-sized buffer at (xpos, ypos).
  */
 static void drawtile(Uint32 *scrbits, int xpos, int ypos, int tn)
 {
-    Uint32 const       *tilebits;
-    int			x, y;
+    Uint32     *tilebits;
+    int		x, y;
 
     scrbits += ypos * cxscreen + xpos;
-    tilebits = tileptr(tn);
+    tilebits = cctiles + tn * cxtile * cytile;
     if (transparency[tn]) {
 	for (y = 0 ; y < cytile ; ++y, scrbits += cxscreen)
 	    for (x = 0 ; x < cxtile ; ++x, ++tilebits)
@@ -321,7 +320,6 @@ static void drawclippedtile(Uint32 *scrbits, int xpos, int ypos,
  */
 static void displaymapview(gamestate const *state)
 {
-    Uint32		tilebuf[cxtile * cytile];
     creature const     *cr;
     int			xdisppos, ydisppos;
     int			lmap, tmap, rmap, bmap;
@@ -350,6 +348,7 @@ static void displaymapview(gamestate const *state)
 		continue;
 	    pos = y * CXGRID + x;
 	    overlaid = FALSE;
+#if 0
 	    if (transparency[state->map[pos].top.id]) {
 		if (transparency[state->map[pos].bot.id])
 		    copytile(tilebuf, floortile(Empty));
@@ -365,6 +364,13 @@ static void displaymapview(gamestate const *state)
 			    xdisplay + (x * cxtile) - (xdisppos * cxtile / 4),
 			    ydisplay + (y * cytile) - (ydisppos * cytile / 4),
 			    tilebuf);
+#else
+	    drawclippedtile((Uint32*)screen->pixels,
+			    xdisplay + (x * cxtile) - (xdisppos * cxtile / 4),
+			    ydisplay + (y * cytile) - (ydisppos * cytile / 4),
+			    getcellimageptr(state->map[pos].top.id,
+					    state->map[pos].bot.id));
+#endif
 	}
     }
 
@@ -387,10 +393,17 @@ static void displaymapview(gamestate const *state)
 	}
 	if (x < lmap || x >= rmap || y < tmap || y >= bmap)
 	    continue;
+#if 0
 	drawclippedtile((Uint32*)screen->pixels,
 			xdisplay + (x * cxtile / 4) - (xdisppos * cxtile / 4),
 			ydisplay + (y * cytile / 4) - (ydisppos * cytile / 4),
 			tileptr(entitydirtile(cr->id, cr->dir)));
+#else
+	drawclippedtile((Uint32*)screen->pixels,
+			xdisplay + (x * cxtile / 4) - (xdisppos * cxtile / 4),
+			ydisplay + (y * cytile / 4) - (ydisppos * cytile / 4),
+			getcreatureimageptr(cr->id, cr->dir));
+#endif
     }
 }
 
