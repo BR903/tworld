@@ -402,6 +402,9 @@ static int getseriesfile(char *filename, void *data)
 
     f = FALSE;
     if (config) {
+	fileclose(&file, NULL);
+	if (!openfileindir(&file, seriesdir, filename, "r", "unknown error"))
+	    return 0;
 	clearfileinfo(&series->mapfile);
 	datfilename = readconfigfile(&file, series);
 	fileclose(&file, NULL);

@@ -30,13 +30,15 @@ particularly motivated to improve the emulation of these, as they are
 pretty obscure. However, their existence may point to areas where the
 emulator could be mirroring the internal logic of the MS game better.
 <li>
-(It is debatable whether or not this one qualifies as a bug.) The
-keyboard is scanned twice per tick, once at the beginning and once in
-the middle. As a result, if Chip makes a move at the beginning of a
+The keyboard is scanned twice per tick, once at the beginning and once
+in the middle. As a result, if Chip makes a move at the beginning of a
 tick, the game does not update the display twice in a row (once after
 the creatures move and once after Chip moves), but just does it once.
-In a few places this does have a non-trivial effect on how the game
-appears, most notably when Chip tries to move against a force floor.
+In a few places this has a non-trivial effect on how the game appears,
+most notably when Chip tries to move against a force floor. I do not
+believe that this optimization ever has an real effect on the
+gameplay, however. It is still a bit of an open question in my mind,
+however, which is why it is mentioned here.
 </ol>
 <p>
 <hr>
@@ -95,16 +97,7 @@ to shut down and restart the program. That drives me crazy.
 TODO: Missing features
 <p>
 <ol>
-<li>
-The program needs to do more with the passwords than just display
-them. It should probably follow the MS pattern -- namely, that you can
-visit any level you've solved in the past, and the level immediately
-after it, or any level for which you can supply the password. All
-other levels are off limits. (This will require another change to the
-save file format -- sigh.)
-<li>
-Anything else? I thought there was a bunch of things, but I can't
-remember any others right now.
+None; the program is currently believed to be feature-complete.
 </ol>
 </body>
 </html>

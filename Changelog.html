@@ -3,7 +3,7 @@
 <title>Tile World Changelog</title>
 </head>
 <body>
-2001 Nov ??: version 0.9.0
+2001 Dec 02: version 0.9.0
 <p>
 <ul>
 <li>
@@ -11,12 +11,10 @@ Found and fixed the obscure slide delay bug that was causing the
 discrepancy in Eric Schmidt's level 29 ("PARAMECIA")!
 <li>
 Threw out all the text-drawing code and replaced it with routines that
-handle proportional fonts. Which naturally necessitated rewriting a
-bunch of the code that uses these functions. Lots of changes.
-<li>
-Created an abstract table "object", so that my tables could be
-realized either on the text console or in a proportional font equally
-well.
+deal in proportional fonts. Which naturally necessitated rewriting a
+bunch of the code that displayed text. Lots of changes. Created an
+abstract table "object", so that my tables could be realized either on
+the text console or in a proportional font equally well.
 <li>
 Implemented sound! Spent an entire weekend making 25 wave files -- and
 they still sound ridiculous. (But the fact that the game finally has
@@ -25,7 +23,12 @@ sound is nice.) Onomatopoeia is still available via a cmdline switch.
 Added password-checking code, plus functions to allow the user to jump
 to a level by entering a password.
 <li>
-Changed the save file format (again!) to store password information.
+Changed the save file format (again!) to store password information,
+and to be a little smaller.
+<li>
+Added the configuration file feature, with a few configuration
+options. This necessitated adding yet another directory, and once
+again moving the old one.
 <li>
 Various bug fixes that I've forgotten about while working on the other
 things.
