@@ -77,6 +77,10 @@ static int	showhistogram = FALSE;
  */
 static int	mudsucking = 1;
 
+/* Frame-skipping disable flag.
+ */
+static int	noframeskip = FALSE;
+
 /* The sound buffer scaling factor.
  */
 static int	soundbufsize = -1;
@@ -701,7 +705,7 @@ static int playgame(gamespec *gs, int firstcmd)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick();
+	render = waitfortick() || noframeskip;
 	cmd = input(FALSE);
 	if (cmd == CmdQuitLevel) {
 	    quitgamestate();
@@ -790,7 +794,7 @@ static int playbackgame(gamespec *gs)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick();
+	render = waitfortick() || noframeskip;
 	switch (input(FALSE)) {
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
@@ -1114,7 +1118,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     mudsucking = 1;
     soundbufsize = 0;
 
-    initoptions(&opts, argc - 1, argv + 1, "aD:dfHhL:lm:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dFfHhL:lm:pqR:S:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1133,7 +1137,8 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = !showhistogram;			break;
-	  case 'f':	fullscreen = !fullscreen;			break;
+	  case 'f':	noframeskip = !noframeskip;			break;
+	  case 'F':	fullscreen = !fullscreen;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
 	  case 'a':	++soundbufsize;					break;
