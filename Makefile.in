@@ -95,6 +95,7 @@ install: tworld
 	mkdir -p $(sharedir)/res
 	mkdir -p $(mandir)/man6
 	cp -i sets/*.dac $(sharedir)/sets/.
+	cp -i data/*.dat $(sharedir)/data/.
 	cp -i resources/rc $(sharedir)/res/.
 	cp -i resources/*.bmp $(sharedir)/res/.
 	cp -i resources/*.wav $(sharedir)/res/.
