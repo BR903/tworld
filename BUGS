@@ -8,8 +8,6 @@ ___________________________________________________________________________
 
 Bugs in the MS game logic emulation
 
-* The timing of when clones emerge from clone machines is slightly off.
-  This can have a material effect on how a level plays out.
 * Some subtleties of timings on "simultaneous" events are incorrect. For
   example, if Chip enters a teleport in such a way as to cause a block to
   press a button, the button's effect is applied after selecting a
@@ -39,8 +37,10 @@ Bugs in the Lynx game logic emulation
   necessary to start finding patterns, and there are few levels that have
   the necessary elements for such investigation. So this one is still up in
   the air.
-* "Diagonal" moves are not supported. The keyboard-handling needs to be
-  changed to deal with multiple keypresses in order to make this work.
+* "Diagonal" moves (moving in one direction while pushing in a
+  perpendicular direction) are not supported. The keyboard-handling needs
+  to be changed to deal with multiple keypresses in order to make this
+  work.
 ___________________________________________________________________________
 
 Other bugs and misfeatures
