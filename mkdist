@@ -1,20 +1,31 @@
 #!/bin/bash
 
-/home/breadbox/p/html2txt < ./README.html > ./README
-/home/breadbox/p/html2txt < ./BUGS.html > ./BUGS
-/home/breadbox/p/html2txt < ./INSTALL.html > ./INSTALL
-/home/breadbox/p/html2txt < ./Changelog.html > ./Changelog
+#
+# Update the documentation files.
+#
+
+html2txt < ./README.html > ./README
+html2txt < ./BUGS.html > ./BUGS
+html2txt < ./INSTALL.html > ./INSTALL
+html2txt < ./Changelog.html > ./Changelog
 
 (cd docs && ./mkdocs tworld.doc)
 
-VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
+#
+# Tar everything up in a fresh versioned directory.
+#
 
+VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
 mkdir tworld-$VER
 tar -cf - `cat MANIFEST` | tar -C tworld-$VER -xf -
 rm -f tworld-$VER.tar.gz
 tar -cvf tworld-$VER.tar tworld-$VER
 gzip -9 tworld-$VER.tar
 rm -rf tworld-$VER
+
+#
+# Finally, grab the files to update on the website.
+#
 
 rm -f twdocs.tar twdocs.tar.gz INSTALL-linux.html INSTALL-win32.html
 cp INSTALL.html INSTALL-linux.html

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Copy all the source files to a fresh directory.
+#
+
 cd win32
 if test -d build ; then rm -rf build ; fi
 mkdir build
@@ -14,26 +18,48 @@ mkdir docs
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
 
+#
+# Build the Windows binary.
+#
+
 sh ./cross-configure.sh --with-win32
 sh ./cross-make.sh tworld.exe
 
-/home/breadbox/p/html2txt < ../../README.html > README.txt
-/home/breadbox/p/html2txt < ../INSTALL.html > INSTALL.txt
-/home/breadbox/p/html2txt < ../../BUGS.html > BUGS.txt
-/home/breadbox/p/html2txt < ../../Changelog.html > Changelog.txt
+#
+# Update the documentation.
+#
+
+html2txt < ../../README.html > README.txt
+html2txt < ../INSTALL.html > INSTALL.txt
+html2txt < ../../BUGS.html > BUGS.txt
+html2txt < ../../Changelog.html > Changelog.txt
 mv COPYING COPYING.txt
 mv -i docs/*.html .
 
-VER=`tr -cd 0123456789. < ver.h`
+#
+# Put everything into a single zipfile.
+#
 
+VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
 zip -9 -l tworld-$VER-win32.zip README.txt INSTALL.txt Changelog.txt BUGS.txt
 zip -9 -l tworld-$VER-win32.zip COPYING.txt README-SDL.txt
 zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.com
 zip -9 -l tworld-$VER-win32.zip tworld.html sets/*.dac res/rc
 zip -9    tworld-$VER-win32.zip res/*.bmp res/*.wav data/*.dat
 
-rm -f ../../tworld-$VER-win32.zip
-mv tworld-$VER-win32.zip ../..
+#
+# Make a self-extracting archive.
+#
+
+cat ../unzipsfx.exe tworld-$VER-win32.zip > tworld-$VER-win32.exe
+zip -A tworld-$VER-win32.exe
+
+#
+# Copy the zipfiles to the starting directory and clean up.
+#
+
+rm -f ../../tworld-$VER-win32.zip ../../tworld-$VER-win32.exe
+mv tworld-$VER-win32.zip tworld-$VER-win32.exe ../..
 cd ..
 rm -rf build
 cd ..
