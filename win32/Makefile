@@ -38,6 +38,7 @@ tworldres.o: tworld.ico
 mklynxcc.exe: mklynxcc.c
 	$(CC) -Wall -W -o $@ $^
 
+all: tworld.exe mklynxcc.exe
 
 clean:
 	rm -f $(OBJS) tworld.exe mklynxcc.exe
