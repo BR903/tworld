@@ -56,12 +56,19 @@ solution.o : solution.c solution.h defs.h gen.h err.h fileio.h
 res.o      : res.c res.h defs.h gen.h fileio.h err.h oshw.h
 lxlogic.o  : lxlogic.c logic.h defs.h gen.h err.h state.h random.h
 mslogic.o  : mslogic.c logic.h defs.h gen.h err.h state.h random.h
-help.o     : help.c help.h defs.h gen.h state.h oshw.h ver.h
+help.o     : help.c help.h defs.h gen.h state.h oshw.h ver.h comptime.h
 score.o    : score.c score.h defs.h gen.h err.h play.h
 random.o   : random.c random.h defs.h gen.h
 cmdline.o  : cmdline.c cmdline.h gen.h
 fileio.o   : fileio.c fileio.h defs.h gen.h err.h
 err.o      : err.c oshw.h err.h
+
+#
+# Generated files
+#
+
+comptime.h:
+	echo \#define COMPILE_TIME \"`date '+%Y %b %e %T %Z'`\" > comptime.h
 
 #
 # Libraries
@@ -94,12 +101,12 @@ install: tworld
 	cp -i docs/tworld.6 $(mandir)/man6/.
 
 clean:
-	rm -f $(OBJS) tworld mklynxcc config.*
+	rm -f $(OBJS) tworld mklynxcc comptime.h config.*
 	rm -f tworldres.o tworld.exe mklynxcc.exe
 	(cd oshw && make clean)
 
 spotless:
-	rm -f $(OBJS) tworld mklynxcc config.* configure
+	rm -f $(OBJS) tworld mklynxcc comptime.h config.* configure
 	rm -f tworldres.o tworld.exe mklynxcc.exe
 	(cd oshw && make spotless)
 #	rm -f Makefile

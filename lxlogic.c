@@ -572,6 +572,8 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     { ALL_IN_OUT, ALL_OUT, ALL_OUT },
     /* Block_Static */
     { 0, 0, 0 },
+    /* Drowned_Chip */
+    { 0, 0, 0 },
     /* Burned_Chip */
     { 0, 0, 0 },
     /* Bombed_Chip */
@@ -583,8 +585,6 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     /* Exit_Extra_2 */
     { 0, 0, 0 },
     /* Overlay_Buffer */
-    { 0, 0, 0 },
-    /* Floor_Reserved3 */
     { 0, 0, 0 },
     /* Floor_Reserved2 */
     { 0, 0, 0 },

@@ -81,15 +81,15 @@ enum
 
     Block_Static	= 0x36,
 
-    Burned_Chip		= 0x37,
-    Bombed_Chip		= 0x38,
-    Exited_Chip		= 0x39,
-    Exit_Extra_1	= 0x3A,
-    Exit_Extra_2	= 0x3B,
+    Drowned_Chip	= 0x37,
+    Burned_Chip		= 0x38,
+    Bombed_Chip		= 0x39,
+    Exited_Chip		= 0x3A,
+    Exit_Extra_1	= 0x3B,
+    Exit_Extra_2	= 0x3C,
 
-    Overlay_Buffer	= 0x3C,
+    Overlay_Buffer	= 0x3D,
 
-    Floor_Reserved3	= 0x3D,
     Floor_Reserved2	= 0x3E,
     Floor_Reserved1	= 0x3F,
 

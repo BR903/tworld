@@ -9,6 +9,7 @@
 #include	"state.h"
 #include	"oshw.h"
 #include	"ver.h"
+#include	"comptime.h"
 #include	"help.h"
 
 #define	array(a)	a, (sizeof a / sizeof *a)
@@ -42,7 +43,7 @@ tablespec const *yowzitch = &yowzitch_table;
 static char *vourzhon_items[] = {
     "1+*", "1-Tile World: version " VERSION,
     "1+",  "1-Copyright (C) 2001,2002 by Brian Raiter",
-    "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
+    "1+",  "1-compiled " COMPILE_TIME,
     "1+*", "1!This program is free software; you can redistribute it and/or"
 	   " modify it under the terms of the GNU General Public License as"
 	   " published by the Free Software Foundation; either version 2 of"

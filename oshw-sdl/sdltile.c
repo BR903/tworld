@@ -1,4 +1,4 @@
-/* sdltiles.c: Functions for rendering tile images.
+/* sdltile.c: Functions for rendering tile images.
  *
  * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -125,7 +125,7 @@ static tileidinfo const tileidmap[NTILES] = {
     { Burned_Chip,	 3,  4, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Bombed_Chip,	 3,  5, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Exited_Chip,	 3,  9, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Water_Splash,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
+    { Drowned_Chip,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Swimming_Chip + 0, 3, 12, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Swimming_Chip + 1, 3, 13, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Swimming_Chip + 2, 3, 14, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
@@ -282,6 +282,8 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
 
     if (!tileptr[top].celcount)
 	die("map element %02X has no suitable image", top);
+    if (top == Water_Splash)
+	warn("rendering a splash");
     nt = (timerval + 1) % tileptr[top].celcount;
     if (bot == Nothing || bot == Empty || !tileptr[top].transp[0]) {
 	if (tileptr[top].opaque[nt])

@@ -579,7 +579,7 @@ static void updatecreature(creature const *cr)
 	if (getchipstatus()) {
 	    switch (getchipstatus()) {
 	      case SF_CHIPBURNED:	tile->id = Burned_Chip;		return;
-	      case SF_CHIPDROWNED:	tile->id = Water_Splash;	return;
+	      case SF_CHIPDROWNED:	tile->id = Drowned_Chip;	return;
 	    }
 	} else if (cellat(cr->pos)->bot.id == Water) {
 	    id = Swimming_Chip;
@@ -827,13 +827,13 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     /* Boots_Fire */		{ NWSE, NWSE, 0 },
     /* Boots_Water */		{ NWSE, NWSE, 0 },
     /* Block_Static */		{ NWSE, 0, 0 },
+    /* Drowned_Chip */		{ 0, 0, 0 },
     /* Burned_Chip */		{ 0, 0, 0 },
     /* Bombed_Chip */		{ 0, 0, 0 },
     /* Exited_Chip */		{ 0, 0, 0 },
     /* Exit_Extra_1 */		{ 0, 0, 0 },
     /* Exit_Extra_2 */		{ 0, 0, 0 },
     /* Overlay_Buffer */	{ 0, 0, 0 },
-    /* Floor_Reserved3 */	{ 0, 0, 0 },
     /* Floor_Reserved2 */	{ 0, 0, 0 },
     /* Floor_Reserved1 */	{ 0, 0, 0 },
 };
@@ -1864,7 +1864,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 /* 30 blocked SE		*/	{ TRUE,  Wall_Southeast,    NIL },
 /* 31 cloning machine		*/	{ TRUE,  CloneMachine,	    NIL },
 /* 32 force all directions	*/	{ TRUE,  Slide_Random,	    NIL },
-/* 33 drowning Chip		*/	{ TRUE,  Water_Splash,	    NIL },
+/* 33 drowning Chip		*/	{ TRUE,  Drowned_Chip,	    NIL },
 /* 34 burned Chip		*/	{ TRUE,  Burned_Chip,	    NIL },
 /* 35 burned Chip		*/	{ TRUE,  Bombed_Chip,	    NIL },
 /* 36 not used			*/	{ TRUE,  HiddenWall_Perm,   NIL },
