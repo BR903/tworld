@@ -18,7 +18,7 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "2-Usage:", "1!tworld [-hvVdlstpqFaHf] [-n N] [-DLRS DIR] [NAME] [LEVEL]",
+    "2-Usage:", "1!tworld [-hvVdlstpqrFaHf] [-n N] [-DLRS DIR] [NAME] [LEVEL]",
     "1- ", "1--D ", "1!Read data files from DIR instead of the default.",
     "1- ", "1--L ", "1!Read level sets from DIR instead of the default.",
     "1- ", "1--R ", "1!Read resource files from DIR instead of the default.",
@@ -26,6 +26,7 @@ static char *yowzitch_items[] = {
     "1- ", "1--p ", "1!Disable password checking.",
     "1- ", "1--F ", "1!Run in fullscreen mode.",
     "1- ", "1--q ", "1!Run quietly.",
+    "1- ", "1--r ", "1!Run in read-only mode; solutions will not be saved.",
     "1- ", "1--n ", "1!Set initial volume level to N.",
     "1- ", "1--a ", "1!Double the size of the sound buffer (can be repeated).",
     "1- ", "1--H ", "1!Produce histogram of idle time upon exit.",
@@ -40,7 +41,7 @@ static char *yowzitch_items[] = {
     "3!NAME specifies which data file to use.",
     "3!LEVEL specifies which level to start at."
 };
-static tablespec const yowzitch_table = { 21, 3, 2, -1, yowzitch_items };
+static tablespec const yowzitch_table = { 22, 3, 2, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
 
 /* Version and license information.
