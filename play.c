@@ -10,6 +10,7 @@
 #include	"err.h"
 #include	"state.h"
 #include	"oshw.h"
+#include	"res.h"
 #include	"mslogic.h"
 #include	"lxlogic.h"
 #include	"random.h"
@@ -40,6 +41,7 @@ static int setrulesetbehavior(int ruleset)
 
     if (ruleset == lastruleset)
 	return TRUE;
+    lastruleset = ruleset;
 
     switch (ruleset) {
       case Ruleset_Lynx:
@@ -57,8 +59,12 @@ static int setrulesetbehavior(int ruleset)
 	settimersecond(1100);
 	break;
       default:
+	die("Unknown ruleset requested");
 	return FALSE;
     }
+
+    if (!loadgameresources(ruleset) || !creategamedisplay())
+	die("Unable to proceed due to previous errors.");
 
     return TRUE;
 }
@@ -68,13 +74,16 @@ static int setrulesetbehavior(int ruleset)
  */
 int initgamestate(gameseries *series, int level, int replay)
 {
-    setrulesetbehavior(series->ruleset);
+    if (!setrulesetbehavior(series->ruleset))
+	return FALSE;
 
     memset(&state, 0, sizeof state);
     state.game = &series->games[level];
     state.ruleset = series->ruleset;
-    state.soundeffect = NULL;
     state.lastmove = NIL;
+    state.statusflags |= SF_ONOMATOPOEIA;
+    state.soundeffects = 0;
+    state.timelimit = state.game->time * TICKS_PER_SECOND;
 
     if (replay) {
 	if (!state.game->savedsolution.count)
@@ -116,7 +125,7 @@ int doturn(int cmd)
     action	act;
     int		n;
 
-    state.soundeffect = NULL;
+    state.soundeffects = 0;
     state.currenttime = gettickcount();
     if (state.replay < 0) {
 	if (cmd != CmdPreserve)
@@ -144,9 +153,6 @@ int doturn(int cmd)
 
     if (n)
 	return n;
-    if (state.game->time)
-	if (state.currenttime / TICKS_PER_SECOND >= state.game->time)
-	    return -1;
 
     return 0;
 }

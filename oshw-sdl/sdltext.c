@@ -31,15 +31,15 @@ static void putline(int xpos, int ypos, int len, char const *text)
     unsigned char		b;
     int				n, x, y;
 
-    top = surface->pixels + ypos * surface->pitch;
+    top = (unsigned char*)surface->pixels + ypos * surface->pitch;
     for (n = 0 ; n < len ; ++n) {
 	ch = *(unsigned char const*)(text + n);
 	glyph = font->bits + ch * font->h;
-	dest = top + xpos;
+	dest = (unsigned char*)(((Uint32*)top) + xpos);
 	for (y = 0 ; y < font->h ; ++y) {
 	    for (x = 0, b = 128 ; b ; ++x, b >>= 1)
 		if (glyph[y] & b)
-		    dest[x] = font->color;
+		    ((Uint32*)dest)[x] = font->color;
 	    dest += surface->pitch;
 	}
 	xpos += font->w;
@@ -125,16 +125,14 @@ void _sdlscrollredraw(scrollinfo *scroll)
     fontinfo const     *origfont;
     int			len, n, y;
 
-    if (scroll->bkgnd >= 0)
-	SDL_FillRect(surface, &scroll->area, scroll->bkgnd);
+    SDL_FillRect(surface, &scroll->area, scroll->bkgnd);
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
 
     y = scroll->area.y;
     origfont = font;
     selfont = *font;
-    if (scroll->highlight >= 0)
-	selfont.color = scroll->highlight;
+    selfont.color = scroll->highlight;
     for (n = scroll->topitem ; n < scroll->itemcount ; ++n) {
 	if (scroll->area.y + scroll->area.h - y < font->h)
 	    break;
@@ -193,14 +191,14 @@ int _sdlscrollmove(scrollinfo *scroll, int delta)
 
     n = scroll->index;
     switch (delta) {
-      case -4:	n = 0;					break;
-      case -3:	n -= scroll->linecount;			break;
-      case -2:	n -= (scroll->linecount + 1) / 2;	break;
-      case -1:	--n;					break;
-      case +1:	++n;					break;
-      case +2:	n += (scroll->linecount + 1) / 2;	break;
-      case +3:	n += scroll->linecount;			break;
-      case +4:	n = scroll->itemcount - 1;		break;
+      case ScrollUp:		--n;					break;
+      case ScrollDn:		++n;					break;
+      case ScrollHalfPageUp:	n -= (scroll->linecount + 1) / 2;	break;
+      case ScrollHalfPageDn:	n += (scroll->linecount + 1) / 2;	break;
+      case ScrollPageUp:	n -= scroll->linecount;			break;
+      case ScrollPageDn:	n += scroll->linecount;			break;
+      case ScrollToTop:		n = 0;					break;
+      case ScrollToBot:		n = scroll->itemcount - 1;		break;
     }
     if (n < 0) {
 	n = 0;
@@ -216,7 +214,7 @@ int _sdlscrollmove(scrollinfo *scroll, int delta)
 /* Initialize the scrolling list's structure.
  */
 int _sdlcreatescroll(scrollinfo *scroll, SDL_Rect const *area,
-		     int bkgndcolor, int highlightcolor,
+		     Uint32 bkgndcolor, Uint32 highlightcolor,
 		     int itemcount, char const **items)
 {
     scroll->area = *area;

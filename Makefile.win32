@@ -8,7 +8,7 @@ CFLAGS += $(shell sdl-config --cflags)
 LOADLIBES += $(shell sdl-config --libs)
 
 OBJS = \
-tworld.o series.o play.o solution.o lxlogic.o mslogic.o help.o score.o \
+tworld.o series.o play.o solution.o res.o lxlogic.o mslogic.o help.o score.o \
 random.o cmdline.o fileio.o err.o liboshw.a
 
 tworld.exe: $(OBJS)

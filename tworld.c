@@ -11,24 +11,13 @@
 #include	"defs.h"
 #include	"err.h"
 #include	"series.h"
+#include	"res.h"
 #include	"play.h"
 #include	"score.h"
 #include	"solution.h"
 #include	"help.h"
 #include	"oshw.h"
 #include	"cmdline.h"
-
-/* Define this symbol to compile in a directory for the data files.
- */
-#ifndef DATADIR
-#define	DATADIR	""
-#endif
-
-/* Define this symbol to compile in a directory for the saved-game files.
- */
-#ifndef SAVEDIR
-#define	SAVEDIR	""
-#endif
 
 /* The data needed to identify what is being played.
  */
@@ -51,31 +40,31 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvls] [-D DIR] [-S DIR] [NAME] [LEVEL]\n"
-	"   -D  Read data files from DIR instead of the default\n"
+	"Usage: tworld [-hvls] [-DS DIR] [NAME] [LEVEL]\n"
+	"   -D  Read shared data from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
 	"   -l  Display the list of available data files and exit\n"
-	"   -s  Display the scores for the selected data files and exit\n"
+	"   -s  Display your scores for the selected data file and exit\n"
 	"   -h  Display this help and exit\n"
 	"   -v  Display version information and exit\n"
-	"NAME specifies which setup file to read.\n"
-	"LEVEL specifies which level to begin with.\n"
+	"NAME specifies which data file to use.\n"
+	"LEVEL specifies which level to start at.\n"
 	"(Press ? during the game for further help.)\n";
 
 /* Online version data.
  */
 static char const *vourzhon =
-	"TileWorld, version 0.6.0.\n"
+	"TileWorld, version 0.7.0.\n\n"
 	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
 	"General Public License; either version 2 of the License, or at\n"
 	"your option any later version.\n"
-	"This program is distributed without any warranty, express or\n"
+	"   This program is distributed without any warranty, express or\n"
 	"implied. See COPYING for details.\n"
-	"(The author also requests that you voluntarily refrain from\n"
+	"   (The author also requests that you voluntarily refrain from\n"
 	"redistributing this version of the program, as it is still pretty\n"
-	"messy.)\n"
-	"Please direct bug reports to breadbox@muppetlabs.com, or post them\n"
-	"on annexcafe.chips.challenge.\n";
+	"rough around the edges.)\n"
+	"   Please direct bug reports to breadbox@muppetlabs.com, or post\n"
+	"them on annexcafe.chips.challenge.\n";
 
 /*
  * The top-level user interface functions.
@@ -87,17 +76,17 @@ static char const *vourzhon =
 static int scrollinputcallback(int *move)
 {
     switch (input(TRUE)) {
-      case CmdPrev10:		*move = -2;		break;
-      case CmdNorth:		*move = -1;		break;
-      case CmdPrev:		*move = -1;		break;
-      case CmdPrevLevel:	*move = -1;		break;
-      case CmdSouth:		*move = +1;		break;
-      case CmdNext:		*move = +1;		break;
-      case CmdNextLevel:	*move = +1;		break;
-      case CmdNext10:		*move = +2;		break;
-      case CmdProceed:		*move = TRUE;		return FALSE;
-      case CmdQuitLevel:	*move = FALSE;		return FALSE;
-      case CmdQuit:					exit(0);
+      case CmdPrev10:		*move = ScrollHalfPageUp;	break;
+      case CmdNorth:		*move = ScrollUp;		break;
+      case CmdPrev:		*move = ScrollUp;		break;
+      case CmdPrevLevel:	*move = ScrollUp;		break;
+      case CmdSouth:		*move = ScrollDn;		break;
+      case CmdNext:		*move = ScrollDn;		break;
+      case CmdNextLevel:	*move = ScrollDn;		break;
+      case CmdNext10:		*move = ScrollHalfPageDn;	break;
+      case CmdProceed:		*move = TRUE;			return FALSE;
+      case CmdQuitLevel:	*move = FALSE;			return FALSE;
+      case CmdQuit:						exit(0);
     }
     return TRUE;
 }
@@ -315,22 +304,71 @@ static void playbackgame(gamespec *gs)
  * Ancillary top-level functions.
  */
 
+/* Assign values to the different directories that the program uses.
+ */
+static void initdirs(char const *root, char const *save)
+{
+    unsigned int	maxpath = getpathbufferlen() - 1;
+    char const	       *dir;
+
+    if (!save && (dir = getenv("TWORLDSAVEDIR")) && *dir) {
+	if (strlen(dir) < maxpath)
+	    save = dir;
+	else
+	    warn("Value of environment variable TWORLDSAVEDIR is too long");
+    }
+
+    if (!root) {
+	if ((dir = getenv("TWORLDDIR")) && *dir) {
+	    if (strlen(dir) < maxpath - 8)
+		root = dir;
+	    else
+		warn("Value of environment variable TWORLDDIR is too long");
+	}
+	if (!root) {
+#ifdef ROOTDIR
+	    root = ROOTDIR;
+#else
+	    root = ".";
+#endif
+	}
+    }
+
+    resdir = getpathbuffer();
+    strcpy(resdir, root);
+
+    seriesdir = getpathbuffer();
+    strcpy(seriesdir, root);
+    combinepath(seriesdir, "data");
+
+    savedir = getpathbuffer();
+    if (!save) {
+#ifdef SAVEDIR
+	save = SAVEDIR;
+#else
+	if ((dir = getenv("HOME")) && *dir && strlen(dir) < maxpath - 8) {
+	    strcpy(savedir, dir);
+	    combinepath(savedir, ".tworld");
+	} else {
+	    strcpy(savedir, root);
+	    combinepath(savedir, "save");
+	}
+#endif
+    } else {
+	strcpy(savedir, save);
+    }
+}
+
 /* Parse the command-line options and arguments, and initialize the
  * user-controlled options.
  */
 static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 {
     cmdlineinfo	opts;
-    char const *dir;
-    unsigned	maxpath;
+    char const *optrootdir = NULL;
+    char const *optsavedir = NULL;
     int		ch, n;
 
-    maxpath = getpathbufferlen();
-
-    datadir = getpathbuffer();
-    strcpy(datadir, DATADIR);
-    savedir = getpathbuffer();
-    strcpy(savedir, SAVEDIR);
     start->filename = getpathbuffer();
     *start->filename = '\0';
     start->levelnum = 0;
@@ -349,10 +387,10 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    if (sscanf(opts.val, "%d", &n) == 1)
 		start->levelnum = n;
 	    else
-		strncpy(start->filename, opts.val, maxpath - 1);
+		strncpy(start->filename, opts.val, getpathbufferlen() - 1);
 	    break;
-	  case 'D':	strncpy(datadir, opts.val, maxpath - 1);	break;
-	  case 'S':	strncpy(savedir, opts.val, maxpath - 1);	break;
+	  case 'D':	optrootdir = opts.val;				break;
+	  case 'S':	optsavedir = opts.val;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
 	  case 'h':	fputs(yowzitch, stdout); 	   exit(EXIT_SUCCESS);
@@ -371,37 +409,11 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	}
     }
 
-    if (!*datadir) {
-	if ((dir = getenv("TWORLDDATADIR"))) {
-	    if (strlen(dir) >= maxpath)
-		die("value of TWORLDDATADIR env variable is too long");
-	    strcpy(datadir, dir);
-	} else {
-	    datadir[0] = '.';
-	    datadir[1] = '\0';
-	    combinepath(datadir, "data");
-	}
-    }
-    datadir[maxpath - 1] = '\0';
-    if (!*savedir) {
-	if ((dir = getenv("TWORLDSAVEDIR"))) {
-	    if (strlen(dir) >= maxpath)
-		die("value of TWORLDSAVEDIR env variable is too long");
-	    strcpy(savedir, dir);
-	} else if ((dir = getenv("HOME")) && strlen(dir) < maxpath - 8) {
-	    strcpy(savedir, dir);
-	    combinepath(savedir, ".tworld");
-	} else {
-	    savedir[0] = '.';
-	    savedir[1] = '\0';
-	    combinepath(savedir, "save");
-	}
-    }
-    savedir[maxpath - 1] = '\0';
-
     if ((start->listscores || start->levelnum) && !*start->filename)
 	strcpy(start->filename, "chips.dat");
-    start->filename[maxpath - 1] = '\0';
+    start->filename[getpathbufferlen() - 1] = '\0';
+
+    initdirs(optrootdir, optsavedir);
 
     return TRUE;
 }

@@ -50,7 +50,7 @@ int createscorelist(gameseries const *series,
     int			count, used, n;
 
     ptrs = malloc((series->count + 1) * sizeof *ptrs);
-    textheap = malloc((series->count + 1) * 72);
+    textheap = malloc((series->count + 1) * 60);
     used = 0;
     if (!ptrs || !textheap)
 	memerrexit();
@@ -61,21 +61,22 @@ int createscorelist(gameseries const *series,
 	    break;
 	ptrs[count] = textheap + used;
 	if (!hassolution(game)) {
-	    used += sprintf(ptrs[count], "%3d  %-30s",
+	    used += sprintf(ptrs[count], "%3d  %-20s",
 					 game->number, game->name);
 	} else {
+	    p = ptrs[count];
+	    p += sprintf(p, "%3d  %-20.20s", game->number, game->name);
 	    levelscore = game->number * 500;
-	    if (game->time)
+	    p += commify(p, levelscore, 8);
+	    if (game->time) {
 		timescore = 10 * (game->time
 					- game->besttime / TICKS_PER_SECOND);
-	    else
+		p += commify(p, timescore, 7);
+	    } else {
 		timescore = 0;
-
-	    p = ptrs[count];
-	    p += sprintf(p, "%3d  %-30.30s", game->number, game->name);
-	    p += commify(p, levelscore, 8);
-	    p += commify(p, timescore, 13);
-	    p += commify(p, levelscore + timescore, 13);
+		p += sprintf(p, "    ---");
+	    }
+	    p += commify(p, levelscore + timescore, 8);
 	    totalscore += levelscore + timescore;
 	    used += p - ptrs[count];
 	}
@@ -84,19 +85,19 @@ int createscorelist(gameseries const *series,
     }
     if (count) {
 	ptrs[count] = textheap + used;
-	n = sprintf(ptrs[count], "%3s  %-51.51s", "", "Total Score");
+	n = sprintf(ptrs[count], "%3s  %-30.30s", "", "Total Score");
 	commify(ptrs[count] + n, totalscore, 13);
     } else {
 	ptrs[0] = textheap;
-	strcpy(ptrs[0], "     (No levels completed)");
+	strcpy(ptrs[0], "(No levels)");
     }	
     ++count;
 
     *pptrs = ptrs;
     *pcount = count;
     if (pheader)
-	*pheader = "Lvl  Name                       "
-		   "Level bonus   Time bonus  Level score";
+	*pheader = "Lvl  Name                    Base  Bonus   Score";
+
     return TRUE;
 }
 

@@ -17,9 +17,9 @@
  */
 typedef	struct fontinfo {
     unsigned char      *bits;	/* 256 characters times h bytes */
-    unsigned char	color;	/* the color index to use for the font */
-    unsigned char	w;	/* width of each character */
-    unsigned char	h;	/* height of each character */
+    Uint32		color;	/* the color index to use for the font */
+    short		w;	/* width of each character */
+    short		h;	/* height of each character */
 } fontinfo;
 
 /* Specify the surface to draw on and the font to use for the
@@ -51,11 +51,11 @@ extern void _sdlputmltext(SDL_Rect *area, char const *text);
  */
 typedef	struct scrollinfo {
     SDL_Rect		area;		/* the rectangle to draw in */
-    short		bkgnd;		/* the background color index */
-    short		highlight;	/* the highlight color index */
-    short		maxlen;		/* how many chars fit in one line */
+    Uint32		bkgnd;		/* the background color index */
+    Uint32		highlight;	/* the highlight color index */
     int			itemcount;	/* the number of items in the list */
     short		linecount;	/* how many lines fit in area */
+    short		maxlen;		/* how many chars fit in one line */
     int			topitem;	/* the uppermost visible line */
     int			index;		/* the line currently selected */
     char const	      **items;		/* the list of lines of text */
@@ -65,7 +65,7 @@ typedef	struct scrollinfo {
  * structure with the other arguments.
  */
 extern int _sdlcreatescroll(scrollinfo *scroll, SDL_Rect const *area,
-			    int bkgndcolor, int highlightcolor,
+			    Uint32 bkgndcolor, Uint32 highlightcolor,
 			    int itemcount, char const **items);
 
 /* Display the scrolling list.
@@ -80,16 +80,9 @@ extern int _sdlscrollindex(scrollinfo const *scroll);
  */
 extern int _sdlscrollsetindex(scrollinfo *scroll, int pos);
 
-/* Change the index of the selected line as follows:
- * -4 = move to the first item
- * -3 = move up a page's worth of items
- * -2 = move up a half-page's worth of items
- * -1 = move up one item
- * +1 = move down one item
- * +2 = move down a half-page's worth of items
- * +3 = move down a page's worth of items
- * +4 = move to the last item
+/* Change the index of the selected line.
  */
 extern int _sdlscrollmove(scrollinfo *scroll, int delta);
+
 
 #endif

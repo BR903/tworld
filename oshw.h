@@ -67,8 +67,21 @@ extern int input(int wait);
 extern int anykey(void);
 
 /*
+ * Resource-loading functions.
+ */
+
+extern int loadsmalltileset(char const *filename, int complain);
+extern int loadlargetileset(char const *filename, int complain);
+extern void freetileset(void);
+
+/*
  * Video output functions.
  */
+
+/* Create a display surface appropriate to the requirements of the
+ * game.
+ */
+extern int creategamedisplay(void);
 
 /* Display the current game state. timeleft and besttime provide the
  * current time on the clock and the best time recorded for the level,
@@ -88,7 +101,7 @@ extern int displayendmessage(int completed);
  * upon return, the value will be changed to the item that was finally
  * selected. inputcallback points to a function that is called after
  * displaying the list. The function is passed a pointer to an
- * integer; this value should be filled in with an integer indicating
+ * integer; this value should be filled in with an enum value indicating
  * how the selection is to be moved. If the return value from the
  * function is TRUE, the display is updated and the function is called
  * again. If the return value from the function is FALSE,
@@ -98,6 +111,16 @@ extern int displayendmessage(int completed);
 extern int displaylist(char const *title, char const *header,
 		       char const **items, int itemcount, int *index,
 		       int (*inputcallback)(int*));
+
+/* Enum values for moving the selection.
+ */
+enum {
+    ScrollNop = 0,
+    ScrollUp,		ScrollDn,
+    ScrollPageUp,	ScrollPageDn,
+    ScrollHalfPageUp,	ScrollHalfPageDn,
+    ScrollToTop,	ScrollToBot
+};
 
 /*
  * Miscellaneous functions.
@@ -152,6 +175,6 @@ enum { HELP_TABTEXT, HELP_OBJECTS };
  * the right of the indicated tiles.
  */
 extern int displayhelp(int type, char const *title,
-		       void const *text, int textcount);
+		       void const *text, int textcount, int completed);
 
 #endif

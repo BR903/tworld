@@ -1,3 +1,21 @@
+2001 Oct 21: 0.7.0
+
+* Altered handling of the slip list in the MS game logic. Creatures on the
+  slip list now have their slip direction stored separately from their
+  pointed direction, and the former is determined at the time they enter a
+  tile, instead of just before moving off of it.
+* My first serious attempt at implementing slide delay!
+* Many little tweaks to the MS logic. I think it's getting close....
+* The tile images are no longer compiled into the binary; instead they are
+  loaded out of an external bitmap file. The rendering code was changed to
+  use 32-bit images internally instead of 8-bit images, so that all types
+  of bitmaps can be accepted.
+* Added a new shared subdirectory for holding the data files; the main
+  shared directory is now used to hold images.
+* Altered the onomatopoeia code to ease future introduction of sound.
+* Fixed the Lynx bug regarding the bequeathing of a slide token, or rather
+  the lack thereof, when Chip is at a force-floor dead end.
+
 2001 Oct 05: version 0.6.0
 
 * Rewrote several fundamentals of the MS game logic, in order to bring it

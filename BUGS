@@ -8,31 +8,15 @@ ___________________________________________________________________________
 
 Bugs in the MS game logic emulation
 
-* The clone does not quite seem to handle teleporting correctly when more
-  than one entity is teleporting at the same time. I don't know what the
-  general rule is for this situation. Also, when creatures (other than
-  Chip) go through a teleport, the emulator shows them briefly on the
-  teleport square. In the actual MS game, only Chip is ever seen entering a
-  teleport square. I'm not sure if this makes any difference to the game
-  logic yet.
-* "Slide delay" is not emulated. At all. So far my attempts at doing so
-  have given rather poor results.
+* Some subtleties of timings on "simultaneous" events are incorrect. For
+  example, if Chip enters a teleport in such a way as to cause a block to
+  press a button, the button's effect is applied after selecting a
+  teleport. In the real game it is the other way round.
 * Chips move's are "quantized" so as to occur exactly on 1/20-second
-  intervals, rather than occuring the moment a key event is received. I
-  believe that this difference does not actually affect game play, but it
-  definitely does affect how the game appears when Chip makes two moves in
-  a single interval.
-* When Chip is on solid ground, and pushes a block that is on ice, Chip
-  follows the block. This is wrong; in the MS game, Chip bounces back. I'm
-  pretty sure this is because the block doesn't start moving right away, as
-  it is on the slip list, causing it to move on the following tick.
-* Some subtleties of the behavior of buttons are still wrong in the clone.
-  For example: if Chip pushes a block off of an open toggle square and onto
-  a green button, Chip should still be able to complete his move before the
-  toggle square closes. In the clone, however, Chip is prevented from
-  following the block.
-* There are probably still some undiscovered bugs involving how uncovered
-  tiles behave.
+  intervals, rather than occuring the moment a key is pressed. I believe
+  that this difference does not actually affect game play, but it does
+  affect how the game appears when Chip makes two moves in a single
+  interval.
 ___________________________________________________________________________
 
 Bugs in the Lynx game logic emulation
@@ -53,12 +37,14 @@ Bugs in the Lynx game logic emulation
   necessary to start finding patterns, and there are few levels that have
   the necessary elements for such investigation. So this one is still up in
   the air.
+* "Diagonal" moves are not supported. The keyboard-handling needs to be
+  changed to deal with multiple keypresses in order to make this work.
 ___________________________________________________________________________
 
 Other bugs and misfeatures
 
 * There ought to be a way to return to the file list, without having to
-  shut down and restart the program.
+  shut down and restart the program. That drives me crazy.
 ___________________________________________________________________________
 
 General non-bugs

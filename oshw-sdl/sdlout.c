@@ -12,12 +12,8 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 #include	"../state.h"
+#include	"sdlres.h"
 #include	"sdltext.h"
-
-/* The dimensions of the graphic output.
- */
-#define	CXSCREEN	640
-#define	CYSCREEN	480
 
 /* Space to leave between graphic objects.
  */
@@ -26,88 +22,164 @@
 
 /* The dimensions of the visible area of the map (in tiles).
  */
-#define	CXDISPLAY	9
-#define	CYDISPLAY	9
-
-/* The pixel location of the information area's upper-left corner.
- */
-#define	XINFO		(CXMARGIN + CXDISPLAY * CXTILE + CXMARGIN)
-#define	YINFO		CYMARGIN
-
-/* The pixel dimensions of the information area.
- */
-#define	CXINFO		(CXSCREEN - CXMARGIN - XINFO)
-#define	CYINFO		(YENDMSG - YINFO)
-
-/* The pixel location of the messages displayed at the end of a game.
- */
-#define	XENDMSG		(CXSCREEN - CXMARGIN - CXFONT * 16)
-#define	YENDMSG		(CYSCREEN - CYMARGIN - CYFONT * 2)
-
-/* The total number of tile images.
- */
-#define	NTILES		128
-
-/* cctiles[]: The pixels of all the tiles.
- * ccpalette[]: The tiles' color palette.
- * (This file is generated automatically.)
- */
-#include	"cctiles.c"
-
-/* ccfont: A nice font.
- * (This file is generated automatically.)
- */
-#include	"ccfont.c"
-
-/* Flags indicating which tiles have transparent pixels.
- */
-static char		transparency[NTILES];
-
-/* The graphic output buffer.
- */
-static SDL_Surface     *screen = NULL;
+#define	NXTILES		9
+#define	NYTILES		9
 
 /* Macros for locating a specific tile's pixels.
  */
 #define	floortile(id)		(id)
 #define	entitydirtile(id, dir)	((id) + ((0x30210 >> ((dir) * 2)) & 3))
 
+/* ccfont: A nice font.
+ * (This file is generated automatically.)
+ */
+#include	"ccfont.c"
+
+/* The graphic output buffer.
+ */
+static SDL_Surface     *screen = NULL;
+
+/* Special pixel values.
+ */
+static Uint32		clr_black, clr_white, clr_gray, clr_red, clr_yellow;
+static Uint32		clr_transparent;
+
+/* Coordinates specifying the layout of the screen elements.
+ */
+static int		xdisplay, ydisplay, cxdisplay, cydisplay;
+static int		xtitle, ytitle, cxtitle, cytitle;
+static int		xinfo, yinfo, cxinfo, cyinfo;
+static int		xinventory, yinventory, cxinventory, cyinventory;
+static int		xonomatopoeia, yonomatopoeia,
+			cxonomatopoeia, cyonomatopoeia;
+static int		xhint, yhint, cxhint, cyhint;
+static int		xendmsg, yendmsg, cxendmsg, cyendmsg;
+static int		xlist, ylist, cxlist, cylist;
+static int		cxscreen, cyscreen;
+
 /*
-#define	tileptr(tn)		(cctiles + (tn) * CXTILE * CYTILE)
-*/
-static unsigned char const *tileptr(int tn)
-{
-    static unsigned char       *badtile = NULL;
-
-    if (tn >= 0 && tn < NTILES)
-	return cctiles + tn * CXTILE * CYTILE;
-    if (!badtile) {
-	badtile = malloc(CXTILE * CYTILE);
-	memset(badtile, IDX_LTRED, CXTILE * CYTILE);
-    }
-    return badtile;
-}
-
-
-/*
- * Tile initialization.
+ *
  */
 
-static void initializetiles(void)
+static void layoutlistarea(void)
 {
-    unsigned char const	       *tile;
-    int				n, i;
+    xlist = CXMARGIN;
+    ylist = CYMARGIN;
+    cxlist = (cxscreen - CXMARGIN) - xlist;
+    cylist = (cyscreen - CYMARGIN - ccfont.h) - ylist;
+}
 
-    memset(transparency, FALSE, sizeof transparency);
-    for (n = 0 ; n < NTILES ; ++n) {
-	tile = tileptr(n);
-	for (i = 0 ; i < CXTILE * CYTILE ; ++i) {
-	    if (tile[i] == IDX_TRANSPARENT) {
-		transparency[n] = TRUE;
-		break;
-	    }
-	}
+/* Calculate the positions of all the elements of the game display.
+ */
+static int layoutscreen(void)
+{
+    int	cx;
+
+    if (cxtile <= 0 || cytile <= 0)
+	return FALSE;
+
+    xdisplay = CXMARGIN;
+    ydisplay = CYMARGIN;
+    cxdisplay = NXTILES * cxtile;
+    cydisplay = NYTILES * cytile;
+
+    xtitle = xdisplay;
+    ytitle = ydisplay + cydisplay + CYMARGIN;
+    cxtitle = cxdisplay;
+    cytitle = ccfont.h;
+
+    cx = 4 * cxtile;
+    if (cx < 18 * ccfont.w)
+	cx = 18 * ccfont.w;
+
+    xinfo = xdisplay + cxdisplay + CXMARGIN;
+    yinfo = CYMARGIN;
+    cxinfo = cx;
+    cyinfo = 6 * ccfont.h;
+
+    xinventory = xinfo;
+    yinventory = yinfo + cyinfo + CYMARGIN;
+    cxinventory = cx;
+    cyinventory = 2 * cytile;
+
+    cxendmsg = 7 * ccfont.w;
+    cyendmsg = ccfont.h;
+    xendmsg = xinfo + cxinfo - cxendmsg;
+    yendmsg = ytitle + cytitle - cyendmsg;
+
+    xonomatopoeia = xinfo;
+    yonomatopoeia = ydisplay + cydisplay - ccfont.h;
+    cxonomatopoeia = 6 * ccfont.w;
+    cyonomatopoeia = ccfont.h;
+
+    xhint = xinfo;
+    yhint = yinventory + cyinventory + CYMARGIN;
+    cxhint = cx;
+    cyhint = yendmsg - CYMARGIN - yhint;
+
+    cxscreen = xinfo + cxinfo + CXMARGIN;
+    cyscreen = ytitle + cytitle + CYMARGIN;
+    cx = 48 * ccfont.w + 2 * CXMARGIN;
+    if (cxscreen < cx)
+	cxscreen = cx;
+
+     return TRUE;
+}
+
+/* Change the dimensions of the game surface.
+ */
+static int setdisplaysize(void)
+{
+    if (screen) {
+	SDL_FreeSurface(screen);
+	screen = NULL;
     }
+    if (!(screen = SDL_SetVideoMode(cxscreen, cyscreen, 32, SDL_HWSURFACE)))
+	die("Cannot open %dx%d display: %s\n",
+	    cxscreen, cyscreen, SDL_GetError());
+    _sdlsettextsurface(screen);
+    _sdlsettileformat(screen->format);
+    layoutlistarea();
+
+    return TRUE;
+}
+
+static char const *getonomatopoeia(unsigned long sfx)
+{
+    static char const  *sounds[] = { "\"Bummer\"",
+	"Tadaa!", "Clang!", "-Tick-", "Mnphf!", "Chack!", "Slurp!",
+	"Flonk!", "Bamff!", "Spang!", "Dring!", "Click!", "Whisk!",
+	"Chunk!", "Shunk!", "Scrrr!", "Booom!", "Plash!",
+	"(slurp slurp)", "(snick snick)", "(plip plip)", "(crackle crackle)",
+	"Whizz ...", "Whing!", "Drrrr ..."
+    };
+    unsigned long	flag;
+    int			i;
+
+    flag = 1;
+    for (i = 0 ; i < (int)(sizeof sounds / sizeof *sounds) ; ++i) {
+	if (sfx & flag)
+	    return sounds[i];
+	flag <<= 1;
+    }
+    return "";
+}
+
+/*
+ * Tile functions.
+ */
+
+static Uint32 *tileptr(int tn)
+{
+    static Uint32     *badtile = NULL;
+
+    if (tn >= 0 && tn < NTILES)
+	return cctiles + tn * cxtile * cytile;
+    if (!badtile && screen) {
+	badtile = malloc(cxtile * cytile * sizeof *badtile);
+	memset(badtile, clr_red, cxtile * cytile * sizeof *badtile);
+    }
+    return badtile;
 }
 
 /*
@@ -116,65 +188,65 @@ static void initializetiles(void)
 
 /* Transfer the given tile to another tile-size buffer.
  */
-static void copytile(unsigned char *dest, int tn)
+static void copytile(Uint32 *dest, int tn)
 {
-    unsigned char const	       *src;
-    int				n;
+    Uint32 const       *src;
+    int			n;
 
     src = tileptr(tn);
     if (transparency[tn]) {
-	for (n = 0 ; n < CXTILE * CYTILE ; ++n)
-	    if (src[n] != IDX_TRANSPARENT)
+	for (n = 0 ; n < cxtile * cytile ; ++n)
+	    if (src[n] != clr_transparent)
 		dest[n] = src[n];
     } else {
-	memcpy(dest, src, CXTILE * CYTILE);
+	memcpy(dest, src, cxtile * cytile * sizeof *dest);
     }
 }
 
 /* Render the given tile to a screen-sized buffer at (xpos, ypos).
  */
-static void drawtile(unsigned char *scrbits, int xpos, int ypos, int tn)
+static void drawtile(Uint32 *scrbits, int xpos, int ypos, int tn)
 {
-    unsigned char const	       *tilebits;
-    int				x, y;
+    Uint32 const       *tilebits;
+    int			x, y;
 
-    scrbits += ypos * CXSCREEN + xpos;
+    scrbits += ypos * cxscreen + xpos;
     tilebits = tileptr(tn);
     if (transparency[tn]) {
-	for (y = 0 ; y < CYTILE ; ++y, scrbits += CXSCREEN)
-	    for (x = 0 ; x < CXTILE ; ++x, ++tilebits)
-		if (*tilebits != IDX_TRANSPARENT)
+	for (y = 0 ; y < cytile ; ++y, scrbits += cxscreen)
+	    for (x = 0 ; x < cxtile ; ++x, ++tilebits)
+		if (*tilebits != clr_transparent)
 		    scrbits[x] = *tilebits;
     } else {
-	for (y = 0 ; y < CYTILE ; ++y, scrbits += CXSCREEN, tilebits += CXTILE)
-	    memcpy(scrbits, tilebits, CXTILE);
+	for (y = 0 ; y < cytile ; ++y, scrbits += cxscreen, tilebits += cxtile)
+	    memcpy(scrbits, tilebits, cxtile * sizeof *scrbits);
     }
 }
 
 /* Render the given tile to a screen-sized buffer at (xpos, ypos),
  * clipping any pixels that fall outside of the map display.
  */
-static void drawclippedtile(unsigned char *scrbits, int xpos, int ypos,
-			    unsigned char const *tilebits)
+static void drawclippedtile(Uint32 *scrbits, int xpos, int ypos,
+			    Uint32 const *tilebits)
 {
-    static int const	lclip = CXMARGIN;
-    static int const	tclip = CYMARGIN;
-    static int const	rclip = CXMARGIN + CXDISPLAY * CXTILE;
-    static int const	bclip = CYMARGIN + CYDISPLAY * CYTILE;
-    int			x, y, l, t, r, b;
+    int	lclip = xdisplay;
+    int	tclip = ydisplay;
+    int	rclip = xdisplay + cxdisplay;
+    int	bclip = ydisplay + cydisplay;
+    int	x, y;
 
-    l = xpos < lclip ? lclip : xpos;
-    t = ypos < tclip ? tclip : ypos;
-    r = xpos + CXTILE >= rclip ? rclip : xpos + CXTILE;
-    b = ypos + CYTILE >= bclip ? bclip : ypos + CYTILE;
-    if (l >= r || t >= b)
+    lclip = xpos < lclip ? lclip : xpos;
+    tclip = ypos < tclip ? tclip : ypos;
+    rclip = xpos + cxtile >= rclip ? rclip : xpos + cxtile;
+    bclip = ypos + cytile >= bclip ? bclip : ypos + cytile;
+    if (lclip >= rclip || tclip >= bclip)
 	return;
 
-    scrbits += t * CXSCREEN;
-    tilebits += (t - ypos) * CXTILE - xpos;
-    for (y = b - t ; y ; --y, scrbits += CXSCREEN, tilebits += CXTILE)
-	for (x = l ; x < r ; ++x)
-	    if (tilebits[x] != IDX_TRANSPARENT)
+    scrbits += tclip * cxscreen;
+    tilebits += (tclip - ypos) * cxtile - xpos;
+    for (y = bclip - tclip ; y ; --y, scrbits += cxscreen, tilebits += cxtile)
+	for (x = lclip ; x < rclip ; ++x)
+	    if (tilebits[x] != clr_transparent)
 		scrbits[x] = tilebits[x];
 }
 
@@ -184,27 +256,27 @@ static void drawclippedtile(unsigned char *scrbits, int xpos, int ypos,
  */
 static void displaymapview(gamestate const *state)
 {
-    unsigned char	tilebuf[CXTILE * CYTILE];
+    Uint32		tilebuf[cxtile * cytile];
     creature const     *cr;
     int			xdisppos, ydisppos;
     int			lmap, tmap, rmap, bmap;
-    int			pos, x, y;
+    int			pos, overlaid, x, y;
 
-    xdisppos = state->xviewpos / 2 - (CXDISPLAY / 2) * 4;
-    ydisppos = state->yviewpos / 2 - (CYDISPLAY / 2) * 4;
+    xdisppos = state->xviewpos / 2 - (NXTILES / 2) * 4;
+    ydisppos = state->yviewpos / 2 - (NYTILES / 2) * 4;
     if (xdisppos < 0)
 	xdisppos = 0;
     if (ydisppos < 0)
 	ydisppos = 0;
-    if (xdisppos > (CXGRID - CXDISPLAY) * 4)
-	xdisppos = (CXGRID - CXDISPLAY) * 4;
-    if (ydisppos > (CYGRID - CYDISPLAY) * 4)
-	ydisppos = (CYGRID - CYDISPLAY) * 4;
+    if (xdisppos > (CXGRID - NXTILES) * 4)
+	xdisppos = (CXGRID - NXTILES) * 4;
+    if (ydisppos > (CYGRID - NYTILES) * 4)
+	ydisppos = (CYGRID - NYTILES) * 4;
 
     lmap = xdisppos / 4;
     tmap = ydisppos / 4;
-    rmap = (xdisppos + 3) / 4 + CXDISPLAY;
-    bmap = (ydisppos + 3) / 4 + CYDISPLAY;
+    rmap = (xdisppos + 3) / 4 + NXTILES;
+    bmap = (ydisppos + 3) / 4 + NYTILES;
     for (y = tmap ; y < bmap ; ++y) {
 	if (y < 0 || y >= CXGRID)
 	    continue;
@@ -212,23 +284,29 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
+	    overlaid = FALSE;
 	    if (transparency[state->map[pos].top.id]) {
 		if (transparency[state->map[pos].bot.id])
 		    copytile(tilebuf, floortile(Empty));
 		copytile(tilebuf, floortile(state->map[pos].bot.id));
+		if (state->map[pos].bot.id != Empty)
+		    overlaid = TRUE;
 	    }
 	    copytile(tilebuf, floortile(state->map[pos].top.id));
-	    drawclippedtile((unsigned char*)screen->pixels,
-			    CXMARGIN + (x * CXTILE) - (xdisppos * CXTILE / 4),
-			    CYMARGIN + (y * CYTILE) - (ydisppos * CYTILE / 4),
+	    if (overlaid)
+		memcpy(tileptr(floortile(Overlay_Buffer)),
+		       tilebuf, sizeof tilebuf);
+	    drawclippedtile((Uint32*)screen->pixels,
+			    xdisplay + (x * cxtile) - (xdisppos * cxtile / 4),
+			    ydisplay + (y * cytile) - (ydisppos * cytile / 4),
 			    tilebuf);
 	}
     }
 
-    --lmap;
-    --tmap;
-    ++rmap;
-    ++bmap;
+    lmap = (lmap - 1) * 4;
+    tmap = (tmap - 1) * 4;
+    rmap = (rmap + 1) * 4;
+    bmap = (bmap + 1) * 4;
     for (cr = state->creatures ; cr->id ; ++cr) {
 	if (cr->hidden)
 	    continue;
@@ -242,11 +320,11 @@ static void displaymapview(gamestate const *state)
 	      case EAST:	x -= cr->moving / 2;	break;
 	    }
 	}
-	if (x < lmap * 4 || x >= rmap * 4 || y < tmap * 4 || y >= bmap * 4)
+	if (x < lmap || x >= rmap || y < tmap || y >= bmap)
 	    continue;
-	drawclippedtile((unsigned char*)screen->pixels,
-			CXMARGIN + (x * CXTILE / 4) - (xdisppos * CXTILE / 4),
-			CYMARGIN + (y * CYTILE / 4) - (ydisppos * CYTILE / 4),
+	drawclippedtile((Uint32*)screen->pixels,
+			xdisplay + (x * cxtile / 4) - (xdisppos * cxtile / 4),
+			ydisplay + (y * cytile / 4) - (ydisppos * cytile / 4),
 			tileptr(entitydirtile(cr->id, cr->dir)));
     }
 }
@@ -256,47 +334,43 @@ static void displaymapview(gamestate const *state)
  */
 static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
-    SDL_Rect	info;
+    SDL_Rect	text;
     char	buf[32];
     int		color;
-    int		n, x;
+    int		n, x, y;
 
     if (state->game->name && *state->game->name) {
 	n = strlen(state->game->name);
-	x = (CXDISPLAY * CXTILE - n * CXFONT) / 2;
-	if (x < CXMARGIN) {
-	    x = CXMARGIN;
-	    n = CXGRID * CXTILE / CXFONT;
+	x = (cxtitle - n * ccfont.w) / 2;
+	if (x < 0) {
+	    x = 0;
+	    n = cxtitle / ccfont.w;
 	}
-	_sdlputntext(x, CYMARGIN + CYDISPLAY * CYTILE + CYMARGIN, n,
-		     state->game->name);
+	_sdlputntext(xtitle + x, ytitle, n, state->game->name);
     }
 
-    info.x = XINFO;
-    info.y = YINFO;
-    info.w = CXINFO;
-    info.h = CYINFO;
+    y = yinfo;
 
     sprintf(buf, "Level %d", state->game->number);
-    _sdlputtext(info.x, info.y, buf);
-    info.y += CYFONT;
+    _sdlputtext(xinfo, y, buf);
+    y += ccfont.h;
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);
-	_sdlputtext(info.x, info.y, buf);
+	_sdlputtext(xinfo, y, buf);
     }
-    info.y += 2 * CYFONT;
+    y += 2 * ccfont.h;
 
     sprintf(buf, "Chips %3d", state->chipsneeded);
-    _sdlputtext(info.x, info.y, buf);
-    info.y += CYFONT;
+    _sdlputtext(xinfo, y, buf);
+    y += ccfont.h;
 
     if (timeleft < 0)
 	strcpy(buf, "Time  ---");
     else
 	sprintf(buf, "Time  %3d", timeleft);
-    _sdlputtext(info.x, info.y, buf);
-    info.y += CYFONT;
+    _sdlputtext(xinfo, y, buf);
+    y += ccfont.h;
 
     if (besttime) {
 	if (timeleft < 0)
@@ -305,35 +379,40 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    sprintf(buf, "Best time: %3d", besttime);
 	color = ccfont.color;
 	if (state->game->replacebest)
-	    ccfont.color = IDX_LTGRAY;
-	_sdlputtext(info.x, info.y, buf);
+	    ccfont.color = clr_gray;
+	_sdlputtext(xinfo, y, buf);
 	ccfont.color = color;
     }
-    info.y += 2 * CYFONT;
 
     for (n = 0 ; n < 4 ; ++n) {
-	drawtile((unsigned char*)screen->pixels,
-		 info.x + n * CXTILE, info.y, floortile(Empty));
-	drawtile((unsigned char*)screen->pixels,
-		 info.x + n * CXTILE, info.y + CYTILE, floortile(Empty));
+	drawtile((Uint32*)screen->pixels,
+		 xinventory + n * cxtile, yinventory,
+		 floortile(Empty));
+	drawtile((Uint32*)screen->pixels,
+		 xinventory + n * cxtile, yinventory + cytile,
+		 floortile(Empty));
 	if (state->keys[n])
-	    drawtile((unsigned char*)screen->pixels,
-		     info.x + n * CXTILE, info.y, floortile(Key_Red + n));
+	    drawtile((Uint32*)screen->pixels,
+		     xinventory + n * cxtile, yinventory,
+		     floortile(Key_Red + n));
 	if (state->boots[n])
-	    drawtile((unsigned char*)screen->pixels,
-		     info.x + n * CXTILE, info.y + CYTILE,
+	    drawtile((Uint32*)screen->pixels,
+		     xinventory + n * cxtile, yinventory + cytile,
 		     floortile(Boots_Ice + n));
     }
-    info.y += 2 * CYTILE + CYFONT;
 
-    if (state->soundeffect && *state->soundeffect)
-	_sdlputtext(info.x, info.y, state->soundeffect);
-    info.y += 2 * CYFONT;
+    text.x = xhint;
+    text.y = yhint;
+    text.w = cxhint;
+    text.h = cyhint;
+    if (state->statusflags & SF_INVALID)
+	_sdlputmltext(&text, "This level cannot be played.");
+    else if (state->statusflags & SF_SHOWHINT)
+	_sdlputmltext(&text, state->game->hinttext);
 
-    if (state->displayflags & DF_INVALID)
-	_sdlputmltext(&info, "This level cannot be played.");
-    else if (state->displayflags & DF_SHOWHINT)
-	_sdlputmltext(&info, state->game->hinttext);
+    if ((state->statusflags & SF_ONOMATOPOEIA) && state->soundeffects)
+	_sdlputtext(xonomatopoeia, yonomatopoeia,
+		    getonomatopoeia(state->soundeffects));
 }
 
 /*
@@ -346,13 +425,11 @@ int displaygame(void const *_state, int timeleft, int besttime)
 {
     gamestate const    *state = _state;
 
+    SDL_FillRect(screen, NULL, clr_black);
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
-
-    memset(screen->pixels, IDX_BLACK, CXSCREEN * CYSCREEN);
     displaymapview(state);
     displayinfo(state, timeleft, besttime);
-
     if (SDL_MUSTLOCK(screen))
 	SDL_UnlockSurface(screen);
 
@@ -372,20 +449,23 @@ int displaylist(char const *title, char const *header,
     scrollinfo	scroll;
     int		n;
 
-    list.x = CXMARGIN;
-    list.y = CYMARGIN + CYFONT + CYMARGIN;
-    list.w = CXSCREEN - CXMARGIN - list.x;
-    list.h = CYSCREEN - 2 * CYMARGIN - CYFONT - list.y;
+    list.x = xlist;
+    list.y = ylist;
+    list.w = cxlist;
+    list.h = cylist;
+    if (header) {
+	list.y += ccfont.h;
+	list.h -= ccfont.h;
+    }
 
-    _sdlcreatescroll(&scroll, &list, IDX_BLACK, IDX_LTYELLOW,
-		     itemcount, items);
+    _sdlcreatescroll(&scroll, &list, clr_black, clr_yellow, itemcount, items);
     _sdlscrollsetindex(&scroll, *index);
 
     for (;;) {
-	SDL_FillRect(screen, NULL, IDX_BLACK);
-	_sdlputtext(CXMARGIN, CYSCREEN - CYMARGIN - CYFONT, title);
+	SDL_FillRect(screen, NULL, clr_black);
+	_sdlputtext(xlist, ylist + cylist, title);
 	if (header)
-	    _sdlputtext(CXMARGIN, CYMARGIN, header);
+	    _sdlputtext(xlist, ylist, header);
 	_sdlscrollredraw(&scroll);
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 	n = 0;
@@ -401,7 +481,8 @@ int displaylist(char const *title, char const *header,
 /* Display some online help text, either arranged in columns or with
  * illustrations on the side.
  */
-int displayhelp(int type, char const *title, void const *text, int textcount)
+int displayhelp(int type, char const *title, void const *text, int textcount,
+		int completed)
 {
     SDL_Rect		help;
     objhelptext const  *objtext;
@@ -409,16 +490,16 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
     int			col, id;
     int			i, n, y;
 
-    SDL_FillRect(screen, NULL, IDX_BLACK);
+    SDL_FillRect(screen, NULL, clr_black);
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
 
-    help.x = CXMARGIN;
-    help.y = CYMARGIN;
-    help.w = CXSCREEN - 2 * CXMARGIN;
-    help.h = CYSCREEN - 3 * CYMARGIN - CYFONT;
+    help.x = xlist;
+    help.y = ylist;
+    help.w = cxlist;
+    help.h = cylist;
 
-    _sdlputtext(CXMARGIN, CYSCREEN - CYMARGIN - CYFONT, title);
+    _sdlputtext(xlist, ylist + cylist, title);
 
     if (type == HELP_TABTEXT) {
 	tabbedtext = text;
@@ -428,17 +509,17 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
 	    if (col < n)
 		col = n;
 	}
-	help.x = CXMARGIN + (col + 4) * CXFONT;
-	help.w = CXSCREEN - CXMARGIN - help.x;
+	help.x += (col + 2) * ccfont.w;
+	help.w -= help.x;
 
 	for (i = 0 ; i < textcount ; ++i) {
 	    n = strchr(tabbedtext[i], '\t') - tabbedtext[i];
-	    _sdlputntext(CXMARGIN, help.y, n, tabbedtext[i]);
+	    _sdlputntext(xlist, help.y, n, tabbedtext[i]);
 	    _sdlputmltext(&help, tabbedtext[i] + n + 1);
 	}
     } else if (type == HELP_OBJECTS) {
-	help.x += CXTILE * 2 + CXMARGIN;
-	help.w -= CXTILE * 2 + CXMARGIN;
+	help.x += cxtile * 2 + ccfont.w;
+	help.w -= cxtile * 2 + ccfont.w;
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
 	    if (objtext[n].isfloor)
@@ -446,51 +527,22 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
 	    else
 		id = entitydirtile(objtext[n].item1, EAST);
 	    if (transparency[id])
-		drawtile((unsigned char*)screen->pixels,
-			 CXMARGIN + CXTILE, help.y, floortile(Empty));
-	    drawtile((unsigned char*)screen->pixels,
-		     CXMARGIN + CXTILE, help.y, id);
+		drawtile((Uint32*)screen->pixels,
+			 xlist + cxtile, help.y, floortile(Empty));
+	    drawtile((Uint32*)screen->pixels, xlist + cxtile, help.y, id);
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
 		    id = floortile(objtext[n].item2);
 		else
 		    id = entitydirtile(objtext[n].item2, EAST);
 		if (transparency[id])
-		    drawtile((unsigned char*)screen->pixels,
-			     CXMARGIN, help.y, floortile(Empty));
-		drawtile((unsigned char*)screen->pixels, CXMARGIN, help.y, id);
+		    drawtile((Uint32*)screen->pixels,
+			     xlist, help.y, floortile(Empty));
+		drawtile((Uint32*)screen->pixels, xlist, help.y, id);
 	    }
-
-#if 0
-	    if (objtext[n].isfloor) {
-		drawtile((unsigned char*)screen->pixels,
-			 CXMARGIN + CXTILE, help.y,
-			 floortile(objtext[n].item1));
-		if (objtext[n].item2)
-		    drawtile((unsigned char*)screen->pixels,
-			     CXMARGIN, help.y,
-			     floortile(objtext[n].item2));
-	    } else {
-		drawtile((unsigned char*)screen->pixels,
-			 CXMARGIN + CXTILE, help.y,
-			 floortile(Empty));
-		drawtile((unsigned char*)screen->pixels,
-			 CXMARGIN + CXTILE, help.y,
-			 entitydirtile(objtext[n].item1, EAST));
-		if (objtext[n].item2) {
-		    drawtile((unsigned char*)screen->pixels,
-			     CXMARGIN, help.y,
-			     floortile(Empty));
-		    drawtile((unsigned char*)screen->pixels,
-			     CXMARGIN, help.y,
-			     entitydirtile(objtext[n].item2, EAST));
-		}
-	    }
-#endif
-
 	    y = help.y;
 	    _sdlputmltext(&help, objtext[n].desc);
-	    y = CYTILE - (help.y - y);
+	    y = cytile - (help.y - y);
 	    if (y > 0) {
 		help.y += y;
 		help.h -= y;
@@ -498,9 +550,8 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
 	}
     }
 
-    _sdlputtext(CXSCREEN - CXMARGIN - 25 * CXFONT,
-		CYSCREEN - CYMARGIN - CYFONT,
-		"Press any key to continue");
+    if (completed)
+	_sdlputtext(xendmsg, yendmsg, completed > 0 ? "  [end]" : " [next]");
 
     if (SDL_MUSTLOCK(screen))
 	SDL_UnlockSurface(screen);
@@ -514,46 +565,49 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
  */
 int displayendmessage(int completed)
 {
-    if (completed > 0) {
-	_sdlputtext(XENDMSG, YENDMSG, "Press ENTER");
-	_sdlputtext(XENDMSG, YENDMSG + CYFONT, "to continue");
-    } else {
-	_sdlputtext(XENDMSG, YENDMSG, " \"Bummer\"");
-	_sdlputtext(XENDMSG, YENDMSG + CYFONT, "Press ENTER");
-    }
+    _sdlputtext(xendmsg, yendmsg, completed > 0 ? " [next]" : "[again]");
+    SDL_UpdateRect(screen, xendmsg, yendmsg, cxendmsg, cyendmsg);
+    return TRUE;
+}
 
-    SDL_UpdateRect(screen, 0, 0, 0, 0);
+/* Create a display surface appropriate to the requirements of the
+ * game.
+ */
+int creategamedisplay(void)
+{
+    if (!layoutscreen())
+	return FALSE;
+    if (!setdisplaysize())
+	return FALSE;
 
     return TRUE;
 }
 
-/* Prepare for graphic output.
+/* Initialize a generic display surface capable of displaying text.
  */
 int _sdloutputinitialize(void)
 {
-    SDL_Surface	       *icon;
+    if (cxscreen <= 0 || cyscreen <= 0) {
+	cxscreen = 640;
+	cyscreen = 480;
+    }
+    if (!setdisplaysize())
+	return FALSE;
 
-    if (sizeof cctiles != NTILES * CXTILE * CYTILE)
-	die("Tile array has size %u, expected %u",
-	    sizeof cctiles, NTILES * CXTILE * CYTILE);
-    initializetiles();
-
-    icon = SDL_CreateRGBSurfaceFrom((void*)tileptr(Exited_Chip),
-				    CXTILE, CYTILE, 8, CXTILE, 0, 0, 0, 0);
-    SDL_SetPalette(icon, SDL_LOGPAL, ccpalette, 0,
-		   sizeof ccpalette / sizeof *ccpalette);
-    SDL_WM_SetIcon(icon, NULL);
-    SDL_FreeSurface(icon);
-
-    if (!(screen = SDL_SetVideoMode(CXSCREEN, CYSCREEN, 8, SDL_HWSURFACE)))
-	die("Cannot open 640x480x8 display: %s\n", SDL_GetError());
-
-    SDL_SetPalette(screen, SDL_LOGPAL, ccpalette, 0,
-		   sizeof ccpalette / sizeof *ccpalette);
-
-    ccfont.color = IDX_WHITE;
-    _sdlsettextsurface(screen);
+    clr_black = SDL_MapRGBA(screen->format, 0, 0, 0, 255);
+    clr_white = SDL_MapRGBA(screen->format, 255, 255, 255, 255);
+    clr_gray = SDL_MapRGBA(screen->format, 192, 192, 192, 255);
+    clr_red = SDL_MapRGBA(screen->format, 255, 0, 0, 255);
+    clr_yellow = SDL_MapRGBA(screen->format, 255, 255, 0, 255);
+    clr_transparent = SDL_MapRGBA(screen->format, 0, 0, 0, 0);
+    if (clr_transparent == clr_black) {
+	clr_transparent = 0xFFFFFFFF;
+	clr_transparent &= ~(screen->format->Rmask | screen->format->Gmask
+						   | screen->format->Bmask);
+    }
+    ccfont.color = clr_white;
     _sdlsettextfont(&ccfont);
+    _sdlsettransparentcolor(clr_transparent);
 
     return TRUE;
 }
