@@ -111,7 +111,7 @@ static tiletablerow const help_objects[] = {
     { TRUE, HintButton, 0,
       "The Hint Button provides a brief suggestion on how to proceed." },
     { TRUE, Burglar, 0,
-      "Burglars take back all your special footgear." }
+      "The Thief takes back all your special footgear." }
 };
 
 /* Descriptions of things that Chip can use.
