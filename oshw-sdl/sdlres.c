@@ -12,16 +12,19 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 
+/* This is an automatically-generated file, which contains a
+ * representation of the program's icon.
+ */
+#include	"ccicon.c"
+
 /* This automatically-generated file defines a built-in font.
  */
 #include	"ccfont.c"
 
+/* Magic numbers identifying a file as a "PC Screen Font" file.
+ */
 #define	PSF_SIG_1	0x36
 #define	PSF_SIG_2	0x04
-
-/* An automatically-generated file.
- */
-#include	"ccicon.c"
 
 /*
  * Reading PSF files.
@@ -74,12 +77,14 @@ int loadfontfromfile(char const *filename)
 }
 
 /*
- * The exported function.
+ *
  */
 
 int _sdlresourceinitialize(void)
 {
     SDL_Surface	       *icon;
+
+    sdlg.font = ccfont;
 
     icon = SDL_CreateRGBSurfaceFrom(cciconimage, CXCCICON, CYCCICON,
 				    32, 4 * CXCCICON,
@@ -89,8 +94,6 @@ int _sdlresourceinitialize(void)
 	SDL_FreeSurface(icon);
     } else
 	warn("couldn't create icon surface: %s", SDL_GetError());
-
-    sdlg.font = ccfont;
 
     return TRUE;
 }

@@ -18,11 +18,9 @@
 /* The definition of a font.
  */
 typedef	struct fontinfo {
-    unsigned char      *bits;	/* 256 characters times h bytes */
-    Uint32		color;	/* the color index to use for the font */
-    Uint32		bkgnd;	/* the color index for the font's bkgnd */
     short		w;	/* width of each character */
     short		h;	/* height of each character */
+    unsigned char      *bits;	/* 256 characters times h bytes */
 } fontinfo;
 
 /* The data mantained for a scrolling list.
@@ -43,8 +41,9 @@ typedef	struct scrollinfo {
  */
 #define	PT_CENTER	0x0001		/* center the text horizontally */
 #define	PT_RIGHT	0x0002		/* right-align the text */
-#define	PT_UPDATERECT	0x0004		/* return the unused area in rect */
-#define	PT_CALCSIZE	0x0008		/* determine area needed for text */
+#define	PT_MULTILINE	0x0004		/* span lines & break at whitespace */
+#define	PT_UPDATERECT	0x0008		/* return the unused area in rect */
+#define	PT_CALCSIZE	0x0010		/* determine area needed for text */
 
 /* Values global to this module. All the globals are placed in here,
  * in order to minimize the namespace pollution of the calling module.
@@ -59,6 +58,8 @@ typedef	struct oshwglobals
     short		htile;		/* height of one tile in pixels */
     short		cptile;		/* size of one tile in pixels */
     short		cbtile;		/* size of one tile in bytes */
+    Uint32		textcolor;
+    Uint32		bkgndcolor;
     Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
@@ -78,15 +79,9 @@ typedef	struct oshwglobals
      */
     void (*keyeventcallbackfunc)(int scancode, int down);
 
-    /* Display a line of text, len characters long.
+    /* Display a line (or more) of text.
      */
     void (*puttextfunc)(SDL_Rect *area, char const *text, int len, int flags);
-
-    /* Draw one or more lines of text, breaking the string up at the
-     * whitespace characters (if possible). area defines the rectangle
-     * to draw in. Upon return, area specifies the area not draw in.
-     */
-    void (*putmltextfunc)(SDL_Rect *area, char const *text, int flags);
 
     /* Create a scrolling list, initializing the given scrollinfo
      * structure with the other arguments.
@@ -122,14 +117,13 @@ extern oshwglobals sdlg;
 #define eventupdate		(*sdlg.eventupdatefunc)
 #define	keyeventcallback	(*sdlg.keyeventcallbackfunc)
 #define	puttext			(*sdlg.puttextfunc)
-#define	putmltext		(*sdlg.putmltextfunc)
 #define	createscroll		(*sdlg.createscrollfunc)
 #define	scrollmove		(*sdlg.scrollmovefunc)
 #define	gettileimage		(*sdlg.gettileimagefunc)
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
 
-#define	putblank(r)		((*sdlg.putmltextfunc)((r), NULL, 0))
+#define	putblank(r)		(puttext((r), NULL, 0, PT_MULTILINE))
 
 /* The initialization functions.
  */

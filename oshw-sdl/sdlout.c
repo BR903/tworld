@@ -307,7 +307,7 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
  */
 void cleardisplay(void)
 {
-    SDL_FillRect(sdlg.screen, NULL, sdlg.font.bkgnd);
+    SDL_FillRect(sdlg.screen, NULL, sdlg.bkgndcolor);
 }
 
 /* Render the view of the visible area of the map to the output
@@ -418,11 +418,11 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %3d", besttime);
-	color = sdlg.font.color;
+	color = sdlg.textcolor;
 	if (state->game->replacebest)
-	    sdlg.font.color = clr_gray;
+	    sdlg.textcolor = clr_gray;
 	puttext(&rect, buf, -1, PT_UPDATERECT);
-	sdlg.font.color = color;
+	sdlg.textcolor = color;
     }
     putblank(&rect);
 
@@ -434,9 +434,9 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     }
 
     if (state->statusflags & SF_INVALID)
-	putmltext(&hintloc, "This level cannot be played.", 0);
+	puttext(&hintloc, "This level cannot be played.", 0, PT_MULTILINE);
     else if (state->statusflags & SF_SHOWHINT)
-	putmltext(&hintloc, state->game->hinttext, 0);
+	puttext(&hintloc, state->game->hinttext, 0, PT_MULTILINE | PT_RIGHT);
     else
 	putblank(&hintloc);
 
@@ -529,21 +529,20 @@ int displayendmessage(int completed)
 int displayhelp(int type, char const *title, void const *text, int textcount,
 		int completed)
 {
-    SDL_Rect		rect;
+    SDL_Rect		left, right;
     objhelptext const  *objtext;
     char *const	       *tabbedtext;
-    int			col, id;
-    int			i, n, y;
+    int			col, id, i, n;
 
     cleardisplay();
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
 
-    rect = listloc;
-    rect.y += listloc.h;
-    rect.h = sdlg.font.h;
-    puttext(&rect, title, -1, 0);
-    rect = listloc;
+    left = listloc;
+    left.y += listloc.h;
+    left.h = sdlg.font.h;
+    puttext(&left, title, -1, 0);
+    left = listloc;
 
     if (type == HELP_TABTEXT) {
 	tabbedtext = text;
@@ -554,41 +553,53 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 		col = n;
 	}
 	col = (col + 2) * sdlg.font.w;
+	right = left;
+	right.x += col;
+	right.w -= col;
 
 	for (i = 0 ; i < textcount ; ++i) {
 	    n = strchr(tabbedtext[i], '\t') - tabbedtext[i];
-	    puttext(&rect, tabbedtext[i], n, 0);
-	    rect.x += col;
-	    rect.w -= col;
-	    putmltext(&rect, tabbedtext[i] + n + 1, PT_UPDATERECT);
-	    rect.x = listloc.x;
-	    rect.w = listloc.w;
+	    puttext(&left, tabbedtext[i], n, PT_UPDATERECT);
+	    puttext(&right, tabbedtext[i] + n + 1, 0,
+			    PT_MULTILINE | PT_UPDATERECT);
+	    if (left.y < right.y) {
+		left.y = right.y;
+		left.h = right.h;
+	    } else {
+		right.y = left.y;
+		right.h = left.h;
+	    }
 	}
     } else if (type == HELP_OBJECTS) {
-	rect.x += sdlg.wtile * 2 + sdlg.font.w;
-	rect.w -= sdlg.wtile * 2 + sdlg.font.w;
+	right = left;
+	col = sdlg.wtile * 2 + sdlg.font.w;
+	right.x += col;
+	right.w -= col;
 	objtext = text;
-	for (n = 0 ; n < textcount ; ++n) {
-	    if (objtext[n].isfloor)
-		id = objtext[n].item1;
+	for (i = 0 ; i < textcount ; ++i) {
+	    if (objtext[i].isfloor)
+		id = objtext[i].item1;
 	    else
-		id = crtile(objtext[n].item1, EAST);
-	    drawopaquetile(listloc.x + sdlg.wtile, rect.y,
+		id = crtile(objtext[i].item1, EAST);
+	    drawopaquetile(left.x + sdlg.wtile, left.y,
 			   gettileimage(id, FALSE));
-	    if (objtext[n].item2) {
-		if (objtext[n].isfloor)
-		    id = objtext[n].item2;
+	    if (objtext[i].item2) {
+		if (objtext[i].isfloor)
+		    id = objtext[i].item2;
 		else
-		    id = crtile(objtext[n].item2, EAST);
-		drawopaquetile(listloc.x, rect.y,
+		    id = crtile(objtext[i].item2, EAST);
+		drawopaquetile(left.x, left.y,
 			       gettileimage(id, FALSE));
 	    }
-	    y = rect.y;
-	    putmltext(&rect, objtext[n].desc, 0);
-	    y = sdlg.htile - (rect.y - y);
-	    if (y > 0) {
-		rect.y += y;
-		rect.h -= y;
+	    left.y += sdlg.htile;
+	    left.h -= sdlg.htile;
+	    puttext(&right, objtext[i].desc, 0, PT_MULTILINE | PT_UPDATERECT);
+	    if (left.y < right.y) {
+		left.y = right.y;
+		left.h = right.h;
+	    } else {
+		right.y = left.y;
+		right.h = left.h;
 	    }
 	}
     }
@@ -639,8 +650,8 @@ int _sdloutputinitialize(void)
 						   | screen->format->Bmask);
     }
 
-    sdlg.font.color = clr_white;
-    sdlg.font.bkgnd = clr_black;
+    sdlg.textcolor = clr_white;
+    sdlg.bkgndcolor = clr_black;
 
     if (!createendmsgicons())
 	return FALSE;

@@ -1,11 +1,6 @@
 /* ccfont.c: This file is generated automatically by the mkfont Perl script.
  */
 
-/* Size of each character in pixels.
- */
-#define	CXFONT		9
-#define	CYFONT		16
-
 /* The font bitmap.
  */
 static unsigned char ccfont_bits[] = {
@@ -269,4 +264,4 @@ static unsigned char ccfont_bits[] = {
 
 /* The font proper.
  */
-static fontinfo ccfont = { ccfont_bits, 0, 0, CXFONT, CYFONT };
+static fontinfo ccfont = { 9, sizeof ccfont_bits / 256, ccfont_bits };
