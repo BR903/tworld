@@ -773,6 +773,17 @@ static void endfloormovement(creature *cr)
     removefromsliplist(cr);
 }
 
+/* Clean out deadwood entries in the slip list.
+ */
+static void updatesliplist()
+{
+    int	n;
+
+    for (n = slipcount - 1 ; n >= 0 ; --n)
+	if (!(slips[n].cr->state & (CS_SLIP | CS_SLIDE)))
+	    endfloormovement(slips[n].cr);
+}
+
 /* Move a block at the given position forward in the given direction.
  * FALSE is returned if the block cannot be pushed. If collapse is
  * TRUE and the block is atop another block, the bottom block will
@@ -1727,10 +1738,6 @@ static void floormovements(void)
 						&& slipcount == savedcount + 1)
 	    ++n;
     }
-
-    for (n = slipcount - 1 ; n >= 0 ; --n)
-	if (!(slips[n].cr->state & (CS_SLIP | CS_SLIDE)))
-	    endfloormovement(slips[n].cr);
 }
 
 static void createclones(void)
@@ -2226,6 +2233,7 @@ static int advancegame(gamelogic *logic)
 	if ((r = checkforending()))
 	    goto done;
     }
+    updatesliplist();
 
     timeoffset() = 0;
     if (timelimit()) {
@@ -2246,7 +2254,7 @@ static int advancegame(gamelogic *logic)
 		goto done;
 	cr->state |= CS_HASMOVED;
     }
-
+    updatesliplist();
     createclones();
 
   done:
