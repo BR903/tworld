@@ -912,9 +912,11 @@ static int canmakemove(creature const *cr, int dir, int flags)
 		return FALSE;
 	}
     } else if (cr->id == Block) {
+	if (iscreature(cellat(to)->top.id)) {
+	    id = creatureid(cellat(to)->top.id);
+	    return id == Chip || id == Swimming_Chip;
+	}
 	if (!(movelaws[floor].block & dir))
-	    return FALSE;
-	if (issomeoneat(to))
 	    return FALSE;
     } else {
 	if (!(movelaws[floor].creature & dir))
