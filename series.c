@@ -261,6 +261,10 @@ static int undomschanges(gameseries *series)
 
     series->games[87].map1[318] = 0x09;
     series->games[120].map1[395] = 0x00;
+    series->games[126].map1[172] = 0x00;
+    series->games[126].map1[184] = 0x01;
+    series->games[126].map1[428] = 0x01;
+    series->games[126].map1[440] = 0x00;
 
     free(series->games[144].map1);
     free(series->games[144].map2);
