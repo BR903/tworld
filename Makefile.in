@@ -82,7 +82,7 @@ tworldres.o: tworld.ico
 install: tworld
 	cp -i ./tworld $(bindir)/.
 	mkdir -p $(sharedir)/sets
-#	cp -i cc-*.dac $(sharedir)/sets/.
+	cp -i sets/*.dac $(sharedir)/sets/.
 	mkdir -p $(sharedir)/data
 	cp -i resources/rc $(sharedir)/.
 	cp -i resources/*.bmp $(sharedir)/.
