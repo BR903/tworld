@@ -307,6 +307,7 @@ static void resetfloorsounds(int includepushing)
 #define	CS_SLIDETOKEN		0x10	/* can move off of a slide floor */
 #define	CS_REVERSE		0x20	/* needs to turn around */
 #define	CS_PUSHED		0x40	/* block was pushed by Chip */
+#define	CS_STUCK		0x80	/* creature is permanently stuck */
 
 #define	getfdir(cr)	((cr)->state & CS_FDIRMASK)
 #define	setfdir(cr, d)	((cr)->state = ((cr)->state & ~CS_FDIRMASK) \
@@ -1007,8 +1008,13 @@ static int teleportcreature(creature *cr)
 	    cr->pos = origpos;
 	    if (n)
 		break;
-	    if (pos == origpos)
-		return TRUE;
+	    if (pos == origpos) {
+		if (cr->id == Chip) {
+		    warn("making chip be stuck");
+		    cr->state |= CS_STUCK;
+		}
+		return FALSE;
+	    }
 	}
     }
 
@@ -1178,6 +1184,9 @@ static int continuemovement(creature *cr)
 	return TRUE;
 
     _assert(cr->moving > 0);
+
+    if (cr->state & CS_STUCK)
+	return TRUE;
 
     speed = cr->id == Blob ? 1 : 2;
     floor = floorat(cr->pos);
