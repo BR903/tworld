@@ -1444,6 +1444,8 @@ static void endmovement(creature *cr, int dir)
 	poptile(oldpos);
     if (dead) {
 	removecreature(cr);
+	if (cellat(oldpos)->bot.id == CloneMachine)
+	    cellat(oldpos)->bot.state &= ~FS_CLONING;
 	return;
     }
 
