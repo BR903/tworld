@@ -12,17 +12,46 @@ html2txt < ./Changelog.html > ./Changelog
 (cd docs && ./mkdocs tworld.doc)
 
 #
-# Tar everything up inside of a fresh versioned directory.
+# Create a fresh versioned directory.
 #
 
 VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
 mkdir tworld-$VER
+
+#
+# Create the main distribution.
+#
+
+echo Building tworld-$VER.tar.gz
 tar -cf - `cat MANIFEST` | tar -C tworld-$VER -xf -
 rm -f tworld-$VER.tar.gz
 tar -cf tworld-$VER.tar tworld-$VER
 gzip -9 tworld-$VER.tar
-rm tworld-$VER/res/*tiles*.bmp
+
+#
+# Create the -noimgs distribution.
+#
+
+echo Building tworld-$VER-noimgs.tar.gz
 rm -f tworld-$VER-noimgs.tar.gz
-tar -cf tworld-$VER-noimgs.tar tworld-$VER
+tar -cf tworld-$VER-noimgs.tar --exclude="tworld-$VER/res/*tiles*.bmp" \
+    tworld-$VER
 gzip -9 tworld-$VER-noimgs.tar
+
+#
+# Create the distribution with CCLP2.
+#
+
+echo Building tworld-$VER-CCLP2.tar.gz
+cp CCLP2/CCLP2.dat tworld-$VER/data/.
+cp CCLP2/2.gif CCLP2/C.gif CCLP2/L.gif CCLP2/P.gif tworld-$VER/docs/.
+cp CCLP2/CCLP2.html CCLP2/CCLP2-disclaimer.txt tworld-$VER/docs/.
+rm -f tworld-$VER-CCLP2.tar.gz
+tar -cf tworld-$VER-CCLP2.tar tworld-$VER
+gzip -9 tworld-$VER-CCLP2.tar
+
+#
+# Done.
+#
+
 rm -rf tworld-$VER

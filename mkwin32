@@ -60,15 +60,6 @@ cat ../unzipsfx.exe tworld-$VER-win32.zip > tworld-$VER-win32.exe
 zip -A tworld-$VER-win32.exe
 
 #
-# Create the CCLP2-enabled version.
-#
-
-zip -9    tworld-$VER-win32-CCLP2.zip $BINFILES data/CCLP2.dat *.gif
-zip -9 -l tworld-$VER-win32-CCLP2.zip $TXTFILES CCLP2.html CCLP2-disclaimer.txt
-cat ../unzipsfx.exe tworld-$VER-win32-CCLP2.zip > tworld-$VER-win32-CCLP2.exe
-zip -A tworld-$VER-win32-CCLP2.exe
-
-#
 # Create the image-less version.
 #
 
@@ -76,12 +67,25 @@ cp tworld-$VER-win32.zip tworld-$VER-noimgs-win32.zip
 zip -d tworld-$VER-noimgs-win32.zip 'res/*tiles*.bmp'
 
 #
+# Create the CCLP2-enabled version.
+#
+
+cp tworld-$VER-win32.zip tworld-$VER-win32-CCLP2.zip
+cp ../../CCLP2/CCLP2.dat data/.
+cp ../../CCLP2/CCLP2.html ../../CCLP2/[CLP2].gif .
+cp ../../CCLP2/CCLP2-disclaimer.txt .
+zip -9    tworld-$VER-win32-CCLP2.zip data/CCLP2.dat [CLP2].gif
+zip -9 -l tworld-$VER-win32-CCLP2.zip CCLP2.html CCLP2-disclaimer.txt
+cat ../unzipsfx.exe tworld-$VER-win32-CCLP2.zip > tworld-$VER-win32-CCLP2.exe
+zip -A tworld-$VER-win32-CCLP2.exe
+
+#
 # Copy the zipfiles to the starting directory and clean up.
 #
 
 mv tworld-$VER-win32.zip tworld-$VER-win32.exe ../..
-mv tworld-$VER-win32-CCLP2.zip tworld-$VER-win32-CCLP2.exe ../..
 mv tworld-$VER-noimgs-win32.zip ../..
+mv tworld-$VER-win32-CCLP2.zip tworld-$VER-win32-CCLP2.exe ../..
 cd ..
 rm -rf build
 cd ..
