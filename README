@@ -1,0 +1,36 @@
+Installing
+----------
+
+Edit the Makefile and change the definition of DATADIR to point to the
+directory containing your .dat files. (Or omit it to use the default
+value of /usr/local/share/chips.)
+
+As with all svgalib programs, you need to run make as root.
+
+Once compiled, use ./chips -h for help with cmdline options.
+
+
+Key Commands
+------------
+
+During play:
+
+arrows		move Chip
+h j k l		ditto
+?		show online help (game pauses)
+q		quit level
+Q (shift-q)	exit game
+Ctrl-R		restart level
+Ctrl-P		jump to previous level
+Ctrl-N		jump to next level
+
+Inbetween levels:
+
+?		show online help
+q		exit game
+Ctrl-R		restart level
+Ctrl-P		jump to previous level
+p		jump to previous level
+Ctrl-N		jump to next level
+n		jump to next level
+Ctrl-I (tab)	playback saved solution

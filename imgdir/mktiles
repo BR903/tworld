@@ -1,0 +1,239 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my $rgbfile = "/usr/lib/X11/rgb.txt";
+
+#my @vgacolors =
+#    ([  0,  0,  0 ], [  0,  0, 42 ], [  0, 42,  0 ], [  0, 42, 42 ],
+#     [ 42,  0,  0 ], [ 42,  0, 42 ], [ 42, 21,  0 ], [ 42, 42, 42 ],
+#     [ 21, 21, 21 ], [ 21, 21, 63 ], [ 21, 63, 21 ], [ 21, 63, 63 ],
+#     [ 63, 21, 21 ], [ 63, 21, 63 ], [ 63, 63, 21 ], [ 63, 63, 63 ]);
+
+my @vgacolors =
+    ([  0,  0,  0 ], [  0,  0, 32 ], [  0, 32,  0 ], [  0, 32, 32 ],
+     [ 32,  0,  0 ], [ 32,  0, 32 ], [ 32, 32,  0 ], [ 48, 48, 48 ],
+     [ 32, 32, 32 ], [  0,  0, 63 ], [  0, 63,  0 ], [  0, 63, 63 ],
+     [ 63,  0,  0 ], [ 63,  0, 63 ], [ 63, 63,  0 ], [ 63, 63, 63 ]);
+
+my (%colornames, $colornamesread);
+
+sub translatecolor($)
+{
+    my ($r, $g, $b) = ($_[0][0] / 4, $_[0][1] / 4, $_[0][2] / 4);
+
+    return " " if $r < 0;
+
+    my ($nearest, $bestdiff) = (15, (64*3)**2);
+
+    foreach my $n (0..$#vgacolors) {
+	my $d = ($r - $vgacolors[$n][0])**2 + ($g - $vgacolors[$n][1])**2
+					    + ($b - $vgacolors[$n][2])**2;
+	($nearest, $bestdiff) = ($n, $d) if $d < $bestdiff;
+    }
+
+    return chr(64 + $nearest);
+}
+
+sub lookupcolorname($)
+{
+    my $name = shift;
+
+    return [ -255, -255, -255 ] if lc $name eq "none";
+
+    unless ($colornamesread) {
+	open COLORS, $rgbfile or die "$rgbfile: $!\n";
+	while (<COLORS>) {
+	    next if /^!/ || /^\s*$/;
+	    unless (/^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*\S)\s*$/) {
+		warn "$rgbfile: invalid entry\n"; 
+		next;
+	    }
+	    my ($r, $g, $b, $name) = ($1, $2, $3, $4);
+	    $colornames{$name} = [ $r, $g, $b ];
+	}
+	close COLORS;
+    }
+    warn "Unrecognized color name $name\n" and return
+	unless exists $colornames{$name};
+    return $colornames{$name};
+}
+
+sub readimage($)
+{
+    my $file = shift;
+    warn "$file: $!\n" and return unless open IMG, $file;
+
+    my @image;
+    my %colortable;
+    my ($colorcount, $pixbytes);
+    my $y = 48;
+    my $state = 0;
+
+    while (<IMG>) {
+	chomp;
+	next if /^\/\*/;
+	if ($state == 0) {
+	    next if /^\w/;
+	    warn "$file: invalid XPM header\n" and return
+		unless /^\s*\"\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\"\s*,\s*$/;
+	    warn "$file: dimensions must be 48x48\n" and return
+		unless $1 == 48 && $2 == 48;
+	    ($colorcount, $pixbytes) = ($3, $4);
+	    warn "$file: invalid XPM header\n" and return
+		unless $colorcount > 0 && $pixbytes > 0;
+	    $state = 1;
+	} elsif ($state == 1) {
+	    warn "$file: invalid color table entry\n" and return
+		unless s/^\s*\"//;
+	    my $rep = substr $_, 0, $pixbytes;
+	    substr($_, 0, $pixbytes) = "";
+	    warn "$file: invalid color table entry\n" and return
+		unless /\bc\s+([^\"\s]+)/;
+	    my $color = $1;
+	    if ($color =~ /^\#([0-9A-Fa-f][0-9A-Fa-f])
+			      ([0-9A-Fa-f][0-9A-Fa-f])
+			      ([0-9A-Fa-f][0-9A-Fa-f])$/x) {
+		$color = [ hex $1, hex $2, hex $3 ];
+	    } else {
+		my $c = lookupcolorname $color;
+		warn "$file: invalid color name \"$color\"\n" and return
+		    unless $c;
+		$color = $c;
+	    }
+	    $colortable{$rep} = translatecolor $color;
+	    $state = 2 unless --$colorcount;
+	} elsif ($state == 2) {
+	    s/^\s*\"//;
+	    s/\"\s*(,|\}\s*;)\s*$//;
+	    warn "$file: invalid scanline" and return
+		unless length == 48 * $pixbytes;
+	    my $scanline = "";
+	    foreach my $x (0..47) {
+		$scanline .= $colortable{substr $_, 0, $pixbytes};
+		substr($_, 0, $pixbytes) = "";
+	    }
+	    push @image, $scanline;
+	    $state = 3 unless --$y;
+	} else {
+	    last;
+	}
+    }
+    close IMG;
+
+    return @image;
+}
+
+my @img;
+
+print "static unsigned char cctiles[] =";
+while (<DATA>) {
+    chomp;
+    my @img = readimage $_;
+    die "Cannot read image from $_\n" unless @img;
+    print map { "\n    \"$_\"" } @img;
+}
+print ";\n";
+
+__END__
+empty.xpm
+slidenorth.xpm
+slidewest.xpm
+slidesouth.xpm
+slideeast.xpm
+sliderandom.xpm
+ice.xpm
+icewallnw.xpm
+icewallne.xpm
+icewallsw.xpm
+icewallse.xpm
+gravel.xpm
+dirt.xpm
+water.xpm
+fire.xpm
+bomb.xpm
+beartrap.xpm
+burglar.xpm
+hintbutton.xpm
+buttonblue.xpm
+buttongreen.xpm
+buttonred.xpm
+buttonbrown.xpm
+teleport.xpm
+wall.xpm
+wallnorth.xpm
+wallwest.xpm
+wallsouth.xpm
+walleast.xpm
+wallsoutheast.xpm
+empty.xpm
+empty.xpm
+blueblock.xpm
+blueblock.xpm
+switchopen.xpm
+switchclosed.xpm
+popupwall.xpm
+cloner.xpm
+doorblue.xpm
+doorgreen.xpm
+doorred.xpm
+dooryellow.xpm
+socket.xpm
+exit.xpm
+icchip.xpm
+keyblue.xpm
+keygreen.xpm
+keyred.xpm
+keyyellow.xpm
+bootsslide.xpm
+bootsice.xpm
+bootswater.xpm
+bootsfire.xpm
+nobody.xpm
+nobody.xpm
+nobody.xpm
+nobody.xpm
+chip_n.xpm
+chip_w.xpm
+chip_s.xpm
+chip_e.xpm
+block_n.xpm
+block_w.xpm
+block_s.xpm
+block_e.xpm
+tank_n.xpm
+tank_w.xpm
+tank_s.xpm
+tank_e.xpm
+ball_n.xpm
+ball_w.xpm
+ball_s.xpm
+ball_e.xpm
+glider_n.xpm
+glider_w.xpm
+glider_s.xpm
+glider_e.xpm
+fireball_n.xpm
+fireball_w.xpm
+fireball_s.xpm
+fireball_e.xpm
+walker_n.xpm
+walker_w.xpm
+walker_s.xpm
+walker_e.xpm
+blob_n.xpm
+blob_w.xpm
+blob_s.xpm
+blob_e.xpm
+teeth_n.xpm
+teeth_w.xpm
+teeth_s.xpm
+teeth_e.xpm
+bug_n.xpm
+bug_w.xpm
+bug_s.xpm
+bug_e.xpm
+paramecium_n.xpm
+paramecium_w.xpm
+paramecium_s.xpm
+paramecium_e.xpm

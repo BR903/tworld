@@ -1,0 +1,31 @@
+Minor
+-----
+Calculate and display scores.
+Add online help for key cmds.
+Add header to save file (possibly with play options indicated).
+Reduce save file size.
+
+Major
+-----
+Smooth scrolling.
+Make boosting a play option.
+Add more play options to emulate MS-Windows behavior.
+Reorganize code sequence to ease port to msg-based environment.
+Test success of previous item by porting to X Windows.
+Comments and documentation.
+
+Unknown
+-------
+Require passwords when jumping to a new (i.e., unsolved) level.
+Get some real graphics.
+Add a raw-keyboard mode option, with joystick-like control.
+Add a save-current-state command for untimed levels?
+(Or introduce a new floor that saves state when Chip touches it.)
+
+Wishlist
+--------
+Maybe work on the svgalib font(s).
+Add a 256-color mode option.
+Add a tool for examining/editing the save file.
+Add a tool for translating the dat file to/from a text file.
+Global scoreboard (a la xsokoban).
