@@ -275,6 +275,8 @@ for example <-aaa> would increase the audio buffer size eightfold.
 . <-d>
 . Display the default directories used by the program on standard
 output, and exit.
+. <-F>
+. Run in full-screen mode.
 . <-H>
 . Upon exit, display a histogram of idle time on standard output. (This
 option is used for evaluating optimization efforts.)
@@ -289,11 +291,14 @@ exit.
 . Turn off all password-checking. This option allows the normal sequence
 of levels to be bypassed.
 . <-n>_%N%
-. Set the initial volume level to %N%. %N% is an integer from 0 to 10,
-0 being silence and 10 being the default level.
+. Set the initial volume level to %N%, 0 being silence and 10 being
+full volume. The default level is 10.
 . <-q>
 . Run quietly. All sounds, including the ringing of the terminal bell,
 are suppressed.
+. <-r>
+. Run in read-only mode. No changes will be made to the solution
+files.
 . <-R>_%DIR%
 . Read resource data from %DIR% instead of the default directory.
 . <-S>_%DIR%
