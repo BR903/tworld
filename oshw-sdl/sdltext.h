@@ -18,6 +18,7 @@
 typedef	struct fontinfo {
     unsigned char      *bits;	/* 256 characters times h bytes */
     Uint32		color;	/* the color index to use for the font */
+    Uint32		bkgnd;	/* the color index for the font's bkgnd */
     short		w;	/* width of each character */
     short		h;	/* height of each character */
 } fontinfo;
@@ -29,19 +30,23 @@ extern void _sdlsettextsurface(SDL_Surface *s);
 extern void _sdlsettextfont(fontinfo const *f);
 
 /* Draw a line of NUL-terminated text. xpos and ypos specify the
- * upper-left corner of the rectangle to draw in.
+ * upper-left corner of the rectangle to draw in. The second function
+ * draws text without erasing its background.
  */
 extern void _sdlputtext(int xpos, int ypos, char const *text);
+extern void _sdlputtranstext(int xpos, int ypos, char const *text);
 
 /* Draw a line of text len characters long.
  */
 extern void _sdlputntext(int xpos, int ypos, int len, char const *text);
+extern void _sdlputtransntext(int xpos, int ypos, int len, char const *text);
 
 /* Draw one or more lines of text, breaking the string up at the
  * whitespace characters (if possible). area defines the rectangle to
  * draw in. Upon return, area specifies the area not draw in.
  */
 extern void _sdlputmltext(SDL_Rect *area, char const *text);
+extern void _sdlputtransmltext(SDL_Rect *area, char const *text);
 
 /*
  * Functions for displaying a scrollable list.
@@ -65,7 +70,7 @@ typedef	struct scrollinfo {
  * structure with the other arguments.
  */
 extern int _sdlcreatescroll(scrollinfo *scroll, SDL_Rect const *area,
-			    Uint32 bkgndcolor, Uint32 highlightcolor,
+			    Uint32 highlightcolor,
 			    int itemcount, char const **items);
 
 /* Display the scrolling list.

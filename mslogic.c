@@ -310,7 +310,6 @@ static void removefromsliplist(creature *cr)
 
 #define	FS_BUTTONDOWN		0x01
 #define	FS_CLONING		0x02
-#define	FS_CLONERFULL		0x04
 #define	FS_BROKEN		0x08
 
 /* Translate a slide floor into the direction it points in. In the
@@ -567,8 +566,10 @@ static void updatecreature(creature const *cr)
 	if (getchipstatus()) {
 	    switch (getchipstatus()) {
 	      case SF_CHIPBURNED:	tile->id = Burned_Chip;		return;
-	      case SF_CHIPBOMBED:	tile->id = Bombed_Chip;		return;
 	      case SF_CHIPDROWNED:	tile->id = Water_Splash;	return;
+#if 0
+	      case SF_CHIPBOMBED:	tile->id = Bombed_Chip;		return;
+#endif
 	    }
 	} else if (cellat(cr->pos)->bot.id == Water) {
 	    id = Swimming_Chip;
@@ -639,9 +640,10 @@ static creature *awakencreature(int pos)
 static void removecreature(creature *cr)
 {
     cr->state &= ~(CS_SLIP | CS_SLIDE);
-    if (cr->id == Chip)
-	setchipstatus(SF_CHIPNOTOKAY);
-    else
+    if (cr->id == Chip) {
+	if (getchipstatus() == SF_CHIPOKAY)
+	    setchipstatus(SF_CHIPNOTOKAY);
+    } else
 	cr->hidden = TRUE;
 
 }
@@ -1080,7 +1082,7 @@ static void choosechipmove(creature *cr, int discard)
 /* Teleport the given creature instantaneously from one teleport tile
  * to another.
  */
-static int teleportcreature(creature *cr)
+static int teleportcreature(creature *cr, int start)
 {
     maptile    *tile;
     int		defer;
@@ -1094,7 +1096,7 @@ static int teleportcreature(creature *cr)
     }
 
     origpos = cr->pos;
-    dest = cr->pos;
+    dest = start;
 
     defer = buttonsdeferred();
     resetdeferbuttons();
@@ -1102,7 +1104,7 @@ static int teleportcreature(creature *cr)
 	--dest;
 	if (dest < 0)
 	    dest += CXGRID * CYGRID;
-	if (dest == origpos)
+	if (dest == start)
 	    break;
 	tile = &cellat(dest)->top;
 	if (tile->id != Teleport || (tile->state & FS_BROKEN))
@@ -1230,6 +1232,9 @@ static void handlebuttons(void)
 	    springtrap(pos);
 	    addsoundeffect(SND_BUTTON_PUSHED);
 	    break;
+	  default:
+	    warn("Fooey! Tile %02X is not a button!", id);
+	    break;
 	}
     }
 }
@@ -1258,9 +1263,6 @@ static int startmovement(creature *cr, int dir)
     if (floor == Beartrap)
 	assert(cr->state & CS_RELEASED);
     cr->state &= ~CS_RELEASED;
-
-    if (floor == CloneMachine)
-	cellat(cr->pos)->bot.state &= ~FS_CLONERFULL;
 
     cr->dir = dir;
 
@@ -1372,7 +1374,7 @@ static void endmovement(creature *cr, int dir)
 	    break;
 	  case Teleport:
 	    if (!(tile->state & FS_BROKEN))
-		cr->pos = teleportcreature(cr);
+		cr->pos = teleportcreature(cr, cr->pos);
 	    break;
 	}
     } else {
@@ -1396,7 +1398,7 @@ static void endmovement(creature *cr, int dir)
 	    break;
 	  case Teleport:
 	    if (!(tile->state & FS_BROKEN))
-		cr->pos = teleportcreature(cr);
+		cr->pos = teleportcreature(cr, cr->pos);
 	    break;
 	}
     }
@@ -1461,7 +1463,7 @@ static void endmovement(creature *cr, int dir)
 	} else if (floor == Teleport && !(tile->state & FS_BROKEN)) {
 	    oldpos = cr->pos;
 	    poptile(cr->pos);
-	    cr->pos = teleportcreature(cr);
+	    cr->pos = teleportcreature(cr, cr->pos);
 	    addcreaturetomap(cr);
 	    if (oldpos != cr->pos)
 		addsoundeffect(SND_TELEPORTING);
@@ -2080,6 +2082,12 @@ int ms_advancegame(gamestate *pstate)
 	    if ((r = checkforending()))
 		goto done;
 	cr->state |= CS_HASMOVED;
+    }
+
+    if (currenttime() && !(currenttime() & 1)) {
+	createclones();
+	if ((r = checkforending()))
+	    goto done;
     }
 
   done:

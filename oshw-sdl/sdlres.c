@@ -299,6 +299,27 @@ void freetileset(void)
     cytile = 0;
 }
 
+#if 0
+
+/*
+ *
+ */
+
+static int setfontresource(int width, int height, unsigned char *fontdata)
+{
+    fontinfo	font;
+
+    memset(fontdata, 0, 32 * height);
+    memset(fontdata + 127 * height, 0, 33 * height);
+    font.bits = fontdata;
+    font.w = width;
+    font.h = height;
+    font.color = font.bkgnd = 0;
+    _sdlsettextfont(&font);
+}
+
+#endif
+
 /*
  *
  */
@@ -311,7 +332,7 @@ int _sdlresourceinitialize(void)
 				    32, 4 * CXCCICON,
 				    0x0000FF, 0x00FF00, 0xFF0000, 0);
     if (!icon)
-	warn("%s", SDL_GetError());
+	warn("couldn't create icon surface: %s", SDL_GetError());
     if (icon) {
 	SDL_WM_SetIcon(icon, cciconmask);
 	SDL_FreeSurface(icon);

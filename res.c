@@ -57,20 +57,31 @@ typedef union resourceitem {
 } resourceitem;
 
 static rcitem rclist[] = {
-    { "pickuptoolsound",	FALSE },
-    { "opendoorsound",		FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
-    { "socketsound",		FALSE },
-    { "blockedmovesound",	FALSE },
-    { "thiefsound",		FALSE },
-    { "pickupchipsound",	FALSE },
-    { "switchsound",		FALSE },
-    { "splashsound",		FALSE },
-    { "bombsound",		FALSE },
-    { "teleportsound",		FALSE },
-    { "ticksound",		FALSE },
     { "chipdeathbytimesound",	FALSE },
+    { "ticksound",		FALSE },
+    { "blockedmovesound",	FALSE },
+    { "pickupchipsound",	FALSE },
+    { "pickuptoolsound",	FALSE },
+    { "thiefsound",		FALSE },
+    { "teleportsound",		FALSE },
+    { "opendoorsound",		FALSE },
+    { "socketsound",		FALSE },
+    { "switchsound",		FALSE },
+    { "tileemptiedsound",	FALSE },
+    { "wallcreatedsound",	FALSE },
+    { "trapsprungsound",	FALSE },
+    { "blockmovingsound",	FALSE },
+    { "bombsound",		FALSE },
+    { "splashsound",		FALSE },
+    { "slidewalkingsound",	FALSE },
+    { "icewalkingsound",	FALSE },
+    { "waterwalkingsound",	FALSE },
+    { "firewalkingsound",	FALSE },
+    { "skatingforwardsound",	FALSE },
+    { "skatingturnsound",	FALSE },
+    { "slidingsound",		FALSE },
     { "silent",			TRUE },
     { "tileimages",		FALSE },
     { "useanimation",		TRUE }
@@ -150,6 +161,8 @@ static int readrcfile(void)
 		ruleset = Ruleset_MS;
 	    else if (!strcmp(name, "lynx"))
 		ruleset = Ruleset_Lynx;
+	    else if (!strcmp(name, "all"))
+		ruleset = Ruleset_None;
 	    else
 		warn("rc:%d: syntax error", lineno);
 	    continue;
@@ -239,6 +252,58 @@ static int loadimages(void)
 	errmsg(resdir, "no tilesets found");
     return f;
 }
+
+#if 0
+
+/*
+ *
+ */
+
+static int loadfont(void)
+{
+    fileinfo		file;
+    unsigned char      *fontdata;
+    unsigned short	sig;
+    unsigned char	n;
+
+    memset(&file, 0, sizeof file);
+    if (!openfileindir(&file, resdir, "font.psf", "rb", "cannot access font"))
+	return FALSE;
+    if (!filereadint16(&file, &sig, "cannot read font file"))
+	goto failure;
+    if (sig != PSF_SIG) {
+	fileerr(&file, "not a PSF font file");
+	goto failure;
+    }
+    if (!filereadint8(&file, &n, "not a valid PSF font file"))
+	goto failure;
+    if (!filereadint8(&file, &n, "not a valid PSF font file"))
+	goto failure;
+    if (n < 8 || n > 32) {
+	fileerr(&file, "invalid font size");
+	goto failure;
+    }
+    fontdata = filereadbuf(&file, n * 256, "invalid font file");
+    if (!fontdata)
+	goto failure;
+    if (!setfontresource(9, n, fontdata))
+	goto failure;
+
+    fileclose(&file, NULL);
+    return TRUE;
+
+  failure:
+    if (fontdata)
+	free(fontdata);
+    fileclose(&file, NULL);
+    return FALSE;
+}
+
+#endif
+
+/*
+ *
+ */
 
 static int loadsounds(void)
 {

@@ -106,7 +106,7 @@ static void showscores(gamespec *gs)
     }
     n = gs->currentgame;
     setsubtitle(NULL);
-    if (displaylist("SCORES", header, (char const**)texts, listsize, &n,
+    if (displaylist(gs->series.name, header, (char const**)texts, listsize, &n,
 		    scrollinputcallback))
 	if (n < listsize - 1)
 	    gs->currentgame = n;

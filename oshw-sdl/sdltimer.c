@@ -21,6 +21,10 @@ static int	utick = 0;
  */
 static int	nexttickat = 0;
 
+#ifdef HISTOGRAM
+static int	hist[1000];
+#endif
+
 /* Set the length (in real time) of a second of game time. A value of
  * zero selects the default length of one second.
  */
@@ -64,6 +68,9 @@ void waitfortick(void)
     int	ms;
 
     ms = nexttickat - SDL_GetTicks();
+#ifdef HISTOGRAM
+    ++hist[ms >= 0 ? ms + 1 : 0];
+#endif
     while (ms < 0)
 	ms += mspertick;
     if (ms > 0)
@@ -75,6 +82,16 @@ void waitfortick(void)
 static void shutdown(void)
 {
     settimer(-1);
+#ifdef HISTOGRAM
+    printf("Tick-waiting histogram\n");
+    printf("NEG: %d\n", hist[0]);
+    {
+	int i;
+	for (i = 1 ; i < 1000 ; ++i)
+	    if (hist[i])
+		printf("%3d: %d\n", i - 1, hist[i]);
+    }
+#endif
 }
 
 /* Initialize and reset the timer.

@@ -269,4 +269,4 @@ static unsigned char ccfont_bits[] = {
 
 /* The font proper.
  */
-static fontinfo ccfont = { ccfont_bits, 0, CXFONT, CYFONT };
+static fontinfo ccfont = { ccfont_bits, 0, 0, CXFONT, CYFONT };

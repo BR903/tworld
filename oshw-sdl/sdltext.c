@@ -19,10 +19,10 @@ static SDL_Surface     *surface = NULL;
  */
 static fontinfo const  *font = NULL;
 
-/* The function that does all the drawing. It is assumed that surface
- * has been locked before calling this function.
+/* The functions that do all the drawing. It is assumed that surface
+ * has been locked before calling these functions.
  */
-static void putline(int xpos, int ypos, int len, char const *text)
+static void putlinetransparent(int xpos, int ypos, int len, char const *text)
 {
     unsigned char const	       *glyph;
     unsigned char	       *dest;
@@ -46,6 +46,32 @@ static void putline(int xpos, int ypos, int len, char const *text)
     }
 }
 
+/* Exactly the same as the previous function, except that the
+ * background pixels are set to the font's background color.
+ */
+static void putlineopaque(int xpos, int ypos, int len, char const *text)
+{
+    unsigned char const	       *glyph;
+    unsigned char	       *dest;
+    unsigned char	       *top;
+    unsigned char		ch;
+    unsigned char		b;
+    int				n, x, y;
+
+    top = (unsigned char*)surface->pixels + ypos * surface->pitch;
+    for (n = 0 ; n < len ; ++n) {
+	ch = *(unsigned char const*)(text + n);
+	glyph = font->bits + ch * font->h;
+	dest = (unsigned char*)(((Uint32*)top) + xpos);
+	for (y = 0 ; y < font->h ; ++y) {
+	    for (x = 0, b = 128 ; b ; ++x, b >>= 1)
+		((Uint32*)dest)[x] = glyph[y] & b ? font->color : font->bkgnd;
+	    dest += surface->pitch;
+	}
+	xpos += font->w;
+    }
+}
+
 /*
  * Exported font-drawing functions.
  */
@@ -61,7 +87,16 @@ void _sdlputtext(int xpos, int ypos, char const *text)
 {
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
-    putline(xpos, ypos, strlen(text), text);
+    putlineopaque(xpos, ypos, strlen(text), text);
+    if (SDL_MUSTLOCK(surface))
+	SDL_UnlockSurface(surface);
+}
+
+void _sdlputtranstext(int xpos, int ypos, char const *text)
+{
+    if (SDL_MUSTLOCK(surface))
+	SDL_LockSurface(surface);
+    putlinetransparent(xpos, ypos, strlen(text), text);
     if (SDL_MUSTLOCK(surface))
 	SDL_UnlockSurface(surface);
 }
@@ -72,7 +107,16 @@ void _sdlputntext(int xpos, int ypos, int len, char const *text)
 {
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
-    putline(xpos, ypos, len, text);
+    putlineopaque(xpos, ypos, len, text);
+    if (SDL_MUSTLOCK(surface))
+	SDL_UnlockSurface(surface);
+}
+
+void _sdlputtransntext(int xpos, int ypos, int len, char const *text)
+{
+    if (SDL_MUSTLOCK(surface))
+	SDL_LockSurface(surface);
+    putlinetransparent(xpos, ypos, len, text);
     if (SDL_MUSTLOCK(surface))
 	SDL_UnlockSurface(surface);
 }
@@ -102,7 +146,39 @@ void _sdlputmltext(SDL_Rect *area, char const *text)
 	    if (n < 0)
 		n = width;
 	}
-	putline(area->x, area->y, n, text + index);
+	putlineopaque(area->x, area->y, n, text + index);
+	index += n;
+	area->y += font->h;
+	area->h -= font->h;
+    }
+
+    if (SDL_MUSTLOCK(surface))
+	SDL_UnlockSurface(surface);
+}
+
+void _sdlputtransmltext(SDL_Rect *area, char const *text)
+{
+    int	index, width, n;
+
+    if (SDL_MUSTLOCK(surface))
+	SDL_LockSurface(surface);
+
+    width = area->w / font->w;
+    index = 0;
+    while (area->h >= font->h) {
+	while (isspace(text[index]))
+	    ++index;
+	if (!text[index])
+	    break;
+	n = strlen(text + index);
+	if (n > width) {
+	    n = width;
+	    while (!isspace(text[index + n]) && n >= 0)
+		--n;
+	    if (n < 0)
+		n = width;
+	}
+	putlinetransparent(area->x, area->y, n, text + index);
 	index += n;
 	area->y += font->h;
 	area->h -= font->h;
@@ -125,7 +201,7 @@ void _sdlscrollredraw(scrollinfo *scroll)
     fontinfo const     *origfont;
     int			len, n, y;
 
-    SDL_FillRect(surface, &scroll->area, scroll->bkgnd);
+    SDL_FillRect(surface, &scroll->area, font->bkgnd);
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
 
@@ -140,9 +216,9 @@ void _sdlscrollredraw(scrollinfo *scroll)
 	    font = &selfont;
 	len = strlen(scroll->items[n]);
 	if (len > scroll->maxlen)
-	    putline(scroll->area.x, y, scroll->maxlen, scroll->items[n]);
+	    putlineopaque(scroll->area.x, y, scroll->maxlen, scroll->items[n]);
 	else
-	    putline(scroll->area.x, y, len, scroll->items[n]);
+	    putlineopaque(scroll->area.x, y, len, scroll->items[n]);
 	if (n == scroll->index)
 	    font = origfont;
 	y += font->h;
@@ -214,11 +290,9 @@ int _sdlscrollmove(scrollinfo *scroll, int delta)
 /* Initialize the scrolling list's structure.
  */
 int _sdlcreatescroll(scrollinfo *scroll, SDL_Rect const *area,
-		     Uint32 bkgndcolor, Uint32 highlightcolor,
-		     int itemcount, char const **items)
+		     Uint32 highlightcolor, int itemcount, char const **items)
 {
     scroll->area = *area;
-    scroll->bkgnd = bkgndcolor;
     scroll->highlight = highlightcolor;
     scroll->itemcount = itemcount;
     scroll->items = items;

@@ -82,16 +82,16 @@ static int createendmsgicons(void)
 	0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,
 	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,
-	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,
 	0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
 	0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,
 	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
 	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
 	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
 	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
+	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
+	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
 	0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,
 	0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
-	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,
 	0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,
 	0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,
@@ -523,7 +523,7 @@ int displaylist(char const *title, char const *header,
 	list.h -= ccfont.h;
     }
 
-    _sdlcreatescroll(&scroll, &list, clr_black, clr_yellow, itemcount, items);
+    _sdlcreatescroll(&scroll, &list, clr_yellow, itemcount, items);
     _sdlscrollsetindex(&scroll, *index);
 
     for (;;) {
@@ -682,6 +682,7 @@ int _sdloutputinitialize(void)
 						   | screen->format->Bmask);
     }
     ccfont.color = clr_white;
+    ccfont.bkgnd = clr_black;
     _sdlsettextfont(&ccfont);
     _sdlsettransparentcolor(clr_transparent);
 
