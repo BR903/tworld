@@ -442,8 +442,11 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 
     rect = infoloc;
 
-    sprintf(buf, "Level %d", state->game->number);
-    puttext(&rect, buf, -1, PT_UPDATERECT);
+    if (state->game->number) {
+	sprintf(buf, "Level %d", state->game->number);
+	puttext(&rect, buf, -1, PT_UPDATERECT);
+    } else
+	puttext(&rect, "", 0, PT_UPDATERECT);
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);

@@ -32,6 +32,7 @@ typedef	struct gamespec {
     int		playback;	/* TRUE if in playback mode */
     int		usepasswds;	/* FALSE if passwords are to be ignored */
     int		status;		/* final status of last game played */
+    int		enddisplay;	/* TRUE if the last level has been completed */
 } gamespec;
 
 /* Structure used to pass data back from initoptionswithcmdline().
@@ -326,6 +327,31 @@ static int selectlevelbypassword(gamespec *gs)
 
 #define	leveldelta(n)	if (!changecurrentgame(gs, (n))) { bell(); continue; }
 
+/*
+ */
+static int doenddisplay(gamespec *gs)
+{
+    int	cmd;
+
+    initgamestate(enddisplaylevel(), gs->series.ruleset);
+    setsubtitle(NULL);
+    drawscreen();
+    endgamestate();
+    for (;;) {
+	cmd = input(TRUE);
+	switch (cmd) {
+	  case CmdSameLevel:
+	  case CmdSame:
+	    changecurrentgame(gs, -gs->currentgame);
+	    return TRUE;
+	  case CmdQuit:
+	    exit(0);
+	  default:
+	    return FALSE;
+	}
+    }
+}
+
 /* Get a keystroke from the user at the start of the current level.
  */
 static int startinput(gamespec *gs)
@@ -408,8 +434,14 @@ static int endinput(gamespec *gs)
 	  case CmdQuitLevel:					return FALSE;
 	  case CmdQuit:						exit(0);
 	  case CmdProceed:
-	    if (gs->status > 0)
-		changecurrentgame(gs, +1);
+	    if (gs->status > 0) {
+		if (gs->currentgame + 1 == gs->series.total ||
+			gs->series.games[gs->currentgame].number == gs->series.final) {
+		    gs->enddisplay = TRUE;
+		} else {
+		    changecurrentgame(gs, +1);
+		}
+	    }
 	    return TRUE;
 	}
     }
@@ -487,8 +519,10 @@ static int playgame(gamespec *gs, int firstcmd)
     if (n > 0) {
 	if (replacesolution())
 	    savesolutions(&gs->series);
+/*
 	if (gs->currentgame + 1 >= gs->series.count)
 	    n = 0;
+*/
     }
     gs->status = n;
     return TRUE;
@@ -615,6 +649,7 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 	return FALSE;
     }
 
+    gs->enddisplay = FALSE;
     gs->playback = FALSE;
     gs->usepasswds = usepasswds && gs->series.usepasswds;
     gs->currentgame = -1;
@@ -917,6 +952,11 @@ static int runcurrentlevel(gamespec *gs)
     int ret = TRUE;
     int	cmd;
     int	valid, f;
+
+    if (gs->enddisplay) {
+	gs->enddisplay = FALSE;
+	return doenddisplay(gs);
+    }
 
     valid = initgamestate(gs->series.games + gs->currentgame,
 			  gs->series.ruleset);

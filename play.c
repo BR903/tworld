@@ -5,7 +5,6 @@
  */
 
 #include	<stdlib.h>
-#include	<assert.h>
 #include	"defs.h"
 #include	"err.h"
 #include	"state.h"

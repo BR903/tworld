@@ -61,4 +61,8 @@ extern void freeserieslist(gameseries *serieslist, int count,
 extern int findlevelinseries(gameseries const *series,
 			     int number, char const *passwd);
 
+/* A small level, for display at the very end.
+ */
+extern gamesetup *enddisplaylevel(void);
+
 #endif

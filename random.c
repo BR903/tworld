@@ -21,7 +21,6 @@
 
 #include	<stdlib.h>
 #include	<time.h>
-#include	<assert.h>
 #include	"gen.h"
 #include	"random.h"
 

@@ -1525,7 +1525,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 /* 36 not used			*/	{ TRUE,  NIL,		    NIL },
 /* 37 not used			*/	{ TRUE,  NIL,		    NIL },
 /* 38 not used			*/	{ TRUE,  NIL,		    NIL },
-/* 39 Chip in exit		*/	{ TRUE,  NIL,		    NIL },
+/* 39 Chip in exit		*/	{ TRUE,  Exited_Chip,	    NIL },
 /* 3A exit (frame 2)		*/	{ TRUE,  Exit,		    NIL },
 /* 3B exit (frame 3)		*/	{ TRUE,  Exit,		    NIL },
 /* 3C Chip swimming N		*/	{ TRUE,  NIL,		    NIL },
