@@ -1,29 +1,31 @@
 Font=font.bmp
-ChipDeathSound=death.wav
 LevelCompleteSound=tada.wav
-PickupChipSound=chack.wav
 PickupToolSound=ting.wav
 ThiefSound=thief.wav
 TeleportSound=teleport.wav
 OpenDoorSound=door.wav
-SocketSound=socket.wav
 SwitchSound=click.wav
 BombSound=bomb.wav
 SplashSound=splash.wav
 
 [MS]
 TileImages=tiles.bmp
-BlockedMoveSound=oof.wav
+ChipDeathSound=death.wav
 ChipDeathByTimeSound=ding.wav
 TickSound=tick.wav
+PickupChipSound=chack.wav
+BlockedMoveSound=oof.wav
+SocketSound=socket.wav
 
 [Lynx]
 TileImages=atiles.bmp
-DerezzSound=derezz.wav
+ChipDeathSound=derezz.wav
+PickupChipSound=ting.wav
 BlockedMoveSound=bump.wav
+SocketSound=door.wav
 TileEmptiedSound=whisk.wav
 WallCreatedSound=popup.wav
-TrapEnteredSound=traphit.wav
+TrapEnteredSound=bump.wav
 BlockMovingSound=block.wav
 SkatingForwardSound=skate.wav
 SkatingTurnSound=skaturn.wav
