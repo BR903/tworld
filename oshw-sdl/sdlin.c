@@ -398,8 +398,7 @@ tablespec const *keyboardhelp(int which)
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_ingame = { 11, 2, 4, 1,
-					      ingame_items };
+    static tablespec const keyhelp_ingame = { 11, 2, 4, 1, ingame_items };
 
     static char *twixtgame_items[] = {
 	"1-P", "1-jump to the previous level",
@@ -411,12 +410,14 @@ tablespec const *keyboardhelp(int which)
 	"1-Q", "1-return to the file list",
 	"1-Tab", "1-playback saved solution",
 	"1-Ctrl-X", "1-replace existing solution",
+	"1-O", "1-toggle between even-step and odd-step offset",
+	"1-Shift-O", "1-increment stepping offset (Lynx only)",
 	"1-V", "1-decrease volume",
 	"1-Shift-V", "1-increase volume",
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_twixtgame = { 13, 2, 4, 1, 
+    static tablespec const keyhelp_twixtgame = { 15, 2, 4, 1,
 						 twixtgame_items };
 
     static char *scroll_items[] = {
