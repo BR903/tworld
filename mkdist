@@ -26,17 +26,3 @@ rm -f tworld-$VER-noimgs.tar.gz
 tar -cf tworld-$VER-noimgs.tar tworld-$VER
 gzip -9 tworld-$VER-noimgs.tar
 rm -rf tworld-$VER
-
-#
-# Finally, grab the files to update on the website.
-#
-
-rm -f twdocs.tar twdocs.tar.gz INSTALL-linux.html INSTALL-win32.html \
-      tworld.html
-cp INSTALL.html INSTALL-linux.html
-cp win32/INSTALL.html INSTALL-win32.html
-cp docs/tworld.html .
-tar -cf twdocs.tar README.html INSTALL-linux.html INSTALL-win32.html \
-                   BUGS.html Changelog.html tworld.html
-gzip -9 twdocs.tar
-rm INSTALL-linux.html INSTALL-win32.html tworld.html
