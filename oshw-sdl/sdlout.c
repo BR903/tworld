@@ -596,13 +596,13 @@ int displayendmessage(int basescore, int timescore, long totalscore,
 	rect = hintloc;
 	puttext(&rect, "Level Completed", -1, PT_CENTER | PT_UPDATERECT);
 	puttext(&rect, "", 0, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Time Bonus %04d", timescore);
+	n = sprintf(buf, "Time Bonus  %04d", timescore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Level Bonus %05d", basescore);
+	n = sprintf(buf, "Level Bonus  %05d", basescore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Level Score %05d", timescore + basescore);
+	n = sprintf(buf, "Level Score  %05d", timescore + basescore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Total Score %07ld", totalscore);
+	n = sprintf(buf, "Total Score  %07ld", totalscore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
 	fillrect(&rect);
 	SDL_UpdateRect(sdlg.screen, hintloc.x, hintloc.y,
