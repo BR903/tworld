@@ -93,10 +93,7 @@ still squarely on the ice when the glider arrives, and the latter
 bounces off and retreats. The boosting pattern is governed by how
 slots in the creature list come back up for reuse after a creature has
 been killed. Clearly, the emulator is not using the same algorithm as
-the Lynx game. Unfortunately, it's a tedious business to collect any
-amount of data on this that would be necessary to start finding
-patterns, and there are few levels that have the necessary elements
-for such investigation. So this one is still up in the air.
+the Lynx game.
 <li>
 The Lynx game only permitted 128 creatures (including Chip) to exist
 simultaneously. Thus, a clone machine activated when the population
@@ -108,6 +105,19 @@ may be better off as it is....
 Block pushing is currently not handled correctly. Pushed blocks move
 when Chip does, when in reality they need to retain their own position
 in the ordering.
+<li>
+Under the real Lynx game it is possible, with carefully constructed
+circumstances, to have Chip push a block off of an open toggle wall
+that then closes before Chip can enter it. This is the only situation
+I know of, barring diagonal moves, in which Chip can push a block
+without following it.  This is impossible to do in TW. (This one may
+be just another manifestation of the previous bug.)
+<li>
+Under the real Lynx game it is possible, with carefully constructed
+circumstances, for Chip to push a block away from him as it's heading
+towards him. That is, a block starts moving into the square that Chip
+occupies, but in the same frame, Chip starts pushing the block in the
+opposite direction. This is impossible to do in TW.
 </ol>
 <p>
 <hr>

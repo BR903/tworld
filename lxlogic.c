@@ -875,10 +875,10 @@ static int getforcedmove(creature *cr)
 
     setfdir(cr, NIL);
 
+    floor = floorat(cr->pos);
+
     if (currenttime() == 0)
 	return FALSE;
-
-    floor = floorat(cr->pos);
 
     if (isice(floor)) {
 	if (cr->id == Chip && possession(Boots_Ice))
@@ -1616,7 +1616,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 /* 07 blocked west		*/	{ TRUE,  Wall_West,	    NIL },
 /* 08 blocked south		*/	{ TRUE,  Wall_South,	    NIL },
 /* 09 blocked east		*/	{ TRUE,  Wall_East,	    NIL },
-/* 0A block			*/	{ FALSE, Block,		    NIL },
+/* 0A block			*/	{ FALSE, Block,		    NORTH },
 /* 0B dirt			*/	{ TRUE,  Dirt,		    NIL },
 /* 0C ice			*/	{ TRUE,  Ice,		    NIL },
 /* 0D force south		*/	{ TRUE,  Slide_South,	    NIL },
@@ -1810,6 +1810,10 @@ static int initgame(gamelogic *logic)
 	    } else {
 		cr->state = 0;
 		claimlocation(pos);
+		if (cr->id == Block)
+		    if (floorat(pos) != CloneMachine &&
+					floorat(pos) != Beartrap)
+			cr->dir = NIL;
 	    }
 	    setfdir(cr, NIL);
 	    cr->tdir = NIL;
