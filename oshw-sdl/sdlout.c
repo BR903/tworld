@@ -475,7 +475,18 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	strcpy(buf, "---");
     else
 	sprintf(buf, "%d", timeleft);
-    puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
+    puttext(&rrect, buf, -1, PT_RIGHT);
+    if (state->stepping) {
+	rrect.x += rrect.w;
+	rrect.w = infoloc.x + infoloc.w - rrect.x;
+	if (state->stepping < 4)
+	    sprintf(buf, "   (+%d)", state->stepping);
+	else if (state->stepping > 4)
+	    sprintf(buf, "   (odd+%d)", state->stepping & 3);
+	else
+	    sprintf(buf, "   (odd)");
+	puttext(&rrect, buf, -1, 0);
+    }
 
     if (besttime != TIME_NIL) {
 	if (timeleft == TIME_NIL)

@@ -571,8 +571,8 @@ static int startinput(gamespec *gs)
 	  case CmdNext:		leveldelta(+1);			return CmdNone;
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
 	  case CmdKillSolution:	replaceablesolution(gs, -1);	break;
-	  case CmdStepping:	changestepping(4, TRUE);	break;
-	  case CmdSubStepping:	changestepping(1, TRUE);	break;
+	  case CmdStepping:	changestepping(4, FALSE);	break;
+	  case CmdSubStepping:	changestepping(1, FALSE);	break;
 	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
 	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdHelp:		dohelp(Help_KeysBetweenGames);	break;

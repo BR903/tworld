@@ -173,36 +173,11 @@ void setgameplaymode(int mode)
 
 /* Alter the stepping.
  */
-int changestepping(int delta, int display)
+int setstepping(int stepping, int display)
 {
     char	msg[32], *p;
 
-    if (state.stepping < 0)
-	state.stepping = 0;
-    switch (state.ruleset) {
-    case Ruleset_Lynx:
-	if (delta == 4) {
-	    state.stepping &= 4;
-	    state.stepping ^= 4;
-	} else if (delta == 1) {
-	    if ((state.stepping & 3) == 3)
-		state.stepping &= 4;
-	    else
-		++state.stepping;
-	} else {
-	    return FALSE;
-	}
-	break;
-    case Ruleset_MS:
-	if (delta == 4)
-	    state.stepping ^= 4;
-	else
-	    return FALSE;
-	break;
-    default:
-	return FALSE;
-    }
-
+    state.stepping = stepping;
     if (display) {
 	p = msg;
 	p += sprintf(p, "%s-step", state.stepping & 4 ? "odd" : "even");
@@ -210,6 +185,20 @@ int changestepping(int delta, int display)
 	    p += sprintf(p, " +%d", state.stepping & 3);
 	setdisplaymsg(msg, 500, 500);
     }
+    return TRUE;
+}
+
+int changestepping(int delta, int display)
+{
+    int	n;
+
+    if (state.stepping < 0)
+	state.stepping = 0;
+    n = (state.stepping + delta) % 8;
+    if (state.ruleset == Ruleset_MS)
+	n &= ~4;
+    if (state.stepping != n)
+	return setstepping(n, display);
     return TRUE;
 }
 
