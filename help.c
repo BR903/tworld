@@ -181,5 +181,6 @@ int gameplayhelp(void)
 	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), +1)
 	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), +1)
 	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), +1)
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0);
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0)
+	&& (cleardisplay(), TRUE);
 }

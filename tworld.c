@@ -540,6 +540,8 @@ int main(int argc, char *argv[])
     if (!startup(&spec, &start))
 	return EXIT_FAILURE;
 
+    cleardisplay();
+
     for (;;) {
 	if (spec.currentgame < 0) {
 	    spec.currentgame = 0;

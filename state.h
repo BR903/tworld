@@ -125,6 +125,10 @@ enum
 #define	isdecaying(f)	((f) >= Water_Splash && (f) <= Bomb_Explosion)
 #define	iscreature(f)	((f) >= Chip)
 
+/* Getting a specific creature tile.
+ */
+#define	crtile(id, dir)	((id) | diridx(dir))
+
 /*
  * Substructures of the game state
  */

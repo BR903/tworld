@@ -83,6 +83,10 @@ extern void freetileset(void);
  */
 extern int creategamedisplay(void);
 
+/* Fill the display with the background color.
+ */
+extern void cleardisplay(void);
+
 /* Display the current game state. timeleft and besttime provide the
  * current time on the clock and the best time recorded for the level,
  * measured in seconds.

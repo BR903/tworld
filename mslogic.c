@@ -30,7 +30,6 @@
 
 #define	creatureid(id)		((id) & ~3)
 #define	creaturedirid(id)	(idxdir((id) & 3))
-#define	creaturetile(id, dir)	((id) | diridx(dir))
 
 static int advancecreature(creature *cr, int dir);
 
@@ -585,7 +584,7 @@ static void updatecreature(creature const *cr)
     if (cr->state & CS_TURNING)
 	dir = right(dir);
 
-    tile->id = creaturetile(id, dir);
+    tile->id = crtile(id, dir);
     tile->state = 0;
 }
 
@@ -914,7 +913,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	if (issomeoneat(to)) {
 	    if (!(flags & CMM_CLONECANTBLOCK))
 		return FALSE;
-	    if (cellat(to)->top.id != creaturetile(cr->id, cr->dir))
+	    if (cellat(to)->top.id != crtile(cr->id, cr->dir))
 		return FALSE;
 	}
 	if (isboots(cellat(to)->top.id))
@@ -1986,8 +1985,8 @@ int ms_initgame(gamestate *pstate)
 	    transparent = iskey(cell->top.id) || isboots(cell->top.id);
 	    layer1[pos] = 0;
 	} else {
-	    cell->top.id = creaturetile(fileids[layer1[pos]].id,
-					fileids[layer1[pos]].dir);
+	    cell->top.id = crtile(fileids[layer1[pos]].id,
+				  fileids[layer1[pos]].dir);
 	    transparent = fileids[layer1[pos]].id != Chip
 		       && fileids[layer1[pos]].id != Block;
 	}
@@ -1999,8 +1998,8 @@ int ms_initgame(gamestate *pstate)
 					|| cell->bot.id == SwitchWall_Open))
 		cell->bot.state |= FS_BROKEN;
 	} else {
-	    cell->bot.id = creaturetile(fileids[layer2[pos]].id,
-					fileids[layer2[pos]].dir);
+	    cell->bot.id = crtile(fileids[layer2[pos]].id,
+				  fileids[layer2[pos]].dir);
 	}
     }
 
