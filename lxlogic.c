@@ -1574,7 +1574,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 /* 1D NE ice slide		*/	{ TRUE,  IceWall_Northeast, NIL },
 /* 1E blue block, tile		*/	{ TRUE,  BlueWall_Fake,	    NIL },
 /* 1F blue block, wall		*/	{ TRUE,  BlueWall_Real,	    NIL },
-/* 20 not used (overlay buffer)	*/	{ TRUE,  NIL,		    NIL },
+/* 20 not used (overlay buffer)	*/	{ TRUE,  0,		    NIL },
 /* 21 thief			*/	{ TRUE,  Burglar,	    NIL },
 /* 22 socket			*/	{ TRUE,  Socket,	    NIL },
 /* 23 green button		*/	{ TRUE,  Button_Green,	    NIL },
@@ -1593,19 +1593,19 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 /* 30 blocked SE		*/	{ TRUE,  Wall_Southeast,    NIL },
 /* 31 cloning machine		*/	{ TRUE,  CloneMachine,	    NIL },
 /* 32 force all directions	*/	{ TRUE,  Slide_Random,	    NIL },
-/* 33 drowning Chip		*/	{ TRUE,  NIL,		    NIL },
-/* 34 burned Chip in fire	*/	{ TRUE,  NIL,		    NIL },
-/* 35 burned Chip		*/	{ TRUE,  NIL,		    NIL },
-/* 36 not used			*/	{ TRUE,  NIL,		    NIL },
-/* 37 not used			*/	{ TRUE,  NIL,		    NIL },
-/* 38 not used			*/	{ TRUE,  NIL,		    NIL },
+/* 33 drowning Chip		*/	{ TRUE,  0,		    NIL },
+/* 34 burned Chip in fire	*/	{ TRUE,  0,		    NIL },
+/* 35 burned Chip		*/	{ TRUE,  0,		    NIL },
+/* 36 not used			*/	{ TRUE,  0,		    NIL },
+/* 37 not used			*/	{ TRUE,  0,		    NIL },
+/* 38 not used			*/	{ TRUE,  0,		    NIL },
 /* 39 Chip in exit		*/	{ TRUE,  Exited_Chip,	    NIL },
 /* 3A exit (frame 2)		*/	{ TRUE,  Exit,		    NIL },
 /* 3B exit (frame 3)		*/	{ TRUE,  Exit,		    NIL },
-/* 3C Chip swimming N		*/	{ TRUE,  NIL,		    NIL },
-/* 3D Chip swimming W		*/	{ TRUE,  NIL,		    NIL },
-/* 3E Chip swimming S		*/	{ TRUE,  NIL,		    NIL },
-/* 3F Chip swimming E		*/	{ TRUE,  NIL,		    NIL },
+/* 3C Chip swimming N		*/	{ TRUE,  0,		    NIL },
+/* 3D Chip swimming W		*/	{ TRUE,  0,		    NIL },
+/* 3E Chip swimming S		*/	{ TRUE,  0,		    NIL },
+/* 3F Chip swimming E		*/	{ TRUE,  0,		    NIL },
 /* 40 Bug N			*/	{ FALSE, Bug,		    NORTH },
 /* 41 Bug W			*/	{ FALSE, Bug,		    WEST },
 /* 42 Bug S			*/	{ FALSE, Bug,		    SOUTH },
@@ -1699,10 +1699,18 @@ static int initgame(gamelogic *logic)
 
     n = -1;
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids))
+	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids)
+					|| !fileids[layer1[pos]].id) {
+	    warn("Level %d: Invalid tile %02X at (%d %d) replaced with wall",
+		 game->number, layer1[pos], pos % CXGRID, pos / CXGRID);
 	    layer1[pos] = 0x01;
-	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids))
+	}
+	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids)
+					|| !fileids[layer2[pos]].id) {
+	    warn("Level %d: Invalid tile %02X at (%d %d) replaced with wall",
+		 game->number, layer2[pos], pos % CXGRID, pos / CXGRID);
 	    layer2[pos] = 0x01;
+	}
 	state->map[pos].bot.id = Empty;
 	if (layer2[pos]) {
 	    if (fileids[layer1[pos]].isfloor) {

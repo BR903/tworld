@@ -11,7 +11,12 @@
 #include	"gen.h"
 
 /* Initialize the OS/hardware interface. This function must be called
- * before any others in the oshw library.
+ * before any others in the oshw library. If silence is TRUE, the
+ * sound system will be disabled, as if no soundcard was present. If
+ * showhistogram is TRUE, then during shutdown the timer module will
+ * send a histogram to stdout describing the amount of time the
+ * program explicitly yielded to other processes. (This feature is for
+ * debugging purposes.)
  */
 extern int oshwinitialize(int silence, int showhistogram);
 

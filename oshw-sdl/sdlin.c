@@ -20,31 +20,31 @@ typedef	struct keycmdmap {
     int		hold;		/* TRUE for repeating joystick-mode keys */
 } keycmdmap;
 
-/* The states of keys.
+/* The possible states of keys.
  */
 enum { KS_OFF = 0,		/* key is not currently pressed */
        KS_ON = 1,		/* key is down (shift-type keys only) */
        KS_DOWN,			/* key is being held down */
-       KS_STRUCK,		/* key was pressed and released in one cycle */
-       KS_PRESSED,		/* key was pressed in this cycle */
-       KS_DOWNBUTOFF1,		/* key was pressed in the previous cycle */
-       KS_DOWNBUTOFF2,		/* key was pressed two cycles ago */
-       KS_REPRESSED,		/* key is down and is now repeating */
+       KS_STRUCK,		/* key was pressed and released in one tick */
+       KS_PRESSED,		/* key was pressed in this tick */
+       KS_DOWNBUTOFF1,		/* key has been down since the previous tick */
+       KS_DOWNBUTOFF2,		/* key has been down since two ticks ago */
+       KS_REPEATING,		/* key is down and is now repeating */
        KS_count
 };
 
-/* The array of key states.
+/* The complete array of key states.
  */
 static char	keystates[SDLK_LAST];
 
-/* TRUE if selected keys are to be treated as continuously repeating.
+/* TRUE if direction keys are to be treated as always repeating.
  */
 static int	joystickstyle = FALSE;
 
-/* The complete list of key commands recognized by the game. hold is
- * TRUE for keys that are to be forced to repeat. shift, ctl and alt
- * are positive if the key must be down, zero if the key must be up,
- * or negative if it doesn't matter.
+/* The complete list of key commands recognized by the game while
+ * playing. hold is TRUE for keys that are to be forced to repeat.
+ * shift, ctl and alt are positive if the key must be down, zero if
+ * the key must be up, or negative if it doesn't matter.
  */
 static keycmdmap const gamekeycmds[] = {
     { SDLK_UP,                    0,  0,  0,   CmdNorth,      TRUE },
@@ -81,8 +81,6 @@ static keycmdmap const gamekeycmds[] = {
     { ' ',                       -1, -1,  0,   CmdProceed,    FALSE },
     { 'd',                        0,  0,  0,   CmdDebugCmd1,  FALSE },
     { 'd',                       +1,  0,  0,   CmdDebugCmd2,  FALSE },
-    { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
-    { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
     { SDLK_UP,                   +1,  0,  0,   CmdCheatNorth,         TRUE },
     { SDLK_LEFT,                 +1,  0,  0,   CmdCheatWest,          TRUE },
     { SDLK_DOWN,                 +1,  0,  0,   CmdCheatSouth,         TRUE },
@@ -97,15 +95,13 @@ static keycmdmap const gamekeycmds[] = {
     { SDLK_F8,                    0,  0,  0,   CmdCheatBootsSlide,    FALSE },
     { SDLK_F9,                    0,  0,  0,   CmdCheatBootsFire,     FALSE },
     { SDLK_F10,                   0,  0,  0,   CmdCheatBootsWater,    FALSE },
-#if 0
-    { '\t',                       0, -1,  0,   CmdNextUndone, FALSE },
-    { '\t',                      +1, -1,  0,   CmdPrevUndone, FALSE },
-#endif
+    { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
+    { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
     { 0, 0, 0, 0, 0, 0 }
 };
 
-/* The map of key commands used when the program is obtaining input
- * from the user.
+/* The list of key commands recognized when the program is obtaining
+ * input from the user.
  */
 static keycmdmap const inputkeycmds[] = {
     { SDLK_UP,                   -1, -1,  0,   CmdNorth,      FALSE },
@@ -148,9 +144,12 @@ static keycmdmap const inputkeycmds[] = {
     { 0, 0, 0, 0, 0, 0 }
 };
 
+/* The current map of key commands.
+ */
 static keycmdmap const *keycmds = gamekeycmds;
 
-/* A map of keys that can produce simultaneous commands. 
+/* A map of keys that can be held down simultaneously to produce
+ * multiple commands.
  */
 static int mergeable[CmdCount];
 
@@ -158,10 +157,12 @@ static int mergeable[CmdCount];
  * Running the keyboard's state machine.
  */
 
-/* Change the recorded state of a key. Shift-type keys are always
- * either on or off. The other keys can be struck, pressed,
- * re-pressed, held down, or down but ignored, as appropriate to when
- * they were first pressed and the current behavior settings.
+/* This callback is called whenever the state of any keyboard key
+ * changes. It records this change in the keystates array. The key can
+ * be recorded as being struck, pressed, repeating, held down, or down
+ * but ignored, as appropriate to when they were first pressed and the
+ * current behavior settings. Shift-type keys are always either on or
+ * off.
  */
 static void _keyeventcallback(int scancode, int down)
 {
@@ -182,7 +183,7 @@ static void _keyeventcallback(int scancode, int down)
       default:
 	if (down) {
 	    keystates[scancode] = keystates[scancode] == KS_OFF ? KS_PRESSED
-								: KS_REPRESSED;
+								: KS_REPEATING;
 	} else {
 	    keystates[scancode] = keystates[scancode] == KS_PRESSED ? KS_STRUCK
 								    : KS_OFF;
@@ -198,7 +199,7 @@ static void restartkeystates(void)
     Uint8      *keyboard;
     int		count, n;
 
-    memset(keystates, FALSE, sizeof keystates);
+    memset(keystates, KS_OFF, sizeof keystates);
     keyboard = SDL_GetKeyState(&count);
     if (count > SDLK_LAST)
 	count = SDLK_LAST;
@@ -207,11 +208,13 @@ static void restartkeystates(void)
 	    _keyeventcallback(n, TRUE);
 }
 
-/* Update the key states at the start of a polling cycle.
+/* Update the key states. This is done at the start of each polling
+ * cycle. The state changes that occur depend on the current behavior
+ * settings.
  */
 static void resetkeystates(void)
 {
-    /* The transition table for resetkeystates() in joystick behavior mode.
+    /* The transition table for keys in joystick behavior mode.
      */
     static char const joystick_trans[KS_count] = {
 	/* KS_OFF         => */	KS_OFF,
@@ -221,9 +224,9 @@ static void resetkeystates(void)
 	/* KS_PRESSED     => */	KS_DOWN,
 	/* KS_DOWNBUTOFF1 => */	KS_DOWN,
 	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
-	/* KS_REPRESSED   => */	KS_DOWN
+	/* KS_REPEATING   => */	KS_DOWN
     };
-    /* The transition table for resetkeystates() in keyboard behavior mode.
+    /* The transition table for keys in keyboard behavior mode.
      */
     static char const keyboard_trans[KS_count] = {
 	/* KS_OFF         => */	KS_OFF,
@@ -233,7 +236,7 @@ static void resetkeystates(void)
 	/* KS_PRESSED     => */	KS_DOWNBUTOFF1,
 	/* KS_DOWNBUTOFF1 => */	KS_DOWNBUTOFF2,
 	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
-	/* KS_REPRESSED   => */	KS_DOWN
+	/* KS_REPEATING   => */	KS_DOWN
     };
 
     char const *newstate;
@@ -248,8 +251,9 @@ static void resetkeystates(void)
  * Exported functions.
  */
 
-/* Wait for any non-shift key to be pressed down. Return TRUE unless
- * the selected key suggests a desire to leave on the user's part.
+/* Wait for any non-shift key to be pressed down, ignoring any keys
+ * that may be down at the time the function is called. Return FALSE
+ * if the key pressed is suggestive of a desire to quit.
  */
 int anykey(void)
 {
@@ -262,14 +266,18 @@ int anykey(void)
 	eventupdate(TRUE);
 	for (n = 0 ; n < SDLK_LAST ; ++n)
 	    if (keystates[n] == KS_STRUCK || keystates[n] == KS_PRESSED
-					  || keystates[n] == KS_REPRESSED)
+					  || keystates[n] == KS_REPEATING)
 		return n != 'q' && n != SDLK_ESCAPE;
     }
 }
 
 /* Poll the keyboard and return the command associated with the
  * selected key, if any. If no key is selected and wait is TRUE, block
- * until a key with an associated command is selected.
+ * until a key with an associated command is selected. In keyboard behavior
+ * mode, the function can return CmdPreserve, indicating that if the key
+ * command from the previous poll has not been processed, it should still
+ * be considered active. If two mergeable keys are selected, the return
+ * value will be the bitwise-or of their command values.
  */
 int input(int wait)
 {
@@ -308,7 +316,7 @@ int input(int wait)
 		    if ((mergeable[cmd1] & keycmds[i].cmd) == keycmds[i].cmd)
 			return cmd1 | keycmds[i].cmd;
 		}
-	    } else if (n == KS_STRUCK || n == KS_REPRESSED) {
+	    } else if (n == KS_STRUCK || n == KS_REPEATING) {
 		cmd = keycmds[i].cmd;
 	    } else if (n == KS_DOWNBUTOFF1 || n == KS_DOWNBUTOFF2) {
 		lingerflag = TRUE;
@@ -334,7 +342,13 @@ int setkeyboardrepeat(int enable)
 	return SDL_EnableKeyRepeat(0, 0) == 0;
 }
 
-/* Turn joystick behavior mode on or off.
+/* Turn joystick behavior mode on or off. In joystick-behavior mode,
+ * the arrow keys are always returned from input() if they are down at
+ * the time of the polling cycle. Other keys are only returned if they
+ * are pressed during a polling cycle (or if they repeat, if keyboard
+ * repeating is on). In keyboard-behavior mode, the arrow keys have a
+ * special repeating behavior that is kept synchronized with the
+ * polling cycle.
  */
 int setkeyboardarrowsrepeat(int enable)
 {
@@ -343,7 +357,8 @@ int setkeyboardarrowsrepeat(int enable)
     return TRUE;
 }
 
-/* Turn input mode on or off.
+/* Turn input mode on or off. When input mode is on, the input key
+ * command map is used instead of the game key command map.
  */
 int setkeyboardinputmode(int enable)
 {
@@ -364,7 +379,7 @@ int _sdlinputinitialize(void)
     return TRUE;
 }
 
-/* Online help text for the keyboard.
+/* Online help texts for the keyboard commands.
  */
 tablespec const *keyboardhelp(int which)
 {
@@ -372,15 +387,16 @@ tablespec const *keyboardhelp(int which)
 	"1-arrows", "1-move Chip",
 	"1-2 4 6 8 (keypad)", "1-also move Chip",
 	"1-Q", "1-quit the current game",
-	"1-Shift-Q", "1-exit the program",
-	"1-Ctrl-H (Bkspc)", "1-pause the game",
+	"1-Bkspc", "1-pause the game",
 	"1-Ctrl-R", "1-restart the current level",
 	"1-Ctrl-P", "1-jump to the previous level",
 	"1-Ctrl-N", "1-jump to the next level",
 	"1-V", "1-decrease volume",
-	"1-Shift-V", "1-increase volume"
+	"1-Shift-V", "1-increase volume",
+	"1-Ctrl-C", "1-exit the program",
+	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_ingame = { 10, 2, 4, 1,
+    static tablespec const keyhelp_ingame = { 11, 2, 4, 1,
 					      ingame_items };
 
     static char *twixtgame_items[] = {
@@ -391,13 +407,14 @@ tablespec const *keyboardhelp(int which)
 	"1-G", "1-go to a level with a password",
 	"1-S", "1-see the current score",
 	"1-Q", "1-return to the file list",
-	"1-Shift-Q", "1-exit the program",
-	"1-Ctrl-I (Tab)", "1-playback saved solution",
+	"1-Tab", "1-playback saved solution",
 	"1-Ctrl-X", "1-replace existing solution",
 	"1-V", "1-decrease volume",
-	"1-Shift-V", "1-increase volume"
+	"1-Shift-V", "1-increase volume",
+	"1-Ctrl-C", "1-exit the program",
+	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_twixtgame = { 10, 2, 4, 1, 
+    static tablespec const keyhelp_twixtgame = { 13, 2, 4, 1, 
 						 twixtgame_items };
 
     static char *scroll_items[] = {
@@ -405,9 +422,10 @@ tablespec const *keyboardhelp(int which)
 	"1-PgUp PgDn", "1-scroll selection",
 	"1-Enter Space", "1-select",
 	"1-Q", "1-cancel",
-	"1-Shift-Q", "1-exit the program"
+	"1-Ctrl-C", "1-exit the program",
+	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_scroll = { 4, 2, 4, 1, scroll_items };
+    static tablespec const keyhelp_scroll = { 6, 2, 4, 1, scroll_items };
 
     switch (which) {
       case KEYHELP_INGAME:	return &keyhelp_ingame;

@@ -35,10 +35,11 @@ void settimersecond(int ms)
     mspertick = (ms ? ms : 1000) / TICKS_PER_SECOND;
 }
 
-/* Control the timer depending on the value of action. A negative
- * value turns off the timer if it is running and resets the counter
- * to zero. A zero value turns off the timer but does not reset the
- * counter. A positive value starts (or resumes) the timer.
+/* Change the current timer setting. If action is positive, the timer
+ * is started (or resumed). If action is negative, the timer is
+ * stopped if it is running and the counter is reset to zero. If
+ * action is zero, the timer is stopped if it is running, and the
+ * counter remains at its current setting.
  */
 void settimer(int action)
 {
@@ -63,7 +64,8 @@ int gettickcount(void)
     return (int)utick;
 }
 
-/* Put the program to sleep until the next timer tick.
+/* Put the program to sleep until the next timer tick. If we've
+ * already missed a timer tick, then wait for the next one.
  */
 void waitfortick(void)
 {
@@ -75,12 +77,15 @@ void waitfortick(void)
 	    ++hist[ms >= 0 ? ms + 1 : 0];
     while (ms < 0)
 	ms += mspertick;
-    if (ms > 0)
-	SDL_Delay(ms);
+
+    SDL_Delay(ms);
+
     ++utick;
     nexttickat += mspertick;
 }
 
+/* At shutdown time, display the histogram data on stdout.
+ */
 static void shutdown(void)
 {
     unsigned long	n;

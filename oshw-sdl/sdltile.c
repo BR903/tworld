@@ -30,162 +30,171 @@
  * for a given id.
  */
 typedef	struct tilemap {
-    Uint32     *opaque[16];	/* ptr to an opaque image */
-    Uint32     *transp[16];	/* ptr to one or more transparent images */
-    char	celcount;	/* count of animated transparent images */
+    Uint32     *opaque[16];	/* one or more opaque images */
+    Uint32     *transp[16];	/* one or more transparent images */
+    char	celcount;	/* count of animated images */
     char	transpsize;	/* SIZE_* flags for the transparent size */
 } tilemap;
 
+/* Different types of tile images as stored in the large format bitmap.
+ */
 enum {
-    TILEIMG_IMPLICIT = 0,
-    TILEIMG_SINGLEOPAQUE,
-    TILEIMG_OPAQUECELS,
-    TILEIMG_TRANSPCELS,
-    TILEIMG_CREATURE,
-    TILEIMG_ANIMATION
+    TILEIMG_IMPLICIT = 0,	/* tile is not in the bitmap */
+    TILEIMG_SINGLEOPAQUE,	/* a single opaque image */
+    TILEIMG_OPAQUECELS,		/* one or more opaque images */
+    TILEIMG_TRANSPCELS,		/* one or more transparent images */
+    TILEIMG_CREATURE,		/* one of the creature formats */
+    TILEIMG_ANIMATION		/* twelve transparent images */
 };
 
 /* Structure indicating where to find the various tile images in a
- * tile bitmap. The last field indicates what is present in a
- * free-form tile bitmap, and the ordering of the array supplies the
- * order of images. All other fields apply to a fixed-form tile
- * bitmap, and can be in any order.
+ * tile bitmap. The opaque and transp fields give the coordinates of
+ * the tile in the small-format and masked-format bitmaps. For a
+ * large-format bitmap, the ordering of the array determines the order
+ * in which tile images are stored. The shape field defines what sort
+ * of tile image is expected in the large-format bitmap.
  */
 typedef	struct tileidinfo {
     int		id;		/* the tile ID */
     signed char	xopaque;	/* the coordinates of the opaque image */
     signed char	yopaque;	/*   (expressed in tiles, not pixels) */
     signed char	xtransp;	/* coordinates of the transparent image */
-    signed char	ytransp;	/*   (or the first image if animated) */
-    signed char	xceloff;	/* offset to the next transparent image */
-    signed char	yceloff;	/*   if image is animated */
-    signed char	celcount;	/* count of animated transparent images */
-    char	transpsize;	/* SIZE_* flags for the transparent size */
+    signed char	ytransp;	/*   (also expressed in tiles) */
     int		shape;		/* enum values for the free-form bitmap */
 } tileidinfo;
 
+/* The list of tile images.
+ */
 static tileidinfo const tileidmap[NTILES] = {
-    { Empty,		 0,  0, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Slide_North,	 1,  2, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Slide_West,	 1,  4, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Slide_South,	 0, 13, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Slide_East,	 1,  3, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Slide_Random,	 3,  2, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Ice,		 0, 12, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { IceWall_Northwest, 1, 12, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { IceWall_Northeast, 1, 13, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { IceWall_Southwest, 1, 11, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { IceWall_Southeast, 1, 10, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Gravel,		 2, 13, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Dirt,		 0, 11, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Water,		 0,  3, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Fire,		 0,  4, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Bomb,		 2, 10, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Beartrap,		 2, 11, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Burglar,		 2,  1, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { HintButton,	 2, 15, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Button_Blue,	 2,  8, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Button_Green,	 2,  3, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Button_Red,	 2,  4, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Button_Brown,	 2,  7, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Teleport,		 2,  9, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall,		 0,  1, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall_North,	 0,  6, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall_West,	 0,  7, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall_South,	 0,  8, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall_East,	 0,  9, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Wall_Southeast,	 3,  0, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { HiddenWall_Perm,	 0,  5, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { HiddenWall_Temp,	 2, 12, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { BlueWall_Real,	 1, 14, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { BlueWall_Fake,	 1, 15, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { SwitchWall_Open,	 2,  6, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { SwitchWall_Closed, 2,  5, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { PopupWall,	 2, 14, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { CloneMachine,	 3,  1, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Door_Red,		 1,  7, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Door_Blue,	 1,  6, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Door_Yellow,	 1,  9, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Door_Green,	 1,  8, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Socket,		 2,  2, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Exit,		 1,  5, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { ICChip,		 0,  2, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
-    { Key_Red,		 6,  5,  9,  5, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Key_Blue,		 6,  4,  9,  4, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Key_Yellow,	 6,  7,  9,  7, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Key_Green,	 6,  6,  9,  6, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Boots_Ice,	 6, 10,  9, 10, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Boots_Slide,	 6, 11,  9, 11, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Boots_Fire,	 6,  9,  9,  9, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Boots_Water,	 6,  8,  9,  8, 0, 0, 1, 0, TILEIMG_TRANSPCELS },
-    { Block_Static,	 0, 10, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { Overlay_Buffer,	 2,  0, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { Exit_Extra_1,	 3, 10, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Exit_Extra_2,	 3, 11, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Burned_Chip,	 3,  4, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Bombed_Chip,	 3,  5, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Exited_Chip,	 3,  9, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Drowned_Chip,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Swimming_Chip + 0, 3, 12, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Swimming_Chip + 1, 3, 13, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Swimming_Chip + 2, 3, 14, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Swimming_Chip + 3, 3, 15, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
-    { Chip + 0,		 6, 12,  9, 12, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Chip + 1,		 6, 13,  9, 13, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Chip + 2,		 6, 14,  9, 14, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Chip + 3,		 6, 15,  9, 15, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Pushing_Chip + 0,	 6, 12,  9, 12, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Pushing_Chip + 1,	 6, 13,  9, 13, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Pushing_Chip + 2,	 6, 14,  9, 14, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Pushing_Chip + 3,	 6, 15,  9, 15, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Block + 0,	 0, 14, -1, -1, 0, 0, 0, 0, TILEIMG_CREATURE },
-    { Block + 1,	 0, 15, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { Block + 2,	 1,  0, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { Block + 3,	 1,  1, -1, -1, 0, 0, 0, 0, TILEIMG_IMPLICIT },
-    { Tank + 0,		 4, 12,  7, 12, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Tank + 1,		 4, 13,  7, 13, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Tank + 2,		 4, 14,  7, 14, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Tank + 3,		 4, 15,  7, 15, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Ball + 0,		 4,  8,  7,  8, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Ball + 1,		 4,  9,  7,  9, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Ball + 2,		 4, 10,  7, 10, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Ball + 3,		 4, 11,  7, 11, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Glider + 0,	 5,  0,  8,  0, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Glider + 1,	 5,  1,  8,  1, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Glider + 2,	 5,  2,  8,  2, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Glider + 3,	 5,  3,  8,  3, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Fireball + 0,	 4,  4,  7,  4, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Fireball + 1,	 4,  5,  7,  5, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Fireball + 2,	 4,  6,  7,  6, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Fireball + 3,	 4,  7,  7,  7, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Walker + 0,	 5,  8,  8,  8, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Walker + 1,	 5,  9,  8,  9, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Walker + 2,	 5, 10,  8, 10, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Walker + 3,	 5, 11,  8, 11, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Blob + 0,		 5, 12,  8, 12, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Blob + 1,		 5, 13,  8, 13, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Blob + 2,		 5, 14,  8, 14, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Blob + 3,		 5, 15,  8, 15, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Teeth + 0,	 5,  4,  8,  4, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Teeth + 1,	 5,  5,  8,  5, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Teeth + 2,	 5,  6,  8,  6, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Teeth + 3,	 5,  7,  8,  7, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Bug + 0,		 4,  0,  7,  0, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Bug + 1,		 4,  1,  7,  1, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Bug + 2,		 4,  2,  7,  2, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Bug + 3,		 4,  3,  7,  3, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Paramecium + 0,	 6,  0,  9,  0, 0, 0, 1, 0, TILEIMG_CREATURE },
-    { Paramecium + 1,	 6,  1,  9,  1, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Paramecium + 2,	 6,  2,  9,  2, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Paramecium + 3,	 6,  3,  9,  3, 0, 0, 1, 0, TILEIMG_IMPLICIT },
-    { Water_Splash,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
-    { Bomb_Explosion,	 3,  6, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
-    { Entity_Explosion,	 3,  7, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION }
+    { Empty,		 0,  0, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Slide_North,	 1,  2, -1, -1, TILEIMG_OPAQUECELS },
+    { Slide_West,	 1,  4, -1, -1, TILEIMG_OPAQUECELS },
+    { Slide_South,	 0, 13, -1, -1, TILEIMG_OPAQUECELS },
+    { Slide_East,	 1,  3, -1, -1, TILEIMG_OPAQUECELS },
+    { Slide_Random,	 3,  2, -1, -1, TILEIMG_OPAQUECELS },
+    { Ice,		 0, 12, -1, -1, TILEIMG_OPAQUECELS },
+    { IceWall_Northwest, 1, 12, -1, -1, TILEIMG_OPAQUECELS },
+    { IceWall_Northeast, 1, 13, -1, -1, TILEIMG_OPAQUECELS },
+    { IceWall_Southwest, 1, 11, -1, -1, TILEIMG_OPAQUECELS },
+    { IceWall_Southeast, 1, 10, -1, -1, TILEIMG_OPAQUECELS },
+    { Gravel,		 2, 13, -1, -1, TILEIMG_OPAQUECELS },
+    { Dirt,		 0, 11, -1, -1, TILEIMG_OPAQUECELS },
+    { Water,		 0,  3, -1, -1, TILEIMG_OPAQUECELS },
+    { Fire,		 0,  4, -1, -1, TILEIMG_OPAQUECELS },
+    { Bomb,		 2, 10, -1, -1, TILEIMG_OPAQUECELS },
+    { Beartrap,		 2, 11, -1, -1, TILEIMG_OPAQUECELS },
+    { Burglar,		 2,  1, -1, -1, TILEIMG_OPAQUECELS },
+    { HintButton,	 2, 15, -1, -1, TILEIMG_OPAQUECELS },
+    { Button_Blue,	 2,  8, -1, -1, TILEIMG_OPAQUECELS },
+    { Button_Green,	 2,  3, -1, -1, TILEIMG_OPAQUECELS },
+    { Button_Red,	 2,  4, -1, -1, TILEIMG_OPAQUECELS },
+    { Button_Brown,	 2,  7, -1, -1, TILEIMG_OPAQUECELS },
+    { Teleport,		 2,  9, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall,		 0,  1, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall_North,	 0,  6, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall_West,	 0,  7, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall_South,	 0,  8, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall_East,	 0,  9, -1, -1, TILEIMG_OPAQUECELS },
+    { Wall_Southeast,	 3,  0, -1, -1, TILEIMG_OPAQUECELS },
+    { HiddenWall_Perm,	 0,  5, -1, -1, TILEIMG_IMPLICIT },
+    { HiddenWall_Temp,	 2, 12, -1, -1, TILEIMG_IMPLICIT },
+    { BlueWall_Real,	 1, 14, -1, -1, TILEIMG_OPAQUECELS },
+    { BlueWall_Fake,	 1, 15, -1, -1, TILEIMG_IMPLICIT },
+    { SwitchWall_Open,	 2,  6, -1, -1, TILEIMG_OPAQUECELS },
+    { SwitchWall_Closed, 2,  5, -1, -1, TILEIMG_OPAQUECELS },
+    { PopupWall,	 2, 14, -1, -1, TILEIMG_OPAQUECELS },
+    { CloneMachine,	 3,  1, -1, -1, TILEIMG_OPAQUECELS },
+    { Door_Red,		 1,  7, -1, -1, TILEIMG_OPAQUECELS },
+    { Door_Blue,	 1,  6, -1, -1, TILEIMG_OPAQUECELS },
+    { Door_Yellow,	 1,  9, -1, -1, TILEIMG_OPAQUECELS },
+    { Door_Green,	 1,  8, -1, -1, TILEIMG_OPAQUECELS },
+    { Socket,		 2,  2, -1, -1, TILEIMG_OPAQUECELS },
+    { Exit,		 1,  5, -1, -1, TILEIMG_OPAQUECELS },
+    { ICChip,		 0,  2, -1, -1, TILEIMG_OPAQUECELS },
+    { Key_Red,		 6,  5,  9,  5, TILEIMG_TRANSPCELS },
+    { Key_Blue,		 6,  4,  9,  4, TILEIMG_TRANSPCELS },
+    { Key_Yellow,	 6,  7,  9,  7, TILEIMG_TRANSPCELS },
+    { Key_Green,	 6,  6,  9,  6, TILEIMG_TRANSPCELS },
+    { Boots_Ice,	 6, 10,  9, 10, TILEIMG_TRANSPCELS },
+    { Boots_Slide,	 6, 11,  9, 11, TILEIMG_TRANSPCELS },
+    { Boots_Fire,	 6,  9,  9,  9, TILEIMG_TRANSPCELS },
+    { Boots_Water,	 6,  8,  9,  8, TILEIMG_TRANSPCELS },
+    { Block_Static,	 0, 10, -1, -1, TILEIMG_IMPLICIT },
+    { Overlay_Buffer,	 2,  0, -1, -1, TILEIMG_IMPLICIT },
+    { Exit_Extra_1,	 3, 10, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Exit_Extra_2,	 3, 11, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Burned_Chip,	 3,  4, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Bombed_Chip,	 3,  5, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Exited_Chip,	 3,  9, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Drowned_Chip,	 3,  3, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Swimming_Chip + 0, 3, 12, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Swimming_Chip + 1, 3, 13, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Swimming_Chip + 2, 3, 14, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Swimming_Chip + 3, 3, 15, -1, -1, TILEIMG_SINGLEOPAQUE },
+    { Chip + 0,		 6, 12,  9, 12, TILEIMG_CREATURE },
+    { Chip + 1,		 6, 13,  9, 13, TILEIMG_IMPLICIT },
+    { Chip + 2,		 6, 14,  9, 14, TILEIMG_IMPLICIT },
+    { Chip + 3,		 6, 15,  9, 15, TILEIMG_IMPLICIT },
+    { Pushing_Chip + 0,	 6, 12,  9, 12, TILEIMG_CREATURE },
+    { Pushing_Chip + 1,	 6, 13,  9, 13, TILEIMG_IMPLICIT },
+    { Pushing_Chip + 2,	 6, 14,  9, 14, TILEIMG_IMPLICIT },
+    { Pushing_Chip + 3,	 6, 15,  9, 15, TILEIMG_IMPLICIT },
+    { Block + 0,	 0, 14, -1, -1, TILEIMG_CREATURE },
+    { Block + 1,	 0, 15, -1, -1, TILEIMG_IMPLICIT },
+    { Block + 2,	 1,  0, -1, -1, TILEIMG_IMPLICIT },
+    { Block + 3,	 1,  1, -1, -1, TILEIMG_IMPLICIT },
+    { Tank + 0,		 4, 12,  7, 12, TILEIMG_CREATURE },
+    { Tank + 1,		 4, 13,  7, 13, TILEIMG_IMPLICIT },
+    { Tank + 2,		 4, 14,  7, 14, TILEIMG_IMPLICIT },
+    { Tank + 3,		 4, 15,  7, 15, TILEIMG_IMPLICIT },
+    { Ball + 0,		 4,  8,  7,  8, TILEIMG_CREATURE },
+    { Ball + 1,		 4,  9,  7,  9, TILEIMG_IMPLICIT },
+    { Ball + 2,		 4, 10,  7, 10, TILEIMG_IMPLICIT },
+    { Ball + 3,		 4, 11,  7, 11, TILEIMG_IMPLICIT },
+    { Glider + 0,	 5,  0,  8,  0, TILEIMG_CREATURE },
+    { Glider + 1,	 5,  1,  8,  1, TILEIMG_IMPLICIT },
+    { Glider + 2,	 5,  2,  8,  2, TILEIMG_IMPLICIT },
+    { Glider + 3,	 5,  3,  8,  3, TILEIMG_IMPLICIT },
+    { Fireball + 0,	 4,  4,  7,  4, TILEIMG_CREATURE },
+    { Fireball + 1,	 4,  5,  7,  5, TILEIMG_IMPLICIT },
+    { Fireball + 2,	 4,  6,  7,  6, TILEIMG_IMPLICIT },
+    { Fireball + 3,	 4,  7,  7,  7, TILEIMG_IMPLICIT },
+    { Walker + 0,	 5,  8,  8,  8, TILEIMG_CREATURE },
+    { Walker + 1,	 5,  9,  8,  9, TILEIMG_IMPLICIT },
+    { Walker + 2,	 5, 10,  8, 10, TILEIMG_IMPLICIT },
+    { Walker + 3,	 5, 11,  8, 11, TILEIMG_IMPLICIT },
+    { Blob + 0,		 5, 12,  8, 12, TILEIMG_CREATURE },
+    { Blob + 1,		 5, 13,  8, 13, TILEIMG_IMPLICIT },
+    { Blob + 2,		 5, 14,  8, 14, TILEIMG_IMPLICIT },
+    { Blob + 3,		 5, 15,  8, 15, TILEIMG_IMPLICIT },
+    { Teeth + 0,	 5,  4,  8,  4, TILEIMG_CREATURE },
+    { Teeth + 1,	 5,  5,  8,  5, TILEIMG_IMPLICIT },
+    { Teeth + 2,	 5,  6,  8,  6, TILEIMG_IMPLICIT },
+    { Teeth + 3,	 5,  7,  8,  7, TILEIMG_IMPLICIT },
+    { Bug + 0,		 4,  0,  7,  0, TILEIMG_CREATURE },
+    { Bug + 1,		 4,  1,  7,  1, TILEIMG_IMPLICIT },
+    { Bug + 2,		 4,  2,  7,  2, TILEIMG_IMPLICIT },
+    { Bug + 3,		 4,  3,  7,  3, TILEIMG_IMPLICIT },
+    { Paramecium + 0,	 6,  0,  9,  0, TILEIMG_CREATURE },
+    { Paramecium + 1,	 6,  1,  9,  1, TILEIMG_IMPLICIT },
+    { Paramecium + 2,	 6,  2,  9,  2, TILEIMG_IMPLICIT },
+    { Paramecium + 3,	 6,  3,  9,  3, TILEIMG_IMPLICIT },
+    { Water_Splash,	 3,  3, -1, -1, TILEIMG_ANIMATION },
+    { Bomb_Explosion,	 3,  6, -1, -1, TILEIMG_ANIMATION },
+    { Entity_Explosion,	 3,  7, -1, -1, TILEIMG_ANIMATION }
 };
 
+/* The heap of tile image data.
+ */
 static Uint32	       *cctiles = NULL;
+
+/* The directory of tile images.
+ */
 static tilemap		tileptr[NTILES];
 
+/* Set the size of one tile. FALSE is returned if the dimensions are
+ * invalid.
+ */
 static int settilesize(int w, int h)
 {
     if (w % 4 || h % 4) {
@@ -200,9 +209,12 @@ static int settilesize(int w, int h)
 }
 
 /*
- * Functions for obtaining tile images.
+ * Functions for using tile images.
  */
 
+/* Overlay a transparent tile image into the given tile-sized buffer.
+ * n supplies the index of the transparent image.
+ */
 static void addtransparenttile(Uint32 *dest, int id, int n)
 {
     Uint32     *src;
@@ -224,8 +236,12 @@ static void addtransparenttile(Uint32 *dest, int id, int n)
 		dest[x] = src[x];
 }
 
-/* Return a pointer to a tile image for a creature, completing the
- * fields of the given rect.
+/* Return a pointer to a tile image for the given creature or
+ * animation. rect is assumed to point to an "integral" tile location,
+ * so if moving is non-zero, the dir and moving values are used to
+ * adjust rect to point to the exact mid-tile position. rect is also
+ * adjusted appropriately when the creature's image is larger than a
+ * single tile.
  */
 static Uint32 const *_getcreatureimage(SDL_Rect *rect,
 				       int id, int dir, int moving, int frame)
@@ -270,9 +286,11 @@ static Uint32 const *_getcreatureimage(SDL_Rect *rect,
     return q->transp[n] ? q->transp[n] : q->opaque[n];
 }
 
-/* Return a pointer to a tile image for a cell. If the top image is
- * transparent, the appropriate image is created in the overlay
- * buffer.
+/* Return a pointer to the image for a cell with the given tiles. If
+ * the top tile is transparent, the appropriate composite image is
+ * constructed in the overlay buffer. (If the top tile is opaque but
+ * the tile image is transparent, the image returned is constructed
+ * in a private buffer).
  */
 static Uint32 const *_getcellimage(int top, int bot, int timerval)
 {
@@ -310,11 +328,11 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
 }
 
 /*
- *
+ * Functions for loading the tile bitmap into memory.
  */
 
-/* Translate the given surface to one with the same color layout as
- * the display surface.
+/* Load the given bitmap into a 32-bit surface with the same format
+ * as the display.
  */
 static SDL_Surface *loadtilesto32(char const *filename)
 {
@@ -356,7 +374,7 @@ static SDL_Surface *loadtilesto32(char const *filename)
     return tiles;
 }
 
-/* Extract the mask section of the given image to an 8-bit surface.
+/* Copy the mask section of the given image to an 8-bit surface.
  */
 static SDL_Surface *extractmask(SDL_Surface *src,
 				int xmask, int ymask, int wmask, int hmask)
@@ -384,11 +402,13 @@ static SDL_Surface *extractmask(SDL_Surface *src,
 }
 
 /*
- *
+ * Functions to read the small format.
  */
 
-/* Individually transfer the tiles to a one-dimensional array. The
- * magenta pixels in the "clear" area are made transparent.
+/* Transfer the tiles to a one-dimensional array. Any magenta pixels
+ * in the "clear" section are made transparent. Then fill in the
+ * values of the tileptr array, using tileidmap to identify the
+ * individual tile images.
  */
 static int initsmalltileset(SDL_Surface *tiles, int wset, int hset,
 			    int xclear, int yclear, int wclear, int hclear)
@@ -450,11 +470,13 @@ static int initsmalltileset(SDL_Surface *tiles, int wset, int hset,
 }
 
 /*
- *
+ * Functions to read the masked format.
  */
 
-/* Individually transfer the tiles to a one-dimensional array. If mask
- * is NULL, then magenta pixels in the mask area are made transparent.
+/* Individually transfer the tiles to a one-dimensional array. The
+ * black pixels in the maskimage are copied onto the indicated section
+ * as transparent pixels. Then fill in the values of the tileptr
+ * array, using tileidmap to identify the individual tile images.
  */
 static int initmaskedtileset(SDL_Surface *tiles, int wset, int hset,
 			     SDL_Surface *maskimage, int wmask, int hmask,
@@ -520,9 +542,16 @@ static int initmaskedtileset(SDL_Surface *tiles, int wset, int hset,
 }
 
 /*
- *
+ * Functions to read the large format.
  */
 
+/* Copy a sequence of count tiles from the given surface at the
+ * position indicated by rect to a buffer pointed to by the pointer at
+ * pdest. Store a separate pointer to each tile in the array at ptrs.
+ * transpclr indicates the color of the pixels to replace with the
+ * corresponding pixels from the Empty tile. Upon return, the pointer
+ * at pdest is set to the first byte following the copied tiles.
+ */
 static void extractopaquetileseq(SDL_Surface *tiles, SDL_Rect const *rect,
 				 int count, Uint32 **pdest, Uint32** ptrs,
 				 Uint32 transpclr)
@@ -550,6 +579,13 @@ static void extractopaquetileseq(SDL_Surface *tiles, SDL_Rect const *rect,
     *pdest = dest;
 }
 
+/* Copy a sequence of count tiles from the given surface at the
+ * position indicated by rect to a buffer pointed to by the pointer at
+ * pdest. Store a separate pointer to each tile in the array at ptrs.
+ * transpclr indicates the color of the pixels to make transparent.
+ * Upon return, the pointer at pdest is set to the first byte
+ * following the copied tiles.
+ */
 static void extracttransptileseq(SDL_Surface *tiles, SDL_Rect const *rect,
 				 int count, Uint32 **pdest, Uint32** ptrs,
 				 Uint32 transpclr)
@@ -575,6 +611,14 @@ static void extracttransptileseq(SDL_Surface *tiles, SDL_Rect const *rect,
     *pdest = dest;
 }
 
+/* Extract the tile images for a single tile type from the given
+ * surface at the given coordinates. shape identifies the arrangement
+ * of tile image(s) that may be present. transpclr indicates the color
+ * of the pixels that are to be treated as transparent. pd points to a
+ * pointer to the buffer where the tile images are to be copied. Upon
+ * return, the pointer at pd is updated to point to the first byte in
+ * the buffer after the copied tile images.
+ */
 static int extracttileimage(SDL_Surface *tiles, int x, int y, int w, int h,
 			    int id, int shape, Uint32 **pd, Uint32 transpclr)
 {
@@ -745,7 +789,12 @@ static int extracttileimage(SDL_Surface *tiles, int x, int y, int w, int h,
     return TRUE;
 }
 
-static int initfreeformtileset(SDL_Surface *tiles)
+/* Extract the large-format tile images from the given surface. The
+ * surface is scanned to find the delimiter pixels. Upon return, the
+ * pointers to each tile image is stored in the appropriate field of
+ * the tileptr array.
+ */
+static int initlargetileset(SDL_Surface *tiles)
 {
     Uint32     *row;
     Uint32     *dest;
@@ -898,9 +947,11 @@ static int initfreeformtileset(SDL_Surface *tiles)
 }
 
 /*
- *
+ * The exported functions.
  */
 
+/* Free all memory allocated for the current set of tile images.
+ */
 void freetileset(void)
 {
     free(cctiles);
@@ -912,6 +963,11 @@ void freetileset(void)
     memset(tileptr, 0, sizeof tileptr);
 }
 
+/* Load the set of tile images stored in the given bitmap. Error
+ * messages will be displayed if complain is TRUE. The return value is
+ * TRUE if the tiles were successfully identified and loaded into
+ * memory.
+ */
 int loadtileset(char const *filename, int complain)
 {
     SDL_Surface	       *tiles = NULL;
@@ -927,7 +983,7 @@ int loadtileset(char const *filename, int complain)
 
     if (tiles->w % 2 != 0) {
 	freetileset();
-	f = initfreeformtileset(tiles);
+	f = initlargetileset(tiles);
     } else if (tiles->w % 13 == 0 && tiles->h % 16 == 0) {
 	w = tiles->w / 13;
 	h = tiles->h / 16;
@@ -959,10 +1015,8 @@ int loadtileset(char const *filename, int complain)
     return f;
 }
 
-/*
- *
+/* Initialization.
  */
-
 int _sdltileinitialize(void)
 {
     sdlg.getcreatureimagefunc = _getcreatureimage;

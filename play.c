@@ -23,11 +23,11 @@ static gamestate	state;
  */
 static gamelogic       *logic = NULL;
 
-/* How much mud to make the timer suck (i.e., slowdown factor).
+/* How much mud to make the timer suck (i.e., the slowdown factor).
  */
 static int		mudsucking = 1;
 
-/*
+/* Set the slowdown factor.
  */
 int setmudsuckingfactor(int mud)
 {
@@ -37,8 +37,9 @@ int setmudsuckingfactor(int mud)
     return TRUE;
 }
 
-/* Configure the game logic, and some of the OS/hardware layer, to the
- * behavior expected for the given ruleset.
+/* Configure the game logic, and some of the OS/hardware layer, as
+ * required for the given ruleset. Do nothing if the requested ruleset
+ * is already the current ruleset.
  */
 static int setrulesetbehavior(int ruleset)
 {
@@ -84,7 +85,7 @@ static int setrulesetbehavior(int ruleset)
 int initgamestate(gamesetup *game, int ruleset)
 {
     if (!setrulesetbehavior(ruleset))
-	return FALSE;
+	die("Unable to initialize the system for the requested ruleset");
 
     memset(state.map, 0, sizeof state.map);
     memset(state.keys, 0, sizeof state.keys);
@@ -127,7 +128,7 @@ int secondsplayed(void)
     return (state.currenttime + state.timeoffset) / TICKS_PER_SECOND;
 }
 
-/* Put the program into a game-play mode.
+/* Change the system behavior according to the given gameplay mode.
  */
 void setgameplaymode(int mode)
 {
@@ -141,10 +142,10 @@ void setgameplaymode(int mode)
     }
 }
 
-/* Advance the game one tick. cmd is the current keyboard command
- * supplied by the user. The return value is positive if the game was
- * completed successfully, negative if the game ended unsuccessfully,
- * and zero otherwise.
+/* Advance the game one tick and update the game state. cmd is the
+ * current keyboard command supplied by the user. The return value is
+ * positive if the game was completed successfully, negative if the
+ * game ended unsuccessfully, and zero otherwise.
  */
 int doturn(int cmd)
 {
@@ -183,7 +184,8 @@ int doturn(int cmd)
     return 0;
 }
 
-/* Update the display of the current game state.
+/* Update the display to show the current game state (including sound
+ * effects, if any).
  */
 int drawscreen(void)
 {
@@ -208,18 +210,24 @@ int drawscreen(void)
     return displaygame(&state, timeleft, besttime);
 }
 
+/* Stop game play and clean up.
+ */
 int quitgamestate(void)
 {
     clearsoundeffects();
     return TRUE;
 }
 
+/* Clean up after game play is over.
+ */
 int endgamestate(void)
 {
     clearsoundeffects();
     return (*logic->endgame)(logic);
 }
 
+/* Close up shop.
+ */
 void shutdowngamestate(void)
 {
     setrulesetbehavior(Ruleset_None);
@@ -235,6 +243,7 @@ int hassolution(gamesetup const *game)
 
 /* Compare the most recent solution for the current game with the
  * user's best solution (if any). If this solution beats what's there,
+ * or if the current solution has been marked as replaceable, then
  * replace it. TRUE is returned if the solution was replaced.
  */
 int replacesolution(void)
@@ -258,7 +267,8 @@ int replacesolution(void)
 
 /* Double-checks the timing for a solution that has just been played
  * back. If the timing is off, and the cause of the discrepancy can be
- * reasonably ascertained to be benign, the return value will be TRUE.
+ * reasonably ascertained to be benign, the timing will be corrected
+ * and TRUE is returned.
  */
 int checksolution(void)
 {

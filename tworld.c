@@ -292,8 +292,16 @@ static int scrollinputcallback(int *move)
 }
 
 /*
- * Basic housekeeping activities.
+ * Basic game activities.
  */
+
+/* Return TRUE if the given level is a final level.
+ */
+static int islastinseries(gamespec *gs, int index)
+{
+    return index == gs->series.total - 1
+	|| gs->series.games[index].number == gs->series.final;
+}
 
 /* Mark the current level's solution as replaceable.
  */
@@ -391,18 +399,13 @@ static int changecurrentgame(gamespec *gs, int offset)
  */
 static int melindawatching(gamespec *gs)
 {
-    int	n;
-
     if (!gs->usepasswds)
 	return FALSE;
-    n = gs->currentgame;
-    if (n + 1 == gs->series.total)
+    if (islastinseries(gs, gs->currentgame))
 	return FALSE;
-    if (gs->series.games[n].number == gs->series.final)
+    if (gs->series.games[gs->currentgame + 1].sgflags & SGF_HASPASSWD)
 	return FALSE;
-    if (gs->series.games[n + 1].sgflags & SGF_HASPASSWD)
-	return FALSE;
-    if (hassolution(gs->series.games + n))
+    if (hassolution(gs->series.games + gs->currentgame))
 	return FALSE;
     return TRUE;
 }
@@ -623,10 +626,7 @@ static int endinput(gamespec *gs)
 	  case CmdQuit:						exit(0);
 	  case CmdProceed:
 	    if (gs->status > 0) {
-		n = gs->currentgame;
-		if (gs->series.games[n].number == gs->series.final)
-		    gs->enddisplay = TRUE;
-		else if (n + 1 == gs->series.total)
+		if (islastinseries(gs, gs->currentgame))
 		    gs->enddisplay = TRUE;
 		else
 		    changecurrentgame(gs, +1);
@@ -804,9 +804,7 @@ static int playbackgame(gamespec *gs)
     if (n > 0) {
 	if (checksolution())
 	    savesolutions(&gs->series);
-	if (gs->series.games[gs->currentgame].number == gs->series.final)
-	    n = 0;
-	else if (gs->currentgame + 1 >= gs->series.count)
+	if (islastinseries(gs, gs->currentgame))
 	    n = 0;
     }
     gs->status = n;
@@ -844,20 +842,20 @@ static int runcurrentlevel(gamespec *gs)
 			  gs->series.ruleset);
     changesubtitle(gs->series.games[gs->currentgame].name);
     passwordseen(gs, gs->currentgame);
+    if (!valid && !islastinseries(gs, gs->currentgame))
+	passwordseen(gs, gs->currentgame + 1);
 
     cmd = startinput(gs);
     if (cmd == CmdQuitLevel) {
 	ret = FALSE;
     } else {
 	if (cmd != CmdNone) {
-	    if (!valid) {
-		bell();
-	    } else {
-		f = gs->playback ? playbackgame(gs)
-				 : playgame(gs, cmd);
+	    if (valid) {
+		f = gs->playback ? playbackgame(gs) : playgame(gs, cmd);
 		if (f)
 		    ret = endinput(gs);
-	    }
+	    } else
+		bell();
 	}
     }
 

@@ -18,17 +18,17 @@
 #define	MARGINW		8
 #define	MARGINH		8
 
-/* Size of the end-message icons.
+/* Size of the prompt icons.
  */
-#define	ENDICONW	16
-#define	ENDICONH	10
+#define	PROMPTICONW	16
+#define	PROMPTICONH	10
 
 /* The dimensions of the visible area of the map (in tiles).
  */
 #define	NXTILES		9
 #define	NYTILES		9
 
-/* Erase a rectangle.
+/* Erase a rectangle (useful for when a surface is locked).
  */
 #define	fillrect(r)		(puttext((r), NULL, 0, PT_MULTILINE))
 
@@ -36,18 +36,35 @@
  */
 #define	gettileimage(id)	(getcellimage((id), Empty, -1))
 
+/* Structure for holding information about the message display.
+ */
+typedef	struct msgdisplayinfo {
+    char		msg[64];	/* text of the message */
+    unsigned int	msglen;		/* length of the message */
+    unsigned long	until;		/* when to erase the message */
+    unsigned long	bolduntil;	/* when to dim the message */
+} msgdisplayinfo;
+
+/* The message display.
+ */
+static msgdisplayinfo	msgdisplay;
+
 /* Some prompting icons.
  */
 static SDL_Surface     *prompticons = NULL;
 
-/* Coordinates specifying the layout of the screen elements.
+/* Coordinates specifying the placement of the various screen elements.
  */
 static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
 static SDL_Rect		promptloc, displayloc, messageloc;
 static int		screenw, screenh;
 
-/* Setup a fontcolors structure, calculating the middle color from the
- * other two.
+/*
+ * Display initialization functions.
+ */
+
+/* Set up a fontcolors structure, calculating the middle color from
+ * the other two.
  */
 static fontcolors makefontcolors(int rbkgnd, int gbkgnd, int bbkgnd,
 				 int rtext, int gtext, int btext)
@@ -62,7 +79,7 @@ static fontcolors makefontcolors(int rbkgnd, int gbkgnd, int bbkgnd,
     return colors;
 }
 
-/* Create some simple icons used to prompt the user.
+/* Create three simple icons, to be used when prompting the user.
  */
 static int createprompticons(void)
 {
@@ -100,8 +117,8 @@ static int createprompticons(void)
 
     if (!prompticons) {
 	prompticons = SDL_CreateRGBSurfaceFrom(iconpixels,
-					       ENDICONW, 3 * ENDICONH,
-					       8, ENDICONW, 0, 0, 0, 0);
+					       PROMPTICONW, 3 * PROMPTICONH,
+					       8, PROMPTICONW, 0, 0, 0, 0);
 	if (!prompticons) {
 	    warn("couldn't create SDL surface: %s", SDL_GetError());
 	    return FALSE;
@@ -124,17 +141,17 @@ static int createprompticons(void)
     return TRUE;
 }
 
-/*
- *
- */
-
-/* Calculate the positions of all the elements of the game display.
+/* Calculate the placements of all the separate elements of the
+ * display.
  */
 static int layoutscreen(void)
 {
     static char const  *scoretext = "888  DRAWN AND QUARTERED"
 				    "   8,888  888,888  888,888";
     static char const  *hinttext = "Total Score  8888888";
+    static char const  *chipstext = "Chips";
+    static char const  *timertext = " 888";
+
     int			fullw, infow, texth;
 
     if (sdlg.wtile <= 0 || sdlg.htile <= 0)
@@ -163,10 +180,10 @@ static int layoutscreen(void)
 	infoloc.w = infow;
     infoloc.h = 6 * texth;
 
-    puttext(&rinfoloc, "Chips", 5, PT_CALCSIZE);
+    puttext(&rinfoloc, chipstext, -1, PT_CALCSIZE);
     rinfoloc.x = infoloc.x + rinfoloc.w + MARGINW;
     rinfoloc.y = infoloc.y;
-    puttext(&rinfoloc, " 888", 4, PT_CALCSIZE);
+    puttext(&rinfoloc, timertext, -1, PT_CALCSIZE);
     rinfoloc.h = 2 * texth;
 
     invloc.x = infoloc.x;
@@ -179,10 +196,10 @@ static int layoutscreen(void)
 	screenw = fullw;
     screenh = titleloc.y + titleloc.h + MARGINH;
 
-    promptloc.x = screenw - MARGINW - ENDICONW;
-    promptloc.y = screenh - MARGINH - ENDICONH;
-    promptloc.w = ENDICONW;
-    promptloc.h = ENDICONH;
+    promptloc.x = screenw - MARGINW - PROMPTICONW;
+    promptloc.y = screenh - MARGINH - PROMPTICONH;
+    promptloc.w = PROMPTICONW;
+    promptloc.h = PROMPTICONH;
 
     messageloc.x = infoloc.x;
     messageloc.y = titleloc.y;
@@ -226,9 +243,11 @@ void cleardisplay(void)
 }
 
 /*
- * Tile display functions.
+ * Tile rendering functions.
  */
 
+/* Copy a single tile to the position (xpos, ypos).
+ */
 static void drawopaquetile(int xpos, int ypos, Uint32 const *src)
 {
     void const	       *endsrc;
@@ -242,6 +261,8 @@ static void drawopaquetile(int xpos, int ypos, Uint32 const *src)
 }
 
 #if 0
+/* Overlay a possibly transparent tile to the position (xpos, ypos).
+ */
 static void drawtransptile(int xpos, int ypos, Uint32 const *src)
 {
     unsigned char      *line;
@@ -261,6 +282,9 @@ static void drawtransptile(int xpos, int ypos, Uint32 const *src)
 }
 #endif
 
+/* Copy a tile to the position (xpos, ypos) but clipped to the
+ * displayloc rectangle.
+ */
 static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
 {
     unsigned char      *dest;
@@ -286,6 +310,9 @@ static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
     }
 }
 
+/* Overlay a possibly transparent tile to the position (xpos, ypos)
+ * but clipped to the displayloc rectangle.
+ */
 static void drawtransptileclipped(SDL_Rect const *rect, Uint32 const *src)
 {
     unsigned char      *line;
@@ -317,59 +344,62 @@ static void drawtransptileclipped(SDL_Rect const *rect, Uint32 const *src)
  * Message display function.
  */
 
-static char		currentmsg[64];
-static unsigned int	currentmsglen = 0;
-static unsigned long	msguntil = 0;
-static unsigned long	msgbolduntil = 0;
-
+/* Refresh the message-display message. If update is TRUE, the screen
+ * is updated immediately.
+ */
 static void displaymsg(int update)
 {
     int	f;
 
-    if (currentmsg && msguntil < SDL_GetTicks()) {
-	*currentmsg = '\0';
-	currentmsglen = 0;
+    if (msgdisplay.until < SDL_GetTicks()) {
+	*msgdisplay.msg = '\0';
+	msgdisplay.msglen = 0;
 	f = 0;
     } else {
-	if (!currentmsglen)
+	if (!msgdisplay.msglen)
 	    return;
 	f = PT_CENTER;
-	if (msgbolduntil >= SDL_GetTicks())
-	    f |= PT_HILIGHT;
+	if (msgdisplay.bolduntil < SDL_GetTicks())
+	    f |= PT_DIM;
     }
-    puttext(&messageloc, currentmsg, currentmsglen, f);
+    puttext(&messageloc, msgdisplay.msg, msgdisplay.msglen, f);
     if (update)
 	SDL_UpdateRect(sdlg.screen, messageloc.x, messageloc.y,
 				    messageloc.w, messageloc.h);
 }
 
+/* Change the current message-display message. msecs gives the number
+ * of milliseconds to display the message, and bold specifies the
+ * number of milliseconds to display the message highlighted.
+ */
 static int _setdisplaymsg(char const *msg, int msecs, int bold)
 {
-    if (!msg) {
-	*currentmsg = '\0';
-	currentmsglen = 0;
-	msguntil = 0;
-	msgbolduntil = 0;
+    if (!msg || !*msg) {
+	*msgdisplay.msg = '\0';
+	msgdisplay.msglen = 0;
+	msgdisplay.until = 0;
+	msgdisplay.bolduntil = 0;
     } else {
-	currentmsglen = strlen(msg);
-	if (currentmsglen >= sizeof currentmsg)
-	    currentmsglen = sizeof currentmsg - 1;
-	memcpy(currentmsg, msg, currentmsglen);
-	currentmsg[currentmsglen] = '\0';
-	msguntil = SDL_GetTicks() + msecs;
-	msgbolduntil = SDL_GetTicks() + bold;
+	msgdisplay.msglen = strlen(msg);
+	if (msgdisplay.msglen >= sizeof msgdisplay.msg)
+	    msgdisplay.msglen = sizeof msgdisplay.msg - 1;
+	memcpy(msgdisplay.msg, msg, msgdisplay.msglen);
+	msgdisplay.msg[msgdisplay.msglen] = '\0';
+	msgdisplay.until = SDL_GetTicks() + msecs;
+	msgdisplay.bolduntil = SDL_GetTicks() + bold;
     }
     displaymsg(TRUE);
     return TRUE;
 }
 
 /*
- * Game display functions.
+ * The main display functions.
  */
 
-/* Render the view of the visible area of the map to the output
- * buffer, including all visible creatures, with the view position
- * centered on the display as much as possible.
+/* Render the view of the visible area of the map to the display, with
+ * the view position centered on the display as much as possible. The
+ * gamestate's map and the list of creatures are consulted to
+ * determine what to render.
  */
 static void displaymapview(gamestate const *state)
 {
@@ -432,7 +462,11 @@ static void displaymapview(gamestate const *state)
 }
 
 /* Render all the various nuggets of data that comprise the
- * information display to the output buffer.
+ * information display. timeleft and besttime supply the current timer
+ * value and the player's best recorded time as measured in seconds.
+ * The level's title, number, password, and hint, the count of chips
+ * needed, and the keys and boots in possession are all used as well
+ * in creating the display.
  */
 static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
@@ -499,7 +533,8 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     fillrect(&promptloc);
 }
 
-/* Display an appropriate prompt in one corner.
+/* Display a prompt icon in the lower right-hand corner. completed is
+ * -1, 0, or +1, depending on which icon is being requested.
  */
 static int displayprompticon(int completed)
 {
@@ -508,9 +543,9 @@ static int displayprompticon(int completed)
     if (!prompticons)
 	return FALSE;
     src.x = 0;
-    src.y = (completed + 1) * ENDICONH;
-    src.w = ENDICONW;
-    src.h = ENDICONH;
+    src.y = (completed + 1) * PROMPTICONH;
+    src.w = PROMPTICONW;
+    src.h = PROMPTICONH;
     SDL_BlitSurface(prompticons, &src, sdlg.screen, &promptloc);
     SDL_UpdateRect(sdlg.screen, promptloc.x, promptloc.y,
 				promptloc.w, promptloc.h);
@@ -521,6 +556,8 @@ static int displayprompticon(int completed)
  * The exported functions.
  */
 
+/* Set the four main colors used to render text on the display.
+ */
 void setcolors(long bkgnd, long text, long bold, long dim)
 {
     int	bkgndr, bkgndg, bkgndb;
@@ -554,7 +591,8 @@ void setcolors(long bkgnd, long text, long bold, long dim)
     createprompticons();
 }
 
-/* Display the current state of the game.
+/* Create the game's display. state is a pointer to the gamestate
+ * structure.
  */
 int displaygame(void const *state, int timeleft, int besttime)
 {
@@ -569,6 +607,11 @@ int displaygame(void const *state, int timeleft, int besttime)
     return TRUE;
 }
 
+/* Update the display to acknowledge the end of game play. completed
+ * is positive if the play was successful or negative if unsuccessful.
+ * If the latter, then the other arguments can contain point values
+ * that will be reported to the user.
+ */
 int displayendmessage(int basescore, int timescore, int totalscore,
 		      int completed)
 {
@@ -595,7 +638,9 @@ int displayendmessage(int basescore, int timescore, int totalscore,
     return displayprompticon(completed);
 }
 
-/* Display some tabular information.
+/* Render a table on the display. title is a short string to let the
+ * user know what they're looking at. completed determines the prompt
+ * icon that will be displayed in the lower right-hand corner.
  */
 int displaytable(char const *title, tablespec const *table, int completed)
 {
@@ -623,8 +668,11 @@ int displaytable(char const *title, tablespec const *table, int completed)
     return TRUE;
 }
 
-
-/* Display some text with illustrations on the side.
+/* Render a table with embedded illustrations on the display. title is
+ * a short string to display under the table. rows is an array of
+ * count lines of text, each accompanied by one or two illustrations.
+ * completed determines the prompt icon that will be displayed in the
+ * lower right-hand corner.
  */
 int displaytiletable(char const *title,
 		     tiletablerow const *rows, int count, int completed)
@@ -682,8 +730,12 @@ int displaytiletable(char const *title,
     return TRUE;
 }
 
-/* Display a scrollable list, calling the callback function to manage
- * the selection until it returns FALSE.
+/* Render a table as a scrollable list on the display. One row is
+ * highlighted as the current selection, initially set by the integer
+ * pointed to by idx. The callback function inputcallback is called
+ * repeatedly to determine how to move the selection and when to
+ * leave. The row selected when the function returns is returned to
+ * the caller through idx.
  */
 int displaylist(char const *title, void const *tab, int *idx,
 		int (*inputcallback)(int*))
@@ -761,6 +813,11 @@ int displaylist(char const *title, void const *tab, int *idx,
     return n;
 }
 
+/* Display a line of text, given by prompt, at the center of the display.
+ * The callback function inputcallback is then called repeatedly to
+ * obtain input characters, which are collected in input. maxlen sets an
+ * upper limit to the length of the input so collected.
+ */
 int displayinputprompt(char const *prompt, char *input, int maxlen,
 		       int (*inputcallback)(void))
 {
@@ -827,10 +884,6 @@ int displayinputprompt(char const *prompt, char *input, int maxlen,
     return ch == '\n';
 }
 
-/*
- *
- */
-
 /* Create a display surface appropriate to the requirements of the
  * game.
  */
@@ -843,7 +896,8 @@ int creategamedisplay(void)
     return TRUE;
 }
 
-/* Initialize with a generic display surface capable of displaying text.
+/* Initialize the display with a generic surface capable of rendering
+ * text.
  */
 int _sdloutputinitialize(void)
 {
@@ -851,10 +905,10 @@ int _sdloutputinitialize(void)
 
     screenw = 640;
     screenh = 480;
-    promptloc.x = screenw - MARGINW - ENDICONW;
-    promptloc.y = screenh - MARGINH - ENDICONH;
-    promptloc.w = ENDICONW;
-    promptloc.h = ENDICONH;
+    promptloc.x = screenw - MARGINW - PROMPTICONW;
+    promptloc.y = screenh - MARGINH - PROMPTICONH;
+    promptloc.w = PROMPTICONW;
+    promptloc.h = PROMPTICONH;
     createdisplay();
     cleardisplay();
 

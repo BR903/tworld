@@ -8,7 +8,11 @@
 #include	<stdarg.h>
 #include	"sdlgen.h"
 
-#ifdef WIN32 /* Windows version */
+#ifdef WIN32
+
+/*
+ * Windows version
+ */
 
 #include	"windows.h"
 
@@ -53,7 +57,11 @@ void usermessage(int action, char const *prefix,
     }
 }
 
-#else /* non-Windows version */
+#else
+
+/*
+ * Unix version
+ */
 
 /* Ring the bell already.
  */

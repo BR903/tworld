@@ -43,7 +43,7 @@ static void _eventupdate(int wait)
     }
 }
 
-/* Window decoration.
+/* Alter the window decoration.
  */
 void setsubtitle(char const *subtitle)
 {
@@ -64,7 +64,8 @@ static void shutdown(void)
     SDL_Quit();
 }
 
-/* Initialize SDL.
+/* Initialize SDL, create the program's icon, and then initialize
+ * the other modules of the library.
  */
 int oshwinitialize(int silence, int showhistogram)
 {

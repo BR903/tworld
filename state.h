@@ -155,11 +155,11 @@ typedef	struct creature {
     signed int		dir   : 5;	/* current direction of creature */
     signed int		id    : 8;	/* type of creature */
     signed int		state : 8;	/* internal state value */
-    signed int		moving: 4;	/* positional offset of creature */
-    signed int		hidden: 2;	/* TRUE if creature is invisible */
+    signed int		hidden: 1;	/* TRUE if creature is invisible */
+    signed int		moving: 5;	/* positional offset of creature */
+    signed int		frame : 5;	/* explicit animation index */
     signed int		fdir  : 5;	/* internal state value */
     signed int		tdir  : 5;	/* internal state value */
-    signed int		waits : 5;	/* internal state value */
 } creature;
 #else
 typedef struct creature {

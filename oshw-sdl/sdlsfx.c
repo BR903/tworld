@@ -18,7 +18,7 @@
 #define DEFAULT_SND_FREQ	22050
 #define	DEFAULT_SND_CHAN	1
 
-/* The data needed for each sound.
+/* The data needed for each sound effect's wave.
  */
 typedef	struct sfxinfo {
     Uint8	       *wave;		/* the actual wave data */
@@ -40,11 +40,11 @@ static sfxinfo		sounds[SND_COUNT];
  */
 static int		enabled = FALSE;
 
-/* TRUE if there is currently a sound device to talk to.
+/* TRUE if the program is currently talking to a sound device.
  */
 static int		hasaudio = FALSE;
 
-/* The sound's volume level.
+/* The volume level.
  */
 static int		volume = SDL_MIX_MAXVOLUME;
 
@@ -82,6 +82,8 @@ static void initonomatopoeia(void)
 }
 
 /* Display the onomatopoeia for the currently playing sound effect.
+ * Only the first sound is used, since we can't display multiple
+ * strings.
  */
 static void displaysoundeffects(unsigned long sfx, int display)
 {
@@ -101,8 +103,12 @@ static void displaysoundeffects(unsigned long sfx, int display)
     }
 }
 
-/* The function that is called by the sound driver to supply the
- * latest sound effects.
+/* The callback function that is called by the sound driver to supply
+ * the latest sound effects. All the sound effects are checked, and
+ * the ones that are being played get another chunk of their sound
+ * data mixed into the output buffer. When the end of a sound effect's
+ * wave data is reached, the one-shot sounds are changed to be marked
+ * as not playing, and the continuous sounds are looped.
  */
 static void sfxcallback(void *data, Uint8 *wave, int len)
 {
@@ -141,7 +147,9 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
  * The exported functions.
  */
 
-/* Activate or deactivate the sound system.
+/* Activate or deactivate the sound system. When activating for the
+ * first time, the connection to the sound device is established. When
+ * deactivating, the connection is closed.
  */
 int setaudiosystem(int active)
 {
@@ -187,8 +195,8 @@ int setaudiosystem(int active)
     return TRUE;
 }
 
-/* Load a wave file into memory. The wave data is converted to the
- * format expected by the sound device.
+/* Load a single wave file into memory. The wave data is converted to
+ * the format expected by the sound device.
  */
 int loadsfxfromfile(int index, char const *filename)
 {
@@ -205,7 +213,6 @@ int loadsfxfromfile(int index, char const *filename)
 
     if (!enabled)
 	return FALSE;
-
     if (!hasaudio)
 	if (!setaudiosystem(TRUE))
 	    return FALSE;
@@ -243,7 +250,10 @@ int loadsfxfromfile(int index, char const *filename)
     return TRUE;
 }
 
-/* Select the sounds effects to be played.
+/* Select the sounds effects to be played. sfx is a bitmask of sound
+ * effect indexes. Any continuous sounds that are not included in sfx
+ * are stopped. One-shot sounds that are included in sfx are
+ * restarted.
  */
 void playsoundeffects(unsigned long sfx)
 {
@@ -286,7 +296,7 @@ void clearsoundeffects(void)
     SDL_UnlockAudio();
 }
 
-/* Release all memory used for the given sound effect.
+/* Release all memory for the given sound effect.
  */
 void freesfx(int index)
 {
@@ -300,7 +310,8 @@ void freesfx(int index)
     }
 }
 
-/* Change the current volume level.
+/* Change the current volume level by delta. If display is true, the
+ * new volume level is displayed to the user.
  */
 int changevolume(int delta, int display)
 {
@@ -320,7 +331,7 @@ int changevolume(int delta, int display)
     volume = (SDL_MIX_MAXVOLUME * v + 9) / 10;
     if (display) {
 	sprintf(buf, "Volume: %d", v);
-	setdisplaymsg(buf, 1000, -1);
+	setdisplaymsg(buf, 1000, 1000);
     }
     return TRUE;
 }
@@ -335,7 +346,8 @@ static void shutdown(void)
     hasaudio = FALSE;
 }
 
-/* Initialize the sound system.
+/* Initialize the module. If silence is TRUE, then the program will
+ * leave sound output disabled.
  */
 int _sdlsfxinitialize(int silence)
 {
