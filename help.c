@@ -8,6 +8,7 @@
 #include	"defs.h"
 #include	"state.h"
 #include	"oshw.h"
+#include	"ver.h"
 #include	"help.h"
 
 #define	array(a)	a, (sizeof a / sizeof *a)
