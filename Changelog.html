@@ -14,8 +14,13 @@ file, instead of using the original Lynx method of implicit wiring.
 Fixed uninitialized variable in password-entry function (reported by
 Ruben Spaans).
 <li>
-Fixed behavior of moving blocks so that they will always enter a
-square that Chip occupies, regardless of the flooring (MS).
+Fixed moving-block behavior so that they will always enter a square
+that Chip occupies, regardless of what Chip is standing on (MS).
+<li>
+Fixed force-floor behavior so that Chip gets to make a voluntary move
+immediately after stepping on a force floor if his forced move
+failed. (Hopefully this is an accurate coverage of the case that TW
+was getting wrong, and only of that.)
 </ul>
 <p>
 2002 Feb 04: version 0.10.4

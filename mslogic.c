@@ -1620,6 +1620,9 @@ static void floormovements(void)
 		    if (cr->id == Chip)
 			cr->state &= ~CS_HASMOVED;
 		}
+	    } else if (isslide(floor)) {
+		if (cr->id == Chip)
+		    cr->state &= ~CS_HASMOVED;
 	    }
 	    if (cr->state & (CS_SLIP | CS_SLIDE)) {
 		endfloormovement(cr);
