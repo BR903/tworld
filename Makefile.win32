@@ -4,8 +4,6 @@ CFLAGS = -Wall -W -O2 -fomit-frame-pointer
 LDLFAGS = -Wall -W
 LOADLIBES =
 
-CFLAGS += '-DDATADIR="/usr/local/share/tworld"'
-
 CFLAGS += $(shell sdl-config --cflags)
 LOADLIBES += $(shell sdl-config --libs)
 
@@ -13,7 +11,7 @@ OBJS = \
 tworld.o series.o play.o solution.o lxlogic.o mslogic.o help.o score.o \
 random.o cmdline.o fileio.o err.o liboshw.a
 
-tworld: $(OBJS)
+tworld.exe: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
 tworld.o   : tworld.c defs.h gen.h err.h fileio.h series.h solution.h	\
@@ -35,13 +33,10 @@ liboshw.a: defs.h gen.h oshw.h oshw/*.c oshw/*.h
 	(cd oshw && make)
 
 
-mklynxcc: mklynxcc.c
+mklynxcc.exe: mklynxcc.c
 	$(CC) -Wall -W -o $@ $^
 
 
-install: tworld
-	cp -i ./tworld /usr/local/games/.
-
 clean:
-	rm -f $(OBJS) tworld mklynxcc
+	rm -f $(OBJS) tworld.exe mklynxcc.exe
 	(cd oshw && make clean)

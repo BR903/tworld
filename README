@@ -1,37 +1,57 @@
-Installing
-----------
+Welcome to Tile World
+---------------------
 
-Edit the Makefile and change the definition of DATADIR to point to the
-directory containing your .dat files. (Or omit it to use the default
-value of /usr/local/share/chips.)
+Tile World is an emulation of the game "Chip's Challenge" for the
+Atari Lynx, created by Chuck Sommerville, and later ported to MS
+Windows by Microsoft (among other ports).
 
-As with all svgalib programs, you need to run make as root.
+This is the first alpha release of Tile World. There is still a fair
+bit of work left to be done, but the program is eminently usable in
+its current state.
 
-Once compiled, use ./chips -h for help with cmdline options.
+Note that Tile World requires the SDL library. The Windows
+distribution includes a copy of the SDL library (version 1.2.2). SDL
+can be downloaded from http://www.libsdl.org/download.html. See the
+INSTALL file for directions on getting the program set up and running.
 
+Tile World is an emulation of the game engines only. It does not come
+with the chips.dat level file, which is copyrighted and cannot be
+freely distributed. If you do not own a copy of chips.dat, however,
+you can still play Tile World with the freely available level files
+created by fans of the original game.
 
-Key Commands
-------------
+Bugs
+----
 
-During play:
+At this time I am unaware of any bugs in the support code (e.g., the
+code that finds and lists the available data files, calculates scores,
+and so on), though I'm sure some are there. Bugs in the game logic, on
+the other hand, definitely do exist. See the BUGS file for details.
 
-arrows		move Chip
-keypad 2 4 6 8	move Chip
-Backspace	pause game
-?		show online help (game pauses)
-q		quit level
-Q (shift-q)	exit game
-Ctrl-R		restart level
-Ctrl-P		jump to previous level
-Ctrl-N		jump to next level
+Bug reports should either be sent to me at <breadbox@muppetlabs.com>,
+or posted to the newsgroup. (However, try to place such posts under an
+existing thread regarding the clone. And take a moment to verify that
+the bug has not already been described in a previous post.)
 
-Inbetween levels:
+License
+-------
 
-?		show online help
-q		exit game
-Ctrl-R		restart level
-Ctrl-P		jump to previous level
-p		jump to previous level
-Ctrl-N		jump to next level
-n		jump to next level
-Ctrl-I (tab)	playback saved solution
+Tile World is copyright (C) 2001 by Brian Raiter. This program is free
+software; you can redistribute it and/or modify it under the terms of
+the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any
+later version. This program is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License, included in this distribution in the file
+COPYING, for more details.
+
+(NOTE: Because there are so many bugs in the MS game logic, I ask that
+you voluntarily refrain from giving out copies of this program. You
+are legally permitted to do so, but I would prefer that the
+distribution of this version of the program be kept to a small, known
+group of people until it is in a more acceptable state.)
+
+Brian Raiter
+<breadbox@muppetlabs.com>
+August 2001
