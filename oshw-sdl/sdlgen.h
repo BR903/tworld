@@ -52,11 +52,9 @@ typedef	struct oshwglobals
     short		wtile;		/* width of one tile in pixels */
     short		htile;		/* height of one tile in pixels */
     short		cptile;		/* size of one tile in pixels */
-    short		cbtile;		/* size of one tile in bytes */
     fontcolors		textclr;	/* color triplet for normal text */
     fontcolors		dimtextclr;	/* color triplet for dim text */
     fontcolors		hilightclr;	/* color triplet for bold text */
-    Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
 
@@ -83,16 +81,15 @@ typedef	struct oshwglobals
      * rendering animated cell tiles, or -1 if the game has not
      * started.
      */
-    Uint32 const* (*getcellimagefunc)(int top, int bot, int timerval);
+    SDL_Surface* (*getcellimagefunc)(SDL_Rect *rect,
+				     int top, int bot, int timerval);
 
     /* Return a pointer to a tile image for the given creature or
      * animation sequence with the specified direction, sub-position,
-     * and animation frame. rect points to a rectangle outlining the
-     * tile for the creature's position; its fields will be altered so
-     * as to properly render the creature at its precise location.
+     * and animation frame.
      */
-    Uint32 const* (*getcreatureimagefunc)(SDL_Rect *rect, int id, int dir,
-					  int moving, int frame);
+    SDL_Surface* (*getcreatureimagefunc)(SDL_Rect *rect, int id, int dir,
+					 int moving, int frame);
 
     /* Display a line (or more) of text in the program's font. The
      * text is clipped to area if necessary. If area is taller than

@@ -122,10 +122,17 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
     return h;
 }
 
-#if 0
+/*
+ * Render a single line of pixels of the given text to a locked
+ * surface at scanline. w specifies the total number of pixels to
+ * render. (Any pixels remaining after the last glyph has been
+ * rendered are set to the background color.) y specifies the vertical
+ * coordinate of the line to render relative to the font glyphs. A
+ * separate function is supplied for each possible surface depth.
+ */
 
-static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 *clr,
-			      unsigned char const *text, int len)
+static void *drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 *clr,
+			       unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
     int				n, x;
@@ -137,12 +144,13 @@ static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 *clr,
 	    scanline[x] = (Uint8)clr[glyph[x]];
 	scanline += x;
     }
-    if (w)
-	memset(scanline, clr[0], w);
+    while (w--)
+	*scanline++ = (Uint8)clr[0];
+    return scanline;
 }
 
-static void drawtextscanline16(Uint16 *scanline, int w, int y, Uint32 *clr,
-			       unsigned char const *text, int len)
+static void *drawtextscanline16(Uint16 *scanline, int w, int y, Uint32 *clr,
+				unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
     int				n, x;
@@ -150,16 +158,17 @@ static void drawtextscanline16(Uint16 *scanline, int w, int y, Uint32 *clr,
     for (n = 0 ; n < len ; ++n) {
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
-	for (x = 0 ; x < sdlg.font.w[text[n]] ; ++x)
+	for (x = 0 ; x < sdlg.font.w[text[n]] ; ++x, --w)
 	    scanline[x] = (Uint16)clr[glyph[x]];
 	scanline += x;
     }
     while (w--)
-	scanline[w] = (Uint16)clr[0];
+	*scanline++ = (Uint16)clr[0];
+    return scanline;
 }
 
-static void drawtextscanline24(Uint8 *scanline, int w, int y, Uint32 *clr,
-			       unsigned char const *text, int len)
+static void *drawtextscanline24(Uint8 *scanline, int w, int y, Uint32 *clr,
+				unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
     Uint32			c;
@@ -170,39 +179,32 @@ static void drawtextscanline24(Uint8 *scanline, int w, int y, Uint32 *clr,
 	glyph += y * sdlg.font.w[text[n]];
 	for (x = 0 ; w && x < sdlg.font.w[text[n]] ; ++x, --w) {
 	    c = clr[glyph[x]];
-	    if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-		*scanline++ = (Uint8)(c >> 16);
-		*scanline++ = (Uint8)(c >> 8);
-		*scanline++ = (Uint8)c;
-	    } else {
-		*scanline++ = (Uint8)c;
-		*scanline++ = (Uint8)(c >> 8);
-		*scanline++ = (Uint8)(c >> 16);
-	    }
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	    *scanline++ = (Uint8)(c >> 16);
+	    *scanline++ = (Uint8)(c >> 8);
+	    *scanline++ = (Uint8)c;
+#else
+	    *scanline++ = (Uint8)c;
+	    *scanline++ = (Uint8)(c >> 8);
+	    *scanline++ = (Uint8)(c >> 16);
+#endif
 	}
     }
     c = clr[0];
     while (w--) {
-	if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-	    *scanline++ = (Uint8)(c >> 16);
-	    *scanline++ = (Uint8)(c >> 8);
-	    *scanline++ = (Uint8)c;
-	} else {
-	    *scanline++ = (Uint8)c;
-	    *scanline++ = (Uint8)(c >> 8);
-	    *scanline++ = (Uint8)(c >> 16);
-	}
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	*scanline++ = (Uint8)(c >> 16);
+	*scanline++ = (Uint8)(c >> 8);
+	*scanline++ = (Uint8)c;
+#else
+	*scanline++ = (Uint8)c;
+	*scanline++ = (Uint8)(c >> 8);
+	*scanline++ = (Uint8)(c >> 16);
+#endif
     }
+    return scanline;
 }
 
-#endif
-
-/* Render a single line of pixels of the given text to a locked 32-bit
- * surface at scanline. w specifies the total number of pixels to
- * render. (Any pixels remaining after the last glyph has been
- * rendered are set to the background color.) y specifies the vertical
- * coordinate of the line to render relative to the font glyphs.
- */
 static void *drawtextscanline32(Uint32 *scanline, int w, int y, Uint32 *clr,
 				unsigned char const *text, int len)
 {
@@ -274,18 +276,28 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
     bpp = sdlg.screen->format->BytesPerPixel;
     p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch + rect->x * bpp;
     for (y = 0 ; y < sdlg.font.h && y < rect->h ; ++y) {
-#if 0
 	switch (bpp) {
-	  case 1: drawtextscanline8(p, w, y, clr, text, len);  break;
-	  case 2: drawtextscanline16(p, w, y, clr, text, len); break;
-	  case 3: drawtextscanline24(p, w, y, clr, text, len); break;
-	  case 4: drawtextscanline32(p, w, y, clr, text, len); break;
+	  case 1:
+	    q = drawtextscanline8(p, l, y, clr, "", 0);
+	    q = drawtextscanline8(q, w, y, clr, text, len);
+	    q = drawtextscanline8(q, r, y, clr, "", 0);
+	    break;
+	  case 2:
+	    q = drawtextscanline16(p, l, y, clr, "", 0);
+	    q = drawtextscanline16(q, w, y, clr, text, len);
+	    q = drawtextscanline16(q, r, y, clr, "", 0);
+	    break;
+	  case 3:
+	    q = drawtextscanline24(p, l, y, clr, "", 0);
+	    q = drawtextscanline24(q, w, y, clr, text, len);
+	    q = drawtextscanline24(q, r, y, clr, "", 0);
+	    break;
+	  case 4:
+	    q = drawtextscanline32(p, l, y, clr, "", 0);
+	    q = drawtextscanline32(q, w, y, clr, text, len);
+	    q = drawtextscanline32(q, r, y, clr, "", 0);
+	    break;
 	}
-#else
-	q = drawtextscanline32(p, l, y, clr, "", 0);
-	q = drawtextscanline32(q, w, y, clr, text, len);
-	q = drawtextscanline32(q, r, y, clr, "", 0);
-#endif
 	p = (unsigned char*)p + pitch;
     }
 

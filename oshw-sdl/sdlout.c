@@ -34,7 +34,7 @@
 
 /* Get a generic tile image.
  */
-#define	gettileimage(id)	(getcellimage((id), Empty, -1))
+#define	gettileimage(id)	(getcellimage(NULL, (id), Empty, -1))
 
 /* Structure for holding information about the message display.
  */
@@ -230,17 +230,12 @@ static int createdisplay(void)
 	SDL_FreeSurface(sdlg.screen);
 	sdlg.screen = NULL;
     }
-    flags = SDL_SWSURFACE;
+    flags = SDL_SWSURFACE | SDL_ANYFORMAT;
     if (fullscreen)
 	flags |= SDL_FULLSCREEN;
     if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh, 32, flags))) {
 	errmsg(NULL, "cannot open %dx%d display: %s\n",
 		     screenw, screenh, SDL_GetError());
-	return FALSE;
-    }
-    if (sdlg.screen->format->BitsPerPixel != 32) {
-	errmsg(NULL, "couldn't open 32-bit display; got %d-bit instead",
-		     sdlg.screen->format->BitsPerPixel);
 	return FALSE;
     }
     if (sdlg.screen->w != screenw || sdlg.screen->h != screenh)
@@ -262,95 +257,41 @@ void cleardisplay(void)
 
 /* Copy a single tile to the position (xpos, ypos).
  */
-static void drawopaquetile(int xpos, int ypos, Uint32 const *src)
+static void drawfulltile(int xpos, int ypos, SDL_Surface *src)
 {
-    void const	       *endsrc;
-    unsigned char      *dest;
+    SDL_Rect	rect = { xpos, ypos, src->w, src->h };
 
-    endsrc = src + sdlg.cptile;
-    dest = (unsigned char*)sdlg.screen->pixels + ypos * sdlg.screen->pitch;
-    dest = (unsigned char*)((Uint32*)dest + xpos);
-    for ( ; src != endsrc ; src += sdlg.wtile, dest += sdlg.screen->pitch)
-	memcpy(dest, src, sdlg.wtile * sizeof *src);
+    if (SDL_BlitSurface(src, NULL, sdlg.screen, &rect))
+	warn("%s", SDL_GetError());
 }
-
-#if 0
-/* Overlay a possibly transparent tile to the position (xpos, ypos).
- */
-static void drawtransptile(int xpos, int ypos, Uint32 const *src)
-{
-    unsigned char      *line;
-    Uint32	       *dest;
-    void const	       *endsrc;
-    int			x;
-
-    endsrc = src + sdlg.cptile;
-    line = (unsigned char*)sdlg.screen->pixels + ypos * sdlg.screen->pitch;
-    line = (unsigned char*)((Uint32*)dest + xpos);
-    for ( ; src != endsrc ; src += sdlg.wtile, line += sdlg.screen->pitch) {
-	dest = (Uint32*)line;
-	for (x = 0 ; x < sdlg.wtile ; ++x)
-	    if (src[x] != sdlg.transpixel)
-		dest[x] = src[x];
-    }
-}
-#endif
 
 /* Copy a tile to the position (xpos, ypos) but clipped to the
  * displayloc rectangle.
  */
-static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
+static void drawclippedtile(SDL_Rect const *rect, SDL_Surface *src)
 {
-    unsigned char      *dest;
-    int			lclip = displayloc.x;
-    int			tclip = displayloc.y;
-    int			rclip = displayloc.x + displayloc.w;
-    int			bclip = displayloc.y + displayloc.h;
-    int			y;
+    int	xoff, yoff, w, h;
 
-    if (xpos > lclip)			lclip = xpos;
-    if (ypos > tclip)			tclip = ypos;
-    if (xpos + sdlg.wtile < rclip)	rclip = xpos + sdlg.wtile;
-    if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
-    if (lclip >= rclip || tclip >= bclip)
+    xoff = 0;
+    if (rect->x < displayloc.x)
+	xoff = displayloc.x - rect->x;
+    yoff = 0;
+    if (rect->y < displayloc.y)
+	yoff = displayloc.y - rect->y;
+    w = rect->w - xoff;
+    if (rect->x + rect->w > displayloc.x + displayloc.w)
+	w -= (rect->x + rect->w) - (displayloc.x + displayloc.w);
+    h = rect->h - yoff;
+    if (rect->y + rect->h > displayloc.y + displayloc.h)
+	h -= (rect->y + rect->h) - (displayloc.y + displayloc.h);
+    if (w <= 0 || h <= 0)
 	return;
-    src += (tclip - ypos) * sdlg.wtile + lclip - xpos;
-    dest = (unsigned char*)sdlg.screen->pixels + tclip * sdlg.screen->pitch;
-    dest = (unsigned char*)((Uint32*)dest + lclip);
-    for (y = bclip - tclip ; y ; --y) {
-	memcpy(dest, src, (rclip - lclip) * sizeof *src);
-	dest += sdlg.screen->pitch;
-	src += sdlg.wtile;
-    }
-}
 
-/* Overlay a possibly transparent tile to the position (xpos, ypos)
- * but clipped to the displayloc rectangle.
- */
-static void drawtransptileclipped(SDL_Rect const *rect, Uint32 const *src)
-{
-    unsigned char      *line;
-    Uint32	       *dest;
-    int			lclip = displayloc.x;
-    int			tclip = displayloc.y;
-    int			rclip = displayloc.x + displayloc.w;
-    int			bclip = displayloc.y + displayloc.h;
-    int			x, y;
-
-    if (rect->x > lclip)			lclip = rect->x;
-    if (rect->y > tclip)			tclip = rect->y;
-    if (rect->x + rect->w < rclip)		rclip = rect->x + rect->w;
-    if (rect->y + rect->h < bclip)		bclip = rect->y + rect->h;
-    if (lclip >= rclip || tclip >= bclip)
-	return;
-    src += (tclip - rect->y) * rect->w - rect->x;
-    line = (unsigned char*)sdlg.screen->pixels + tclip * sdlg.screen->pitch;
-    for (y = bclip - tclip ; y ; --y) {
-	for (x = lclip, dest = (Uint32*)line ; x < rclip ; ++x)
-	    if (src[x] != sdlg.transpixel)
-		dest[x] = src[x];
-	line += sdlg.screen->pitch;
-	src += rect->w;
+    {
+	SDL_Rect srect = { xoff, yoff, w, h };
+	SDL_Rect drect = { rect->x + xoff, rect->y + yoff, 0, 0 };
+	if (SDL_BlitSurface(src, &srect, sdlg.screen, &drect))
+	    warn("%s", SDL_GetError());
     }
 }
 
@@ -418,8 +359,8 @@ int setdisplaymsg(char const *msg, int msecs, int bold)
 static void displaymapview(gamestate const *state)
 {
     SDL_Rect		rect;
+    SDL_Surface	       *s;
     creature const     *cr;
-    Uint32 const       *p;
     int			xdisppos, ydisppos;
     int			xorigin, yorigin;
     int			lmap, tmap, rmap, bmap;
@@ -449,11 +390,14 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
-	    p = getcellimage(state->map[pos].top.id, state->map[pos].bot.id,
+	    rect.x = xorigin + x * sdlg.wtile;
+	    rect.y = yorigin + y * sdlg.htile;
+	    s = getcellimage(&rect,
+			     state->map[pos].top.id,
+			     state->map[pos].bot.id,
 			     (state->statusflags & SF_NOANIMATION) ?
 						-1 : state->currenttime);
-	    drawopaquetileclipped(xorigin + x * sdlg.wtile,
-				  yorigin + y * sdlg.htile, p);
+	    drawclippedtile(&rect, s);
 	}
     }
 
@@ -470,8 +414,8 @@ static void displaymapview(gamestate const *state)
 	    continue;
 	rect.x = xorigin + x * sdlg.wtile;
 	rect.y = yorigin + y * sdlg.htile;
-	p = getcreatureimage(&rect, cr->id, cr->dir, cr->moving, cr->frame);
-	drawtransptileclipped(&rect, p);
+	s = getcreatureimage(&rect, cr->id, cr->dir, cr->moving, cr->frame);
+	drawclippedtile(&rect, s);
     }
 }
 
@@ -531,10 +475,10 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     fillrect(&rect);
 
     for (n = 0 ; n < 4 ; ++n) {
-	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y,
-		gettileimage(state->keys[n] ? Key_Red + n : Empty));
-	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y + sdlg.htile,
-		gettileimage(state->boots[n] ? Boots_Ice + n : Empty));
+	drawfulltile(invloc.x + n * sdlg.wtile, invloc.y,
+		     gettileimage(state->keys[n] ? Key_Red + n : Empty));
+	drawfulltile(invloc.x + n * sdlg.wtile, invloc.y + sdlg.htile,
+		     gettileimage(state->boots[n] ? Boots_Ice + n : Empty));
     }
 
     if (state->statusflags & SF_INVALID)
@@ -610,12 +554,8 @@ void setcolors(long bkgnd, long text, long bold, long dim)
  */
 int displaygame(void const *state, int timeleft, int besttime)
 {
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_LockSurface(sdlg.screen);
     displaymapview(state);
     displayinfo(state, timeleft, besttime);
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_UnlockSurface(sdlg.screen);
     displaymsg(FALSE);
     SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
     return TRUE;
@@ -715,13 +655,13 @@ int displaytiletable(char const *title,
 	    id = rows[i].item1;
 	else
 	    id = crtile(rows[i].item1, EAST);
-	drawopaquetile(left.x + sdlg.wtile, left.y, gettileimage(id));
+	drawfulltile(left.x + sdlg.wtile, left.y, gettileimage(id));
 	if (rows[i].item2) {
 	    if (rows[i].isfloor)
 		id = rows[i].item2;
 	    else
 		id = crtile(rows[i].item2, EAST);
-	    drawopaquetile(left.x, left.y, gettileimage(id));
+	    drawfulltile(left.x, left.y, gettileimage(id));
 	}
 	left.y += sdlg.htile;
 	left.h -= sdlg.htile;
@@ -923,14 +863,6 @@ int _sdloutputinitialize(int _fullscreen)
     promptloc.h = PROMPTICONH;
     createdisplay();
     cleardisplay();
-
-    sdlg.transpixel = SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 0);
-    if (sdlg.transpixel == SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 255)) {
-	sdlg.transpixel = 0xFFFFFFFF;
-	sdlg.transpixel &= ~(sdlg.screen->format->Rmask
-					| sdlg.screen->format->Gmask
-					| sdlg.screen->format->Bmask);
-    }
 
     sdlg.textclr = makefontcolors(0, 0, 0, 255, 255, 255);
     sdlg.dimtextclr = makefontcolors(0, 0, 0, 192, 192, 192);
