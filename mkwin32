@@ -7,6 +7,7 @@ cd build
 
 mkdir oshw-sdl
 ln -s oshw-sdl oshw
+mkdir resources
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 mv resources/* .
 rmdir resources
