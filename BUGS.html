@@ -37,25 +37,31 @@ Chip remains on the slide list, pushing against the new Chip tile,
 until the player makes a move. In TW, Chip exits in the expected
 direction. The teleport always vanishes, and the block never does.
 <li>
-The MS game permits movement via the mouse, which allows for a few
-unusual maneuvers not otherwise possible. Tile World does not have any
-form of mouse input.
+TW does not correctly handle the situation when a trap's brown button
+is on the bottom layer and then gets permanently lost when a creature
+passes through the tile. In TW, the button is removed from further
+consideration, as if it never existed. In the MS game, the trap
+usually becomes stuck in the open position, but the location where the
+button used to be can still influence the trap's behavior. Worse, this
+vanishing button may affect the behavior of other traps as well.
 <li>
 The MS game checks for input more than once per tick. Probably this
 was done to catch last-minute keyboard events, but it has the effect
 that by having more than one input event in the queue, Chip can
-sometimes have the latter move processed after he has moved but before
-ay other creatures move.
+sometimes have the latter keystroke processed after he has moved but
+before any other creatures move.
 <li>
 In TW, the keyboard is scanned twice per tick, once at the beginning
 and once in the middle. As a result, if Chip makes a move at the
 beginning of a tick, the game does not update the display twice in a
 row (once after the creatures move and once after Chip moves), but
-just does it once. In a few places this has a non-trivial effect on
-how the game appears, most notably when Chip tries to move against a
-force floor. I do not believe that this optimization has a real effect
-on the gameplay. It does, however, make it easier to examine the
-screen when pushing against a force floor.
+just does it once. I do not believe that this optimization has a real
+effect on the gameplay. It does, however, make it easier to examine
+the screen when pushing against a force floor.
+<li>
+The MS game permits movement via the mouse, which allows for a few
+unusual maneuvers that are difficult or even impossible to do with the
+keyboard. Tile World does not have any form of mouse input.
 </ol>
 <p>
 <hr>
@@ -64,12 +70,18 @@ Bugs in the Lynx game logic emulation
 <p>
 <ol>
 <li>
-The Lynx game only permitted 128 creatures (including Chip) to exist
-simultaneously. Thus, a clone machine activated when the population
-was at maximum would "run out". The emulator does not enforce any such
-maximum. Of course, fixing this would put a limit on the kinds of new
-levels that people could create under the Lynx ruleset -- so this one
-may be better off as it is....
+The Lynx game only permits 128 creatures (including Chip) to exist
+simultaneously. Thus, a clone machine activated when the population is
+at maximum will "run out". The emulator does not enforce any such
+maximum. Fixing this would put a limit on the kinds of new levels that
+people could create under the Lynx ruleset, so it has been
+intentionally allowed to stand.
+<li>
+The Lynx game tracks how many keys of each color Chips carries with a
+single 8-bit counter. Thus if Chip is carrying 255 keys of a single
+color, picking up one more will cause them all to disappear. For
+obvious reasons, this difference has been intentionally allowed to
+stand.
 <li>
 Under the real Lynx game it is possible to push a block diagonally
 without moving at all. This is done by pushing against a wall, and
@@ -94,7 +106,17 @@ World fails to capture.
 Other bugs and misfeatures
 <p>
 <ol>
-None listed at this time.
+<li>
+TW does not perfectly emulate how MS Chips' Challenge reads the .dat
+file. The latter uses the level size field at the beginning of each
+level to move from level to level in the file, thus if one level is
+actually larger than its stated size it will still begin reading the
+next level from where the level size would have it begin. Likewise, it
+doesn't notice if the field section size is inconsistent with the
+overall size, or if the last field extends past the field section
+size. TW generally refuses to accept levels with inconsistent data.
+Finally, TW ignores field 8 entries unless they are exactly five bytes
+long.
 </ol>
 <p>
 <hr>
@@ -102,7 +124,17 @@ None listed at this time.
 TODO: Missing features
 <p>
 <ol>
-None listed at this time.
+<li>
+Add a control so that players can select even- or odd-stepping for MS
+emulation, and any of the eight possible steppings for Lynx
+emulation. This requires new key controls and an unobtrusive way to
+display the current stepping state. Steppings can be stored in the
+existing save-file format, in byte 10 or 11 of the level header.
+<li>
+Add a mouse interface for MS emulation. This involves handling mouse
+events, plotting a path, being able to store an entire sequence of
+moves in the input queue, and (groan) adding a new type of record to
+the save-file format.
 </ol>
 </body>
 </html>
