@@ -29,8 +29,8 @@ VER=`tr -cd 0123456789. < ver.h`
 zip -9 -l tworld-$VER-win32.zip README.txt INSTALL.txt Changelog.txt BUGS.txt
 zip -9 -l tworld-$VER-win32.zip COPYING.txt README-SDL.txt
 zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.com
-zip -9 -l tworld-$VER-win32.zip rc sets/*.dac
-zip -9    tworld-$VER-win32.zip *.bmp *.wav data
+zip -9 -l tworld-$VER-win32.zip rc sets/*.dac data
+zip -9    tworld-$VER-win32.zip *.bmp *.wav
 
 rm -f ../../tworld-$VER-win32.zip
 mv tworld-$VER-win32.zip ../..

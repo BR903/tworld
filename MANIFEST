@@ -16,10 +16,9 @@ gen.h
 help.c
 help.h
 lxlogic.c
-lxlogic.h
+logic.h
 mklynxcc.c
 mslogic.c
-mslogic.h
 oshw.h
 play.c
 play.h
