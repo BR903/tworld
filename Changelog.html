@@ -7,12 +7,16 @@
 <p>
 <ul>
 <li>
-Rewrote a lot of the display code. Didn't really make it faster, but I
-did make it more to my liking.
+Rewrote a lot of the display code to avoid redundant drawing of areas
+of the screen. Didn't really make it faster, but I did make it more to
+my liking. Also rewrote all of the text display code.
 <li>
-Also rewrote all of the text display code.
+Removed gamestate data that was only needed by one of the logic
+modules and made it private to that module.
 <li>
-Fixed bug found by Mike L. regarding the ordering of clones.
+Fixed bug found by Mike L. regarding the ordering of clones (MS).
+<li>
+Fixed bug regarding Chip trying to move on random force floors (MS).
 </ul>
 <p>
 2001 Nov 10: version 0.8.3
@@ -31,17 +35,17 @@ had to be tossed out.)
 <p>
 <ul>
 <li>
-Found problem with teleports: creatures provide their own teleport
-blockage! Fixed.
+Found problem with teleports (MS): creatures provide their own
+teleport blockage! Fixed.
 <li>
 Careful investigation revealed more timing bugs with buttons,
-teleports, and maybe beartraps as well. Rewrote the endmovement()
+teleports, and maybe beartraps as well (MS). Rewrote the endmovement()
 function until everything was being done in the right order.
 <li>
 Added an "rc" file which can be edited to change the filenames of the
 external resources.
 <li>
-Discovered and fixed a discrepancy in the slide delay.
+Discovered and fixed a discrepancy in the slide delay (MS).
 <li>
 The usual sundry tweaks.
 </ul>
@@ -61,7 +65,7 @@ variable.
 <ul>
 <li>
 Fixed bug introduced in 0.7.2 which caused Chip to "come to rest" when
-he couldn't make a forced move.
+he couldn't make a forced move (MS).
 <li>
 Fixed buried beartrap behavior in MS game logic.
 <li>

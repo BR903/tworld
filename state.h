@@ -179,32 +179,30 @@ typedef struct creature {
  * The game state structure proper.
  */
 
-/* Ideally, everything the logic and gameplay modules need to know
- * about a game in progress is here.
+/* Ideally, everything that the gameplay module, the display module,
+ * and both logic modules need to know about a game in progress is
+ * in here.
  */
 typedef struct gamestate {
     gamesetup	       *game;			/* the level specification */
+    int			ruleset;		/* the ruleset for the game */
+    int			replay;			/* playback move index */
     int			timelimit;		/* maximum time permitted */
     int			currenttime;		/* the current tick count */
     short		currentinput;		/* the current keystroke */
-    short		ruleset;		/* the ruleset for the game */
-    short		replay;			/* TRUE if in playback mode */
     short		chipsneeded;		/* no. of chips still needed */
+    short		xviewpos;		/* the visible part of the */
+    short		yviewpos;		/*   map (ie, where Chip is) */
     short		keys[4];		/* keys collected */
     short		boots[4];		/* boots collected */
+    unsigned long	statusflags;		/* internal status flags */
     unsigned long	soundeffects;		/* the latest sound effects */
-    actlist		moves;			/* the list of moves */
-    short		lastmove;		/* most recent move */
+    unsigned char	lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
-    unsigned char	rndslidedir;		/* latest random-slide dir */
+    actlist		moves;			/* the list of moves */
     prng		mainprng;		/* the main PRNG */
-    prng		restartprng;		/* the restarting PRNG */
-    short		xviewpos;
-    short		yviewpos;
-    int			displayflags;		/* game display indicators */
-    int			statusflags;		/* internal status flags */
     mapcell		map[CXGRID * CYGRID];	/* the game's map */
-    creature		creatures[CXGRID * CYGRID];  /* the creature list */
+    creature	       *creatures;		/* the creature list */
 } gamestate;
 
 /* General status flags.

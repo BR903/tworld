@@ -11,6 +11,11 @@
 #include	"random.h"
 #include	"lxlogic.h"
 
+/* The walker's PRNG seed value. Don't change this; it needs to
+ * remain forever constant.
+ */
+#define	WALKER_PRNG_SEED	105977040UL
+
 #undef assert
 #define	assert(test)	((test) || (die("internal error: failed sanity check" \
 				        " (%s)\nPlease report this error to"  \
@@ -23,17 +28,27 @@
 
 static int advancecreature(creature *cr, int oob);
 
+/* A pointer to the game state, used so that it doesn't have to be
+ * passed to every single function.
+ */
+static gamestate *state;
+
 /* The direction used the last time something stepped onto a random
  * slide floor.
  */
 static int lastrndslidedir = NORTH;
 
-static int xviewoffset = 0, yviewoffset = 0;
-
-/* A pointer to the game state, used so that it doesn't have to be
- * passed to every single function.
+/* The PRNG used for the walkers.
  */
-static gamestate *state;
+static prng		walkerprng;
+
+/* The memory used to hold the list of creatures.
+ */
+static creature		creaturearray[CXGRID * CYGRID];
+
+#define	MAX_CREATURES	((int)(sizeof creaturearray / sizeof *creaturearray))
+
+static int xviewoffset = 0, yviewoffset = 0;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
@@ -49,12 +64,11 @@ static gamestate *state;
 #define	chipdir()		(getchip()->dir)
 
 #define	mainprng()		(&state->mainprng)
-#define	restartprng()		(&state->restartprng)
 
+#define	timelimit()		(state->timelimit)
 #define	currenttime()		(state->currenttime)
 #define	currentinput()		(state->currentinput)
 #define	lastmove()		(state->lastmove)
-#define	displayflags()		(state->displayflags)
 #define	xviewpos()		(state->xviewpos)
 #define	yviewpos()		(state->yviewpos)
 
@@ -138,8 +152,8 @@ static int getslidedir(int floor, int advance)
       case Slide_East:		return EAST;
       case Slide_Random:
 	if (advance)
-	    state->rndslidedir = right(state->rndslidedir);
-	return state->rndslidedir;
+	    lastrndslidedir = right(lastrndslidedir);
+	return lastrndslidedir;
     }
     warn("Invalid floor %d handed to getslidedir()\n", floor);
     assert(!"getslidedir() called with an invalid object");
@@ -246,8 +260,10 @@ static creature *addclone(creature *old)
 	}
     }
 
-    if (new - creaturelist() + 1 >= CXGRID * CYGRID)
-	die("Ran out of room in the creatures array!");
+    if (new - creaturelist() + 1 >= MAX_CREATURES) {
+	warn("Ran out of room in the creatures array!");
+	return NULL;
+    }
 
     *new = *old;
 
@@ -614,7 +630,7 @@ static void choosecreaturemove(creature *cr)
 	break;
       case Walker:
 	choices[0] = dir;
-	choices[1] = randomof3(restartprng(),
+	choices[1] = randomof3(&walkerprng,
 			       left(dir), back(dir), right(dir));
 	break;
       case Blob:
@@ -779,7 +795,8 @@ static int activatecloner(int pos)
 	return FALSE;
     clone = addclone(cr);
     if (!advancecreature(cr, TRUE)) {
-	clone->hidden = TRUE;
+	if (clone)
+	    clone->hidden = TRUE;
 	return FALSE;
     }
     return TRUE;
@@ -1173,9 +1190,10 @@ static void initialhousekeeping(void)
     if (currentinput() == CmdDebugCmd2) {
 	dumpmap();
 	exit(0);
+	currentinput() = NIL;
     } else if (currentinput() == CmdDebugCmd1) {
 	static int mark = 0;
-	warn("Mark %d.", ++mark);
+	warn("Mark %d (%d).", ++mark, currenttime());
 	currentinput() = NIL;
     }
     if (currentinput() >= CmdCheatNorth && currentinput() <= CmdCheatICChip) {
@@ -1241,6 +1259,7 @@ static int checkforending(void)
     }
     if (iscompleted())
 	return +1;
+
     return 0;
 }
 
@@ -1448,6 +1467,8 @@ int lynx_initgame(gamestate *pstate)
 	    layer2[pos++] = game->map2[n];
     }
 
+    creaturelist() = creaturearray;
+
     cr = creaturelist();
 
     n = -1;
@@ -1464,6 +1485,7 @@ int lynx_initgame(gamestate *pstate)
 	    cr->id = fileids[layer1[pos]].id;
 	    cr->dir = fileids[layer1[pos]].dir;
 	    cr->moving = 0;
+	    cr->hidden = FALSE;
 	    if (cr->id == Chip) {
 		if (n >= 0)
 		    die("Multiple Chips on the map!");
@@ -1473,6 +1495,9 @@ int lynx_initgame(gamestate *pstate)
 		cr->state = 0;
 		claimlocation(pos);
 	    }
+	    cr->fdir = NIL;
+	    cr->tdir = NIL;
+	    cr->waits = 0;
 	    ++cr;
 	}
     }
@@ -1497,15 +1522,12 @@ int lynx_initgame(gamestate *pstate)
 			  = possession(Boots_Fire)
 			  = possession(Boots_Water) = 0;
 
-    displayflags() = 0;
-
     resetgreentoggle();
-    if (state->initrndslidedir == NIL) {
-	if (state->rndslidedir == NIL)
-	    state->rndslidedir = lastrndslidedir;
-	state->initrndslidedir = state->rndslidedir;
-    } else
-	state->rndslidedir = state->initrndslidedir;
+    restartprng(&walkerprng, WALKER_PRNG_SEED);
+    if (state->initrndslidedir == NIL)
+	state->initrndslidedir = lastrndslidedir;
+    else
+	lastrndslidedir = state->initrndslidedir;
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
@@ -1521,7 +1543,6 @@ int lynx_initgame(gamestate *pstate)
 
 int lynx_endgame(gamestate *pstate)
 {
-    lastrndslidedir = state->rndslidedir;
     xviewoffset = yviewoffset = 0;
     return pstate != NULL;
 }
@@ -1533,6 +1554,11 @@ int lynx_advancegame(gamestate *pstate)
     creature   *cr;
 
     setstate(pstate);
+
+    if (timelimit() && currenttime() >= timelimit()) {
+	addsoundeffect(SND_CHIP_LOSES);
+	return -1;
+    }
 
     initialhousekeeping();
 

@@ -17,11 +17,6 @@
 #include	"solution.h"
 #include	"play.h"
 
-/* The restarting-PRNG seed value. Don't change this; it needs to
- * remain forever constant.
- */
-#define	RESTART_PRNG_SEED	105977040UL
-
 /* The functions used to apply the selected ruleset.
  */
 static int	      (*initgame)(gamestate*) = NULL;
@@ -98,7 +93,6 @@ int initgamestate(gameseries *series, int level, int replay)
 	state.initrndslidedir = NIL;
 	resetprng(&state.mainprng);
     }
-    restartprng(&state.restartprng, RESTART_PRNG_SEED);
 
     return (*initgame)(&state);
 }

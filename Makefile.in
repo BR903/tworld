@@ -49,7 +49,7 @@ err.o      : err.c oshw.h err.h
 #win32:tworldres.o: tworld.ico
 #win32:	echo 1 ICON $^ | windres -o $@
 
-liboshw.a: defs.h gen.h oshw.h oshw/*.c oshw/*.h
+liboshw.a: oshw.h defs.h gen.h state.h err.h oshw/*.c oshw/*.h
 	(cd oshw && make)
 
 mklynxcc: mklynxcc.c
