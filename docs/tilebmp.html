@@ -1,0 +1,270 @@
+<html>
+<head>
+<title>Tile World Documentation -- Tile Bitmap Format</title>
+</head>
+<body>
+<p align=center>
+<h1>
+Tile World Documentation
+</h1>
+<p align=center>
+<h2>
+Tile Bitmap Format
+</h2>
+<p>
+There are three different formats that the tile image bitmap can use.
+(The program automatically determines which one is being used by
+examining the dimensions of the bitmap.) They are referred to here as
+the <em>small format</em>, the <em>large format</em>, and the
+<em>masked format</em>.
+<p>
+<hr>
+<p>
+The <def>masked format</def> is essentially the same one that is used
+by the original MS program. In fact, anyone with a copy of the
+original program and a resource editor can extract the bitmap from the
+Windows executable and use it with Tile World directly. The tiles are
+laid out in a 13x16 grid. The first four columns of the bitmap are:
+<p>
+	Empty		Clone Block S	Overlay Buffer	Wall Southeast
+	Wall		Clone Block E	Thief		Clone Machine
+	IC Chip		Force Floor N	Socket		Random Force
+	Water		Force Floor E	Green Button	Water Splash
+	Fire		Force Floor W	Red Button	Burned Chip
+	Hidden Wall (p)	Exit		Toggle Wall	Bombed Chip
+	Wall North	Blue Door	Toggle Floor	Bomb Explosion
+	Wall West	Red Door	Brown Button	Entity Explosion
+	Wall South	Green Door	Blue Button	Empty (unused)
+	Wall East	Yellow Door	Teleport	Exited Chip
+	Block		Ice Wall SE	Bomb		Extra Exit #1
+	Dirt		Ice Wall SW	Bear Trap	Extra Exit #2
+	Ice		Ice Wall NW	Hidden Wall (t)	Chip Swimming N
+	Force Floor S	Ice Wall NE	Gravel		Chip Swimming W
+	Clone Block N	Blue Wall (f)	Popup Wall	Chip Swimming S
+	Clone Block W	Blue Wall (r)	Hint Button	Chip Swimming E
+<p>
+(See below for an explanation regarding the tile names.)
+<p>
+The next three columns contain the following tiles:
+<p>
+	Bug N		Glider N	Paramecium N
+	Bug W		Glider W	Paramecium W
+	Bug S		Glider S	Paramecium S
+	Bug E		Glider E	Paramecium E
+	Fireball N	Teeth N		Blue Key
+	Fireball W	Teeth W		Red Key
+	Fireball S	Teeth S		Green Key
+	Fireball E	Teeth E		Yellow Key
+	Ball N		Walker N	Water Boots
+	Ball W		Walker W	Fire Boots
+	Ball S		Walker S	Ice Boots
+	Ball E		Walker E	Force Boots
+	Tank N		Blob N		Chip N
+	Tank W		Blob W		Chip W
+	Tank S		Blob S		Chip S
+	Tank E		Blob E		Chip E
+<p>
+Each of these tiles are drawn with an empty tile in the background.
+The next three columns repeat the images of the previous three
+columns, but with a pure white background instead. The last three
+columns then have the "masks" for these images. The mask images are
+monochrome, with black used for the background and white used for the
+figure. When the program is displaying a creature, a key, or a pair of
+boots, it uses a tile from columns 4-6 if the item is upon an empty
+tile.  Otherwise, it uses the image from columns 7-9, coupled with the
+mask from columns 10-12, to combine the image with the proper floor
+tile image.
+<p>
+<hr>
+<p>
+The <def>small format</def> is an abbreviated layout of the masked
+format. The tiles are laid out in a 7x16 grid. The first four columns
+are the same as with the masked format. The remaining three columns
+contain the creatures, boots, and keys (again, as with the small
+format) with a solid background of magenta pixels
+(RGB=255,0,255). When the bitmap is read by Tile World, all magenta
+pixels in the will be made transparent. (Magenta pixels in the first
+four columns will not be altered.) If you wish to use magenta in any
+of these tiles (e.g., for the balls), then you will have to use one of
+the other formats instead.
+<p>
+<hr>
+<p>
+The <def>large format</def> is the only format that permits inclusion
+of animated tiles. This format has a less rigid layout. Tiles are
+arranged in rows instead of columns. The tiles are extracted from the
+bitmap in reading order -- scanning from left-to-right, top-to-bottom.
+The rows do not have to have a specific width.
+<p>
+A one-pixel-high horizontal line is above each row of tiles. The
+pixels in this line indicate the divisions between tiles in the
+row. There is also a one-pixel-wide vertical line at the left edge of
+the bitmap, which is used to indicate the placement of the rows.
+<p>
+One color is used throughout the bitmap to indicate transparency.
+This color can be magenta, or some other color. The program determines
+which color is used to show transparency by reading the color of the
+second pixel in the horizontal line above the first row -- pixel (1,0)
+in x-y coordinates.
+<p>
+The vertical line on the left side of the bitmap has a non-transparent
+pixel at the position of the horizonal lines above the tiles. All
+other pixels in the vertical line must be transparent. (The
+non-transparent pixels can be of different colors.) The horizontal
+lines have a non-transparent pixel at the rightmost edge of each tile
+image. (Note that the tile images are separated from each other by a
+line of pixels vertically, but not horizontally.)
+<p>
+The first tile in the first row is the Empty tile. The Empty tile
+cannot be animated, nor is it permitted to have any transparent
+pixels.
+<p>
+The next 49 tiles in the bitmap are the following, in order:
+<p>
+<blockquote>
+	Force Floor N; Force Floor W; Force Floor S; Force Floor E;
+	Random Force; Ice; Ice Wall NW; Ice Wall NE; Ice Wall SW; Ice
+	Wall SE; Gravel; Dirt; Water; Fire; Bomb; Bear Trap; Thief;
+	Hint Button; Blue Button; Green Button; Red Button; Brown
+	Button; Teleport; Wall; Wall N; Wall W; Wall S; Wall E; Wall
+	SE; Blue Wall; Toggle Floor; Toggle Wall; Popup Wall; Clone
+	Machine; Red Door; Blue Door; Yellow Door; Green Door; Socket;
+	Exit; IC Chip; Red Key; Blue Key; Yellow Key; Green Key; Ice
+	Boots; Force Boots; Fire Boots; Water Boots.
+</blockquote>
+<p>
+(Note that there are no tile images for Hidden Walls. These tiles
+always use the Empty tile image. Likewise, there is only a single tile
+used to display a Blue Wall, whether the wall is real or fake.)
+<p>
+The tiles can be broken up across any number of rows, and each row can
+be of different length.
+<p>
+Any of these tile images can have transparent pixels. Those that do
+will have their transparent pixels replaced with the corresponding
+pixels from the Empty tile image. Note that if the bitmap is intended
+to be used under MS emulation, then the Keys and Boots need to be
+rendered with transparent backgrounds.
+<p>
+These tiles may also have more than one image supplied for them. Those
+that do will be animated under Lynx emulation; Tile World will loop
+through the images in the sequence while the game is playing. (Under
+MS emulation, only the first image in the sequence will be used.) In
+this case, the horizontal line above the row will have only one
+non-transparent pixel, placed at the rightmost edge of the last tile
+in the sequence. (The tiles of a single animated sequence may NOT be
+broken up across rows.)
+<p>
+The next 10 tiles following these are:
+<p>
+<blockquote>
+	Extra Exit #1; Extra Exit #2; Burned Chip; Bombed Chip; Exited
+	Chip; Water Splash; Chip Swimming N; Chip Swimming W; Chip
+	Swimming S; Chip Swimming E.
+</blockquote>
+<p>
+These tiles are only used during the MS emulation. They cannot be
+animated; each tile can only have a single image. (Transparent pixels
+are permitted, however, and will be handled as before.) If the bitmap
+is only intended for use under Lynx emulation, these tiles can be left
+blank, but they still need to be present.
+<p>
+After these come the following 12 tiles:
+<p>
+<blockquote>
+	Chip; Pushing Chip; Block; Tank; Ball; Glider; Fireball;
+	Walker; Blob; Teeth; Bug; Paramecium.
+</blockquote>
+<p>
+These tiles will usually have one of a set number of multiple images.
+Note that some of the possible layouts require rows that are two tiles
+high. Any given row in the bitmap is of a fixed height all the way
+across, however. So any change of height between neighboring tile
+images requires that a new row be started in the bitmap.
+<p>
+The possible "sub-layouts" of the images of these 12 tiles are:
+<p>
+<ul>
+<li>
+  1x1: A single image. The lone image is used to display the creature,
+  regardless of its movement or orientation.
+<li>
+  1x4: Four images in a single row, showing the creature moving N, W,
+  S, and E, respectively.
+<li>
+  2x2: Four images as before, but arranged in a square. The top two
+  images show N and W movement, and S and E constitute the bottom row.
+<li>
+  2x8: Sixteen images, giving four animated images per direction. The
+  top row contains the four N images followed by the four W images,
+  and the bottom row contains the four S images followed by the four E
+  images.
+<li>
+  2x16: Sixteen images, but each image occupies two tiles' worth of
+  space. The leftmost 2x4 area contains the four animated images of
+  the creature moving N. Each image is two tiles high, and is drawn
+  across both tiles as the creature moves. (Note that the final image
+  will ideally be completely transparent in the bottom half.) The next
+  2x4 area has the four animated images of the creature moving S,
+  arranged as before. The right half contains the images of the
+  creature moving W and E. These images are a single tile high but two
+  tiles wide, with the sequence of four W images appearing above the
+  sequence of four E images.
+</ul>
+<p>
+Finally, the bitmap contains three more tile images:
+<p>
+<blockquote>
+	Water Splash; Bomb Explosion; Entity Explosion.
+</blockquote>
+<p>
+The images for these tiles can either be 1x1 or 3x3 in size. There
+must be exactly twelve images for each.
+<p>
+<hr>
+<p>
+The following notes clarify the meanings of the names used to identify
+the tile images.
+<p>
+The ice wall tiles are identified by their open sides. Thus "Ice Wall
+NW" indicates an ice tile with thin walls on the S and E sides.
+<p>
+The parenthetical parts of tile names distinguish between tiles that
+are identical in appearance. Thus, "Blue Wall" is suffixed by "(f)" or
+"(r)" to indicate "fake" or "real" walls.
+<p>
+The "Overlay Buffer" tile is used by the program as a place to build
+up images made with one or more transparent tiles. Whatever is
+actually placed here in the bitmap will only be visible if a level
+containing this tile is displayed before it is ever used by the
+program. Normally this tile contains a duplicate of the Empty tile
+image.
+<p>
+The "Exited Chip" tile and the two "Extra Exit" tiles are used by the
+original MS program to create the ending sequence shown after
+completing one of the two final levels. The two "Extra Exit" tiles are
+used with the main "Exit" tile to create an three-frame animated
+sequence.
+<p>
+The "Empty (Unused)" tile in the first two formats indicates tiles
+that are not used by the program, and normally appear the same as
+Empty.
+<p>
+In the original MS program, the tiles marked "Bomb Explosion" and
+"Entity Explosion" are actually unused, and contain an Empty tile
+image. These extra tiles only appear during Lynx emulation. (If your
+masked format bitmap is only intended to be used under MS emulation,
+these tiles can be left as Empty.)
+<p>
+The "Water Splash" tile is displayed by the MS game when Chip dies
+from walking into a water square. The "Burned Chip" tile is displayed
+by the MS game when Chip dies from walking into a fire square. The
+"Bombed Chip" tile is not used by the original program unless it is
+explicitly inserted in a level's map.
+<p>
+Note that the "Water Splash" tile appears twice in the large format.
+The first occurrence is as a single tile used only for MS emulation,
+and the second occurrence is an animation sequence used only under
+Lynx emulation.
+</body>
+</html>

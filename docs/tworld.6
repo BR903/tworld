@@ -1,0 +1,695 @@
+.TH tworld 6 "January 2002" "Tile World"
+.LO 1
+.SH NAME
+tworld \- Tile World
+.SH SYNOPSIS
+.B tworld
+[\-hvVdlstpqH] [\-DLRS DIR] [LEVEL-SET] [LEVEL-NUMBER]
+.P
+.B Tile World
+is a reimplementation of the game "Chip's Challenge". The player
+controls Chip, navigating him through his challenges. The object of
+each level of the game is to find and reach the exit tile, which takes
+you to the next level. The levels contain many different kinds of
+obstacles, creatures both hostile and indifferent, tools, protective
+gear -- and, of course, chips.
+.br
+.SH CONTENTS
+1. Overview of the Game
+.br
+2. Passwords
+.br
+3. Scoring
+.br
+4. Key Commands
+.br
+5. Rulesets
+.br
+6. Adding New Level Sets
+.br
+7. Command-Line Options
+.br
+8. Configuration Files
+.br
+9. Resources
+.br
+10. Environment
+.br
+11. Directories
+.br
+12. License
+.br
+13. History
+.br
+14. Notes on Nomenclature
+.br
+.SH OVERVIEW OF THE GAME
+The main display shows Chip in the current level and his immediate
+surroundings. To the right of this display is shown the basic
+information about the current level. The most important data shown
+here are how many seconds are left on the clock, and how many chips
+still need to be collected. (On some level the clock does not show a
+time -- these levels have no time limit.)
+.P
+The object of every level is to find and reach the exit before the
+time runs out. The exit is frequently (but not always) guarded by a
+chip socket. To move past the chip socket, Chip must collect a certain
+number of computer chips; the amount needed is different in each
+level. As you play a level, the information display on the right shows
+the number of chips that still need to be collected in order to open
+the socket. (Remember that getting enough chips to open the chip
+socket is only a subgoal, not the main goal. Some levels do not
+require any chips to be collected; some levels have no chip socket at
+all.)
+.P
+Also occupying many of the levels are other creatures. Most (but not
+all) of them move about in simple, predictable patterns, and without
+regard for Chip's presence. The creatures know enough to avoid running
+into each other, but a collision with Chip is fatal. The complete
+taxonomy of creatures is: tanks, balls, gliders, fireballs, walkers,
+blobs, teeth, bugs, and paramecia.
+.P
+In addition to the socket and the main exit, there are also four
+different kinds of doors. These doors can be opened with the right
+kind of key. The doors and the keys are color-coded -- red, green,
+blue, and yellow -- so you can tell them apart. Like the chip socket,
+a door that has been opened stays open. Keys are picked up simply by
+stepping upon them. The key disappears from the map and appears in
+your possession. Keys in your possession are displayed on the
+right-hand side of the window.
+.P
+Besides keys and chip, there are also four kinds of special footgear
+that Chip can collect. Like keys, boots can be picked up simply by
+walking over them. (There is no limit to the number of boots you can
+have.) These boots permit Chip to walk across four different kinds of
+surfaces, just as if they were normal flooring. Fire and water are two
+kind of tiles that are normally fatal to Chip, but fire boots and
+water boots will permit safe passage across these. Stepping onto ice
+sends Chip sliding at high speed unless he has a pair of ice boots.
+Finally, there are force floors that push Chip along in a specific
+direction; these can be counteracted with force boots.
+.P
+Two other types of surfaces are more useful to Chip, in that they keep
+other creatures out. These are dirt and gravel, and they are special
+in that Chip is the only one who can walk on them. However, when Chip
+steps onto a dirt tile, it is cleared away and becomes normal
+flooring. Gravel, on the other hand, is permanent.
+.P
+There are numerous other objects scattered around the various levels,
+which Chip can interact with, although he cannot pick them up. Bombs
+are one kind of object which should always be avoided, as they explode
+when stepped on. The thief tile should also generally be avoided;
+entering this tile will cause Chip to lose any footgear he has
+collected.
+.P
+Dirt blocks are large, movable squares of dirt. Chip can push them
+about, and use them to wall off areas or to safely detontate bombs.
+Furthermore, if a block is pushed into water, the tile will turn into
+dirt (which will become normal flooring when Chip steps on it).
+Finally, note that blocks can sometimes be resting on top of other
+objects, both helpful (such as a key) and harmful (such as a bomb).
+.P
+Some levels have teleports. Entering a teleport causes Chip to vanish
+and instantaneously reappear at another teleport.
+.P
+Even some of the walls can demonstrate surprising behavior. The
+so-called blue walls can either be actual walls, or empty mirages.
+The only way for Chip to tell which is which is to attempt to walk
+through one. There are also popup walls -- Chip can walk across these
+only once, for they turn into walls as he walks over them.
+.P
+There are four different types of pushbuttons. Like keys and boots,
+they are color-coded. Stepping on a pushbutton activates it.
+.P
+The green buttons control the toggle walls. Toggle walls have dotted
+green outlines, and they change between being open (passable, like any
+other floor) and open (unpassable, a wall). When a green button is
+pressed, the closed toggle walls are opened and the open toggle walls
+are closed.
+.P
+Brown buttons control bear traps. Anything that wanders into a bear
+trap will be stuck there until the brown button connected to it is
+pushed.
+.P
+Blue buttons exercise some control over the tanks. Normally, a tank
+moves directly forward until it hits an obstacle, whereupon it stops.
+But when a blue button is pressed, all tanks turn around 180 degrees
+and begin moving again.
+.P
+The objects with the most potential for help and hindrance are the
+clone machines, which are controlled by red buttons. Every clone
+machine contains a dirt block, a tank, or some other creature. When
+the clone machine's red button is pressed, a duplicate of whatever the
+clone machine contains is created and set loose.
+.P
+Once in a while there will also be hint buttons. These have a question
+mark displayed on them. When Chip steps onto a hint button, a short
+bit of information will be displayed in the lower right-hand area of
+the window.
+.P
+Here are some general hints for successful play:
+.TP 2
+.PD 0
+*
+When moving dirt blocks around, take care not to shove them into
+corners where you can't get them out again.
+.TP
+*
+On some of the more mazelike levels, you may need to sketch out a map
+in order to solve it.
+.TP
+*
+Many of the creatures move in specific patterns (for example, as with
+the tanks mentioned above).
+.TP
+*
+A number of the objects in the game will affect other creatures in the
+same way they affect Chip.
+.TP
+*
+Remember that if you get trapped somewhere, you can always use Ctrl-R
+to restart a level.
+.PD 1
+.br
+.SH PASSWORDS
+Every level has a four-letter password. The password for a level is
+shown in the information display at the upper-right of the window. The
+obstensible purpose of passwords is to allow you to come back to a
+level. Howver, normally you will never need to remember passwords, as
+Tile World will automatically store the passwords for you. However, if
+you somehow manage to learn the password of a level that you have yet
+to achieve, you can use the password to gain early access to that
+level.
+.br
+.SH SCORING
+For each level in a set that you complete, the game awards 500 points
+times the level's number. Furthermore, if the level is timed, an extra
+10 points is added for every second left on the clock when you finish
+the level. You can thus sometimes improve your score by returning to
+already-completed levels and playing them again.
+.br
+.SH KEY COMMANDS
+During game play, the arrows are the most important keys; they move
+Chip through the level. The 2 4 6 8 keys on the numeric keypad can
+also be used for the same purpose. Other keys have the following
+functions:
+.TP
+.B Ctrl-H
+pauses the game; press any key to resume play.
+.TP
+.B Ctrl-N
+stops the current game and moves forward to the next level.
+.TP
+.B Ctrl-P
+stops the current game and moves back to the previous level.
+.TP
+.B Q
+quits the current level.
+.TP
+.B Ctrl-R
+starts over at the beginning of the current level. 
+.TP
+.B ?
+pauses the game and displays the list of help topics.
+.TP
+.B V
+decreases the volume level. (If the volume level is reduced to zero,
+then the program will display sound effects textually, as
+onomatopoeia.)
+.TP
+.B Shift-V
+increases the volume level.
+.P
+At the start of a level, before game play begins, the following key
+commands are available:
+.TP
+.B Q
+returns to the list of available level sets.
+.TP
+.B Spc
+starts the current level without moving (i.e., standing still).
+.TP
+.B N
+moves to the next level.
+.TP
+.B P
+moves to the previous level.
+.TP
+.B PgUp
+moves ahead ten levels.
+.TP
+.B PgDn
+moves back ten levels.
+.TP
+.B G
+displays a prompt and accepts a password, then jumps to the level with
+that password.
+.TP
+.B Ctrl-I
+plays back the user's best solution for that level.
+.TP
+.B Ctrl-X
+deprecates the user's best solution for that level. If the level is
+then succesfully completed, the user's saved solution will be replaced
+with the new one, whether or not it had a better time.
+.TP
+.B S
+displays the list of known levels and the user's scores. From the
+score list, the user can also jump to any previously visited level.
+.TP
+.B ?
+displays the list of help topics.
+.P
+At most other points, the
+.B Q
+key will abort the current activity and return to the start of the
+current level.
+.P
+Finally, the program can be exited at any time by pressing
+.B Ctrl-C
+or
+.BR Alt-F4 .
+.br
+.SH RULESETS
+.B Tile World
+contains emulators for two different rulesets of "Chip's Challenge".
+They are referred to as the Lynx ruleset and the MS ruleset. The Lynx
+ruleset recreates the original implementation of the game, and the MS
+ruleset recreates the version that was implemented for Microsoft
+Windows (cf
+.BR HISTORY ).
+.P
+The most notable difference between the two rulesets is that in the MS
+ruleset, movement between tiles is instantaneous, whereas under the
+Lynx ruleset motion occurs across several "ticks". (This probably
+reflects the fact that the latter ran on dedicated hardware, while the
+former ran on 33 MHz PCs under a non-preemptive multitasking OS.)
+Although the basic mechanics of the game are the same under both
+rulesets, there are also a host of subtle differences between the two.
+.P
+Each level set file includes a flag that indicates which ruleset it is
+to be played under. Some level sets can be played under both rulesets
+(most notably, the original set of levels), but this is the exception.
+.br
+.SH ADDING NEW LEVEL SETS
+Level sets are defined by data files. By convention these file are
+named with a
+.B .dat
+extension. Typically the name proper contains the author's first name,
+last initial, and a single digit -- for example,
+.BR EricS1.dat .
+(The digit is used to give the sequence in case the author, for
+whatever reason, stores his creations in more than one file.)
+.P
+When a new data file is obtained, it may simply be copied into the
+level set directory (typically
+.BR /usr/local/share/tworld/sets ),
+and
+.B Tile World
+will then make it available for playing.
+.P
+An alternate method is to use a configuration file (see
+.B CONFIGURATION FILES
+below).
+.br
+.SH COMMAND-LINE OPTIONS
+.B tworld
+is normally invoked without arguments. The program begins by
+displaying a list of the available level sets. After choosing a level
+set, the program jumps to the first unsolved level to begin play.
+However, the user can specify on the command line the name of a level
+set to begin directly with that set, and may also specify a specific
+level number to start at.
+.P
+The available command-line options are as follows:
+.TP
+.BI \-D " DIR"
+Read level data files from
+.I DIR
+instead of the default directory.
+.TP
+.B \-d
+Display the default directories used by the program on standard output
+and exit.
+.TP
+.B \-H
+Upon exit, display a histogram of idle time on standard output. (This
+option is used for evaluating optimization efforts.)
+.TP
+.B \-h
+Display a summary of the command-line syntax on standard output and
+exit.
+.TP
+.BI \-L " DIR"
+Look for level sets in
+.I DIR
+instead of the default directory.
+.TP
+.B \-l
+Write a list of available level sets to standard output and exit.
+.TP
+.B \-p
+Turn off all password-checking. This option allows the user to
+bypass the normal sequence of levels.
+.TP
+.B \-q
+Run quietly. All sounds, including the ringing of the terminal bell,
+are suppressed.
+.TP
+.BI \-R " DIR"
+Read resource data from
+.I DIR
+instead of the default directory.
+.TP
+.BI \-S " DIR"
+Read and write solution files under
+.I DIR
+instead of the default directory.
+.TP
+.B \-s
+Display the current scores for the selected level set on standard
+output and exit. (A level set must be specified on the command line
+for this option to be useful.)
+.TP
+.B \-t
+Display the best times for the selected level set on standard output
+and exit. (A level set must be specified on the command line for this
+option to be useful.)
+.TP
+.B \-V
+Display the program's version and license information on standard
+output and exit.
+.TP
+.B \-v
+Display the program's version number on standard output and exit.
+.br
+.SH CONFIGURATION FILES
+Configuration files are used to override some of the settings in a
+data file, or to set values not provided for by the data file format.
+Configuration files are by convention named with a
+.B .dac
+extension. A configuration file is stored in the level set directory
+in the place of the data file, which then goes into the data directory
+(typically
+.BR /usr/local/share/tworld/data ).
+.P
+The configuration file is a simple text file. The first line of a
+configuration file
+.I must
+have the following form:
+.P
+file = 
+.I DATAFILE
+.P
+where
+.I DATAFILE
+is the filename of the data file. (Arbitrary whitespace is permitted
+around the equal sign, but there cannot be any whitespace embedded at
+the beginning of the line.) After this initial line, the configuration
+file can contain any of the following lines:
+.TP
+.RI "usepasswords = " y/n
+This line permits password-checking to be enabled/disabled when
+playing the levels in the set. The default is
+.BR y .
+.TP
+.RI "ruleset = " ms/lynx
+This line allows the configuration file to override the ruleset
+setting in the data file. This is mainly useful in the case where one
+level set is playable under either ruleset (as is the case with the
+original level set). The author can then provide one data file and two
+configuration files to make both versions available.
+.TP
+.RI "lastlevel = " levelnum
+This line marks an arbitrary level as being the last level in the
+set. The game will stop when a player completes this level, instead of
+proceeding to the next level. (Note that if the data file contains any
+levels beyond this one, they will only be reachable if the user can
+provide a password to one of them.)
+.br
+.SH RESOURCES
+.B Tile World
+loads various resources at runtime from its resource directory
+(typically
+.BR /usr/local/share/tworld/res ).
+These resources include the program's font, graphic images, and sound
+effects. The actual files that it loads is determined by the contents
+of a file named
+.B rc
+(short for "resource configuration", not "runtime commands"), in the
+same directory.
+.P
+The
+.B rc
+file is a plain text file, and contains lines of the form
+.I resource
+=
+.IR filename ,
+where
+.I resource
+is a symbolic resource name, and
+.I filename
+is the name of a file in the resource directory.
+.P
+The resources can be set differently depending on the ruleset that the
+program is using. A line in the
+.B rc
+file of the form
+.P
+.I [ ruleset ]
+.P
+indicates that the lines that follow only apply when that ruleset is
+in effect (where
+.I ruleset
+is either
+.B MS
+or
+.BR Lynx ).
+Resources that are defined before any such line apply to both
+rulesets, and are also used as fallbacks if a ruleset-specific
+resource could not be loaded. (The font and the text-color resources
+also need to have ruleset-independent values, as these are used when
+the program is displaying the initial file list.)
+.P
+A line of the form
+.P
+.BI "TileImages = " FILENAME
+.P
+provides all the images used to draw the game. These images are stored
+in a Windows bitmap. For information regarding the layout of this
+bitmap see the documentation accompanying the distribution.
+.P
+A line of the form
+.P
+.BI "Font = " FILENAME
+.P
+provides the program's font. The font is stored as a Windows bitmap;
+again, for information regarding the layout of this bitmap see the
+documentation accompanying the distribution.
+.P
+Four resources define the colors used in rendering text:
+.P
+.BI "BackgroundColor = " RRGGBB
+.br
+.BI "TextColor = " RRGGBB
+.br
+.BI "BoldTextColor = " RRGGBB
+.br
+.BI "DimTextColor = " RRGGBB
+.P
+The value of each of these is a string of six hexadecimal digits
+defining the red, green, and blue values of the color (as with the
+color specification used in HTML or X Windows, but without the
+preceding octothorpe).
+.P
+The remaining resources all define the game's sound effects. The
+sounds are stored as Microsoft .wav (RIFF) files. Unlike the tile
+images, each sound effect is defined as a separate file. The complete
+list of symbolic resource names is as follows:
+.P
+Sounds used in both rulesets
+.br
+.B LevelCompleteSound
+.br
+.B ChipDeathSound
+.br
+.B BlockedMoveSound
+.br
+.B PickupToolSound
+.br
+.B ThiefSound
+.br
+.B TeleportSound
+.br
+.B OpenDoorSound
+.br
+.B SocketSound
+.br
+.B SwitchSound
+.br
+.B BombSound
+.br
+.B SplashSound
+.P
+Sounds used only under the MS ruleset
+.br
+.B TickSound
+.br
+.B ChipDeathByTimeSound
+.br
+.B PickupChipSound
+.P
+Sounds used only under the Lynx ruleset
+.br
+.B TileEmptiedSound
+.br
+.B WallCreatedSound
+.br
+.B TrapEnteredSound
+.br
+.B BlockMovingSound
+.br
+.B SkatingForwardSound
+.br
+.B SkatingTurnSound
+.br
+.B SlidingSound
+.br
+.B SlideWalkingSound
+.br
+.B IceWalkingSound
+.br
+.B WaterWalkingSound
+.br
+.B FireWalkingSound
+.P
+(Note that the symbolic names for the shared and MS-only sounds match
+the names in the 
+.B entpack.ini
+file used by the Microsoft program. This makes it easy for someone
+with a copy of Microsoft's "Chip's Challenge" to use the sound effects
+that were provided with that version of the game. In a similar vein,
+the bitmap stored in the Microsoft executable can be used as the
+.B TileImages
+resource.)
+.br
+.SH ENVIRONMENT
+.TP
+.B TWORLDDIR
+Specifies a top-level directory for the program's resource, level set,
+and data file directories.
+.TP
+.B TWORLDSAVEDIR
+Specifies a directory for solution files.
+.br
+.SH DIRECTORIES
+By default, the following directories are used by
+.BR tworld .
+They can be changed at compile-time, so these are actually the default
+defaults. They can also be set at runtime via command-line options
+and/or environment variables.
+.TP
+.B /usr/local/share/tworld/sets
+This directory is used to hold the available level sets. The files in
+this directory are either data files or configuration files.
+.TP
+.B /usr/local/share/tworld/data
+This directory is used to hold the data files that are referenced by
+configuration files.
+.TP
+.B /usr/local/share/tworld/res
+This directory stores the graphics and sound files used by the
+program.
+.TP
+.B ~/.tworld
+This directory is used to hold the user's solution files.
+.br
+.SH LICENSE
+.B Tile World
+is copyright (C) 2001, 2002 by Brian Raiter.
+.P
+This program is free software; you can redistribute it and/or  
+modify it under the terms of the GNU General Public License as 
+published by the Free Software Foundation; either version 2 of 
+the License, or (at your option) any later version.            
+.P
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the   
+GNU General Public License for more details.                   
+.P
+Please send bug reports to
+.BR <breadbox@muppetlabs.com> .
+.br
+.SH HISTORY
+"Chip's Challenge" was created by Chuck Sommerville, and was
+originally written for the Atari Lynx handheld game console. ("Tile
+World" was his working title for the game.) "Chip's Challenge" was
+published by Epyx (the company who designed the Lynx before selling
+the rights to Atari) in 1989, and was among the first set of games
+made available for the Lynx.
+.P
+"Chip's Challenge" was subsequently ported to several other platforms:
+MS-DOS, Microsoft Windows, Amiga, and the Commodore 64. (A NES port
+was also planned, but never completed.) The most well-known port was
+the Windows version, done by Microsoft and sold as part of Windows
+Entertainment Pack 4 (and later as part of Best of Windows
+Entertainment Pack).
+.P
+In the process of recreating the game for the 16-bit Windows platform,
+Microsoft introduced a surprising number of changes to the mechanics
+of the game. Some were clearly intentional, some were done through
+ignorance or indifference, and others were simply bugs in the program.
+.P
+The programs in WEP4 came pre-installed on many PC computers sold
+during the 1990s, which is part of the reason for its widespread
+popularity. A small but fanatically loyal community of adherents to
+the game connected via a MSN chatroom (and later through the
+internet). A few members of this community managed to decipher the
+format of the MS game's data file, and John K. Elion subsequently
+created a freeware level editor, called ChipEdit. As a result there
+are now dozens of new level sets, created by fans of the game and all
+freely available.
+.P
+Atari discontinued support for the Lynx in 1994. When Epyx went under,
+the rights to their games were purchased by Bridgestone Multimedia.
+Responding to the success of "Chip's Challenge", Chuck Sommerville
+created a sequel ("Chip's Challenge 2"). The sequel included the
+original game as a proper subset, and Bridgestone holds the rights to
+both games. Unfortunately, the company has not seen fit to actually
+release "Chip's Challenge 2", and by now it is highly unlikely that
+they ever will. Since Chuck Sommerville no longer has rights to either
+game, and Microsoft no longer sells either of the Entertainment Packs,
+"Chip's Challenge" is no longer available (except by purchasing a used
+version, or obtaining an illegal copy of same).
+.P
+In 2001, the author began writing "Tile World" with the intention of
+recreating a version of the MS game for the Linux platform. At the
+encouragement of Chuck Sommerville, this project was expanded to
+include the goals of recreating the original Lynx game as well, and
+also making the program work under MS Windows in addition to Linux.
+.br
+.SH NOTES ON NOMENCLATURE
+"Chip's Challenge" has seen several incarnations. Each had its own
+graphical rendering, and thus many of the objects in the game are
+known by more than one name. For example, the four types of boots in
+the MS version of the game were known as fire boots, flippers (for
+water), skates (for ice), and suction boots (for force floors). In the
+original Lynx version, however, they were not even boots -- the four
+tools were fire shields, water shields, cleats, and magnets,
+respectively.
+.P
+Several of the creatures have seen a variety of names. The list of
+creatures given in
+.B OVERVIEW OF THE GAME
+corresponds to the MS version of the game. In the original Lynx
+version, the paramecia were centipedes instead. In still other
+versions of the game, gliders were referred to as ghosts or sharks,
+fireballs were flames, and teeth were called frogs. (You will also
+occasionally see bugs referred to as bees, and walkers referred to as
+dumbbells.)
+.P
+Finally, the thief tile was called a spy in the MS version.
+.P
+None of this information is needed in order to play the game, but it
+helps to explain the titles of some of the user-created levels.
