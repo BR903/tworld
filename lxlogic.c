@@ -849,12 +849,7 @@ static void choosecreaturemove(creature *cr)
 		choices[n] = right(choices[n]);
 	} else if (choices[n] == BLOB_TURN) {
 	    int cw[4] = { NORTH, EAST, SOUTH, WEST };
-#if 1
-	    choices[n] = cw[(lynx_prng() ^ (currenttime() + stepping)) & 3];
-	    (void)lynx_prng();
-#else
 	    choices[n] = cw[random4(mainprng())];
-#endif
 	}
 	cr->tdir = choices[n];
 	if (canmakemove(cr, choices[n], CMM_CLEARANIMATIONS))
