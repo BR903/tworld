@@ -32,7 +32,7 @@ static int setrulesetbehavior(int ruleset)
     if (logic) {
 	if (ruleset == logic->ruleset)
 	    return TRUE;
-	(*logic->shutdown)();
+	(*logic->shutdown)(logic);
 	logic = NULL;
     }
 

@@ -49,11 +49,11 @@ tworld.o   : tworld.c defs.h gen.h err.h series.h res.h play.h score.h \
              solution.h fileio.h help.h oshw.h cmdline.h ver.h
 series.o   : series.c series.h defs.h gen.h err.h fileio.h solution.h
 play.o     : play.c play.h defs.h gen.h err.h state.h random.h oshw.h res.h \
-             mslogic.h lxlogic.h solution.h fileio.h
+             logic.h solution.h fileio.h
 solution.o : solution.c solution.h defs.h gen.h err.h fileio.h
 res.o      : res.c res.h defs.h gen.h fileio.h err.h oshw.h
-lxlogic.o  : lxlogic.c lxlogic.h defs.h gen.h err.h state.h random.h
-mslogic.o  : mslogic.c mslogic.h defs.h gen.h err.h state.h random.h
+lxlogic.o  : lxlogic.c logic.h defs.h gen.h err.h state.h random.h
+mslogic.o  : mslogic.c logic.h defs.h gen.h err.h state.h random.h
 help.o     : help.c help.h defs.h gen.h state.h oshw.h ver.h
 score.o    : score.c score.h defs.h gen.h err.h play.h
 random.o   : random.c random.h defs.h gen.h

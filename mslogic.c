@@ -2037,6 +2037,8 @@ static int initgame(gamelogic *logic)
     return TRUE;
 }
 
+/* Free resources associated with the current game state.
+ */
 static int endgame(gamelogic *logic)
 {
     (void)logic;
@@ -2104,12 +2106,9 @@ static int advancegame(gamelogic *logic)
     return r;
 }
 
-static void shutdown(void)
+static void shutdown(gamelogic *logic)
 {
-    resetcreaturepool();
-    free(creaturepool);
-    creaturepool = NULL;
-    creaturepoolend = NULL;
+    (void)logic;
 
     free(creatures);
     creatures = NULL;
@@ -2123,6 +2122,11 @@ static void shutdown(void)
     slips = NULL;
     slipcount = 0;
     slipsallocated = 0;
+
+    resetcreaturepool();
+    free(creaturepool);
+    creaturepool = NULL;
+    creaturepoolend = NULL;
 }
 
 gamelogic *mslogicstartup(void)

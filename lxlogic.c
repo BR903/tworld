@@ -1,4 +1,4 @@
-/* lxlogic.h: The game logic for the Lynx ruleset.
+/* lxlogic.c: The game logic for the Lynx ruleset.
  *
  * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -1662,8 +1662,9 @@ static int endgame(gamelogic *logic)
     return TRUE;
 }
 
-static void shutdown(void)
+static void shutdown(gamelogic *logic)
 {
+    (void)logic;
     free(creaturearray);
     creaturearray = NULL;
 }
