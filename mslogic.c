@@ -1521,7 +1521,7 @@ static void endmovement(creature *cr, int dir)
 		dead = TRUE;
 	    break;
 	  case Bomb:
-	    tile->id = Empty;
+	    cell->top.id = Empty;
 	    dead = TRUE;
 	    addsoundeffect(SND_BOMB_EXPLODES);
 	    break;
