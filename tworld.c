@@ -342,6 +342,11 @@ static int doenddisplay(gamespec *gs)
 	switch (cmd) {
 	  case CmdSameLevel:
 	  case CmdSame:
+	    return TRUE;
+	  case CmdPrevLevel:
+	  case CmdPrev:
+	  case CmdNextLevel:
+	  case CmdNext:
 	    changecurrentgame(gs, -gs->currentgame);
 	    return TRUE;
 	  case CmdQuit:
