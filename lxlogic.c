@@ -95,14 +95,16 @@ static int		xviewoffset, yviewoffset;
 #define	xviewpos()		(state->xviewpos)
 #define	yviewpos()		(state->yviewpos)
 
-#define	inendgame()		(state->statusflags & SF_ENDGAMETIMERBITS)
-#define	decrendgametimer()	(--state->statusflags & SF_ENDGAMETIMERBITS)
-#define	startendgametimer()	(state->statusflags |= SF_ENDGAMETIMERBITS)
-
 #define	iscompleted()		(state->statusflags & SF_COMPLETED)
 #define	setcompleted()		(state->statusflags |= SF_COMPLETED)
 #define	setnosaving()		(state->statusflags |= SF_NOSAVING)
 #define	showhint()		(state->statusflags |= SF_SHOWHINT)
+#define	markinvalid()		(state->statusflags |= SF_INVALID)
+#define	ismarkedinvalid()	(state->statusflags & SF_INVALID)
+
+#define	inendgame()		(state->statusflags & SF_ENDGAMETIMERBITS)
+#define	decrendgametimer()	(--state->statusflags & SF_ENDGAMETIMERBITS)
+#define	startendgametimer()	(state->statusflags |= SF_ENDGAMETIMERBITS)
 #define	hidehint()		(state->statusflags &= ~SF_SHOWHINT)
 #define	isgreentoggleset()	(state->statusflags & SF_GREENTOGGLE)
 #define	togglegreen()		(state->statusflags ^= SF_GREENTOGGLE)
@@ -1695,12 +1697,22 @@ static int initgame(gamelogic *logic)
 	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids))
 	    layer2[pos] = 0x01;
 	state->map[pos].bot.id = Empty;
-	if (layer2[pos])
+	if (layer2[pos]) {
+	    if (fileids[layer1[pos]].isfloor) {
+		warn("Level %d: Invalid \"buried\" tile at (%d %d)",
+		     game->number, pos % CXGRID, pos / CXGRID);
+		markinvalid();
+	    } else if (!fileids[layer2[pos]].isfloor) {
+		warn("Level %d: Invalid \"buried\" creature at (%d %d)",
+		     game->number, pos % CXGRID, pos / CXGRID);
+		markinvalid();
+	    }
 	    floorat(pos) = fileids[layer2[pos]].id;
-	else if (fileids[layer1[pos]].isfloor)
+	} else if (fileids[layer1[pos]].isfloor) {
 	    floorat(pos) = fileids[layer1[pos]].id;
-	else
+	} else {
 	    floorat(pos) = Empty;
+	}
 	if (!fileids[layer1[pos]].isfloor) {
 	    cr->pos = pos;
 	    cr->id = fileids[layer1[pos]].id;
@@ -1708,8 +1720,10 @@ static int initgame(gamelogic *logic)
 	    cr->moving = 0;
 	    cr->hidden = FALSE;
 	    if (cr->id == Chip) {
-		if (n >= 0)
-		    die("Multiple Chips on the map!");
+		if (n >= 0) {
+		    warn("Multiple Chips on the map!");
+		    markinvalid();
+		}
 		n = cr - creaturelist();
 		cr->state = 0;
 	    } else {
@@ -1722,8 +1736,15 @@ static int initgame(gamelogic *logic)
 	    ++cr;
 	}
     }
-    if (n < 0)
-	die("Chip isn't on the map!");
+    if (n < 0) {
+	warn("Chip isn't on the map!");
+	markinvalid();
+	n = cr - creaturelist();
+	cr->pos = 0;
+	cr->hidden = TRUE;
+	++cr;
+    }
+
     cr->pos = -1;
     cr->id = Nothing;
     cr->dir = NIL;
@@ -1757,7 +1778,7 @@ static int initgame(gamelogic *logic)
     xviewoffset = yviewoffset = 0;
 
     preparedisplay();
-    return TRUE;
+    return !ismarkedinvalid();
 }
 
 /* Advance the game state by one tick.
