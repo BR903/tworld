@@ -123,8 +123,6 @@ extern oshwglobals sdlg;
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
 
-#define	putblank(r)		(puttext((r), NULL, 0, PT_MULTILINE))
-
 /* The initialization functions.
  */
 extern int _sdltimerinitialize(int showhistogram);

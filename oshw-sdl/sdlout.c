@@ -28,6 +28,10 @@
 #define	NXTILES		9
 #define	NYTILES		9
 
+/* Macro to erase a rectangle.
+ */
+#define	fillrect(r)		(puttext((r), NULL, 0, PT_MULTILINE))
+
 /* The graphic output buffer.
  */
 static SDL_Surface     *screen = NULL;
@@ -424,7 +428,7 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	puttext(&rect, buf, -1, PT_UPDATERECT);
 	sdlg.textcolor = color;
     }
-    putblank(&rect);
+    fillrect(&rect);
 
     for (n = 0 ; n < 4 ; ++n) {
 	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y,
@@ -438,12 +442,12 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     else if (state->statusflags & SF_SHOWHINT)
 	puttext(&hintloc, state->game->hinttext, 0, PT_MULTILINE | PT_RIGHT);
     else
-	putblank(&hintloc);
+	fillrect(&hintloc);
 
     if (state->statusflags & SF_ONOMATOPOEIA)
 	puttext(&onomatopoeialoc, getonomatopoeia(state->soundeffects), -1, 0);
 
-    putblank(&endmsgloc);
+    fillrect(&endmsgloc);
 }
 
 /*
