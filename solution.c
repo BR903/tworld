@@ -361,6 +361,7 @@ static int readsolution(fileinfo *file, gamesetup *game)
     if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
     game->savedrndslidedir = idxdir8[val8];
+    game->savedstepping = 0;
     if (!filereadint32(file, &val32, "unexpected EOF"))
 	return FALSE;
     game->savedrndseed = val32;

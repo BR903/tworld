@@ -1532,6 +1532,7 @@ static void initialhousekeeping(void)
 #endif
 
     if (currenttime() == 0) {
+	stepping() += 2;
 	if (state->initrndslidedir == NIL)
 	    state->initrndslidedir = lastrndslidedir;
 	else
@@ -1935,7 +1936,6 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Water) = 0;
 
     resetendgametimer();
-    stepping() += 2;
     couldntmove() = FALSE;
     chippushing() = FALSE;
     chipstuck() = FALSE;

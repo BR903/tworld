@@ -167,6 +167,7 @@ typedef	struct gamesetup {
     int			besttime;	/* time (in ticks) of best solution */
     unsigned long	savedrndseed;	/* PRNG seed of best solution */
     unsigned char	savedrndslidedir; /* rnd-slide dir of best solution */
+    signed char		savedstepping;	/* timer offset of best solution */
     unsigned char	sgflags;	/* saved-game flags (see below) */
     int			map1size;	/* compressed size of layer 1 */
     int			map2size;	/* compressed size of layer 2 */

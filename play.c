@@ -121,7 +121,7 @@ int prepareplayback(void)
     state.replay = 0;
     copymovelist(&state.moves, &state.game->savedsolution);
     state.initrndslidedir = state.game->savedrndslidedir;
-    /*state.stepping = state.game->savedstepping;*/
+    state.stepping = state.game->savedstepping;
     restartprng(&state.mainprng, state.game->savedrndseed);
     return TRUE;
 }
@@ -170,6 +170,7 @@ void setgameplaymode(int mode)
  */
 int doturn(int cmd)
 {
+    int const	playbackslop = 32;
     action	act;
     int		n;
 
@@ -191,6 +192,9 @@ int doturn(int cmd)
 		state.currentinput = state.moves.list[state.replay].dir;
 		++state.replay;
 	    }
+	} else {
+	    if (state.currenttime > state.game->besttime + playbackslop)
+		return -1;
 	}
     }
 
@@ -242,6 +246,7 @@ int drawscreen(int showframe)
  */
 int quitgamestate(void)
 {
+    state.soundeffects = 0;
     clearsoundeffects();
     return TRUE;
 }
@@ -288,6 +293,7 @@ int replacesolution(void)
     state.game->besttime = currenttime;
     state.game->sgflags &= ~SGF_REPLACEABLE;
     state.game->savedrndslidedir = state.initrndslidedir;
+    state.game->savedstepping = state.stepping;
     state.game->savedrndseed = getinitialseed(&state.mainprng);
     copymovelist(&state.game->savedsolution, &state.moves);
     return TRUE;
