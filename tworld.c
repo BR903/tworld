@@ -100,72 +100,6 @@ static int	usepasswds = TRUE;
  */
 static int	showhistogram = FALSE;
 
-#ifdef DESPERATE_LEAK_DETECTOR
-
-/*
- * Memory leak detection.
- */
-
-#undef malloc
-#undef calloc
-#undef realloc
-#undef free
-
-static FILE *memlog = NULL;
-
-static void initmemlog(void)
-{
-     memlog = fopen("./mem.log", "w");
-     if (!memlog)
-	  exit(EXIT_FAILURE);
-}
-
-void *debug_malloc(char const *file, long line, size_t n)
-{
-    void       *p;
-
-    p = malloc(n);
-    if (!p)
-	memerrexit();
-    fprintf(memlog, "%p < malloc(%u) @ %s:%ld\n", p, n, file, line);
-    return p;
-}
-
-void *debug_calloc(char const *file, long line, size_t m, size_t n)
-{
-    void       *p;
- 
-    p = calloc(m, n);
-    if (!p)
-	memerrexit();
-    fprintf(memlog, "%p < calloc(%u, %u) @ %s:%ld\n", p, m, n, file, line);
-    return p;
-}
-
-void *debug_realloc(char const *file, long line, void *q, size_t n)
-{
-    void       *p;
- 
-    p = realloc(q, n);
-    if (!p)
-	memerrexit();
-    fprintf(memlog, "%p > realloc @ %s:%ld\n", q, file, line);
-    fprintf(memlog, "%p < realloc(%u) @ %s:%ld\n", p, n, file, line);
-    return p;
-}
-
-void debug_free(char const *file, long line, void *p)
-{
-    fprintf(memlog, "%p > free @ %s:%ld\n", p, file, line);
-    free(p);
-}
-
-#else
-
-#define	initmemlog()
-
-#endif
-
 /*
  * The top-level user interface functions.
  */
@@ -980,8 +914,6 @@ int main(int argc, char *argv[])
     gamespec	spec;
     char	lastseries[sizeof spec.series.filebase];
     int		f;
-
-    initmemlog();
 
     if (!initoptionswithcmdline(argc, argv, &start))
 	return EXIT_FAILURE;
