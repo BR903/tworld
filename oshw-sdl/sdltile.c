@@ -17,140 +17,152 @@
  */
 #define	NTILES		128
 
+#define	SIZE_EXTLEFT	0x01
+#define	SIZE_EXTRIGHT	0x02
+#define	SIZE_EXTUP	0x04
+#define	SIZE_EXTDOWN	0x08
+
 typedef	struct tilemap {
     Uint32     *opaque;
-    Uint32     *transp;
+    Uint32     *transp[4];
+    char	transpsize;
 } tilemap;
 
 typedef	struct tileidmap {
     short	opaque;
     short	transp;
+    char	cellcount;
+    char	transpsize;
 } tileidmap;
 
 static tileidmap const small_tileidmap[NTILES] = {
-/* Nothing		*/ { -1, -1 },
-/* Empty		*/ { 0 * 16 +  0,           -1 },
-/* Slide_North		*/ { 1 * 16 +  2,           -1 },
-/* Slide_West		*/ { 1 * 16 +  4,           -1 },
-/* Slide_South		*/ { 0 * 16 + 13,           -1 },
-/* Slide_East		*/ { 1 * 16 +  3,           -1 },
-/* Slide_Random		*/ { 3 * 16 +  2,           -1 },
-/* Ice			*/ { 0 * 16 + 12,           -1 },
-/* IceWall_Northwest	*/ { 1 * 16 + 12,           -1 },
-/* IceWall_Northeast	*/ { 1 * 16 + 13,           -1 },
-/* IceWall_Southwest	*/ { 1 * 16 + 11,           -1 },
-/* IceWall_Southeast	*/ { 1 * 16 + 10,           -1 },
-/* Gravel		*/ { 2 * 16 + 13,           -1 },
-/* Dirt			*/ { 0 * 16 + 11,           -1 },
-/* Water		*/ { 0 * 16 +  3,           -1 },
-/* Fire			*/ { 0 * 16 +  4,           -1 },
-/* Bomb			*/ { 2 * 16 + 10,           -1 },
-/* Beartrap		*/ { 2 * 16 + 11,           -1 },
-/* Burglar		*/ { 2 * 16 +  1,           -1 },
-/* HintButton		*/ { 2 * 16 + 15,           -1 },
-/* Button_Blue		*/ { 2 * 16 +  8,           -1 },
-/* Button_Green		*/ { 2 * 16 +  3,           -1 },
-/* Button_Red		*/ { 2 * 16 +  4,           -1 },
-/* Button_Brown		*/ { 2 * 16 +  7,           -1 },
-/* Teleport		*/ { 2 * 16 +  9,           -1 },
-/* Wall			*/ { 0 * 16 +  1,           -1 },
-/* Wall_North		*/ { 0 * 16 +  6,           -1 },
-/* Wall_West		*/ { 0 * 16 +  7,           -1 },
-/* Wall_South		*/ { 0 * 16 +  8,           -1 },
-/* Wall_East		*/ { 0 * 16 +  9,           -1 },
-/* Wall_Southeast	*/ { 3 * 16 +  0,           -1 },
-/* HiddenWall_Perm	*/ { 0 * 16 +  5,           -1 },
-/* HiddenWall_Temp	*/ { 2 * 16 + 12,           -1 },
-/* BlueWall_Real	*/ { 1 * 16 + 15,           -1 },
-/* BlueWall_Fake	*/ { 1 * 16 + 14,           -1 },
-/* SwitchWall_Open	*/ { 2 * 16 +  6,           -1 },
-/* SwitchWall_Closed	*/ { 2 * 16 +  5,           -1 },
-/* PopupWall		*/ { 2 * 16 + 14,           -1 },
-/* CloneMachine		*/ { 3 * 16 +  1,           -1 },
-/* Door_Red		*/ { 1 * 16 +  7,           -1 },
-/* Door_Blue		*/ { 1 * 16 +  6,           -1 },
-/* Door_Yellow		*/ { 1 * 16 +  9,           -1 },
-/* Door_Green		*/ { 1 * 16 +  8,           -1 },
-/* Socket		*/ { 2 * 16 +  2,           -1 },
-/* Exit			*/ { 1 * 16 +  5,           -1 },
-/* ICChip		*/ { 0 * 16 +  2,           -1 },
-/* Key_Red		*/ { 6 * 16 +  5,  9 * 16 +  5 },
-/* Key_Blue		*/ { 6 * 16 +  4,  9 * 16 +  4 },
-/* Key_Yellow		*/ { 6 * 16 +  7,  9 * 16 +  7 },
-/* Key_Green		*/ { 6 * 16 +  6,  9 * 16 +  6 },
-/* Boots_Ice		*/ { 6 * 16 + 10,  9 * 16 + 10 },
-/* Boots_Slide		*/ { 6 * 16 + 11,  9 * 16 + 11 },
-/* Boots_Fire		*/ { 6 * 16 +  9,  9 * 16 +  9 },
-/* Boots_Water		*/ { 6 * 16 +  8,  9 * 16 +  8 },
-/* Water_Splash		*/ { 3 * 16 +  3,           -1 },
-/* Dirt_Splash		*/ { 3 * 16 +  7,           -1 },
-/* Bomb_Explosion	*/ { 3 * 16 +  6,           -1 },
-/* Block_Static		*/ { 0 * 16 + 10,           -1 },
-/* Burned_Chip		*/ { 3 * 16 +  4,           -1 },
-/* Bombed_Chip		*/ { 3 * 16 +  5,           -1 },
-/* Exited_Chip		*/ { 3 * 16 +  9,           -1 },
-/* Exit_Extra_1		*/ { 3 * 16 + 10,           -1 },
-/* Exit_Extra_2		*/ { 3 * 16 + 11,           -1 },
-/* Overlay_Buffer	*/ { 2 * 16 +  0,           -1 },
-/* Chip			*/ { 6 * 16 + 12,  9 * 16 + 12 },
-			   { 6 * 16 + 13,  9 * 16 + 13 },
-			   { 6 * 16 + 14,  9 * 16 + 14 },
-			   { 6 * 16 + 15,  9 * 16 + 15 },
-/* Block		*/ { 0 * 16 + 14,           -1 },
-			   { 0 * 16 + 15,           -1 },
-			   { 1 * 16 +  0,           -1 },
-			   { 1 * 16 +  1,           -1 },
-/* Tank			*/ { 4 * 16 + 12,  7 * 16 + 12 },
-			   { 4 * 16 + 13,  7 * 16 + 13 },
-			   { 4 * 16 + 14,  7 * 16 + 14 },
-			   { 4 * 16 + 15,  7 * 16 + 15 },
-/* Ball			*/ { 4 * 16 +  8,  7 * 16 +  8 },
-			   { 4 * 16 +  9,  7 * 16 +  8 },
-			   { 4 * 16 + 10,  7 * 16 + 10 },
-			   { 4 * 16 + 11,  7 * 16 + 11 },
-/* Glider		*/ { 5 * 16 +  0,  8 * 16 +  0 },
-			   { 5 * 16 +  1,  8 * 16 +  1 },
-			   { 5 * 16 +  2,  8 * 16 +  2 },
-			   { 5 * 16 +  3,  8 * 16 +  3 },
-/* Fireball		*/ { 4 * 16 +  4,  7 * 16 +  4 },
-			   { 4 * 16 +  5,  7 * 16 +  5 },
-			   { 4 * 16 +  6,  7 * 16 +  6 },
-			   { 4 * 16 +  7,  7 * 16 +  7 },
-/* Walker		*/ { 5 * 16 +  8,  8 * 16 +  8 },
-			   { 5 * 16 +  9,  8 * 16 +  9 },
-			   { 5 * 16 + 10,  8 * 16 + 10 },
-			   { 5 * 16 + 11,  8 * 16 + 11 },
-/* Blob			*/ { 5 * 16 + 12,  8 * 16 + 12 },
-			   { 5 * 16 + 13,  8 * 16 + 13 },
-			   { 5 * 16 + 14,  8 * 16 + 14 },
-			   { 5 * 16 + 15,  8 * 16 + 15 },
-/* Teeth		*/ { 5 * 16 +  4,  8 * 16 +  4 },
-			   { 5 * 16 +  5,  8 * 16 +  5 },
-			   { 5 * 16 +  6,  8 * 16 +  6 },
-			   { 5 * 16 +  7,  8 * 16 +  7 },
-/* Bug			*/ { 4 * 16 +  0,  7 * 16 +  0 },
-			   { 4 * 16 +  1,  7 * 16 +  1 },
-			   { 4 * 16 +  2,  7 * 16 +  2 },
-			   { 4 * 16 +  3,  7 * 16 +  3 },
-/* Paramecium		*/ { 6 * 16 +  0,  9 * 16 +  0 },
-			   { 6 * 16 +  1,  9 * 16 +  1 },
-			   { 6 * 16 +  2,  9 * 16 +  2 },
-			   { 6 * 16 +  3,  9 * 16 +  3 },
-/* Swimming_Chip	*/ { 3 * 16 + 12,           -1 },
-			   { 3 * 16 + 13,           -1 },
-			   { 3 * 16 + 14,           -1 },
-			   { 3 * 16 + 15,           -1 },
-/* Pushing_Chip		*/ { 6 * 16 + 12,  9 * 16 + 12 },
-			   { 6 * 16 + 13,  9 * 16 + 13 },
-			   { 6 * 16 + 14,  9 * 16 + 14 },
-			   { 6 * 16 + 15,  9 * 16 + 15 },
-/* Entity_Reserved3	*/ { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 },
-/* Entity_Reserved2	*/ { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 },
-/* Entity_Reserved1	*/ { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }
+/* Nothing		*/ { -1, -1, 0, 0 },
+/* Empty		*/ { 0 * 16 +  0,           -1, 1, 0 },
+/* Slide_North		*/ { 1 * 16 +  2,           -1, 1, 0 },
+/* Slide_West		*/ { 1 * 16 +  4,           -1, 1, 0 },
+/* Slide_South		*/ { 0 * 16 + 13,           -1, 1, 0 },
+/* Slide_East		*/ { 1 * 16 +  3,           -1, 1, 0 },
+/* Slide_Random		*/ { 3 * 16 +  2,           -1, 1, 0 },
+/* Ice			*/ { 0 * 16 + 12,           -1, 1, 0 },
+/* IceWall_Northwest	*/ { 1 * 16 + 12,           -1, 1, 0 },
+/* IceWall_Northeast	*/ { 1 * 16 + 13,           -1, 1, 0 },
+/* IceWall_Southwest	*/ { 1 * 16 + 11,           -1, 1, 0 },
+/* IceWall_Southeast	*/ { 1 * 16 + 10,           -1, 1, 0 },
+/* Gravel		*/ { 2 * 16 + 13,           -1, 1, 0 },
+/* Dirt			*/ { 0 * 16 + 11,           -1, 1, 0 },
+/* Water		*/ { 0 * 16 +  3,           -1, 1, 0 },
+/* Fire			*/ { 0 * 16 +  4,           -1, 1, 0 },
+/* Bomb			*/ { 2 * 16 + 10,           -1, 1, 0 },
+/* Beartrap		*/ { 2 * 16 + 11,           -1, 1, 0 },
+/* Burglar		*/ { 2 * 16 +  1,           -1, 1, 0 },
+/* HintButton		*/ { 2 * 16 + 15,           -1, 1, 0 },
+/* Button_Blue		*/ { 2 * 16 +  8,           -1, 1, 0 },
+/* Button_Green		*/ { 2 * 16 +  3,           -1, 1, 0 },
+/* Button_Red		*/ { 2 * 16 +  4,           -1, 1, 0 },
+/* Button_Brown		*/ { 2 * 16 +  7,           -1, 1, 0 },
+/* Teleport		*/ { 2 * 16 +  9,           -1, 1, 0 },
+/* Wall			*/ { 0 * 16 +  1,           -1, 1, 0 },
+/* Wall_North		*/ { 0 * 16 +  6,           -1, 1, 0 },
+/* Wall_West		*/ { 0 * 16 +  7,           -1, 1, 0 },
+/* Wall_South		*/ { 0 * 16 +  8,           -1, 1, 0 },
+/* Wall_East		*/ { 0 * 16 +  9,           -1, 1, 0 },
+/* Wall_Southeast	*/ { 3 * 16 +  0,           -1, 1, 0 },
+/* HiddenWall_Perm	*/ { 0 * 16 +  5,           -1, 1, 0 },
+/* HiddenWall_Temp	*/ { 2 * 16 + 12,           -1, 1, 0 },
+/* BlueWall_Real	*/ { 1 * 16 + 15,           -1, 1, 0 },
+/* BlueWall_Fake	*/ { 1 * 16 + 14,           -1, 1, 0 },
+/* SwitchWall_Open	*/ { 2 * 16 +  6,           -1, 1, 0 },
+/* SwitchWall_Closed	*/ { 2 * 16 +  5,           -1, 1, 0 },
+/* PopupWall		*/ { 2 * 16 + 14,           -1, 1, 0 },
+/* CloneMachine		*/ { 3 * 16 +  1,           -1, 1, 0 },
+/* Door_Red		*/ { 1 * 16 +  7,           -1, 1, 0 },
+/* Door_Blue		*/ { 1 * 16 +  6,           -1, 1, 0 },
+/* Door_Yellow		*/ { 1 * 16 +  9,           -1, 1, 0 },
+/* Door_Green		*/ { 1 * 16 +  8,           -1, 1, 0 },
+/* Socket		*/ { 2 * 16 +  2,           -1, 1, 0 },
+/* Exit			*/ { 1 * 16 +  5,           -1, 1, 0 },
+/* ICChip		*/ { 0 * 16 +  2,           -1, 1, 0 },
+/* Key_Red		*/ { 6 * 16 +  5,  9 * 16 +  5, 1, 0 },
+/* Key_Blue		*/ { 6 * 16 +  4,  9 * 16 +  4, 1, 0 },
+/* Key_Yellow		*/ { 6 * 16 +  7,  9 * 16 +  7, 1, 0 },
+/* Key_Green		*/ { 6 * 16 +  6,  9 * 16 +  6, 1, 0 },
+/* Boots_Ice		*/ { 6 * 16 + 10,  9 * 16 + 10, 1, 0 },
+/* Boots_Slide		*/ { 6 * 16 + 11,  9 * 16 + 11, 1, 0 },
+/* Boots_Fire		*/ { 6 * 16 +  9,  9 * 16 +  9, 1, 0 },
+/* Boots_Water		*/ { 6 * 16 +  8,  9 * 16 +  8, 1, 0 },
+/* Water_Splash		*/ { 3 * 16 +  3,           -1, 1, 0 },
+/* Dirt_Splash		*/ { 3 * 16 +  7,           -1, 1, 0 },
+/* Bomb_Explosion	*/ { 3 * 16 +  6,           -1, 1, 0 },
+/* Block_Static		*/ { 0 * 16 + 10,           -1, 1, 0 },
+/* Burned_Chip		*/ { 3 * 16 +  4,           -1, 1, 0 },
+/* Bombed_Chip		*/ { 3 * 16 +  5,           -1, 1, 0 },
+/* Exited_Chip		*/ { 3 * 16 +  9,           -1, 1, 0 },
+/* Exit_Extra_1		*/ { 3 * 16 + 10,           -1, 1, 0 },
+/* Exit_Extra_2		*/ { 3 * 16 + 11,           -1, 1, 0 },
+/* Overlay_Buffer	*/ { 2 * 16 +  0,           -1, 1, 0 },
+/* Chip			*/ { 6 * 16 + 12,  9 * 16 + 12, 1, 0 },
+			   { 6 * 16 + 13,  9 * 16 + 13, 1, 0 },
+			   { 6 * 16 + 14,  9 * 16 + 14, 1, 0 },
+			   { 6 * 16 + 15,  9 * 16 + 15, 1, 0 },
+/* Block		*/ { 0 * 16 + 14,           -1, 1, 0 },
+			   { 0 * 16 + 15,           -1, 1, 0 },
+			   { 1 * 16 +  0,           -1, 1, 0 },
+			   { 1 * 16 +  1,           -1, 1, 0 },
+/* Tank			*/ { 4 * 16 + 12,  7 * 16 + 12, 1, 0 },
+			   { 4 * 16 + 13,  7 * 16 + 13, 1, 0 },
+			   { 4 * 16 + 14,  7 * 16 + 14, 1, 0 },
+			   { 4 * 16 + 15,  7 * 16 + 15, 1, 0 },
+/* Ball			*/ { 4 * 16 +  8,  7 * 16 +  8, 1, 0 },
+			   { 4 * 16 +  9,  7 * 16 +  8, 1, 0 },
+			   { 4 * 16 + 10,  7 * 16 + 10, 1, 0 },
+			   { 4 * 16 + 11,  7 * 16 + 11, 1, 0 },
+/* Glider		*/ { 5 * 16 +  0,  8 * 16 +  0, 1, 0 },
+			   { 5 * 16 +  1,  8 * 16 +  1, 1, 0 },
+			   { 5 * 16 +  2,  8 * 16 +  2, 1, 0 },
+			   { 5 * 16 +  3,  8 * 16 +  3, 1, 0 },
+/* Fireball		*/ { 4 * 16 +  4,  7 * 16 +  4, 1, 0 },
+			   { 4 * 16 +  5,  7 * 16 +  5, 1, 0 },
+			   { 4 * 16 +  6,  7 * 16 +  6, 1, 0 },
+			   { 4 * 16 +  7,  7 * 16 +  7, 1, 0 },
+/* Walker		*/ { 5 * 16 +  8,  8 * 16 +  8, 1, 0 },
+			   { 5 * 16 +  9,  8 * 16 +  9, 1, 0 },
+			   { 5 * 16 + 10,  8 * 16 + 10, 1, 0 },
+			   { 5 * 16 + 11,  8 * 16 + 11, 1, 0 },
+/* Blob			*/ { 5 * 16 + 12,  8 * 16 + 12, 1, 0 },
+			   { 5 * 16 + 13,  8 * 16 + 13, 1, 0 },
+			   { 5 * 16 + 14,  8 * 16 + 14, 1, 0 },
+			   { 5 * 16 + 15,  8 * 16 + 15, 1, 0 },
+/* Teeth		*/ { 5 * 16 +  4,  8 * 16 +  4, 1, 0 },
+			   { 5 * 16 +  5,  8 * 16 +  5, 1, 0 },
+			   { 5 * 16 +  6,  8 * 16 +  6, 1, 0 },
+			   { 5 * 16 +  7,  8 * 16 +  7, 1, 0 },
+/* Bug			*/ { 4 * 16 +  0,  7 * 16 +  0, 1, 0 },
+			   { 4 * 16 +  1,  7 * 16 +  1, 1, 0 },
+			   { 4 * 16 +  2,  7 * 16 +  2, 1, 0 },
+			   { 4 * 16 +  3,  7 * 16 +  3, 1, 0 },
+/* Paramecium		*/ { 6 * 16 +  0,  9 * 16 +  0, 1, 0 },
+			   { 6 * 16 +  1,  9 * 16 +  1, 1, 0 },
+			   { 6 * 16 +  2,  9 * 16 +  2, 1, 0 },
+			   { 6 * 16 +  3,  9 * 16 +  3, 1, 0 },
+/* Swimming_Chip	*/ { 3 * 16 + 12,           -1, 1, 0 },
+			   { 3 * 16 + 13,           -1, 1, 0 },
+			   { 3 * 16 + 14,           -1, 1, 0 },
+			   { 3 * 16 + 15,           -1, 1, 0 },
+/* Pushing_Chip		*/ { 6 * 16 + 12,  9 * 16 + 12, 1, 0 },
+			   { 6 * 16 + 13,  9 * 16 + 13, 1, 0 },
+			   { 6 * 16 + 14,  9 * 16 + 14, 1, 0 },
+			   { 6 * 16 + 15,  9 * 16 + 15, 1, 0 },
+/* Entity_Reserved3	*/ { -1, -1, 0, 0 }, { -1, -1, 0, 0 },
+			   { -1, -1, 0, 0 }, { -1, -1, 0, 0 },
+/* Entity_Reserved2	*/ { -1, -1, 0, 0 }, { -1, -1, 0, 0 },
+			   { -1, -1, 0, 0 }, { -1, -1, 0, 0 },
+/* Entity_Reserved1	*/ { -1, -1, 0, 0 }, { -1, -1, 0, 0 },
+			   { -1, -1, 0, 0 }, { -1, -1, 0, 0 }
 };
 
 static Uint32	       *cctiles = NULL;
 static tilemap		tileptr[NTILES];
+static int		useanimation = FALSE;
 
 /*
  * Functions for obtaining tile images.
@@ -161,11 +173,11 @@ static tilemap		tileptr[NTILES];
 static Uint32 const *_gettileimage(int id, int transp)
 {
     if (transp)
-	return tileptr[id].transp ? tileptr[id].transp
-				  : tileptr[id].opaque;
+	return tileptr[id].transp[0] ? tileptr[id].transp[0]
+				     : tileptr[id].opaque;
     else
 	return tileptr[id].opaque ? tileptr[id].opaque
-				  : tileptr[id].transp;
+				  : tileptr[id].transp[0];
 }
 
 /* Return a pointer to a tile image for a creature, completing the
@@ -174,18 +186,37 @@ static Uint32 const *_gettileimage(int id, int transp)
 static Uint32 const *_getcreatureimage(SDL_Rect *rect,
 				       int id, int dir, int moving)
 {
+    tilemap const      *q;
+
     rect->w = sdlg.wtile;
     rect->h = sdlg.htile;
-    if (moving > 0) {
-	switch (dir) {
-	  case NORTH:	rect->y += moving * rect->h / 8;	break;
-	  case WEST:	rect->x += moving * rect->w / 8;	break;
-	  case SOUTH:	rect->y -= moving * rect->h / 8;	break;
-	  case EAST:	rect->x -= moving * rect->w / 8;	break;
+    q = tileptr + id + diridx(dir);
+
+    if (useanimation) {
+	if (q->transpsize & SIZE_EXTLEFT) {
+	    rect->x -= sdlg.wtile;
+	    rect->w += sdlg.wtile;
 	}
+	if (q->transpsize & SIZE_EXTRIGHT)
+	    rect->w += sdlg.wtile;
+	if (q->transpsize & SIZE_EXTUP) {
+	    rect->y -= sdlg.htile;
+	    rect->h += sdlg.htile;
+	}
+	if (q->transpsize & SIZE_EXTDOWN)
+	    rect->h += sdlg.htile;
+	return q->transp[moving / 2];
+    } else {
+	if (moving > 0) {
+	    switch (dir) {
+	    case NORTH:	rect->y += moving * rect->h / 8;	break;
+	    case WEST:	rect->x += moving * rect->w / 8;	break;
+	    case SOUTH:	rect->y -= moving * rect->h / 8;	break;
+	    case EAST:	rect->x -= moving * rect->w / 8;	break;
+	    }
+	}
+	return q->transp[0] ? q->transp[0] : q->opaque;
     }
-    id += diridx(dir);
-    return tileptr[id].transp ? tileptr[id].transp : tileptr[id].opaque;
 }
 
 /* Return a pointer to a tile image for a cell. If the top image is
@@ -199,12 +230,12 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
     int		n;
 
     (void)timerval;
-    if (bot == Nothing || bot == Empty || tileptr[top].transp == 0)
+    if (bot == Nothing || bot == Empty || !tileptr[top].transp[0])
 	return tileptr[top].opaque;
     src = tileptr[bot].opaque;
     dest = tileptr[Overlay_Buffer].opaque;
     memcpy(dest, src, sdlg.cbtile);
-    src = tileptr[top].transp;
+    src = tileptr[top].transp[0];
     for (n = 0 ; n < sdlg.cptile ; ++n)
 	if (src[n] != (Uint32)sdlg.transpixel)
 	    dest[n] = src[n];
@@ -310,10 +341,10 @@ static int inittileswithmask(SDL_Surface *bmp, int wset, int hset,
 	else
 	    tileptr[n].opaque = NULL;
 	if (small_tileidmap[n].transp >= 0)
-	    tileptr[n].transp = cctiles
+	    tileptr[n].transp[0] = cctiles
 			+ small_tileidmap[n].transp * sdlg.cptile;
 	else
-	    tileptr[n].transp = NULL;
+	    tileptr[n].transp[0] = NULL;
     }
 
     return TRUE;
@@ -336,7 +367,7 @@ static int inittileswithclrkey(SDL_Surface *bmp, int wset, int hset)
     int			x, y, i, j, n;
 
     if (!sdlg.screen) {
-	warn("inittileswithmask() called before creating 32-bit screen");
+	warn("inittileswithclrkey() called before creating 32-bit surface");
 	fmt = SDL_GetVideoInfo()->vfmt;
     } else
 	fmt = sdlg.screen->format;
@@ -383,14 +414,90 @@ static int inittileswithclrkey(SDL_Surface *bmp, int wset, int hset)
 	else
 	    tileptr[n].opaque = NULL;
 	if (small_tileidmap[n].transp >= 0)
-	    tileptr[n].transp = cctiles
+	    tileptr[n].transp[0] = cctiles
 			+ small_tileidmap[n].transp * sdlg.cptile;
 	else
-	    tileptr[n].transp = NULL;
+	    tileptr[n].transp[0] = NULL;
     }
 
     return TRUE;
 }
+
+#if 0
+/*
+ *
+ */
+
+/*
+ */
+static int initanimtileswithclrkey(SDL_Surface *bmp, int wset, int hset)
+{
+    SDL_PixelFormat    *fmt;
+    SDL_Surface	       *temp;
+    Uint32	       *src;
+    Uint32	       *dest;
+    Uint32		magenta;
+    SDL_Rect		srcrect;
+    SDL_Rect		destrect;
+    int			x, y, i, j, n;
+
+    if (!sdlg.screen) {
+	warn("initanimtileswithclrkey() called before creating 32-bit screen");
+	fmt = SDL_GetVideoInfo()->vfmt;
+    } else
+	fmt = sdlg.screen->format;
+
+    temp = SDL_CreateRGBSurface(SDL_SWSURFACE,
+				wset * sdlg.wtile, hset * sdlg.htile, 32,
+				fmt->Rmask, fmt->Gmask,
+				fmt->Bmask, fmt->Amask);
+    if (!temp)
+	die("couldn't create intermediate tile surface: %s", SDL_GetError());
+
+    srcrect.x = 0;
+    srcrect.y = 0;
+    srcrect.w = wset * sdlg.wtile;
+    srcrect.h = hset * sdlg.htile;
+    destrect = srcrect;
+    SDL_BlitSurface(bmp, &srcrect, temp, &destrect);
+
+    magenta = SDL_MapRGB(temp->format, 255, 0, 255);
+    if (SDL_MUSTLOCK(temp))
+	SDL_LockSurface(temp);
+
+    if (!(cctiles = calloc(wset * hset * sdlg.cptile, sizeof *cctiles)))
+	memerrexit();
+
+
+    for (n = 0 ; n < NTILES ; ++n) {
+	if (small_tileidmap[n].opaque >= 0)
+	    tileptr[n].opaque = cctiles
+			+ small_tileidmap[n].opaque * sdlg.cptile;
+	else
+	    tileptr[n].opaque = NULL;
+	if (small_tileidmap[n].transp >= 0)
+	    tileptr[n].transp[0] = cctiles
+			+ small_tileidmap[n].transp * sdlg.cptile;
+	else
+	    tileptr[n].transp[0] = NULL;
+    }
+
+
+    for (x = 0 ; x < wset * sdlg.wtile ; x += sdlg.wtile) {
+	for (y = 0 ; y < hset * sdlg.htile ; y += sdlg.htile) {
+	    src = (Uint32*)((char*)temp->pixels + y * temp->pitch) + x;
+	    for (j = 0 ; j < sdlg.htile ; ++j, dest += sdlg.wtile) {
+		for (i = 0 ; i < sdlg.wtile ; ++i)
+		    dest[i] = src[i] == magenta ? sdlg.transpixel : src[i];
+		src = (Uint32*)((char*)src + temp->pitch);
+	    }
+	}
+    }
+
+
+
+}
+#endif
 
 /*
  *
@@ -421,7 +528,7 @@ int loadsmalltileset(char const *filename, int complain)
     }
     if (bmp->h % 16) {
 	errmsg(filename, "image file has invalid dimensions");
-	return FALSE;
+	goto failure;
     }
     y = bmp->h / 16;
 
@@ -433,13 +540,11 @@ int loadsmalltileset(char const *filename, int complain)
 	mask = FALSE;
     } else {
 	errmsg(filename, "image file has invalid dimensions");
-	return FALSE;
+	goto failure;
     }
-
     if (x % 4 || y % 4) {
-	errmsg("%s: invalid images: tile dimensions must be divisible by four",
-	       filename);
-	return FALSE;
+	errmsg(filename, "tile dimensions must be divisible by four");
+	goto failure;
     }
 
     freetileset();
@@ -448,13 +553,21 @@ int loadsmalltileset(char const *filename, int complain)
     sdlg.cptile = x * y;
     sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
 
-    if (mask)
-	inittileswithmask(bmp, 10, 16, 10, 0, 3, 16, 7, 0);
-    else
-	inittileswithclrkey(bmp, 10, 16);
+    if (mask) {
+	if (!inittileswithmask(bmp, 10, 16, 10, 0, 3, 16, 7, 0))
+	    goto failure;
+    } else {
+	if (!inittileswithclrkey(bmp, 10, 16))
+	    goto failure;
+    }
 
+    useanimation = FALSE;
     SDL_FreeSurface(bmp);
-    return cctiles != NULL;
+    return TRUE;
+
+  failure:
+    SDL_FreeSurface(bmp);
+    return FALSE;
 }
 
 int loadlargetileset(char const *filename, int complain)
