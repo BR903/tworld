@@ -1585,9 +1585,11 @@ static void floormovements(void)
 		    cr->state &= ~CS_HASMOVED;
 	    }
 	}
-	if (!f && cr->id != Chip) {
-	    endfloormovement(cr);
-	    startfloormovement(cr, cellat(cr->pos)->bot.id);
+	if (!f) {
+	    if (cr->id != Chip || (cr->state & (CS_SLIP | CS_SLIDE))) {
+		endfloormovement(cr);
+		startfloormovement(cr, cellat(cr->pos)->bot.id);
+	    }
 	}
 	if (checkforending())
 	    return;

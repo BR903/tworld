@@ -178,6 +178,26 @@ void *filereadbuf(fileinfo *file, unsigned long size, char const *msg)
     return buf;
 }
 
+/* Read one full line from fp and store the first len characters,
+ * minus the trailing newline.
+ */
+int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
+{
+    int	n, ch;
+
+    if (!fgets(buf, *len, file->fp))
+	return fileerr(file, msg);
+    n = strlen(buf);
+    if (n == *len - 1 && buf[n] != '\n') {
+	do
+	    ch = fgetc(file->fp);
+	while (ch != EOF && ch != '\n');
+    } else
+	buf[n--] = '\0';
+    *len = n;
+    return TRUE;
+}
+
 /* write().
  */
 int filewrite(fileinfo *file, void const *data, unsigned long size,
