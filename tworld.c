@@ -18,6 +18,7 @@
 #include	"help.h"
 #include	"oshw.h"
 #include	"cmdline.h"
+#include	"ver.h"
 
 /* The data needed to identify what is being played.
  */
@@ -54,7 +55,7 @@ static char const *yowzitch =
 /* Online version data.
  */
 static char const *vourzhon =
-	"TileWorld, version 0.8.2.\n\n"
+	"TileWorld, version " VERSION ".\n\n"
 	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
 	"General Public License; either version 2 of the License, or at\n"
 	"your option any later version.\n"
