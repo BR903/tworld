@@ -89,6 +89,7 @@ enum {
     CmdNext10,
     CmdPauseGame,
     CmdHelp,
+    CmdAbout,
     CmdPlayback,
     CmdSeeScores,
     CmdKillSolution,

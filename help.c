@@ -1,4 +1,4 @@
-/* help.c: Displaying online help screens.
+/* help.c: Displaying online help.
  *
  * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -13,34 +13,53 @@
 
 #define	array(a)	a, (sizeof a / sizeof *a)
 
-/* A list of the available keyboard commands.
+/* Help for command-line options.
  */
-static char *gamekeys_items[] = {
-    "2.During the Game",
-    "1-arrows", "1-move Chip",
-    "1-2 4 6 8 (keypad)", "1-also move Chip",
-    "1-q", "1-quit the current game",
-    "1-Q", "1-exit the program",
-    "1-Ctrl-H (Bkspc)", "1-pause the game",
-    "1-Ctrl-R", "1-restart the current level",
-    "1-Ctrl-P", "1-jump to the previous level",
-    "1-Ctrl-N", "1-jump to the next level",
-    /*"2- ",*/
-    "2.Inbetween Games",
-    "1-p", "1-jump to the previous level",
-    "1-n", "1-jump to the next level",
-    "1-g", "1-go to a level with a password",
-    "1-s", "1-see the current score",
-    "1-q", "1-return to the file list",
-    "1-Q", "1-exit the program",
-    "1-Ctrl-I (Tab)", "1-playback saved solution",
-    "1-Ctrl-X", "1-replace existing solution"
+static char *yowzitch_items[] = {
+    "3-Usage: tworld [-hvVdlstpqH] [-DLRS DIR] [NAME] [LEVEL]",
+    "1-", "1+-D", "1-Read data files from DIR instead of the default.",
+    "1-", "1+-L", "1-Read level sets from DIR instead of the default.",
+    "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
+    "1-", "1+-S", "1-Save games in DIR instead of the default.",
+    "1-", "1+-p", "1-Disable password checking.",
+    "1-", "1+-q", "1-Run quietly.",
+    "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
+    "1-", "1+-l", "1-Display the list of available data files and exit.",
+    "1-", "1+-s", "1-Display scores for the selected data file and exit.",
+    "1-", "1+-t", "1-Display times for the selected data file and exit.",
+    "1-", "1+-h", "1-Display this help and exit.",
+    "1-", "1+-d", "1-Display default directories and exit.",
+    "1-", "1+-v", "1-Display version number and exit.",
+    "1-", "1+-V", "1-Display version and license information and exit.",
+    "3-NAME specifies which data file to use.",
+    "3-LEVEL specifies which level to start at."
 };
-static tablespec const gameplay_keys = { 17, 2, 4, 1, gamekeys_items };
+static tablespec const yowzitch_table = { 17, 3, 2, -1, yowzitch_items };
+tablespec const *yowzitch = &yowzitch_table;
+
+/* Version and license information.
+ */
+static char *vourzhon_items[] = {
+    "1+*", "1-Tile World: version " VERSION,
+    "1+",  "1-Copyright (C) 2001 by Brian Raiter",
+    "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
+    "1+*", "1-This program is free software; you can redistribute it and/or",
+    "1+",  "1-modify it under the terms of the GNU General Public License as",
+    "1+",  "1-published by the Free Software Foundation; either version 2 of",
+    "1+",  "1-the License, or (at your option) any later version.",
+    "1+*", "1-This program is distributed in the hope that it will be useful,",
+    "1+",  "1-but WITHOUT ANY WARRANTY; without even the implied warranty of",
+    "1+",  "1-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
+    "1+",  "1-GNU General Public License for more details.",
+    "1+*", "1-Bug reports are appreciated, and can be sent to",
+    "1+",  "1-breadbox@muppetlabs.com."
+};
+static tablespec const vourzhon_table = { 13, 2, 1, -1, vourzhon_items };
+tablespec const *vourzhon = &vourzhon_table;
 
 /* Descriptions of the different surfaces of the levels.
  */
-static objhelptext const gameplay_floors[] = {
+static tiletablerow const help_floors[] = {
     { TRUE, Fire, 0,
       "Fire is fatal unless Chip has firewalking boots." },
     { TRUE, Water, 0,
@@ -58,7 +77,7 @@ static objhelptext const gameplay_floors[] = {
 
 /* Descriptions of the various kinds of obstacles.
  */
-static objhelptext const gameplay_walls[] = {
+static tiletablerow const help_walls[] = {
     { TRUE, Wall_North, Wall,
       "Walls can either take up an entire square,"
       " or just cut off one direction." },
@@ -76,7 +95,7 @@ static objhelptext const gameplay_walls[] = {
 
 /* Descriptions of various objects to be found.
  */
-static objhelptext const gameplay_objects[] = {
+static tiletablerow const help_objects[] = {
     { TRUE, Bomb, 0,
       "A Bomb is always fatal to whatever steps on it." },
     { TRUE, CloneMachine, Button_Red,
@@ -99,7 +118,7 @@ static objhelptext const gameplay_objects[] = {
 
 /* Descriptions of things that Chip can use.
  */
-static objhelptext const gameplay_tools[] = {
+static tiletablerow const help_tools[] = {
     { TRUE, ICChip, 0,
       "IC Chips are what Chip needs to collect in order to pass through"
       " the socket." },
@@ -121,7 +140,7 @@ static objhelptext const gameplay_tools[] = {
 
 /* Descriptions of the roaming creatures.
  */
-static objhelptext const gameplay_monsters[] = {
+static tiletablerow const help_monsters[] = {
     { FALSE, Tank, 0,
       "Tanks only move in one direction, until a blue button"
       " makes them turn around." },
@@ -144,34 +163,14 @@ static objhelptext const gameplay_monsters[] = {
       "Finally, Seekers home in on you; like Blobs, they can be outrun." }
 };
 
-/* About this program.
- */
-static char *about_items[] = {
-    "1+\267", "1-Tile World: version " VERSION,
-    "1+ ",    "1-Copyright \251 2001 by Brian Raiter",
-    "1+ ",    "1-compiled " __DATE__ " " __TIME__ " PST",
-    "1+\267", "1!This program is free software; you can redistribute it and/or"
-	      " modify it under the terms of the GNU General Public License"
-	      " as published by the Free Software Foundation; either version 2"
-	      " of the License, or (at your option) any later version.",
-    "1+\267", "1!This program is distributed in the hope that it will be"
-	      " useful, but WITHOUT ANY WARRANTY; without even the implied"
-	      " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR"
-	      " PURPOSE. See the GNU General Public License for more details.",
-    "1+\267", "1!Bug reports are appreciated, and can be sent to"
-	      " breadbox@muppetlabs.com, or posted to the"
-	      " annexcafe.chips.challenge newsgroup."
-};
-static tablespec const about = { 6, 2, 1, 1, about_items };
-
 /*
  *
  */
 
-static inline int helpscreen(int type, char const *title,
-			     void const *text, int textcount, int completed)
+static int helptilescreen(char const *title, tiletablerow const *table,
+			  int count, int completed)
 {
-    displayhelp(type, title, text, textcount, completed);
+    displaytiletable(title, table, count, completed);
     return anykey();
 }
 
@@ -181,14 +180,74 @@ int gameplayhelp(void)
 {
     int	ret;
 
-    ret =  helpscreen(HELP_TABTEXT, "KEYS", &gameplay_keys, 0, +1)
-	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), +1)
-	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), +1)
-	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), +1)
-	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), +1)
-	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), +1)
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", &about, 0, 0);
+    ret  = helptilescreen("FLOORS", array(help_floors), +1)
+	&& helptilescreen("WALLS", array(help_walls), +1)
+	&& helptilescreen("OBJECTS", array(help_objects), +1)
+	&& helptilescreen("TOOLS", array(help_tools), +1)
+	&& helptilescreen("MONSTERS", array(help_monsters), 0);
 
     cleardisplay();
     return ret;
+}
+
+static int scrollinputcallback(int *move)
+{
+    switch (input(TRUE)) {
+      case CmdPrev10:		*move = SCROLL_UP;		break;
+      case CmdNorth:		*move = SCROLL_UP;		break;
+      case CmdPrev:		*move = SCROLL_UP;		break;
+      case CmdPrevLevel:	*move = SCROLL_UP;		break;
+      case CmdSouth:		*move = SCROLL_DN;		break;
+      case CmdNext:		*move = SCROLL_DN;		break;
+      case CmdNextLevel:	*move = SCROLL_DN;		break;
+      case CmdNext10:		*move = SCROLL_DN;		break;
+      case CmdProceed:		*move = TRUE;			return FALSE;
+      case CmdQuitLevel:	*move = FALSE;			return FALSE;
+      case CmdQuit:						exit(0);
+    }
+    return TRUE;
+}
+
+void onlinehelp(int topic)
+{
+    static char *items[] = {
+	"2-",
+	"1+\267", "1-Return to the program",
+	"1+\267", "1-Key commands during the game",
+	"1+\267", "1-Key commands inbetween games",
+	"1+\267", "1-Objects of the game",
+	"1+\267", "1-About Tile World"
+    };
+    static tablespec const table = { 6, 2, 4, 1, items };
+
+    for (;;) {
+	if (!displaylist("HELP", &table, &topic, scrollinputcallback)) {
+	    cleardisplay();
+	    return;
+	}
+	switch (topic) {
+	  case Help_KeysDuringGame:
+	    displaytable("KEYS", keyboardhelp(KEYHELP_INGAME), -1);
+	    anykey();
+	    break;
+	  case Help_KeysBetweenGames:
+	    displaytable("KEYS", keyboardhelp(KEYHELP_TWIXTGAMES), -1);
+	    anykey();
+	    break;
+	  case Help_ObjectsOfGame:
+	    (void)(helptilescreen("FLOORS", array(help_floors), +1)
+		&& helptilescreen("WALLS", array(help_walls), +1)
+		&& helptilescreen("OBJECTS", array(help_objects), +1)
+		&& helptilescreen("TOOLS", array(help_tools), +1)
+		&& helptilescreen("MONSTERS", array(help_monsters), 0));
+	    break;
+	  case Help_AboutGame:
+	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
+	    anykey();
+	    break;
+	  default:
+	    cleardisplay();
+	    return;
+	}
+    }
 }

@@ -7,8 +7,27 @@
 #ifndef	_help_h_
 #define	_help_h_
 
-/* Display the online help screens for the game.
+/* The available help topics.
  */
-extern int gameplayhelp(void);
+enum {
+    Help_None = 0,
+    Help_KeysDuringGame,
+    Help_KeysBetweenGames,
+    Help_ObjectsOfGame,
+    Help_AboutGame
+};
+
+/* Help for the command-line options.
+ */
+extern tablespec const *yowzitch;
+
+/* Version and license information.
+ */
+extern tablespec const *vourzhon;
+
+/* Display online help screens for the game, with the given topic as
+ * the default.
+ */
+extern void onlinehelp(int topic);
 
 #endif

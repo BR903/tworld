@@ -54,48 +54,6 @@ typedef	struct seriesdata {
     tablespec	table;
 } seriesdata;
 
-/* Help for command-line options.
- */
-static char *yowzitch_items[] = {
-    "3-Usage: tworld [-hvVdlstpqH] [-DLRS DIR] [NAME] [LEVEL]",
-    "1-", "1+-D", "1-Read data files from DIR instead of the default.",
-    "1-", "1+-L", "1-Read level sets from DIR instead of the default.",
-    "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
-    "1-", "1+-S", "1-Save games in DIR instead of the default.",
-    "1-", "1+-p", "1-Disable password checking.",
-    "1-", "1+-q", "1-Run quietly.",
-    "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
-    "1-", "1+-l", "1-Display the list of available data files and exit.",
-    "1-", "1+-s", "1-Display scores for the selected data file and exit.",
-    "1-", "1+-t", "1-Display times for the selected data file and exit.",
-    "1-", "1+-h", "1-Display this help and exit.",
-    "1-", "1+-d", "1-Display default directories and exit.",
-    "1-", "1+-v", "1-Display version number and exit.",
-    "1-", "1+-V", "1-Display version and license information and exit.",
-    "3-NAME specifies which data file to use.",
-    "3-LEVEL specifies which level to start at."
-};
-static tablespec const yowzitch_table = { 17, 3, 2, -1, yowzitch_items };
-
-/* Version and license information.
- */
-static char *vourzhon_items[] = {
-    "1+*", "1-Tile World: version " VERSION,
-    "1+",  "1-Copyright (C) 2001 by Brian Raiter",
-    "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
-    "1+*", "1-This program is free software; you can redistribute it and/or",
-    "1+",  "1-modify it under the terms of the GNU General Public License as",
-    "1+",  "1-published by the Free Software Foundation; either version 2 of",
-    "1+",  "1-the License, or (at your option) any later version.",
-    "1+*", "1-This program is distributed in the hope that it will be useful,",
-    "1+",  "1-but WITHOUT ANY WARRANTY; without even the implied warranty of",
-    "1+",  "1-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
-    "1+",  "1-GNU General Public License for more details.",
-    "1+*", "1-Bug reports are appreciated, and can be sent to",
-    "1+",  "1-breadbox@muppetlabs.com."
-};
-static tablespec const vourzhon_table = { 13, 2, 1, -1, vourzhon_items };
-
 /* TRUE suppresses sound and the console bell.
  */
 static int	silence = FALSE;
@@ -179,20 +137,6 @@ static void printdirectories(void)
     printf("Solution files saved in:         %s\n", savedir);
 }
 
-static int yowzitch(int requested)
-{
-    printtable((requested ? stdout : stderr), &yowzitch_table);
-    return requested;
-}
-
-static void vourzhon(int longform)
-{
-    if (longform)
-	printtable(stdout, &vourzhon_table);
-    else
-	puts(VERSION);
-}
-
 /*
  * Callback functions for oshw.
  */
@@ -233,9 +177,11 @@ static int scrollinputcallback(int *move)
       case CmdNext:		*move = SCROLL_DN;		break;
       case CmdNextLevel:	*move = SCROLL_DN;		break;
       case CmdNext10:		*move = SCROLL_HALFPAGE_DN;	break;
-      case CmdProceed:		*move = TRUE;			return FALSE;
-      case CmdQuitLevel:	*move = FALSE;			return FALSE;
+      case CmdProceed:		*move = CmdProceed;		return FALSE;
+      case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
+      case CmdHelp:		*move = CmdHelp;		return FALSE;
       case CmdQuit:						exit(0);
+
     }
     return TRUE;
 }
@@ -313,13 +259,17 @@ static int changecurrentgame(gamespec *gs, int offset)
     return TRUE;
 }
 
+/*
+ *
+ */
+
 /* Display the user's current score.
  */
 static int showscores(gamespec *gs)
 {
     tablespec	table;
     int	       *levellist;
-    int		count, n;
+    int		count, f, n;
 
     if (!createscorelist(&gs->series, gs->usepasswds,
 			 &levellist, &count, &table)) {
@@ -330,8 +280,16 @@ static int showscores(gamespec *gs)
     for (n = 0 ; n < count ; ++n)
 	if (levellist[n] == gs->currentgame)
 	    break;
-    if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
-	n = levellist[n];
+    for (;;) {
+	f = displaylist(gs->series.name, &table, &n, scrollinputcallback);
+	if (f == CmdProceed) {
+	    n = levellist[n];
+	    break;
+	} else if (f == CmdQuitLevel)
+	    break;
+	else if (f == CmdHelp)
+	    onlinehelp(Help_None);
+    }
     freescorelist(levellist, &table);
     if (n >= 0)
 	gs->currentgame = n;
@@ -391,8 +349,8 @@ static int startinput(gamespec *gs)
 	  case CmdNextLevel:	leveldelta(+1);			return CmdNone;
 	  case CmdNext:		leveldelta(+1);			return CmdNone;
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
-	  case CmdHelp:		gameplayhelp();			break;
 	  case CmdKillSolution:	replaceablesolution(gs);	break;
+	  case CmdHelp:		onlinehelp(Help_KeysBetweenGames); break;
 	  case CmdQuit:						exit(0);
 	  case CmdPlayback:
 	    if (prepareplayback()) {
@@ -443,9 +401,9 @@ static int endinput(gamespec *gs)
 	  case CmdNext10:	changecurrentgame(gs, +10);	return TRUE;
 	  case CmdGotoLevel:	selectlevelbypassword(gs);	return TRUE;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return TRUE;
-	  case CmdHelp:		gameplayhelp();			return TRUE;
 	  case CmdSeeScores:	showscores(gs);			return TRUE;
 	  case CmdKillSolution:	replaceablesolution(gs);	return TRUE;
+	  case CmdHelp:		onlinehelp(Help_KeysBetweenGames); return TRUE;
 	  case CmdQuitLevel:					return FALSE;
 	  case CmdQuit:						exit(0);
 	  case CmdProceed:
@@ -498,7 +456,7 @@ static int playgame(gamespec *gs, int firstcmd)
 	    break;
 	  case CmdHelp:
 	    setgameplaymode(SuspendPlay);
-	    gameplayhelp();
+	    onlinehelp(Help_KeysDuringGame);
 	    setgameplaymode(ResumePlay);
 	    cmd = CmdNone;
 	    break;
@@ -562,7 +520,7 @@ static int playbackgame(gamespec *gs)
 	    break;
 	  case CmdHelp:
 	    setgameplaymode(SuspendPlay);
-	    gameplayhelp();
+	    onlinehelp(Help_None);
 	    setgameplaymode(ResumePlay);
 	    break;
 	}
@@ -591,7 +549,7 @@ static int playbackgame(gamespec *gs)
 static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 				char const *defaultseries, int defaultlevel)
 {
-    int	okay, n;
+    int	okay, f, n;
 
     if (series->count < 1) {
 	errmsg(NULL, "no level sets found");
@@ -609,13 +567,18 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 		if (!strcmp(series->list[--n].filebase, defaultseries))
 		    break;
 	}
-	if (!displaylist("    Welcome to Tile World. Select your destination.",
-			 &series->table, &n, scrollinputcallback))
-	    okay = FALSE;
-	else if (n < 0 || n >= series->count)
-	    okay = FALSE;
-	else
-	    getseriesfromlist(&gs->series, series->list, n);
+	for (;;) {
+	    f = displaylist(" Welcome to Tile World. Select your destination.",
+			    &series->table, &n, scrollinputcallback);
+	    if (f == CmdProceed) {
+		getseriesfromlist(&gs->series, series->list, n);
+		okay = TRUE;
+		break;
+	    } else if (f == CmdQuitLevel) {
+		okay = FALSE;
+		break;
+	    }
+	}
     }
     freeserieslist(series->list, series->count, &series->table);
     if (!okay)
@@ -784,7 +747,8 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 0:
 	    if (*start->filename && start->levelnum) {
 		fprintf(stderr, "too many arguments: %s\n", opts.val);
-		return yowzitch(FALSE);
+		printtable(stderr, yowzitch);
+		return FALSE;
 	    }
 	    if (sscanf(opts.val, "%d", &n) == 1)
 		start->levelnum = n;
@@ -802,17 +766,20 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
 	  case 't':	start->listtimes = TRUE;			break;
-	  case 'h':	yowzitch(TRUE);		 	   exit(EXIT_SUCCESS);
-	  case 'v':	vourzhon(FALSE);	 	   exit(EXIT_SUCCESS);
-	  case 'V':	vourzhon(TRUE);		 	   exit(EXIT_SUCCESS);
+	  case 'h':	printtable(stdout, yowzitch); 	   exit(EXIT_SUCCESS);
+	  case 'v':	puts(VERSION);		 	   exit(EXIT_SUCCESS);
+	  case 'V':	printtable(stdout, vourzhon); 	   exit(EXIT_SUCCESS);
 	  case ':':
 	    fprintf(stderr, "option requires an argument: -%c\n", opts.opt);
-	    return yowzitch(FALSE);
+	    printtable(stderr, yowzitch);
+	    return FALSE;
 	  case '?':
 	    fprintf(stderr, "unrecognized option: -%c\n", opts.opt);
-	    return yowzitch(FALSE);
+	    printtable(stderr, yowzitch);
+	    return FALSE;
 	  default:
-	    return yowzitch(FALSE);
+	    printtable(stderr, yowzitch);
+	    return FALSE;
 	}
     }
 
