@@ -53,12 +53,13 @@ map
 # # * # . . # * # #
 # > ; #     # . < #
 # # # #   E # # # #
+and
+# # # #     # # # #
+#     # @   #     #
+# # x # x y # y # #
+# > x #     # y < #
+# # # #   E # # # #
 end
-
-traps 2 3 -> 2 2
-traps 4 2 -> 2 2
-traps 5 2 -> 7 2
-traps 7 3 -> 7 2
 
 % Action: Variously press and release the brown buttons.
 % TW result: After the brown button under the red key goes away, the
@@ -71,42 +72,6 @@ traps 7 3 -> 7 2
 %%%
 
 title   Buried Brown Button III
-passwd  ECBQ
-
-tiles
-*	beartrap
-.	brown button
-;	red key + brown button
->	glider east
-<	glider west
-end
-
-map
-# # # #     # # # #
-#     # @   #     #
-# # * # . . # * # #
-# > ; #     # . < #
-# # # #   E # # # #
-end
-
-traps 2 3 -> 2 2
-traps 7 3 -> 7 2
-traps 4 2 -> 2 2
-traps 5 2 -> 7 2
-
-% Action: Variously press and release the brown buttons.
-% TW result: Both traps behave as if the extra buttons are not present.
-% MS result: The left-hand glider will become stuck when moving north
-% into the trap, whether or not Chip is standing on the button at the
-% time. It can only be released by Chip pressing the button *after*
-% the glider has become stuck. The right-hand glider shows the same
-% behavior when entering the trap from the north or from the south.
-% The only difference between this level and the previous one is the
-% order in which the trap connections are listed.
-
-%%%
-
-title   Buried Brown Button IV
 passwd  YMCJ
 
 tiles

@@ -13,24 +13,62 @@ Chip's Challenge: Differences between the MS and Lynx versions
 </center>
 <p>
 <h2>
+Introduction
+</h2>
+<p>
+When I originally started compiling this document, I had hoped to make
+it comprehensive. Since Tile World was meant to emulate both the
+original Lynx game and the Windows version created by Microsoft, I
+would surely have to know what all the differences are. I no longer
+entertain such hopes, however, as I have come to realize that the
+differences are too numerous. At times it is hard to meaninfully
+compare the two.
+<p>
+For all that the two programs are in essence the same game, they
+diverge radically when you go beyond the surface details. Some of the
+differences were made deliberately, and reflect the tradeoffs made
+when porting a game written for dedicated hardware to Windows 3.x, a
+non-preemptive multitasking GUI layer, sometimes running on
+not-at-all-fast hardware. Other differences in the MS version are all
+too obviously the result of bugs in the code. And some differences are
+just inexplicable. One might wonder, at times, at the very fact that
+the same set of levels (or mostly the same) can all be solved in both
+games. Upon further reflection, though, it seems clear that the MS
+programmer(s) simply continued to tinker with the code until the
+testers were able to complete the game. And in fact, this likely
+explains still other differences in the MS version -- i.e. they were
+introduced in order to make a broken level solvable.
+<p>
+On top of this, both games have odd and completely distinct behavior
+when given levels that are "illegal". Neither version of the program
+originally came with a level editor, and the games were not intended
+to be used with anything but the almost-150 levels they were sold
+with. So it is understandable that their behavior is sometimes
+surprising when running a user-created level with unforeseen
+juxtapositions of elements. But just trying to document this
+information alone would be a very large task.
+<p>
+Instead I have focused on what I consider to be the most important
+differences. I have tried to list the differences that are the most
+noteworthy, the differences that really catch people off-guard the
+first time they see them, and the differences that level designers
+should be aware of before creating levels in either ruleset.
+<p>
+<h2>
 Level Layout
 </h2>
 <p>
 Under MS, each tile of the map can contain up to two things, one atop
 the other. No distinction is made between creatures and other objects.
 Creatures, keys, and boots are "transparent", in that they partially
-expose the contents of the lower tile layer. Opaque objects can
-sometimes be removed from the upper layer, making the lower layer
-topmost. Under Lynx, each tile of the map can contain only one object
-and/or one creature. Blocks are one type of creature, as is Chip.
-<p>
-Under MS, the creatures are ordered by a separately specified list.
-This "creature list" determines the order of the creatures' movements.
-As a side effect of this, creatures can be made immobile by omitting
-them from the list. Under Lynx, the creature list is generated
-automatically from the initial placement of creatures on the map. It
-is not possible to have immobile creatures. [Note: this has since been
-shown to be untrue.]
+expose the contents of the lower tile layer. Blocks, on the other
+hand, are not transparent, and are treated more as a type of tile.
+Opaque objects can sometimes be removed from the upper layer, making
+the lower layer topmost. Under Lynx, each location of the map can
+contain only one tile and optionally one creature. Blocks are a type
+of creature (i.e. not a tile), and so is Chip. Keys and boots, on the
+other hand, are a type of tile, and so cannot be combined with other
+tiles.
 <p>
 Under MS, the mappings of brown buttons to beartraps and red buttons
 to clone machines are explicitly specified. Buttons can be unconnected
@@ -38,8 +76,8 @@ by omitting them from the list. Under Lynx, a button of either type is
 always connected to the first beartrap/clone machine that comes after
 it on the map, in reading order (i.e., going from left-to-right, then
 top-to-bottom, and returning to the top from the bottom if necessary).
-[Note: this is no longer true in Tile World's Lynx emulation --
-explicit specification of button connections is permitted.]
+[Note: this is not true in Tile World's Lynx emulation -- it uses the
+same mechanism as the MS game.]
 <p>
 <h2>
 General Movement
@@ -88,10 +126,10 @@ that frame.
 Involuntary Movement
 </h2>
 <p>
-(Involuntary movement is my generic term to refer to all types of
-movement that are caused by what Chip or a creature is standing on.
-Ice, force floors, teleports, beartraps, and clone machines are the
-causes of involuntary movement.)
+Involuntary movement refers to all types of movement that are caused
+by what Chip or a creature is standing on.  Ice, force floors,
+teleports, beartraps, and clone machines are the causes of involuntary
+movement.
 <p>
 Ice and force floors cause creatures to move at double-speed. Under
 Lynx, when Chip is moving along a sequence of force floors he can,
@@ -112,11 +150,14 @@ can attempt an extra move immediately after leaving a force floor. Due
 to the temporary lifting of the 5-moves-per-second restriction, Chip
 will always have a move available to him afterwards. This also means
 that an extra move is available on tiles that do not force movement at
-double-speed, such as teleports. Under Lynx, teleports, beartraps, and
-clone machines also cause forced movement, but only at normal speed.
-(Actually, movement into and out of beartraps and clone machines
-happen slightly faster than normal; the details are outside the scope
-of this document.)
+double-speed, such as teleports. Under Lynx, it is the floor Chip is
+moving onto that determines whether or not he moves at double speed,
+not the floor he is leaving. This is because Chip's location while in
+mid-move is considered to be the destination tile. Furthermore,
+teleports, beartraps, and clone machines only cause forced movement at
+normal speed. (Actually, movement into and out of beartraps and clone
+machines happen slightly faster than normal; the details are outside
+the scope of this document.)
 <p>
 Under MS, creatures entering ice, force floors, etc. make their first
 involuntary move on the same tick. Thus, they pass through that first
@@ -129,18 +170,6 @@ Under Lynx, the double-speed of force floors is actually a doubling of
 speed. In particular, blobs on ice and force floors move at 5 moves
 per second, which is double their normal speed. Under MS, all
 creatures have the same double-speed rate of 10 moves per second.
-<p>
-Under Lynx, it is the floor Chip is moving onto that determines
-whether or not he moves at double speed, not the floor he is leaving.
-(This is because Chip's location while in mid-move is considered to be
-the destination tile.) This obliquely accounts for another difference:
-under MS, force floors and the like do not take effect until after a
-creature successfully moves. Thus if Chip or any other creature starts
-a level located on a square of ice, they can leave it in any
-direction, and at any time. (If the move takes them onto another
-square of ice, though, they will then be subject to its effects.)
-[Note: some or all of this latter point may actually be true for
-Lynx.]
 <p>
 Under MS, Chip can use his voluntary move to move opposite the
 direction of the force floor. Under Lynx, such an attempt will fail.
@@ -200,13 +229,12 @@ Beartraps and Clone Machines
 </h2>
 <p>
 Under Lynx, creatures always exit beartraps and clone machines in the
-direction they are facing. Chip is the only creature (except perhaps
-tanks?) that can turn around while held in a beartrap. Under MS,
-blobs, bugs, paramecia and teeth can exit beartraps and clone machines
-in a new direction. Tanks will turn around in a beartrap when a blue
-button is pushed. Blobs always exit in a random direction. Bugs,
-paramecia, and teeth choose their direction via a complex set of rules
-that I won't go into here.
+direction they are facing. Chip is the only creature besides tanks
+that can turn around while held in a beartrap. Under MS, blobs, bugs,
+paramecia and teeth can exit beartraps and clone machines in a new
+direction. Blobs always exit in a random direction. Bugs, paramecia, and
+teeth choose their direction via a complex set of rules that I won't
+go into here.
 <p>
 Under Lynx, a creature (including Chip) will leave a beartrap the
 moment a brown button is pressed. The movement is involuntary. Under
@@ -221,17 +249,14 @@ of beartraps by themselves.)
 <p>
 Under Lynx, a creature leaves a clone machine the moment a red button
 is pressed. If the clone's direction is blocked, the clone is not
-created.
-<p>
-Under MS, only blocks leave a clone machine immediately upon a red
-button being pressed, and if the exit direction is blocked, the clone
-is not created. Other creatures wait one tick before exiting. If the
-exit becomes blocked during that one-tick pause, the clone is still
-created, and can exit at a later time if the direction becomes
-clear. Note that in the case of blobs, bugs, paramecia, and teeth, the
-direction that needs to be clear can change with every tick. Their
-original direction only matters when determining if the clone is
-created in the first place.
+created. Under MS, only blocks leave a clone machine immediately upon
+a red button being pressed. Other creatures wait one tick before
+exiting. If the exit becomes blocked during that one-tick pause, the
+clone still exists, and can exit at a later time if the direction
+becomes clear.  Note that in the case of blobs, bugs, paramecia, and
+teeth, the direction that needs to be clear can change with every
+tick. Their original direction only matters when determining if the
+clone is created in the first place.
 <p>
 <h2>
 Miscellaneous
@@ -243,13 +268,15 @@ appropriate animation is displaying. (Other creatures can still enter
 the tile, which stops the animation.) Under MS, these actions complete
 instantaneously.
 <p>
-Under Lynx, if a creature (including a block) enters a teleport and no
-teleport, including the original one, permits exit in the given
-direction, the creature will remain trapped on the original teleport
-(presumably until a direction becomes free). Under MS, this is true
-for all creatures except Chip; if Chip cannot exit any teleport, he
-will "bounce back", returning to the tile he was on before he entered
-the teleport.
+Under MS, if a creature enters a teleport and no teleport, including
+the original one, permits exit in the given direction, the creature
+will remain trapped on the original teleport until a direction becomes
+free. If Chip enters such a teleport, however, he will "bounce back",
+returning to the tile he was on before he entered the teleport. Under
+Lynx, creatures treat blocked teleports as if they were empty tiles,
+and they have no effect on them. When Chip enters a blocked teleport,
+however, he becomes permanently stuck. Even if a direction becomes
+free later, Chip will be unable to move off the teleport.
 <p>
 Under Lynx, pressing a blue button only turns around tanks that are
 not in mid-move at the time. Under MS, tanks are never "in mid-move",

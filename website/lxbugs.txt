@@ -145,7 +145,7 @@ end
 
 %%%
 
-title   Push-back
+title   maglev
 passwd  WNLP
 hint    " "
 
@@ -168,5 +168,32 @@ end
 % TW result: Block cannot be pushed against the force floor.
 % Lynx result: Chip can push block against the force floor when
 % carrying the magnet. 
+
+%%%
+
+title   Push-back
+passwd  FXQO
+
+tiles
+.	red button
+G	glider east
+F	fireball west
+end
+
+map
+# # # # # # # # # #
+# 6             @ #
+#                 #
+#                 #
+#       .       ^ #
+#       G , F   ^ #
+#               ^]#
+# # # # E # # # # #
+end
+
+% Action: Move and hold south.
+% TW result: Chip is killed by a cloned block.
+% Lynx result: Chip is able to hold the block back as long as he keeps
+% pushing down. (As soon as he lets up, the block kills him.)
 
 %%%
