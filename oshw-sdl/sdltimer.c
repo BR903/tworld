@@ -85,10 +85,11 @@ static void shutdown(void)
 {
     settimer(-1);
 #ifdef HISTOGRAM
-    printf("Tick-waiting histogram\n");
-    printf("NEG: %d\n", hist[0]);
     {
 	int i;
+	printf("Tick-waiting histogram\n");
+	if (hist[0])
+	    printf("NEG: %d\n", hist[0]);
 	for (i = 1 ; i < 1000 ; ++i)
 	    if (hist[i])
 		printf("%3d: %d\n", i - 1, hist[i]);
