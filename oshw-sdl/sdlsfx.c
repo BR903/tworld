@@ -52,9 +52,9 @@ static void initonomatopoeia(void)
     sounds[SND_IC_COLLECTED].textsfx    = "Chack!";
     sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
     sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
-    sounds[SND_TELEPORTING].textsfx     = "Whing!";
+    sounds[SND_TELEPORTING].textsfx     = "Bamff!";
     sounds[SND_DOOR_OPENED].textsfx     = "Spang!";
-    sounds[SND_SOCKET_OPENED].textsfx   = "Chack!";
+    sounds[SND_SOCKET_OPENED].textsfx   = "Clack!";
     sounds[SND_BUTTON_PUSHED].textsfx   = "Click!";
     sounds[SND_BOMB_EXPLODES].textsfx   = "Booom!";
     sounds[SND_WATER_SPLASH].textsfx    = "Plash!";
@@ -75,43 +75,40 @@ static void initonomatopoeia(void)
  */
 static void displaysoundeffects(unsigned long sfx, int display)
 {
-    static char const  *playing = NULL;
+    static int		nowplaying = -1;
     static Uint32	playtime = 0;
-    char const	       *play;
     unsigned long	flag;
-    int			i;
+    int			play;
+    int			i, f;
 
     if (!display) {
-	playing = NULL;
+	nowplaying = -1;
 	playtime = 0;
 	return;
     }
 
-    play = NULL;
+    play = -1;
     for (flag = 1, i = 0 ; flag ; flag <<= 1, ++i) {
 	if (sfx & flag) {
-	    play = sounds[i].textsfx;
+	    play = i;
 	    break;
 	}
     }
-    if (play) {
-	if (playing == play) {
-	    puttext(&sdlg.textsfxrect, "", 0, 0);
-	    SDL_UpdateRect(sdlg.screen,
-			   sdlg.textsfxrect.x, sdlg.textsfxrect.y,
-			   sdlg.textsfxrect.w, sdlg.textsfxrect.h);
-	}
-	playing = play;
-	playtime = SDL_GetTicks();
-    } else if (playing) {
-	if (SDL_GetTicks() - playtime < 400)
-	    play = playing;
-	else
-	    playing = NULL;
+
+    f = PT_CENTER;
+    if (play >= 0) {
+	nowplaying = i;
+	playtime = SDL_GetTicks() + 500;
+    } else if (nowplaying >= 0) {
+	if (SDL_GetTicks() < playtime) {
+	    play = nowplaying;
+	    f |= PT_DIM;
+	} else
+	    nowplaying = -1;
     }
 
-    if (play)
-	puttext(&sdlg.textsfxrect, play, -1, PT_CENTER);
+    if (play >= 0)
+	puttext(&sdlg.textsfxrect, sounds[play].textsfx, -1, f);
     else
 	puttext(&sdlg.textsfxrect, "", 0, 0);
 }
