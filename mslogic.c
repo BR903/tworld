@@ -460,24 +460,6 @@ static maptile *getfloorat(int pos)
     return &cell->bot; /* ? */
 }
 
-/* Return TRUE if a creature (other than Chip) is at the given
- * location.
- */
-static int issomeoneat(int pos)
-{
-    mapcell    *cell;
-    int		id;
-
-    cell = cellat(pos);
-    id = cell->top.id;
-    if (creatureid(id) == Chip || creatureid(id) == Swimming_Chip) {
-	id = cell->bot.id;
-	if (creatureid(id) == Chip || creatureid(id) == Swimming_Chip)
-	    return FALSE;
-    }
-    return iscreature(id);
-}
-
 /* Return TRUE if a creature, a block, or Chip is at the given
  * location.
  */
@@ -956,9 +938,13 @@ static int canmakemove(creature const *cr, int dir, int flags)
 
     floor = floorat(to);
     if (isanimation(floor))
+	warn("What the hell is going on here? animation %02X at (%d %d)",
+	     floor, to % CXGRID, to / CXGRID);
+    if (isanimation(floor))
 	return FALSE;
 
     if (cr->id == Chip) {
+	floor = floorat(to);
 	if (!(movelaws[floor].chip & dir))
 	    return FALSE;
 	if (floor == Socket && chipsneeded() > 0)
@@ -986,23 +972,37 @@ static int canmakemove(creature const *cr, int dir, int flags)
 		return FALSE;
 	}
     } else if (cr->id == Block) {
-	if (iscreature(cellat(to)->top.id)) {
-	    id = creatureid(cellat(to)->top.id);
+	floor = cellat(to)->top.id;
+	if (iscreature(floor)) {
+	    id = creatureid(floor);
 	    return id == Chip || id == Swimming_Chip;
 	}
 	if (!(movelaws[floor].block & dir))
 	    return FALSE;
     } else {
+	floor = cellat(to)->top.id;
+	if (iscreature(floor)) {
+	    id = creatureid(floor);
+	    if (id == Chip || id == Swimming_Chip) {
+		floor = cellat(to)->bot.id;
+		if (iscreature(floor)) {
+		    id = creatureid(floor);
+		    return id == Chip || id == Swimming_Chip;
+		}
+	    }
+	}
+	if (iscreature(floor)) {
+	    if ((flags & CMM_CLONECANTBLOCK)
+				&& floor == crtile(cr->id, cr->dir))
+		return TRUE;
+	    return FALSE;
+	}
 	if (!(movelaws[floor].creature & dir))
 	    return FALSE;
-	if (issomeoneat(to)) {
-	    if (!(flags & CMM_CLONECANTBLOCK))
-		return FALSE;
-	    if (cellat(to)->top.id != crtile(cr->id, cr->dir))
-		return FALSE;
-	}
+#if 0
 	if (isboots(cellat(to)->top.id))
 	    return FALSE;
+#endif
 	if (floor == Fire && (cr->id == Bug || cr->id == Walker))
 	    return FALSE;
     }
