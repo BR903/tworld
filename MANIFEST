@@ -46,6 +46,7 @@ oshw-sdl/sdlsfx.c
 oshw-sdl/sdltext.c
 oshw-sdl/sdltile.c
 oshw-sdl/sdltimer.c
+resources/atiles.bmp
 resources/block.wav
 resources/bomb.wav
 resources/bump.wav
@@ -72,7 +73,6 @@ resources/teleport.wav
 resources/thief.wav
 resources/tick.wav
 resources/tiles.bmp
-resources/tiles32.bmp
 resources/ting.wav
 resources/traphit.wav
 resources/whisk.wav
