@@ -163,7 +163,7 @@ void printtable(FILE *out, tablespec const *table)
 	for (x = 0 ; x < table->cols ; ++n) {
 	    c = table->items[n][0] - '0';
 	    if (table->items[n][1] == '!') {
-		mlpos = x;
+		mlpos = x + c - 1;
 	    } else if (c == 1) {
 		len = strlen(table->items[n] + 2);
 		if (len > colsizes[x])
@@ -577,7 +577,7 @@ static int startinput(gamespec *gs)
 	  case CmdSteppingDown:	changestepping(-1, TRUE);	break;
 	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
 	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
-	  case CmdHelp:		dohelp(Help_KeysBetweenGames); break;
+	  case CmdHelp:		dohelp(Help_KeysBetweenGames);	break;
 	  case CmdQuit:						exit(0);
 	  case CmdPlayback:
 	    if (prepareplayback()) {
@@ -647,7 +647,7 @@ static int endinput(gamespec *gs)
 	  case CmdPlayback:	gs->playback = !gs->playback;	return TRUE;
 	  case CmdSeeScores:	showscores(gs);			return TRUE;
 	  case CmdKillSolution:	replaceablesolution(gs, -1);	return TRUE;
-	  case CmdHelp:		dohelp(Help_KeysBetweenGames); return TRUE;
+	  case CmdHelp:		dohelp(Help_KeysBetweenGames);	return TRUE;
 	  case CmdQuitLevel:					return FALSE;
 	  case CmdQuit:						exit(0);
 	  case CmdProceed:
