@@ -7,11 +7,14 @@
 2003 Mar 08: version 1.1.2
 <ul>
 <li>
-Blocks were getting default initial direction of nil (Lynx logic).
-Default changed to north. (Reported by ccexplore@yahoo.com.)
+Added frame-skipping code, so that gameplay doesn't slow down on
+slower hardware.
+<li>
+Blocks on beartraps were getting default initial direction of nil
+(Lynx logic). Default changed to north. (Reported by ccexplore.)
 <li>
 Fixed broken handling (Lynx logic) of creatures that start out on ice
-(reported by ccexplore@yahoo.com).
+(reported by ccexplore).
 <li>
 Fixed bug where tanks could be turned around while sliding (Lynx
 logic).
@@ -27,13 +30,12 @@ Reorganized logic code to use fewer static variables.
 <li>
 Fixed broken handling (MS logic) of tanks not stopping in traps, and
 the fact that tanks on clone machines can sometimes turn around
-(reported by ccexplore@yahoo.com).
+(reported by ccexplore).
 <li>
 Attempted to fix controller bug, where a controller being added to the
 slip list sets the controller direction according to its slipping
-direction rather than its visible direction (reported by
-ccexplore@yahoo.com). Hopefully fixing this hasn't broken anything
-else.
+direction rather than its visible direction (reported by ccexplore).
+Hopefully fixing this hasn't broken anything else.
 </ul>
 <p>
 2003 Feb 22: version 1.1
