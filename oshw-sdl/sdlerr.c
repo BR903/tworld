@@ -12,6 +12,8 @@
 
 #include	"windows.h"
 
+static FILE    *errlog = NULL;
+
 /* Ring the bell already.
  */
 void ding(void)
@@ -20,7 +22,7 @@ void ding(void)
 }
 
 /* Display a message box. If action is NOTIFY_LOG, the text of the
- * message is written to stderr instead.
+ * message is written to a logfile instead.
  */
 void usermessage(int action, char const *prefix,
 		 char const *cfile, unsigned long lineno,
@@ -46,9 +48,11 @@ void usermessage(int action, char const *prefix,
 	MessageBox(NULL, errbuf, "Tile World", MB_ICONEXCLAMATION | MB_OK);
 	break;
       case NOTIFY_LOG:
-	fputs(errbuf, stderr);
-	fputc('\n', stderr);
-	fflush(stderr);
+	if (!errlog && !(errlog = fopen("err.log", "w")))
+	    break;
+	fputs(errbuf, errlog);
+	fputc('\n', errlog);
+	fflush(errlog);
 	break;
     }
 }

@@ -11,6 +11,10 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 
+/* Values global to this library.
+ */
+oshwglobals	sdlg;
+
 /* Dispatch all events sitting in the SDL event queue. 
  */
 void _sdleventupdate(int wait)

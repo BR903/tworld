@@ -12,8 +12,8 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 #include	"../state.h"
-#include	"sdlres.h"
 #include	"sdltext.h"
+#include	"sdltile.h"
 
 /* Space to leave between graphic objects.
  */
@@ -51,7 +51,6 @@ static SDL_Surface     *endmsgicons = NULL;
 /* Special pixel values.
  */
 static Uint32		clr_black, clr_white, clr_gray, clr_red, clr_yellow;
-static Uint32		clr_transparent;
 
 /* Coordinates specifying the layout of the screen elements.
  */
@@ -140,20 +139,20 @@ static int layoutscreen(void)
 {
     int	cx;
 
-    if (cxtile <= 0 || cytile <= 0)
+    if (sdlg.wtile <= 0 || sdlg.htile <= 0)
 	return FALSE;
 
     xdisplay = CXMARGIN;
     ydisplay = CYMARGIN;
-    cxdisplay = NXTILES * cxtile;
-    cydisplay = NYTILES * cytile;
+    cxdisplay = NXTILES * sdlg.wtile;
+    cydisplay = NYTILES * sdlg.htile;
 
     xtitle = xdisplay;
     ytitle = ydisplay + cydisplay + CYMARGIN;
     cxtitle = cxdisplay;
     cytitle = ccfont.h;
 
-    cx = 4 * cxtile;
+    cx = 4 * sdlg.wtile;
     if (cx < 18 * ccfont.w)
 	cx = 18 * ccfont.w;
 
@@ -165,7 +164,7 @@ static int layoutscreen(void)
     xinventory = xinfo;
     yinventory = yinfo + cyinfo + CYMARGIN;
     cxinventory = cx;
-    cyinventory = 2 * cytile;
+    cyinventory = 2 * sdlg.htile;
 
     cxendmsg = CXENDICON;
     cyendmsg = CYENDICON;
@@ -202,8 +201,7 @@ static int setdisplaysize(void)
     if (!(screen = SDL_SetVideoMode(cxscreen, cyscreen, 32, SDL_HWSURFACE)))
 	die("Cannot open %dx%d display: %s\n",
 	    cxscreen, cyscreen, SDL_GetError());
-    _sdlsettextsurface(screen);
-    _sdlsettileformat(screen->format);
+    sdlg.screen = screen;
     layoutlistarea();
 
     return TRUE;
@@ -231,88 +229,83 @@ static char const *getonomatopoeia(unsigned long sfx)
 }
 
 /*
- * Tile functions.
+ * Tile display functions.
  */
+
+static void drawopaquetile(int xpos, int ypos, Uint32 const *src)
+{
+    Uint32     *dest;
+    void const *endsrc;
+
+    dest = (Uint32*)screen->pixels + ypos * cxscreen + xpos;
+    endsrc = src + sdlg.cptile;
+    for ( ; src != endsrc ; src += sdlg.wtile, dest += cxscreen)
+	memcpy(dest, src, sdlg.wtile * sizeof *dest);
+}
+
+#if 0
+static void drawtransptile(int xpos, int ypos, Uint32 const *src)
+{
+    Uint32     *dest;
+    void const *endsrc;
+    int		x;
+
+    dest = (Uint32*)screen->pixels + ypos * cxscreen + xpos;
+    endsrc = src + sdlg.cptile;
+    for ( ; src != endsrc ; src += sdlg.wtile, dest += cxscreen)
+	for (x = 0 ; x < sdlg.wtile ; ++x)
+	    if (src[x] != (Uint32)sdlg.transpixel)
+		dest[x] = src[x];
+}
+#endif
+
+static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
+{
+    Uint32     *dest;
+    int		lclip = xdisplay;
+    int		tclip = ydisplay;
+    int		rclip = xdisplay + cxdisplay;
+    int		bclip = ydisplay + cydisplay;
+    int		y;
+
+    if (xpos > lclip)			lclip = xpos;
+    if (ypos > tclip)			tclip = ypos;
+    if (xpos + sdlg.wtile < rclip)	rclip = xpos + sdlg.wtile;
+    if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
+    if (lclip >= rclip || tclip >= bclip)
+	return;
+    dest = (Uint32*)screen->pixels + tclip * cxscreen + lclip;
+    src += (tclip - ypos) * sdlg.wtile + lclip - xpos;
+    for (y = bclip - tclip ; y ; --y, dest += cxscreen, src += sdlg.wtile)
+	memcpy(dest, src, (rclip - lclip) * sizeof *dest);
+}
+
+static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
+{
+    Uint32     *dest;
+    int		lclip = xdisplay;
+    int		tclip = ydisplay;
+    int		rclip = xdisplay + cxdisplay;
+    int		bclip = ydisplay + cydisplay;
+    int		x, y;
+
+    if (xpos > lclip)			lclip = xpos;
+    if (ypos > tclip)			tclip = ypos;
+    if (xpos + sdlg.wtile < rclip)	rclip = xpos + sdlg.wtile;
+    if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
+    if (lclip >= rclip || tclip >= bclip)
+	return;
+    dest = (Uint32*)screen->pixels + tclip * cxscreen;
+    src += (tclip - ypos) * sdlg.wtile - xpos;
+    for (y = bclip - tclip ; y ; --y, dest += cxscreen, src += sdlg.wtile)
+	for (x = lclip ; x < rclip ; ++x)
+	    if (src[x] != (Uint32)sdlg.transpixel)
+		dest[x] = src[x];
+}
 
 /*
  * Game display functions.
  */
-
-static Uint32 const *getcellimageptr(int top, int bot)
-{
-    Uint32     *dest;
-    Uint32     *src;
-    int		n;
-
-    src = cctiles + top * cxtile * cytile;
-    if (bot == Nothing || bot == Empty || !transparency[top])
-	return src;
-    dest = cctiles + Overlay_Buffer * cxtile * cytile;
-    memcpy(dest, cctiles + bot * cxtile * cytile,
-	   cxtile * cytile * sizeof *dest);
-    src += NTILES * cxtile * cytile;
-    for (n = 0 ; n < cxtile * cytile ; ++n)
-	if (src[n] != clr_transparent)
-	    dest[n] = src[n];
-    return dest;
-}
-
-static Uint32 const *getcreatureimageptr(int id, int dir)
-{
-    int	tileid;
-
-    tileid = entitydirtile(id, dir);
-    if (transparency[tileid])
-	tileid += NTILES;
-    return cctiles + tileid * cxtile * cytile;
-}
-
-/* Render the given tile to a screen-sized buffer at (xpos, ypos).
- */
-static void drawtile(Uint32 *scrbits, int xpos, int ypos, int tn)
-{
-    Uint32     *tilebits;
-    int		x, y;
-
-    scrbits += ypos * cxscreen + xpos;
-    tilebits = cctiles + tn * cxtile * cytile;
-    if (transparency[tn]) {
-	for (y = 0 ; y < cytile ; ++y, scrbits += cxscreen)
-	    for (x = 0 ; x < cxtile ; ++x, ++tilebits)
-		if (*tilebits != clr_transparent)
-		    scrbits[x] = *tilebits;
-    } else {
-	for (y = 0 ; y < cytile ; ++y, scrbits += cxscreen, tilebits += cxtile)
-	    memcpy(scrbits, tilebits, cxtile * sizeof *scrbits);
-    }
-}
-
-/* Render the given tile to a screen-sized buffer at (xpos, ypos),
- * clipping any pixels that fall outside of the map display.
- */
-static void drawclippedtile(Uint32 *scrbits, int xpos, int ypos,
-			    Uint32 const *tilebits)
-{
-    int	lclip = xdisplay;
-    int	tclip = ydisplay;
-    int	rclip = xdisplay + cxdisplay;
-    int	bclip = ydisplay + cydisplay;
-    int	x, y;
-
-    lclip = xpos < lclip ? lclip : xpos;
-    tclip = ypos < tclip ? tclip : ypos;
-    rclip = xpos + cxtile >= rclip ? rclip : xpos + cxtile;
-    bclip = ypos + cytile >= bclip ? bclip : ypos + cytile;
-    if (lclip >= rclip || tclip >= bclip)
-	return;
-
-    scrbits += tclip * cxscreen;
-    tilebits += (tclip - ypos) * cxtile - xpos;
-    for (y = bclip - tclip ; y ; --y, scrbits += cxscreen, tilebits += cxtile)
-	for (x = lclip ; x < rclip ; ++x)
-	    if (tilebits[x] != clr_transparent)
-		scrbits[x] = tilebits[x];
-}
 
 /* Render the view of the visible area of the map to the output
  * buffer, including all visible creatures, with Chip centered on the
@@ -323,7 +316,7 @@ static void displaymapview(gamestate const *state)
     creature const     *cr;
     int			xdisppos, ydisppos;
     int			lmap, tmap, rmap, bmap;
-    int			pos, overlaid, x, y;
+    int			pos, x, y;
 
     xdisppos = state->xviewpos / 2 - (NXTILES / 2) * 4;
     ydisppos = state->yviewpos / 2 - (NYTILES / 2) * 4;
@@ -347,30 +340,12 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
-	    overlaid = FALSE;
-#if 0
-	    if (transparency[state->map[pos].top.id]) {
-		if (transparency[state->map[pos].bot.id])
-		    copytile(tilebuf, floortile(Empty));
-		copytile(tilebuf, floortile(state->map[pos].bot.id));
-		if (state->map[pos].bot.id != Empty)
-		    overlaid = TRUE;
-	    }
-	    copytile(tilebuf, floortile(state->map[pos].top.id));
-	    if (overlaid)
-		memcpy(tileptr(floortile(Overlay_Buffer)),
-		       tilebuf, sizeof tilebuf);
-	    drawclippedtile((Uint32*)screen->pixels,
-			    xdisplay + (x * cxtile) - (xdisppos * cxtile / 4),
-			    ydisplay + (y * cytile) - (ydisppos * cytile / 4),
-			    tilebuf);
-#else
-	    drawclippedtile((Uint32*)screen->pixels,
-			    xdisplay + (x * cxtile) - (xdisppos * cxtile / 4),
-			    ydisplay + (y * cytile) - (ydisppos * cytile / 4),
-			    getcellimageptr(state->map[pos].top.id,
-					    state->map[pos].bot.id));
-#endif
+	    drawopaquetileclipped(xdisplay + (x * sdlg.wtile)
+					   - (xdisppos * sdlg.wtile / 4),
+				  ydisplay + (y * sdlg.htile)
+					   - (ydisppos * sdlg.htile / 4),
+				  _sdlgetcellimage(state->map[pos].top.id,
+						   state->map[pos].bot.id));
 	}
     }
 
@@ -393,18 +368,13 @@ static void displaymapview(gamestate const *state)
 	}
 	if (x < lmap || x >= rmap || y < tmap || y >= bmap)
 	    continue;
-#if 0
-	drawclippedtile((Uint32*)screen->pixels,
-			xdisplay + (x * cxtile / 4) - (xdisppos * cxtile / 4),
-			ydisplay + (y * cytile / 4) - (ydisppos * cytile / 4),
-			tileptr(entitydirtile(cr->id, cr->dir)));
-#else
-	drawclippedtile((Uint32*)screen->pixels,
-			xdisplay + (x * cxtile / 4) - (xdisppos * cxtile / 4),
-			ydisplay + (y * cytile / 4) - (ydisppos * cytile / 4),
-			getcreatureimageptr(cr->id, cr->dir));
-#endif
+	drawtransptileclipped(xdisplay + (x * sdlg.wtile / 4)
+				       - (xdisppos * sdlg.wtile / 4),
+			      ydisplay + (y * sdlg.htile / 4)
+				       - (ydisppos * sdlg.htile / 4),
+			      _sdlgetcreatureimage(cr->id, cr->dir, 0));
     }
+    SDL_SetClipRect(screen, NULL);
 }
 
 /* Render all the various nuggets of data that comprise the
@@ -463,20 +433,11 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     }
 
     for (n = 0 ; n < 4 ; ++n) {
-	drawtile((Uint32*)screen->pixels,
-		 xinventory + n * cxtile, yinventory,
-		 floortile(Empty));
-	drawtile((Uint32*)screen->pixels,
-		 xinventory + n * cxtile, yinventory + cytile,
-		 floortile(Empty));
-	if (state->keys[n])
-	    drawtile((Uint32*)screen->pixels,
-		     xinventory + n * cxtile, yinventory,
-		     floortile(Key_Red + n));
-	if (state->boots[n])
-	    drawtile((Uint32*)screen->pixels,
-		     xinventory + n * cxtile, yinventory + cytile,
-		     floortile(Boots_Ice + n));
+	drawopaquetile(xinventory + n * sdlg.wtile, yinventory,
+		_sdlgettileimage(state->keys[n] ? Key_Red + n : Empty, FALSE));
+	drawopaquetile(xinventory + n * sdlg.wtile, yinventory + sdlg.htile,
+		_sdlgettileimage(state->boots[n] ? Boots_Ice + n : Empty,
+				 FALSE));
     }
 
     text.x = xhint;
@@ -617,31 +578,26 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    _sdlputmltext(&help, tabbedtext[i] + n + 1);
 	}
     } else if (type == HELP_OBJECTS) {
-	help.x += cxtile * 2 + ccfont.w;
-	help.w -= cxtile * 2 + ccfont.w;
+	help.x += sdlg.wtile * 2 + ccfont.w;
+	help.w -= sdlg.wtile * 2 + ccfont.w;
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
 	    if (objtext[n].isfloor)
 		id = floortile(objtext[n].item1);
 	    else
 		id = entitydirtile(objtext[n].item1, EAST);
-	    if (transparency[id])
-		drawtile((Uint32*)screen->pixels,
-			 xlist + cxtile, help.y, floortile(Empty));
-	    drawtile((Uint32*)screen->pixels, xlist + cxtile, help.y, id);
+	    drawopaquetile(xlist + sdlg.wtile, help.y,
+			   _sdlgettileimage(id, FALSE));
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
 		    id = floortile(objtext[n].item2);
 		else
 		    id = entitydirtile(objtext[n].item2, EAST);
-		if (transparency[id])
-		    drawtile((Uint32*)screen->pixels,
-			     xlist, help.y, floortile(Empty));
-		drawtile((Uint32*)screen->pixels, xlist, help.y, id);
+		drawopaquetile(xlist, help.y, _sdlgettileimage(id, FALSE));
 	    }
 	    y = help.y;
 	    _sdlputmltext(&help, objtext[n].desc);
-	    y = cytile - (help.y - y);
+	    y = sdlg.htile - (help.y - y);
 	    if (y > 0) {
 		help.y += y;
 		help.h -= y;
@@ -688,16 +644,16 @@ int _sdloutputinitialize(void)
     clr_gray = SDL_MapRGBA(screen->format, 192, 192, 192, 255);
     clr_red = SDL_MapRGBA(screen->format, 255, 0, 0, 255);
     clr_yellow = SDL_MapRGBA(screen->format, 255, 255, 0, 255);
-    clr_transparent = SDL_MapRGBA(screen->format, 0, 0, 0, 0);
-    if (clr_transparent == clr_black) {
-	clr_transparent = 0xFFFFFFFF;
-	clr_transparent &= ~(screen->format->Rmask | screen->format->Gmask
+
+    sdlg.transpixel = SDL_MapRGBA(screen->format, 0, 0, 0, 0);
+    if (sdlg.transpixel == clr_black) {
+	sdlg.transpixel = 0xFFFFFFFF;
+	sdlg.transpixel &= ~(screen->format->Rmask | screen->format->Gmask
 						   | screen->format->Bmask);
     }
     ccfont.color = clr_white;
     ccfont.bkgnd = clr_black;
-    _sdlsettextfont(&ccfont);
-    _sdlsettransparentcolor(clr_transparent);
+    sdlg.font = &ccfont;
 
     if (!createendmsgicons())
 	return FALSE;

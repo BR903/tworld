@@ -10,6 +10,20 @@
 #include	"../defs.h"
 #include	"../oshw.h"
 
+/* From sdloshw.c: Values global to this module.
+ */
+typedef	struct oshwglobals {
+    void 	       *screen;		/* the display */
+    void	       *font;		/* the font */
+    unsigned long	transpixel;	/* value of the transparent pixel */
+    short		wtile;		/* width of one tile in pixels */
+    short		htile;		/* height of one tile in pixels */
+    short		cptile;		/* size of one tile in pixels */
+    short		cbtile;		/* size of one tile in bytes */
+} oshwglobals;
+
+extern oshwglobals sdlg;
+
 /* From sdloshw.c: Process all pending events. If no events are
  * currently pending and wait is TRUE, the function blocks until an
  * event occurs.

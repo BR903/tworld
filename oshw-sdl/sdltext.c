@@ -11,18 +11,6 @@
 #include	"sdltext.h"
 #include	"../err.h"
 
-/* The surface to draw text on.
- */
-static SDL_Surface     *surface = NULL;
-
-/* The font to draw text with.
- */
-static fontinfo const  *font = NULL;
-
-/* A pointer to one of the following four functions.
- */
-static void (*putline)(int, int, int, char const*) = NULL;
-
 /*
  * The functions that do all the drawing. It is assumed that surface
  * has been locked before calling these functions.
@@ -30,6 +18,8 @@ static void (*putline)(int, int, int, char const*) = NULL;
 
 static void putline8(int xpos, int ypos, int len, char const *text)
 {
+    SDL_Surface		       *surface = sdlg.screen;
+    fontinfo const	       *font = sdlg.font;
     unsigned char const	       *glyph;
     Uint8		       *top;
     Uint8		       *p;
@@ -37,7 +27,7 @@ static void putline8(int xpos, int ypos, int len, char const *text)
     unsigned char		b;
     int				n, x, y;
 
-    top = (Uint8*)((unsigned char*)surface->pixels + ypos * surface->pitch);
+    top = (Uint8*)surface->pixels + ypos * surface->pitch;
     top += xpos;
     for (n = 0 ; n < len ; ++n) {
 	ch = *(unsigned char const*)(text + n);
@@ -51,6 +41,8 @@ static void putline8(int xpos, int ypos, int len, char const *text)
 
 static void putline16(int xpos, int ypos, int len, char const *text)
 {
+    SDL_Surface		       *surface = sdlg.screen;
+    fontinfo const	       *font = sdlg.font;
     unsigned char const	       *glyph;
     Uint16		       *top;
     Uint16		       *p;
@@ -75,6 +67,8 @@ static void putline16(int xpos, int ypos, int len, char const *text)
 
 static void putline24(int xpos, int ypos, int len, char const *text)
 {
+    SDL_Surface		       *surface = sdlg.screen;
+    fontinfo const	       *font = sdlg.font;
     unsigned char const	       *glyph;
     unsigned char	       *top;
     unsigned char	       *p;
@@ -108,6 +102,8 @@ static void putline24(int xpos, int ypos, int len, char const *text)
 
 static void putline32(int xpos, int ypos, int len, char const *text)
 {
+    SDL_Surface		       *surface = sdlg.screen;
+    fontinfo const	       *font = sdlg.font;
     unsigned char const	       *glyph;
     Uint32		       *top;
     Uint32		       *p;
@@ -130,45 +126,37 @@ static void putline32(int xpos, int ypos, int len, char const *text)
     }
 }
 
+static void (*putlinearray[])(int, int, int, char const*) = {
+    NULL, putline8, putline16, putline24, putline32
+};
+
+#define putline	\
+    (putlinearray[((SDL_Surface*)sdlg.screen)->format->BytesPerPixel])
+
 /*
  * Exported font-drawing functions.
  */
-
-/* Specify the surface to draw on and the font to draw with.
- */
-void _sdlsettextfont(fontinfo const *f) { font = f; }
-
-void _sdlsettextsurface(SDL_Surface *s)
-{
-    surface = s;
-    switch (surface->format->BytesPerPixel) {
-      case 1:	putline = putline8;	break;
-      case 2:	putline = putline16;	break;
-      case 3:	putline = putline24;	break;
-      case 4:	putline = putline32;	break;
-    }
-}
 
 /* Draw a line of NUL-terminated text.
  */
 void _sdlputtext(int xpos, int ypos, char const *text)
 {
-    if (SDL_MUSTLOCK(surface))
-	SDL_LockSurface(surface);
+    if (SDL_MUSTLOCK(((SDL_Surface*)sdlg.screen)))
+	SDL_LockSurface(sdlg.screen);
     putline(xpos, ypos, strlen(text), text);
-    if (SDL_MUSTLOCK(surface))
-	SDL_UnlockSurface(surface);
+    if (SDL_MUSTLOCK(((SDL_Surface*)sdlg.screen)))
+	SDL_UnlockSurface(sdlg.screen);
 }
 
 /* Draw a line of len characters.
  */
 void _sdlputntext(int xpos, int ypos, int len, char const *text)
 {
-    if (SDL_MUSTLOCK(surface))
-	SDL_LockSurface(surface);
+    if (SDL_MUSTLOCK(((SDL_Surface*)sdlg.screen)))
+	SDL_LockSurface(sdlg.screen);
     putline(xpos, ypos, len, text);
-    if (SDL_MUSTLOCK(surface))
-	SDL_UnlockSurface(surface);
+    if (SDL_MUSTLOCK(((SDL_Surface*)sdlg.screen)))
+	SDL_UnlockSurface(sdlg.screen);
 }
 
 /* Draw multiple lines of text, looking for whitespace characters to
@@ -176,7 +164,9 @@ void _sdlputntext(int xpos, int ypos, int len, char const *text)
  */
 void _sdlputmltext(SDL_Rect *area, char const *text)
 {
-    int	index, width, n;
+    SDL_Surface	       *surface = sdlg.screen;
+    fontinfo const     *font = sdlg.font;
+    int			index, width, n;
 
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
@@ -215,31 +205,30 @@ void _sdlputmltext(SDL_Rect *area, char const *text)
  */
 void _sdlscrollredraw(scrollinfo *scroll)
 {
+    SDL_Surface	       *surface = sdlg.screen;
+    fontinfo	       *origfont = sdlg.font;
     fontinfo		selfont;
-    fontinfo const     *origfont;
     int			len, n, y;
 
-    SDL_FillRect(surface, &scroll->area, font->bkgnd);
+    SDL_FillRect(surface, &scroll->area, origfont->bkgnd);
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
 
     y = scroll->area.y;
-    origfont = font;
-    selfont = *font;
+    selfont = *origfont;
     selfont.color = scroll->highlight;
     for (n = scroll->topitem ; n < scroll->itemcount ; ++n) {
-	if (scroll->area.y + scroll->area.h - y < font->h)
+	if (scroll->area.y + scroll->area.h - y < origfont->h)
 	    break;
 	if (n == scroll->index)
-	    font = &selfont;
+	    sdlg.font = &selfont;
 	len = strlen(scroll->items[n]);
 	if (len > scroll->maxlen)
-	    putline(scroll->area.x, y, scroll->maxlen, scroll->items[n]);
-	else
-	    putline(scroll->area.x, y, len, scroll->items[n]);
+	    len = scroll->maxlen;
+	putline(scroll->area.x, y, len, scroll->items[n]);
 	if (n == scroll->index)
-	    font = origfont;
-	y += font->h;
+	    sdlg.font = origfont;
+	y += origfont->h;
     }
 
     if (SDL_MUSTLOCK(surface))
@@ -310,6 +299,8 @@ int _sdlscrollmove(scrollinfo *scroll, int delta)
 int _sdlcreatescroll(scrollinfo *scroll, SDL_Rect const *area,
 		     Uint32 highlightcolor, int itemcount, char const **items)
 {
+    fontinfo const     *font = sdlg.font;
+
     scroll->area = *area;
     scroll->highlight = highlightcolor;
     scroll->itemcount = itemcount;

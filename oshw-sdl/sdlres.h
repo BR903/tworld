@@ -13,14 +13,11 @@
  */
 #define	NTILES		128
 
+#if 0
+
 /* The SDL surface containing the tiles.
  */
 extern Uint32	       *cctiles;
-
-/* The dimensions of the individual tiles.
- */
-extern int		cxtile;
-extern int		cytile;
 
 /* Flag array indicating which tiles have transparent pixels.
  */
@@ -28,5 +25,7 @@ extern char		transparency[NTILES];
 
 extern void _sdlsettransparentcolor(Uint32 color);
 extern void _sdlsettileformat(SDL_PixelFormat const *fmt);
+
+#endif
 
 #endif
