@@ -28,9 +28,9 @@ typedef	struct seriesdata {
     int		count;		/* number of gameseries filled in */
 } seriesdata;
 
-/* The path of the directory containing the data files.
+/* The directory containing the data files.
  */
-char   *datadir = NULL;
+char   *seriesdir = NULL;
 
 /*
  * File I/O functions, with error-handling specific to the data files.
@@ -225,8 +225,8 @@ int readlevelinseries(gameseries *series, int level)
 
     if (!series->allmapsread) {
 	if (!series->mapfile.fp) {
-	    if (!openfileindir(&series->mapfile, datadir, series->mapfile.name,
-			       "rb", "unknown error"))
+	    if (!openfileindir(&series->mapfile, seriesdir,
+			       series->mapfile.name, "rb", "unknown error"))
 		return FALSE;
 
 	    if (!readseriesheader(series))
@@ -326,7 +326,7 @@ static int getseriesfile(char *filename, void *data)
     series->name[sizeof series->name - 1] = '\0';
 
     f = FALSE;
-    if (openfileindir(&series->mapfile, datadir, series->mapfile.name,
+    if (openfileindir(&series->mapfile, seriesdir, series->mapfile.name,
 		      "rb", "unknown error")) {
 	f = readseriesheader(series);
 	fileclose(&series->mapfile, NULL);
@@ -359,11 +359,11 @@ static int getseriesfiles(char const *filename, gameseries **list, int *count)
     if (filename && *filename && haspathname(filename)) {
 	if (getseriesfile((char*)filename, &s) <= 0 || !s.count)
 	    die("%s: couldn't read data file", filename);
-	*datadir = '\0';
+	*seriesdir = '\0';
 	*savedir = '\0';
     } else {
-	if (!findfiles(datadir, &s, getseriesfile) || !s.count)
-	    die("%s: directory contains no data files", datadir);
+	if (!findfiles(seriesdir, &s, getseriesfile) || !s.count)
+	    die("%s: directory contains no data files", seriesdir);
 	if (filename && *filename) {
 	    for (n = 0 ; n < s.count ; ++n) {
 		if (!strcmp(s.list[n].name, filename)) {

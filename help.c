@@ -15,8 +15,7 @@
 /* A list of the available keyboard commands.
  */
 static char const *gameplay_keys[] = {
-    "\240\tDuring the Game",
-    "\240\t\240",
+    "\240\240\240\240During the Game\t\240",
     "arrows\tmove Chip",
     "2 4 6 8 (keypad)\talso move Chip",
     "q\tquit the current game",
@@ -26,8 +25,7 @@ static char const *gameplay_keys[] = {
     "Ctrl-P\tjump to the previous level",
     "Ctrl-N\tjump to the next level",
     "\240\t\240",
-    "\240\tInbetween Games",
-    "\240\t\240",
+    "\240\240\240\240Inbetween Games\t\240",
     "q\texit the program",
     "p\tjump to the previous level",
     "n\tjump to the next level",
@@ -145,27 +143,20 @@ static objhelptext const gameplay_monsters[] = {
 /* About this program.
  */
 static char const *about[] = {
-    "\267\tTileWorld",
-    "\tversion 0.6.0 (alpha)",
+    "\267\tTile World: version 0.7.0 (alpha)",
     "\tCopyright \251 2001 by Brian Raiter",
     "\tcompiled " __DATE__ " " __TIME__,
-    "\240\t\240",
-    "\267\tThis program is free software; you can redistribute it and/or",
-    "\tmodify it under the terms of the GNU General Public License as",
-    "\tpublished by the Free Software Foundation; either version 2 of",
-    "\tthe License, or (at your option) any later version.",
-    "\240\t\240",
-    "\267\tThis program is distributed in the hope that it will be useful,",
-    "\tbut WITHOUT ANY WARRANTY; without even the implied warranty of",
-    "\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
-    "\tGNU General Public License for more details.",
-    "\240\t\240",
-    "\267\t(The author requests that you voluntarily refrain from",
-    "\tdistributing this particular version of the software, as it's",
-    "\tstill pretty messy and would make me look dumb. Bug reports",
-    "\tare appreciated, and can be sent to breadbox@muppetlabs.com,",
-    "\tor posted to the annexcafe.chips.challenge newsgroup in an",
-    "\tappropriate fashion.)"
+    "\267\tThis program is free software; you can redistribute it"
+    " and/or modify it under the terms of the GNU General Public"
+    " License as published by the Free Software Foundation; either"
+    " version 2 of the License, or (at your option) any later version.",
+    "\267\tThis program is distributed in the hope that it will be"
+    " useful, but WITHOUT ANY WARRANTY; without even the implied"
+    " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+    " See the GNU General Public License for more details.",
+    "\267\tBug reports are appreciated, and can be sent to"
+    " breadbox@muppetlabs.com, or posted to the"
+    " annexcafe.chips.challenge newsgroup."
 };
 
 /*
@@ -173,9 +164,9 @@ static char const *about[] = {
  */
 
 static inline int helpscreen(int type, char const *title,
-			     void const *text, int textcount)
+			     void const *text, int textcount, int completed)
 {
-    displayhelp(type, title, text, textcount);
+    displayhelp(type, title, text, textcount, completed);
     return anykey();
 }
 
@@ -183,11 +174,11 @@ static inline int helpscreen(int type, char const *title,
  */
 int gameplayhelp(void)
 {
-    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys))
-	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors))
-	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls))
-	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects))
-	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools))
-	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters))
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILEWORLD", array(about));
+    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), -1)
+	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), -1)
+	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), -1)
+	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), -1)
+	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), -1)
+	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), -1)
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), +1);
 }

@@ -9,9 +9,9 @@
 
 #include	"defs.h"
 
-/* The path of the directory containing the data files.
+/* The directory containing the data files.
  */
-extern char    *datadir;
+extern char    *seriesdir;
 
 /* Read the given level from the given data file if it has not already
  * been loaded. (Any and all preceding levels are loaded into memory

@@ -7,18 +7,13 @@ http://www.libsdl.org/download-1.2.html. If you download a precompiled
 version -- i.e., an .rpm or .deb file -- note that you will need the
 development runtime, as opposed to the binary runtime.)
 
-By default, the program is set up so that it will look for your .dat
-files in /usr/local/share/tworld. If you would rather have it look
-somewhere else, you can change the line near the top of the Makefile
-from:
-	CFLAGS += '-DDATADIR="/usr/local/share/tworld"'
-to:
-	CFLAGS += '-DDATADIR="/some/other/place"'
-(You can also specify a different directory at runtime, either on the
-command line or via the TWORLDDATADIR environment variable; however,
-setting an appropriate default value is easier in the long run.) In
-any case, this directory should contain nothing besides your Chip's
-Challenge .dat file(s).
+By default, the program is set up so that it will look for globally
+shared files under /usr/local/share/tworld. If you would rather have
+it look somewhere else, edit the Makefile and change the definition of
+ROOTDIR. (You can also specify a different directory at runtime,
+either on the command line or via the TWORLDDIR environment variable;
+however, setting an appropriate default value is easier in the long
+run.)
 
 Now, run make and build the binary. There shouldn't be any serious
 warnings from the compiler. If (and only if) you want to be able to
@@ -28,27 +23,41 @@ support for SVGAlib is still a bit primitive. On my machine it looks
 awful. I may add an SVGAlib-specific port later that is independent of
 SDL, but for now I recommend sticking with X.)
 
-Then run "make install" as root, or just manually copy the tworld
-binary to an appropriate location.
+Running "make install" as root will do the following:
+
+* Copy the "tworld" binary to /usr/local/games.
+* Copy the tile bitmap(s) to /usr/local/share/tworld.
+* Create an empty directory /usr/local/share/tworld/data.
+
+The latter directory is where you will need to copy the .dat files
+that you want to use. (Remember that the first part of the directory
+will be different if you changed the Makefile.)
 
 N.B.: With every alpha release, there is the possibility that one or
 more of your saved games from a previous release will no longer work
-correctly. This happens when your solution, knowingly or not, takes
-advantage of a bug in the emulation that has been fixed. When this
-happens, you can use Ctrl-X to mark a solution as "replaceable". It
-will then be overwritten the next time you solve that level, whether
-or not the new solution has a better time.
+correctly. This happens when your solution, knowingly or not, is
+dependent on a bug in the emulation that has been fixed. When this
+happens, you can use Ctrl-X to mark a solution as "replaceable", and
+then play the level. When you solve it, your new solution will replace
+the old one, whether or not it has a better time.
 
 mklynxcc
 --------
 
-Finally, a very simple command-line utility is included, namely
-mklynxcc. Run "make mklynxcc" to build it. This program will change a
-normal .dat file to one that is marked as using the Lynx ruleset. You
-can copy a .dat file and run this utility on the copy to see how the
-levels work with the Lynx ruleset. When you run this utility on your a
-copy of your chips.dat file, include the -x option. This will have the
-added effect on the .dat file of restoring the wall on level 88 that
-Microsoft removed (if your chips.dat is one of those with a removed
-wall), and will also fix the four passwords that were changed from the
-original Lynx codes.
+A very simple command-line utility is included called mklynxcc. This
+program will change a normal .dat file to one that will use the Lynx
+ruleset when played. By making a copy of a .dat file and running this
+utility on the copy, you can see how the levels work (or don't work)
+with the Lynx ruleset.
+
+However, the main purpose of this utility is to create a Lynx version
+of the original chips.dat, so you can play the original version of the
+game. When you run this utility on your chips.dat file (or rather, on
+a separate copy of your chips.dat file), include the -x option. This
+will have the added effect on the .dat file of restoring the wall on
+level 88 (SPIRALS) that MS removed, assuming your chips.dat is one of
+those with a removed wall. (It will also fix the four passwords that
+were changed from the original Lynx codes -- levels 7, 10, 28, and
+96.) The resulting .dat file will thus provide a more accurate
+emulation of the original game. (Though not perfect -- to be perfect
+it should remove level 145 and replace it with a fractal generator.)

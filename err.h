@@ -23,7 +23,7 @@ extern void _warn(char const *fmt, ...);
  */
 extern void _errmsg(char const *prefix, char const *fmt, ...);
 
-/* A really ugly hack used to pass extra arguments to variadic
+/* A really ugly hack used to smuggle extra arguments into variadic
  * functions.
  */
 extern char const      *_err_cfile;

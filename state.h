@@ -92,7 +92,7 @@ enum
     Exit_Extra_1	= 0x3D,
     Exit_Extra_2	= 0x3E,
 
-    Invalid_Tile	= 0x3F,
+    Overlay_Buffer	= 0x3F,
 
     Chip		= 0x40,
 
@@ -116,8 +116,6 @@ enum
     Entity_Reserved1	= 0x7C,
 };
 
-#define	Tile_Count	0x80
-
 /* Macros to assist in identifying types of tiles.
  */
 #define	isslide(f)	((f) >= Slide_North && (f) <= Slide_Random)
@@ -135,26 +133,16 @@ enum
 /* A tile on the map.
  */
 typedef struct maptile {
-    unsigned char	id;
-    unsigned char	state;
+    unsigned char	id;	/* identity of the tile */
+    unsigned char	state;	/* internal state flags */
 } maptile;
 
 /* A location on the map.
  */
 typedef	struct mapcell {
-    maptile		top;
-    maptile		bot;
+    maptile		top;	/* the upper tile */
+    maptile		bot;	/* the lower tile */
 } mapcell;
-
-#if 0
-/* A location on the map.
- */
-typedef	struct mapcell {
-    unsigned char	floor;		/* the main tile */
-    unsigned char	hfloor;		/* the other, hidden tile */
-    unsigned short	state;		/* internal state value */
-} mapcell;
-#endif
 
 /* A creature.
  */
@@ -193,6 +181,7 @@ typedef struct creature {
  */
 typedef struct gamestate {
     gamesetup	       *game;			/* the level specification */
+    int			timelimit;		/* maximum time permitted */
     int			currenttime;		/* the current tick count */
     short		currentinput;		/* the current keystroke */
     short		ruleset;		/* the ruleset for the game */
@@ -200,7 +189,7 @@ typedef struct gamestate {
     short		chipsneeded;		/* no. of chips still needed */
     short		keys[4];		/* keys collected */
     short		boots[4];		/* boots collected */
-    char const	       *soundeffect;		/* the latest sound effect */
+    unsigned long	soundeffects;		/* the latest sound effects */
     actlist		moves;			/* the list of moves */
     short		lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
@@ -215,16 +204,14 @@ typedef struct gamestate {
     creature		creatures[CXGRID * CYGRID];  /* the creature list */
 } gamestate;
 
-/* Status flags.
+/* General status flags.
  */
-#define	SF_COMPLETED		0x4000		/* level has been completed */
-#define	SF_NOSAVING		0x2000		/* level won't be remembered */
-
-/* Display flags.
- */
-#define	DF_INVALID		0x4000		/* level is not valid */
-#define	DF_SHOWHINT		0x2000		/* display the hint text */
-#define	DF_CHIPPUSHING		0x1000		/* Chip is pushing something */
+#define	SF_COMPLETED		0x40000000	/* level has been completed */
+#define	SF_NOSAVING		0x20000000	/* solution won't be saved */
+#define	SF_INVALID		0x10000000	/* level is not playable */
+#define	SF_SHOWHINT		0x08000000	/* display the hint text */
+#define	SF_ONOMATOPOEIA		0x04000000	/* use textual sound effects */
+#define	SF_CHIPPUSHING		0x02000000	/* Chip is pushing something */
 
 /* gamestate accessor macros.
  */
@@ -236,5 +223,33 @@ typedef struct gamestate {
 #define	slideboots(st)		((st)->boots[1])
 #define	fireboots(st)		((st)->boots[2])
 #define	waterboots(st)		((st)->boots[3])
+
+/* The list of available sound effects.
+ */
+#define	SND_CHIP_LOSES		0x00000001
+#define	SND_CHIP_WINS		0x00000002
+#define	SND_TIME_OUT		0x00000004
+#define	SND_TIME_LOW		0x00000008
+#define	SND_CANT_MOVE		0x00000010
+#define	SND_IC_COLLECTED	0x00000020
+#define	SND_ITEM_COLLECTED	0x00000040
+#define	SND_BOOTS_STOLEN	0x00000080
+#define	SND_TELEPORTING		0x00000100
+#define	SND_DOOR_OPENED		0x00000200
+#define	SND_SOCKET_OPENED	0x00000400
+#define	SND_BUTTON_PUSHED	0x00000800
+#define	SND_TILE_EMPTIED	0x00001000
+#define	SND_WALL_CREATED	0x00002000
+#define	SND_TRAP_SPRUNG		0x00004000
+#define	SND_BLOCK_MOVING	0x00008000
+#define	SND_BOMB_EXPLODES	0x00010000
+#define	SND_WATER_SPLASH	0x00020000
+#define	SND_SLIDEWALKING	0x00040000
+#define	SND_ICEWALKING		0x00080000
+#define	SND_WATERWALKING	0x00100000
+#define	SND_FIREWALKING		0x00200000
+#define	SND_SKATING_FORWARD	0x00400000
+#define	SND_SKATING_TURN	0x00800000
+#define	SND_SLIDING		0x01000000
 
 #endif
