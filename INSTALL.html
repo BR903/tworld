@@ -10,23 +10,37 @@ Installing Tile World for Linux
 Installing Tile World for Linux
 </h1></center>
 <p>
-Before compiling Tile World, ensure that you have SDL installed on
-your machine. (If you don't have SDL, you can get it by visiting
-<a href="http://www.libsdl.org/download.html">http://www.libsdl.org/download.html</a>.
+Before proceeding, ensure that you have SDL installed on your
+machine. (If you don't have SDL, you can get it by visiting <a
+href="http://www.libsdl.org/download.html">http://www.libsdl.org/download.html</a>.
 If you download a precompiled version -- i.e., an .rpm or .deb file --
 note that you will need the development runtime, as opposed to the
 binary runtime.)
 <p>
-By default, the program is set up so that it will look for globally
-shared files under <tt>/usr/local/share/tworld</tt>. If you would
-rather have it look somewhere else, edit the <tt>Makefile</tt> and
-change the definition of <tt>ROOTDIR</tt>. (You can also specify a
-different directory at runtime, either on the command line or via the
+Installing Tile World involves the usual three-step invocation:
+<p>
+<h3>
+./configure
+</h3>
+<p>
+By default, the program is set up so that it will keep its shared
+files in a directory, called <tt>tworld</tt>, under
+<tt>/usr/local/share</tt>. If you would prefer the shared directory to
+be somewhere else, use the <tt>--datadir</tt> option to change it when
+you run <tt>./configure</tt>. (You can also specify a different
+directory at runtime, either on the command line or via the
 <tt>TWORLDDIR</tt> environment variable; however, setting an
 appropriate default value is easier in the long run.)
 <p>
-Now, run make and build the binary. There shouldn't be any serious
-warnings from the compiler.
+<h3>
+make
+</h3>
+<p>
+There shouldn't be any serious warnings from the compiler.
+<p>
+<h3>
+make install
+</h3>
 <p>
 Running "make install" as root will do the following:
 <p>
@@ -34,14 +48,17 @@ Running "make install" as root will do the following:
 <li>
 Copy the <tt>tworld</tt> binary to <tt>/usr/local/games</tt>.
 <li>
-Copy the tile bitmap(s) to <tt>/usr/local/share/tworld</tt>.
+Create <tt>/usr/local/share/tworld</tt> if it does not exist. (Or
+whatever directory you specified to <tt>./configure</tt>.)
+<li>
+Copy the external resources (i.e., the tile bitmaps) to
+<tt>/usr/local/share/tworld</tt>.
 <li>
 Create an empty directory <tt>/usr/local/share/tworld/data</tt>.
 </ul>
 <p>
-The latter directory is where you will need to copy the <tt>.dat</tt>
-files that you want to use. (Remember that the first part of the
-directory will be different if you changed the Makefile.)
+This empty directory is where you will store the <tt>.dat</tt> files
+that you want to use.
 <p>
 N.B.: With every alpha release, there is the possibility that one or
 more of your saved games from a previous release will no longer work

@@ -20,7 +20,10 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-The slide delay looks convincing, but it's not quite correct. Sigh.
+The behavior of the paramecia in Eric Schmidt's level 29 ("PARAMECIA")
+<i>still</i> does not match the real game (although it's much closer
+than it was before). I don't yet know what the root cause of the
+discrepancy is.
 <li>
 (It is debatable whether or not this one qualifies as a bug.) The
 keyboard is scanned twice per tick, once at the beginning and once in
@@ -32,8 +35,8 @@ appears, most notably when Chip tries to move against a force floor.
 <li>
 Several of the weirder obscure bugs aren't reproduced faithfully. (For
 example, the tank-hits-red-button-cloning-block-which-hits-blue-button
-bug correctly produces an extra tank in the emulation, but the
-original tank still turns around.) For the most part, I'm not
+bug correctly produces an extra tank in the emulation, but the first
+tank still gets turned around.) For the most part, I'm not
 particularly motivated to improve the emulation of these, as they are
 pretty obscure. However, their existence may point to areas where the
 emulator could be mirroring the internal logic of the MS game better.
@@ -66,6 +69,13 @@ for such investigation. So this one is still up in the air.
 perpendicular direction) are not supported. The keyboard-handling
 needs to be changed to deal with multiple keypresses in order to make
 this work.
+<li>
+The Lynx game only permitted 128 creatures (including Chip) to exist
+simultaneously. Thus, a clone machine activated when the population
+was at maximum would "run out". The emulator does not enforce any such
+maximum. Of course, fixing this would put a limit on the kinds of new
+levels that people could create under the Lynx ruleset -- so this one
+may be better off as it is....
 </ol>
 <p>
 <hr>

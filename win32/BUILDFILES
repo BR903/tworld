@@ -1,5 +1,6 @@
 INSTALL.html
 README-SDL.txt
 SDL.dll
+cross-configure.sh
 cross-make.sh
 tworld.ico

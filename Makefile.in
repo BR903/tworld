@@ -1,5 +1,5 @@
 #
-# Useful ./configure options with respect to this Makefile:
+# Useful standard ./configure options with respect to this Makefile:
 # --prefix
 # --exec_prefix
 # --bindir

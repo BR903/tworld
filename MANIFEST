@@ -2,10 +2,11 @@ BUGS
 COPYING
 Changelog
 INSTALL
-Makefile
+Makefile.in
 README
 cmdline.c
 cmdline.h
+configure
 defs.h
 err.c
 err.h
@@ -19,7 +20,6 @@ lxlogic.h
 mklynxcc.c
 mslogic.c
 mslogic.h
-oshw
 oshw.h
 play.c
 play.h
@@ -39,7 +39,7 @@ tiles.bmp
 tiles32.bmp
 tworld.c
 ver.h
-oshw-sdl/Makefile
+oshw-sdl/Makefile.in
 oshw-sdl/ccfont.c
 oshw-sdl/ccicon.c
 oshw-sdl/sdlerr.c
