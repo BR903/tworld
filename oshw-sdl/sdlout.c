@@ -199,6 +199,12 @@ static int setdisplaysize(void)
     if (!(screen = SDL_SetVideoMode(cxscreen, cyscreen, 32, SDL_HWSURFACE)))
 	die("Cannot open %dx%d display: %s\n",
 	    cxscreen, cyscreen, SDL_GetError());
+    if (screen->w != cxscreen || screen->h != cyscreen)
+	die("Requested a %dx%d display, got %dx%d instead!",
+	    screen->w, screen->h);
+    if (screen->format->BitsPerPixel != 32)
+	die("Requested a display with 32-bit depth, got %d-bit instead!",
+	    screen->format->BitsPerPixel);
     sdlg.screen = screen;
     layoutlistarea();
 
@@ -372,7 +378,6 @@ static void displaymapview(gamestate const *state)
 				       - (ydisppos * sdlg.htile / 4),
 			      sdlg.getcreatureimage(cr->id, cr->dir, 0));
     }
-    SDL_SetClipRect(screen, NULL);
 }
 
 /* Render all the various nuggets of data that comprise the
@@ -380,43 +385,42 @@ static void displaymapview(gamestate const *state)
  */
 static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
-    SDL_Rect	text;
+    SDL_Rect	rect;
     char	buf[32];
     int		color;
-    int		n, x, y;
+    int		n;
 
     if (state->game->name && *state->game->name) {
-	n = strlen(state->game->name);
-	x = (cxtitle - n * ccfont.w) / 2;
-	if (x < 0) {
-	    x = 0;
-	    n = cxtitle / ccfont.w;
-	}
-	sdlg.putntext(xtitle + x, ytitle, n, state->game->name);
+	rect.x = xtitle;
+	rect.y = ytitle;
+	rect.w = cxtitle;
+	rect.h = cytitle;
+	sdlg.puttext(&rect, state->game->name, PT_CENTER);
     }
 
-    y = yinfo;
+    rect.x = xinfo;
+    rect.y = yinfo;
+    rect.w = cxinfo;
+    rect.h = cyinfo;
 
     sprintf(buf, "Level %d", state->game->number);
-    sdlg.puttext(xinfo, y, buf);
-    y += ccfont.h;
+    sdlg.puttext(&rect, buf, PT_UPDATERECT);
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);
-	sdlg.puttext(xinfo, y, buf);
+	sdlg.puttext(&rect, buf, 0);
     }
-    y += 2 * ccfont.h;
+    rect.y += 2 * ccfont.h;
+    rect.h -= 2 * ccfont.h;
 
     sprintf(buf, "Chips %3d", state->chipsneeded);
-    sdlg.puttext(xinfo, y, buf);
-    y += ccfont.h;
+    sdlg.puttext(&rect, buf, PT_UPDATERECT);
 
     if (timeleft < 0)
 	strcpy(buf, "Time  ---");
     else
 	sprintf(buf, "Time  %3d", timeleft);
-    sdlg.puttext(xinfo, y, buf);
-    y += ccfont.h;
+    sdlg.puttext(&rect, buf, PT_UPDATERECT);
 
     if (besttime) {
 	if (timeleft < 0)
@@ -426,7 +430,7 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	color = ccfont.color;
 	if (state->game->replacebest)
 	    ccfont.color = clr_gray;
-	sdlg.puttext(xinfo, y, buf);
+	sdlg.puttext(&rect, buf, 0);
 	ccfont.color = color;
     }
 
@@ -439,18 +443,22 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 				  FALSE));
     }
 
-    text.x = xhint;
-    text.y = yhint;
-    text.w = cxhint;
-    text.h = cyhint;
+    rect.x = xhint;
+    rect.y = yhint;
+    rect.w = cxhint;
+    rect.h = cyhint;
     if (state->statusflags & SF_INVALID)
-	sdlg.putmltext(&text, "This level cannot be played.");
+	sdlg.putmltext(&rect, "This level cannot be played.", 0);
     else if (state->statusflags & SF_SHOWHINT)
-	sdlg.putmltext(&text, state->game->hinttext);
+	sdlg.putmltext(&rect, state->game->hinttext, 0);
 
-    if ((state->statusflags & SF_ONOMATOPOEIA) && state->soundeffects)
-	sdlg.puttext(xonomatopoeia, yonomatopoeia,
-		     getonomatopoeia(state->soundeffects));
+    if ((state->statusflags & SF_ONOMATOPOEIA) && state->soundeffects) {
+	rect.x = xonomatopoeia;
+	rect.y = yonomatopoeia;
+	rect.w = cxonomatopoeia;
+	rect.h = cyonomatopoeia;
+	sdlg.puttext(&rect, getonomatopoeia(state->soundeffects), 0);
+    }
 }
 
 /*
@@ -483,29 +491,28 @@ int displaylist(char const *title, char const *header,
 		char const **items, int itemcount, int *index,
 		int (*inputcallback)(int*))
 {
-    SDL_Rect	list;
+    SDL_Rect	rect;
     scrollinfo	scroll;
     int		n;
 
-    list.x = xlist;
-    list.y = ylist;
-    list.w = cxlist;
-    list.h = cylist;
-    if (header) {
-	list.y += ccfont.h;
-	list.h -= ccfont.h;
-    }
+    SDL_FillRect(screen, NULL, ccfont.bkgnd);
+    rect.x = xlist;
+    rect.y = ylist + cylist;
+    rect.w = cxlist;
+    rect.h = ccfont.h;
+    sdlg.puttext(&rect, title, 0);
+    rect.y = ylist;
+    rect.h = cylist;
+    if (header)
+	sdlg.puttext(&rect, header, PT_UPDATERECT);
 
-    sdlg.createscroll(&scroll, &list, clr_yellow, itemcount, items);
+    sdlg.createscroll(&scroll, &rect, clr_yellow, itemcount, items);
     sdlg.scrollsetindex(&scroll, *index);
+    SDL_UpdateRect(screen, 0, 0, 0, 0);
 
     for (;;) {
-	SDL_FillRect(screen, NULL, clr_black);
-	sdlg.puttext(xlist, ylist + cylist, title);
-	if (header)
-	    sdlg.puttext(xlist, ylist, header);
 	sdlg.scrollredraw(&scroll);
-	SDL_UpdateRect(screen, 0, 0, 0, 0);
+	SDL_UpdateRect(screen, rect.x, rect.y, rect.w, rect.h);
 	n = 0;
 	if (!(*inputcallback)(&n))
 	    break;
@@ -543,7 +550,7 @@ int displayendmessage(int completed)
 int displayhelp(int type, char const *title, void const *text, int textcount,
 		int completed)
 {
-    SDL_Rect		help;
+    SDL_Rect		rect;
     objhelptext const  *objtext;
     char *const	       *tabbedtext;
     int			col, id;
@@ -553,12 +560,13 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
 
-    help.x = xlist;
-    help.y = ylist;
-    help.w = cxlist;
-    help.h = cylist;
-
-    sdlg.puttext(xlist, ylist + cylist, title);
+    rect.x = xlist;
+    rect.y = ylist + cylist;
+    rect.w = cxlist;
+    rect.h = ccfont.h;
+    sdlg.puttext(&rect, title, 0);
+    rect.y = ylist;
+    rect.h = cylist;
 
     if (type == HELP_TABTEXT) {
 	tabbedtext = text;
@@ -568,38 +576,41 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    if (col < n)
 		col = n;
 	}
-	help.x += (col + 2) * ccfont.w;
-	help.w -= help.x;
+	col = (col + 2) * ccfont.w;
 
 	for (i = 0 ; i < textcount ; ++i) {
 	    n = strchr(tabbedtext[i], '\t') - tabbedtext[i];
-	    sdlg.putntext(xlist, help.y, n, tabbedtext[i]);
-	    sdlg.putmltext(&help, tabbedtext[i] + n + 1);
+	    sdlg.putntext(&rect, tabbedtext[i], n, 0);
+	    rect.x += col;
+	    rect.w -= col;
+	    sdlg.putmltext(&rect, tabbedtext[i] + n + 1, PT_UPDATERECT);
+	    rect.x -= col;
+	    rect.w += col;
 	}
     } else if (type == HELP_OBJECTS) {
-	help.x += sdlg.wtile * 2 + ccfont.w;
-	help.w -= sdlg.wtile * 2 + ccfont.w;
+	rect.x += sdlg.wtile * 2 + ccfont.w;
+	rect.w -= sdlg.wtile * 2 + ccfont.w;
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
 	    if (objtext[n].isfloor)
 		id = floortile(objtext[n].item1);
 	    else
 		id = entitydirtile(objtext[n].item1, EAST);
-	    drawopaquetile(xlist + sdlg.wtile, help.y,
+	    drawopaquetile(xlist + sdlg.wtile, rect.y,
 			   sdlg.gettileimage(id, FALSE));
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
 		    id = floortile(objtext[n].item2);
 		else
 		    id = entitydirtile(objtext[n].item2, EAST);
-		drawopaquetile(xlist, help.y, sdlg.gettileimage(id, FALSE));
+		drawopaquetile(xlist, rect.y, sdlg.gettileimage(id, FALSE));
 	    }
-	    y = help.y;
-	    sdlg.putmltext(&help, objtext[n].desc);
-	    y = sdlg.htile - (help.y - y);
+	    y = rect.y;
+	    sdlg.putmltext(&rect, objtext[n].desc, 0);
+	    y = sdlg.htile - (rect.y - y);
 	    if (y > 0) {
-		help.y += y;
-		help.h -= y;
+		rect.y += y;
+		rect.h -= y;
 	    }
 	}
     }

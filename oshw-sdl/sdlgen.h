@@ -39,6 +39,11 @@ typedef	struct scrollinfo {
     char const	      **items;		/* the list of lines of text */
 } scrollinfo;
 
+/* Flags to the various puttext functions.
+ */
+#define	PT_CENTER	0x0001
+#define	PT_RIGHT	0x0002
+#define	PT_UPDATERECT	0x0004
 
 /* Values global to this module. All the globals are placed in here,
  * in order to minimize the namespace pollution of the calling module.
@@ -74,17 +79,17 @@ typedef	struct oshwglobals
 
     /* Display a line of text, len characters long.
      */
-    void (*putntext)(int xpos, int ypos, int len, char const *text);
+    void (*putntext)(SDL_Rect *area, char const *text, int len, int flags);
 
     /* Display a line of NUL-terminated text.
      */
-    void (*puttext)(int xpos, int ypos, char const *text);
+    void (*puttext)(SDL_Rect *area, char const *text, int flags);
 
     /* Draw one or more lines of text, breaking the string up at the
      * whitespace characters (if possible). area defines the rectangle
      * to draw in. Upon return, area specifies the area not draw in.
      */
-    void (*putmltext)(SDL_Rect *area, char const *text);
+    void (*putmltext)(SDL_Rect *area, char const *text, int flags);
 
     /* Create a scrolling list, initializing the given scrollinfo
      * structure with the other arguments.
