@@ -270,7 +270,6 @@ static int loadsounds(void)
 	    ++count;
     }
     free(path);
-    selectsoundset(currentruleset);
     return count;
 }
 

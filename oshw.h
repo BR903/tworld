@@ -169,11 +169,6 @@ extern int setaudiosystem(int active);
  */
 extern int loadsfxfromfile(int index, char const *filename);
 
-/* Select the onomatopoeia to be used for textual sound effects based
- * on the given ruleset.
- */
-extern void selectsoundset(int ruleset);
-
 /* Select the sounds effects to be played at this time.
  */
 extern void playsoundeffects(unsigned long sfx);
