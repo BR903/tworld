@@ -57,6 +57,7 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { '\t',                       0, -1,  0,   CmdPlayback,   FALSE },
     { 'i',                        0, +1,  0,   CmdPlayback,   FALSE },
     { 's',                        0,  0,  0,   CmdSeeScores,  FALSE },
+    { 'x',                       -1, +1,  0,   CmdKillSolution, FALSE },
     { '\n',                      -1, -1,  0,   CmdProceed,    FALSE },
     { '\r',                      -1, -1,  0,   CmdProceed,    FALSE },
     { SDLK_KP_ENTER,             -1, -1,  0,   CmdProceed,    FALSE },
@@ -64,6 +65,20 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { '.',                        0, -1,  0,   CmdProceed,    FALSE },
     { 'd',                        0,  0,  0,   CmdDebugCmd1,  FALSE },
     { 'd',                       +1,  0,  0,   CmdDebugCmd2,  FALSE },
+    { SDLK_UP,                   +1,  0,  0,   CmdCheatNorth,         TRUE },
+    { SDLK_LEFT,                 +1,  0,  0,   CmdCheatWest,          TRUE },
+    { SDLK_DOWN,                 +1,  0,  0,   CmdCheatSouth,         TRUE },
+    { SDLK_RIGHT,                +1,  0,  0,   CmdCheatEast,          TRUE },
+    { SDLK_HOME,                 +1,  0,  0,   CmdCheatHome,          FALSE },
+    { SDLK_F2,                    0,  0,  0,   CmdCheatICChip,        FALSE },
+    { SDLK_F3,                    0,  0,  0,   CmdCheatKeyRed,        FALSE },
+    { SDLK_F4,                    0,  0,  0,   CmdCheatKeyBlue,       FALSE },
+    { SDLK_F5,                    0,  0,  0,   CmdCheatKeyYellow,     FALSE },
+    { SDLK_F6,                    0,  0,  0,   CmdCheatKeyGreen,      FALSE },
+    { SDLK_F7,                    0,  0,  0,   CmdCheatBootsIce,      FALSE },
+    { SDLK_F8,                    0,  0,  0,   CmdCheatBootsSlide,    FALSE },
+    { SDLK_F9,                    0,  0,  0,   CmdCheatBootsFire,     FALSE },
+    { SDLK_F10,                   0,  0,  0,   CmdCheatBootsWater,    FALSE },
     { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
     { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
     { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE }
@@ -226,23 +241,41 @@ int input(int wait)
     return cmd;
 }
 
-/* Set the keyboard's behavior according to which ruleset is in effect
- * and whether or not a game is in progress.
+int setkeyboardrepeat(int enable)
+{
+    if (enable)
+	return SDL_EnableKeyRepeat(500, 75) == 0;
+    else
+	return SDL_EnableKeyRepeat(0, 0) == 0;
+}
+
+int setkeyboardarrowsrepeat(int enable)
+{
+    joystickstyle = enable;
+    restartkeystates();
+    return TRUE;
+}
+
+#if 0
+/* Set the keyboard's auto-repeat behavior depending on if the
+ * keyboard will be polled and whether or not a game is in progress.
  */
-int setkeyboardbehavior(int ruleset, int polling)
+int setkeyboardrepeat(int holdrepeat, int polling)
 {
     if (polling)
 	SDL_EnableKeyRepeat(0, 0);
     else
 	SDL_EnableKeyRepeat(500, 75);
-    joystickstyle = ruleset == Ruleset_Lynx;
+    joystickstyle = holdrepeat;
     restartkeystates();
-    return polling;
+    return TRUE;
 }
+#endif
 
 /* Initialization.
  */
 int _sdlinputinitialize(void)
 {
+    setkeyboardrepeat(TRUE);
     return TRUE;
 }

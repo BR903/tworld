@@ -7,8 +7,8 @@
 #ifndef	_help_h_
 #define	_help_h_
 
-/* Display the online help screens.
+/* Display the online help screens for the game.
  */
-extern void runhelp(void);
+extern int gameplayhelp(void);
 
 #endif

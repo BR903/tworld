@@ -21,4 +21,8 @@ extern int ms_initgame(gamestate *pstate);
  */
 extern int ms_advancegame(gamestate *pstate);
 
+/* Free any resources associated with the game state.
+ */
+extern int ms_endgame(gamestate *pstate);
+
 #endif

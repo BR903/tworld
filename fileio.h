@@ -32,7 +32,7 @@ extern int filegetpos(fileinfo *file, fpos_t *pos, char const *msg);
 extern int filesetpos(fileinfo *file, fpos_t *pos, char const *msg);
 extern int fileread(fileinfo *file, void *data, unsigned long size,
 		    char const *msg);
-extern int filewrite(fileinfo *file, void *data, unsigned long size,
+extern int filewrite(fileinfo *file, void const *data, unsigned long size,
 		     char const *msg);
 extern void fileclose(fileinfo *file, char const *msg);
 

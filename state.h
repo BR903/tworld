@@ -14,111 +14,111 @@
  * The objects and entities of the game.
  */
 
-/* Floor tiles (i.e., static objects)
+/* All the objects that make up Chip's universe.
  */
 enum
 {
-    Empty = 0,
+    Nothing		= 0,
 
-    Slide_North,
-    Slide_West,
-    Slide_South,
-    Slide_East,
-    Slide_Random,
-    Ice,
-    IceWall_Northwest,
-    IceWall_Northeast,
-    IceWall_Southwest,
-    IceWall_Southeast,
-    Gravel,
-    Dirt,
-    Water,
-    Fire,
-    Bomb,
-    Beartrap,
-    Burglar,
-    HintButton,
+    Empty		= 0x01,
 
-    Button_Blue,
-    Button_Green,
-    Button_Red,
-    Button_Brown,
-    Teleport,
+    Slide_North		= 0x02,
+    Slide_West		= 0x03,
+    Slide_South		= 0x04,
+    Slide_East		= 0x05,
+    Slide_Random	= 0x06,
+    Ice			= 0x07,
+    IceWall_Northwest	= 0x08,
+    IceWall_Northeast	= 0x09,
+    IceWall_Southwest	= 0x0A,
+    IceWall_Southeast	= 0x0B,
+    Gravel		= 0x0C,
+    Dirt		= 0x0D,
+    Water		= 0x0E,
+    Fire		= 0x0F,
+    Bomb		= 0x10,
+    Beartrap		= 0x11,
+    Burglar		= 0x12,
+    HintButton		= 0x13,
 
-    Wall,
-    Wall_North,
-    Wall_West,
-    Wall_South,
-    Wall_East,
-    Wall_Southeast,
-    HiddenWall_Perm,
-    HiddenWall_Temp,
-    BlueWall_Real,
-    BlueWall_Fake,
-    SwitchWall_Open,
-    SwitchWall_Closed,
-    PopupWall,
+    Button_Blue		= 0x14,
+    Button_Green	= 0x15,
+    Button_Red		= 0x16,
+    Button_Brown	= 0x17,
+    Teleport		= 0x18,
 
-    CloneMachine,
+    Wall		= 0x19,
+    Wall_North		= 0x1A,
+    Wall_West		= 0x1B,
+    Wall_South		= 0x1C,
+    Wall_East		= 0x1D,
+    Wall_Southeast	= 0x1E,
+    HiddenWall_Perm	= 0x1F,
+    HiddenWall_Temp	= 0x20,
+    BlueWall_Real	= 0x21,
+    BlueWall_Fake	= 0x22,
+    SwitchWall_Open	= 0x23,
+    SwitchWall_Closed	= 0x24,
+    PopupWall		= 0x25,
 
-    Door_Red,
-    Door_Blue,
-    Door_Yellow,
-    Door_Green,
-    Socket,
-    Exit,
+    CloneMachine	= 0x26,
 
-    ICChip,
-    Key_Red,
-    Key_Blue,
-    Key_Yellow,
-    Key_Green,
-    Boots_Ice,
-    Boots_Slide,
-    Boots_Fire,
-    Boots_Water,
+    Door_Red		= 0x27,
+    Door_Blue		= 0x28,
+    Door_Yellow		= 0x29,
+    Door_Green		= 0x2A,
+    Socket		= 0x2B,
+    Exit		= 0x2C,
 
-    Water_Splash,
-    Dirt_Splash,
-    Bomb_Explosion,
+    ICChip		= 0x2D,
+    Key_Red		= 0x2E,
+    Key_Blue		= 0x2F,
+    Key_Yellow		= 0x30,
+    Key_Green		= 0x31,
+    Boots_Ice		= 0x32,
+    Boots_Slide		= 0x33,
+    Boots_Fire		= 0x34,
+    Boots_Water		= 0x35,
 
-    Block_Emergent,
+    Water_Splash	= 0x36,
+    Dirt_Splash		= 0x37,
+    Bomb_Explosion	= 0x38,
 
-    Count_Floors
+    Block_Static	= 0x39,
+
+    Burned_Chip		= 0x3A,
+    Bombed_Chip		= 0x3B,
+    Exited_Chip		= 0x3C,
+    Exit_Extra_1	= 0x3D,
+    Exit_Extra_2	= 0x3E,
+
+    Invalid_Tile	= 0x3F,
+
+    Chip		= 0x40,
+
+    Block		= 0x44,
+
+    Tank		= 0x48,
+    Ball		= 0x4C,
+    Glider		= 0x50,
+    Fireball		= 0x54,
+    Walker		= 0x58,
+    Blob		= 0x5C,
+    Teeth		= 0x60,
+    Bug			= 0x64,
+    Paramecium		= 0x68,
+
+    Swimming_Chip	= 0x6C,
+    Pushing_Chip	= 0x70,
+
+    Entity_Reserved3	= 0x74,
+    Entity_Reserved2	= 0x78,
+    Entity_Reserved1	= 0x7C,
 };
 
-#if Count_Floors >= 64
-#error "Too many unique floor objects."
-#endif
+#define	Tile_Count	0x80
 
-/* Creatures (i.e., moving objects)
- */
-enum
-{
-    Nobody = 0,
-
-    Chip,
-
-    Block,
-
-    Tank,
-    Ball,
-    Glider,
-    Fireball,
-    Walker,
-    Blob,
-    Teeth,
-    Bug,
-    Paramecium,
-
-    Count_Entities
-};
-
-#if Count_Entities > 16
-#error "Over 16 unique entities."
-#endif
-
-/* Macros to assist in identify types of tiles.
+/* Macros to assist in identifying types of tiles.
  */
 #define	isslide(f)	((f) >= Slide_North && (f) <= Slide_Random)
 #define	isice(f)	((f) >= Ice && (f) <= IceWall_Southeast)
@@ -126,11 +126,27 @@ enum
 #define	iskey(f)	((f) >= Key_Red && (f) <= Key_Green)
 #define	isboots(f)	((f) >= Boots_Ice && (f) <= Boots_Water)
 #define	isdecaying(f)	((f) >= Water_Splash && (f) <= Bomb_Explosion)
+#define	iscreature(f)	((f) >= Chip)
 
 /*
  * Substructures of the game state
  */
 
+/* A tile on the map.
+ */
+typedef struct maptile {
+    unsigned char	id;
+    unsigned char	state;
+} maptile;
+
+/* A location on the map.
+ */
+typedef	struct mapcell {
+    maptile		top;
+    maptile		bot;
+} mapcell;
+
+#if 0
 /* A location on the map.
  */
 typedef	struct mapcell {
@@ -138,32 +154,33 @@ typedef	struct mapcell {
     unsigned char	hfloor;		/* the other, hidden tile */
     unsigned short	state;		/* internal state value */
 } mapcell;
+#endif
 
 /* A creature.
  */
 #if 0
 typedef	struct creature {
-    short		pos;		/* creature's location */
-    unsigned short	state;		/* internal state value */
-    signed int		id    : 6;	/* type of creature */
+    signed int		pos   : 11;	/* creature's location */
     signed int		dir   : 5;	/* current direction of creature */
-    signed int		waits : 5;	/* internal state value */
+    signed int		id    : 8;	/* type of creature */
+    signed int		state : 8;	/* internal state value */
     signed int		moving: 4;	/* positional offset of creature */
+    signed int		hidden: 2;	/* TRUE if creature is invisible */
     signed int		fdir  : 5;	/* internal state value */
     signed int		tdir  : 5;	/* internal state value */
-    signed int		hidden: 2;	/* TRUE if creature is invisible */
+    signed int		waits : 5;	/* internal state value */
 } creature;
 #else
 typedef struct creature {
     short		pos;		/* creature's location */
     unsigned char	id;		/* type of creature */
     unsigned char	dir;		/* current direction of creature */
-    unsigned char	hidden;		/* TRUE if creature is invisible */
     signed char		moving;		/* positional offset of creature */
+    unsigned char	hidden;		/* TRUE if creature is invisible */
     unsigned char	state;		/* internal state value */
     unsigned char	fdir;		/* internal state value */
     unsigned char	tdir;		/* internal state value */
-    unsigned char	waits;		/* internal state value */
+    signed char		waits;		/* internal state value */
 } creature;
 #endif
 
@@ -190,6 +207,8 @@ typedef struct gamestate {
     unsigned char	rndslidedir;		/* latest random-slide dir */
     prng		mainprng;		/* the main PRNG */
     prng		restartprng;		/* the restarting PRNG */
+    short		xviewpos;
+    short		yviewpos;
     int			displayflags;		/* game display indicators */
     int			statusflags;		/* internal status flags */
     mapcell		map[CXGRID * CYGRID];	/* the game's map */
@@ -199,11 +218,13 @@ typedef struct gamestate {
 /* Status flags.
  */
 #define	SF_COMPLETED		0x4000		/* level has been completed */
+#define	SF_NOSAVING		0x2000		/* level won't be remembered */
 
 /* Display flags.
  */
-#define	DF_SHOWHINT		0x4000		/* display the hint text */
-#define	DF_CHIPPUSHING		0x2000		/* Chip is pushing something */
+#define	DF_INVALID		0x4000		/* level is not valid */
+#define	DF_SHOWHINT		0x2000		/* display the hint text */
+#define	DF_CHIPPUSHING		0x1000		/* Chip is pushing something */
 
 /* gamestate accessor macros.
  */

@@ -315,8 +315,6 @@ static int writesolution(fileinfo *file, gamesetup const *game)
 int savesolutions(gameseries *series)
 {
     gamesetup  *game;
-    char       *tbuf = NULL;
-    int		tbufsize = 0;
     int		i;
 
     if (!*savedir)
@@ -326,30 +324,7 @@ int savesolutions(gameseries *series)
 	warn("Cannot save solution; save file incompletely parsed!");
 	return FALSE;
     }
-#if 0
-    if (series->solutionfile.fp && !series->allsolutionsread) {
-	int n = 0;
-	warn("entering file loop; %d bytes in first read", BUFSIZ);
-	while (!filetestend(&series->solutionfile)) {
-	    if (tbufsize >= n) {
-		n = n ? n * 2 : BUFSIZ;
-		if (!(tbuf = realloc(tbuf, n)))
-		    memerrexit();
-		i = fread(tbuf + tbufsize, 1, n - tbufsize,
-			  series->solutionfile.fp);
-		warn("asked for %d - %d = %d bytes, got %d ...",
-		     n, tbufsize, n - tbufsize, i);
-		if (i <= 0) {
-		    if (i < 0)
-			fileerr(&series->solutionfile, "can't read");
-		    break;
-		}
-		tbufsize += i;
-	    }
-	}
-	warn("done with file loop");
-    }
-#endif
+
     if (!series->solutionfile.fp || series->solutionsreadonly) {
 	if (!savedirchecked) {
 	    savedirchecked = TRUE;
@@ -377,19 +352,6 @@ int savesolutions(gameseries *series)
 	if (!writesolution(&series->solutionfile, game))
 	    return fileerr(&series->solutionfile,
 			   "saved-game file has become corrupted!");
-
-    if (tbufsize) {
-	fpos_t	pos;
-	if (!filegetpos(&series->solutionfile, &pos, "seek error")
-			|| !filewrite(&series->solutionfile, tbuf, tbufsize,
-				      "write error")
-			|| !filesetpos(&series->solutionfile, &pos,
-				       "seek error"))
-	    return fileerr(&series->solutionfile,
-			   "saved-game file may have been corrupted!");
-    }
-    if (tbuf)
-	free(tbuf);
 
     return TRUE;
 }

@@ -180,7 +180,8 @@ void *filereadbuf(fileinfo *file, unsigned long size, char const *msg)
 
 /* write().
  */
-int filewrite(fileinfo *file, void *data, unsigned long size, char const *msg)
+int filewrite(fileinfo *file, void const *data, unsigned long size,
+	      char const *msg)
 {
     if (fwrite(data, size, 1, file->fp) == 1)
 	return TRUE;

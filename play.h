@@ -9,10 +9,19 @@
 
 #include	"defs.h"
 
+/* The different modes of the program with respect to game-play.
+ */
+enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay };
+
 /* Initialize the current state to the starting position of the
  * specified level.
  */
 extern int initgamestate(gameseries *series, int level, int replay);
+
+/* Move the program in and out of game-play mode. This affects
+ * the running of the timer and the handling of the keyboard.
+ */
+extern void setgameplaymode(int mode);
 
 /* Handle one tick of the game. cmd is the current keyboard command
  * supplied by the user, or CmdPreserve if any pending command is to
@@ -26,10 +35,9 @@ extern int doturn(int cmd);
  */
 extern int drawscreen(void);
 
-/* Set the keyboard behavior. A TRUE value for active indicates that the
- * keyboard should be set for game play.
+/* Free any resources associates with the current game state.
  */
-extern int activatekeyboard(int active);
+extern int endgamestate(void);
 
 /* Return TRUE if a solution exists for the given level.
  */

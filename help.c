@@ -10,9 +10,11 @@
 #include	"oshw.h"
 #include	"help.h"
 
+#define	array(a)	a, (sizeof a / sizeof *a)
+
 /* A list of the available keyboard commands.
  */
-static char const *keys[] = {
+static char const *gameplay_keys[] = {
     "\240\tDuring the Game",
     "\240\t\240",
     "arrows\tmove Chip",
@@ -31,11 +33,12 @@ static char const *keys[] = {
     "n\tjump to the next level",
     "s\tsee the current score",
     "Ctrl-I (Tab)\tplayback saved solution",
+    "Ctrl-X\treplace existing solution"
 };
 
 /* Descriptions of the different surfaces of the levels.
  */
-static objhelptext const floors[] = {
+static objhelptext const gameplay_floors[] = {
     { TRUE, Fire, 0,
       "Fire is fatal unless Chip has firewalking boots." },
     { TRUE, Water, 0,
@@ -53,7 +56,7 @@ static objhelptext const floors[] = {
 
 /* Descriptions of the various kinds of obstacles.
  */
-static objhelptext const walls[] = {
+static objhelptext const gameplay_walls[] = {
     { TRUE, Wall_North, Wall,
       "Walls can either take up an entire square,"
       " or just cut off one direction." },
@@ -71,7 +74,7 @@ static objhelptext const walls[] = {
 
 /* Descriptions of various objects to be found.
  */
-static objhelptext const objects[] = {
+static objhelptext const gameplay_objects[] = {
     { TRUE, Bomb, 0,
       "A Bomb is always fatal to whatever steps on it." },
     { TRUE, CloneMachine, Button_Red,
@@ -94,7 +97,7 @@ static objhelptext const objects[] = {
 
 /* Descriptions of things that Chip can use.
  */
-static objhelptext const tools[] = {
+static objhelptext const gameplay_tools[] = {
     { TRUE, ICChip, 0,
       "IC Chips are what Chip needs to collect in order to pass through"
       " the socket." },
@@ -103,7 +106,7 @@ static objhelptext const tools[] = {
     { TRUE, Boots_Water, Boots_Fire,
       "Boots allow Chip to get past fire and water, and to traverse"
       " ice and slide floors as if they were normal floors." },
-    { TRUE, Block_Emergent, 0,
+    { TRUE, Block_Static, 0,
       "Blocks are obstacles, but they can be moved. When pushed into water,"
       " the water square turns into dirt." },
     { TRUE, Socket, 0,
@@ -116,7 +119,7 @@ static objhelptext const tools[] = {
 
 /* Descriptions of the roaming creatures.
  */
-static objhelptext const monsters[] = {
+static objhelptext const gameplay_monsters[] = {
     { FALSE, Tank, 0,
       "Tanks only move in one direction, until a blue button"
       " makes them turn around." },
@@ -143,7 +146,7 @@ static objhelptext const monsters[] = {
  */
 static char const *about[] = {
     "\267\tTileWorld",
-    "\tversion 0.5.1 (alpha)",
+    "\tversion 0.6.0 (alpha)",
     "\tCopyright \251 2001 by Brian Raiter",
     "\tcompiled " __DATE__ " " __TIME__,
     "\240\t\240",
@@ -165,36 +168,26 @@ static char const *about[] = {
     "\tappropriate fashion.)"
 };
 
-/* Display the online help screens.
+/*
+ *
  */
-void runhelp(void)
-{
-    displayhelp(HELP_TABTEXT, "KEYS",
-		keys, sizeof keys / sizeof *keys);
-    if (!anykey())
-	return;
-    displayhelp(HELP_OBJECTS, "FLOORS",
-		floors, sizeof floors / sizeof *floors);
-    if (!anykey())
-	return;
-    displayhelp(HELP_OBJECTS, "WALLS",
-		walls, sizeof walls / sizeof *walls);
-    if (!anykey())
-	return;
-    displayhelp(HELP_OBJECTS, "OBJECTS & MACHINES",
-		objects, sizeof objects / sizeof *objects);
-    if (!anykey())
-	return;
-    displayhelp(HELP_OBJECTS, "TOOLS",
-		tools, sizeof tools / sizeof *tools);
-    if (!anykey())
-	return;
-    displayhelp(HELP_OBJECTS, "MONSTERS",
-		monsters, sizeof monsters / sizeof *monsters);
-    if (!anykey())
-	return;
 
-    displayhelp(HELP_TABTEXT, "ABOUT TILEWORLD",
-		about, sizeof about / sizeof *about);
-    anykey();
+static inline int helpscreen(int type, char const *title,
+			     void const *text, int textcount)
+{
+    displayhelp(type, title, text, textcount);
+    return anykey();
+}
+
+/* Display the online help screens for the game.
+ */
+int gameplayhelp(void)
+{
+    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys))
+	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors))
+	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls))
+	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects))
+	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools))
+	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters))
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILEWORLD", array(about));
 }

@@ -46,7 +46,7 @@
 
 /* The total number of tile images.
  */
-#define	NTILES		(Count_Floors + 4 * Count_Entities)
+#define	NTILES		128
 
 /* cctiles[]: The pixels of all the tiles.
  * ccpalette[]: The tiles' color palette.
@@ -70,9 +70,24 @@ static SDL_Surface     *screen = NULL;
 /* Macros for locating a specific tile's pixels.
  */
 #define	floortile(id)		(id)
-#define	entitydirtile(id, dir)	(Count_Floors + (id) * 4 \
-					      + ((0x30210 >> ((dir) * 2)) & 3))
+#define	entitydirtile(id, dir)	((id) + ((0x30210 >> ((dir) * 2)) & 3))
+
+/*
 #define	tileptr(tn)		(cctiles + (tn) * CXTILE * CYTILE)
+*/
+static unsigned char const *tileptr(int tn)
+{
+    static unsigned char       *badtile = NULL;
+
+    if (tn >= 0 && tn < NTILES)
+	return cctiles + tn * CXTILE * CYTILE;
+    if (!badtile) {
+	badtile = malloc(CXTILE * CYTILE);
+	memset(badtile, IDX_LTRED, CXTILE * CYTILE);
+    }
+    return badtile;
+}
+
 
 /*
  * Tile initialization.
@@ -171,24 +186,12 @@ static void displaymapview(gamestate const *state)
 {
     unsigned char	tilebuf[CXTILE * CYTILE];
     creature const     *cr;
-    creature const     *chip;
     int			xdisppos, ydisppos;
     int			lmap, tmap, rmap, bmap;
     int			pos, x, y;
 
-    for (chip = state->creatures ; chip->id != Chip ; ++chip) ;
-    xdisppos = (chip->pos % CXGRID) * 4;
-    ydisppos = (chip->pos / CXGRID) * 4;
-    if (chip->moving > 0) {
-	switch (chip->dir) {
-	  case NORTH:	ydisppos += chip->moving / 2;	break;
-	  case WEST:	xdisppos += chip->moving / 2;	break;
-	  case SOUTH:	ydisppos -= chip->moving / 2;	break;
-	  case EAST:	xdisppos -= chip->moving / 2;	break;
-	}
-    }
-    xdisppos -= 4 * 4;
-    ydisppos -= 4 * 4;
+    xdisppos = state->xviewpos / 2 - (CXDISPLAY / 2) * 4;
+    ydisppos = state->yviewpos / 2 - (CYDISPLAY / 2) * 4;
     if (xdisppos < 0)
 	xdisppos = 0;
     if (ydisppos < 0)
@@ -209,12 +212,12 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
-	    if (transparency[state->map[pos].floor]) {
-		if (transparency[state->map[pos].hfloor])
+	    if (transparency[state->map[pos].top.id]) {
+		if (transparency[state->map[pos].bot.id])
 		    copytile(tilebuf, floortile(Empty));
-		copytile(tilebuf, floortile(state->map[pos].hfloor));
+		copytile(tilebuf, floortile(state->map[pos].bot.id));
 	    }
-	    copytile(tilebuf, floortile(state->map[pos].floor));
+	    copytile(tilebuf, floortile(state->map[pos].top.id));
 	    drawclippedtile((unsigned char*)screen->pixels,
 			    CXMARGIN + (x * CXTILE) - (xdisppos * CXTILE / 4),
 			    CYMARGIN + (y * CYTILE) - (ydisppos * CYTILE / 4),
@@ -255,6 +258,7 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
     SDL_Rect	info;
     char	buf[32];
+    int		color;
     int		n, x;
 
     if (state->game->name && *state->game->name) {
@@ -299,7 +303,11 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %3d", besttime);
+	color = ccfont.color;
+	if (state->game->replacebest)
+	    ccfont.color = IDX_LTGRAY;
 	_sdlputtext(info.x, info.y, buf);
+	ccfont.color = color;
     }
     info.y += 2 * CYFONT;
 
@@ -318,10 +326,14 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     }
     info.y += 2 * CYTILE + CYFONT;
 
-    if (state->displayflags & DF_SHOWHINT)
-	_sdlputmltext(&info, state->game->hinttext);
-    else if (state->soundeffect && *state->soundeffect)
+    if (state->soundeffect && *state->soundeffect)
 	_sdlputtext(info.x, info.y, state->soundeffect);
+    info.y += 2 * CYFONT;
+
+    if (state->displayflags & DF_INVALID)
+	_sdlputmltext(&info, "This level cannot be played.");
+    else if (state->displayflags & DF_SHOWHINT)
+	_sdlputmltext(&info, state->game->hinttext);
 }
 
 /*
@@ -394,7 +406,7 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
     SDL_Rect		help;
     objhelptext const  *objtext;
     char *const	       *tabbedtext;
-    int			col;
+    int			col, id;
     int			i, n, y;
 
     SDL_FillRect(screen, NULL, IDX_BLACK);
@@ -429,6 +441,27 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
 	help.w -= CXTILE * 2 + CXMARGIN;
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
+	    if (objtext[n].isfloor)
+		id = floortile(objtext[n].item1);
+	    else
+		id = entitydirtile(objtext[n].item1, EAST);
+	    if (transparency[id])
+		drawtile((unsigned char*)screen->pixels,
+			 CXMARGIN + CXTILE, help.y, floortile(Empty));
+	    drawtile((unsigned char*)screen->pixels,
+		     CXMARGIN + CXTILE, help.y, id);
+	    if (objtext[n].item2) {
+		if (objtext[n].isfloor)
+		    id = floortile(objtext[n].item2);
+		else
+		    id = entitydirtile(objtext[n].item2, EAST);
+		if (transparency[id])
+		    drawtile((unsigned char*)screen->pixels,
+			     CXMARGIN, help.y, floortile(Empty));
+		drawtile((unsigned char*)screen->pixels, CXMARGIN, help.y, id);
+	    }
+
+#if 0
 	    if (objtext[n].isfloor) {
 		drawtile((unsigned char*)screen->pixels,
 			 CXMARGIN + CXTILE, help.y,
@@ -453,6 +486,8 @@ int displayhelp(int type, char const *title, void const *text, int textcount)
 			     entitydirtile(objtext[n].item2, EAST));
 		}
 	    }
+#endif
+
 	    y = help.y;
 	    _sdlputmltext(&help, objtext[n].desc);
 	    y = CYTILE - (help.y - y);
@@ -496,9 +531,19 @@ int displayendmessage(int completed)
  */
 int _sdloutputinitialize(void)
 {
-    if (sizeof cctiles < NTILES * CXTILE * CYTILE)
-	die("Tile array has size %u, expected at least %u",
+    SDL_Surface	       *icon;
+
+    if (sizeof cctiles != NTILES * CXTILE * CYTILE)
+	die("Tile array has size %u, expected %u",
 	    sizeof cctiles, NTILES * CXTILE * CYTILE);
+    initializetiles();
+
+    icon = SDL_CreateRGBSurfaceFrom((void*)tileptr(Exited_Chip),
+				    CXTILE, CYTILE, 8, CXTILE, 0, 0, 0, 0);
+    SDL_SetPalette(icon, SDL_LOGPAL, ccpalette, 0,
+		   sizeof ccpalette / sizeof *ccpalette);
+    SDL_WM_SetIcon(icon, NULL);
+    SDL_FreeSurface(icon);
 
     if (!(screen = SDL_SetVideoMode(CXSCREEN, CYSCREEN, 8, SDL_HWSURFACE)))
 	die("Cannot open 640x480x8 display: %s\n", SDL_GetError());
@@ -509,8 +554,6 @@ int _sdloutputinitialize(void)
     ccfont.color = IDX_WHITE;
     _sdlsettextsurface(screen);
     _sdlsettextfont(&ccfont);
-
-    initializetiles();
 
     return TRUE;
 }
