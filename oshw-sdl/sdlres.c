@@ -287,7 +287,8 @@ static int loadtileset(char const *filename, int nxtiles, int nytiles,
 	destfmt = SDL_GetVideoInfo()->vfmt;
     }
     cctilesurface = SDL_CreateRGBSurface(SDL_SWSURFACE,
-					 cxtile, cytile * NTILES, 32,
+					 cxtile, cytile * NTILES,
+					 destfmt->BitsPerPixel,
 					 destfmt->Rmask, destfmt->Gmask,
 					 destfmt->Bmask, destfmt->Amask);
     if (!cctilesurface)

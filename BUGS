@@ -8,6 +8,8 @@ ___________________________________________________________________________
 
 Bugs in the MS game logic emulation
 
+* The timing of when clones emerge from clone machines is slightly off.
+  This can have a material effect on how a level plays out.
 * Some subtleties of timings on "simultaneous" events are incorrect. For
   example, if Chip enters a teleport in such a way as to cause a block to
   press a button, the button's effect is applied after selecting a
