@@ -320,6 +320,8 @@ static int writesolution(fileinfo *file, gamesetup const *game)
  * File I/O for solution files.
  */
 
+/* Locate the solution file for the given data file and open it.
+ */
 static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
 {
     char       *buf = NULL;
@@ -373,6 +375,7 @@ int readsolutions(gameseries *series)
     savedirchecked = TRUE;
 
     j = 0;
+    memset(&gametmp, 0, sizeof gametmp);
     for (;;) {
 	if (!readsolution(&series->solutionfile, &gametmp))
 	    break;

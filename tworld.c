@@ -480,7 +480,7 @@ static int startup(gamespec *gs, startupdata const *start)
 	if (!initializesystem())
 	    return FALSE;
 	n = 0;
-	if (!displaylist("Welcome to Tile World. Select your destination.",
+	if (!displaylist("    Welcome to Tile World. Select your destination.",
 			 header, (char const**)texts, listsize, &n,
 			 scrollinputcallback))
 	    exit(EXIT_SUCCESS);

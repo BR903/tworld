@@ -7,18 +7,15 @@ ___________________________________________________________________________
 
 Bugs in the MS game logic emulation
 
-* The behavior of the paramecia around the teleports in Eric Schmidt's
-  level 29 ("PARAMECIA") does not match the real game. I don't yet know why
-  this is.
-* Some subtleties of timings on "simultaneous" events are incorrect. For
-  example, if Chip enters a teleport in such a way as to cause a block to
-  press a button, the button's effect is applied after selecting a
-  teleport. In the real game it is the other way round.
-* Chips move's are "quantized" so as to occur exactly on 1/20-second
-  intervals, rather than occuring the moment a key is pressed. I believe
-  that this difference does not actually affect game play, but it does
-  affect how the game appears when Chip makes two moves in a single
-  interval.
+* Something's wrong somewhere in Eric Schmidt's level 29 (PARAMECIA).
+  Unfortunately, I don't know where the discrepancy is.
+* (It is debatable whether or not this one qualifies as a bug.) The
+  keyboard is scanned twice per tick, once at the beginning and once in the
+  middle. As a result, if Chip makes a move at the beginning of a tick, the
+  game does not update the display twice in a row (once after the creatures
+  move and once after Chip moves), but just does it once. In a few places
+  this does have a non-trivial effect on how the game appears, most notably
+  when Chip tries to move against a force floor.
 ___________________________________________________________________________
 
 Bugs in the Lynx game logic emulation
