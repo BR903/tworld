@@ -4,6 +4,8 @@
  * License. No warranty. See COPYING for details.
  */
 
+/*#define HISTOGRAM*/
+
 #include	<stdlib.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
