@@ -7,6 +7,7 @@
 #include	<string.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
+#include	"../defs.h"
 
 /* The states of keys.
  */
@@ -88,57 +89,12 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
  * Running the keyboard's state machine.
  */
 
-/* Initialize (or re-initialize) all key states.
- */
-static void restartkeystates(void)
-{
-    Uint8      *keyboard;
-    int		count, n;
-
-    memset(keystates, FALSE, sizeof keystates);
-    keyboard = SDL_GetKeyState(&count);
-    if (count > SDLK_LAST)
-	count = SDLK_LAST;
-    for (n = 0 ; n < count ; ++n)
-	if (keyboard[n])
-	    _sdlkeyeventcallback(n, TRUE);
-}
-
-/* Update the key states at the start of a polling cycle.
- */
-static void resetkeystates(void)
-{
-    int	n;
-
-    if (joystickstyle) {
-	for (n = 0 ; n < SDLK_LAST ; ++n) {
-	    switch (keystates[n]) {
-	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
-	      case KS_PRESSED:		keystates[n] = KS_DOWN;		break;
-	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWN;		break;
-	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
-	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
-	    }
-	}
-    } else {
-	for (n = 0 ; n < SDLK_LAST ; ++n) {
-	    switch (keystates[n]) {
-	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
-	      case KS_PRESSED:		keystates[n] = KS_DOWNBUTOFF1;	break;
-	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWNBUTOFF2;	break;
-	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
-	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
-	    }
-	}
-    }
-}
-
 /* Change the recorded state of a key. Shift-type keys are always
  * either on or off. The other keys can be struck, pressed,
  * re-pressed, held down, or down but ignored, as appropriate to when
  * they were first pressed and the current behavior settings.
  */
-void _sdlkeyeventcallback(int scancode, int down)
+static void keyeventcallback(int scancode, int down)
 {
     switch (scancode) {
       case KMOD_LSHIFT:
@@ -170,6 +126,51 @@ void _sdlkeyeventcallback(int scancode, int down)
     }
 }
 
+/* Initialize (or re-initialize) all key states.
+ */
+static void restartkeystates(void)
+{
+    Uint8      *keyboard;
+    int		count, n;
+
+    memset(keystates, FALSE, sizeof keystates);
+    keyboard = SDL_GetKeyState(&count);
+    if (count > SDLK_LAST)
+	count = SDLK_LAST;
+    for (n = 0 ; n < count ; ++n)
+	if (keyboard[n])
+	    keyeventcallback(n, TRUE);
+}
+
+/* Update the key states at the start of a polling cycle.
+ */
+static void resetkeystates(void)
+{
+    int	n;
+
+    if (joystickstyle) {
+	for (n = 0 ; n < SDLK_LAST ; ++n) {
+	    switch (keystates[n]) {
+	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
+	      case KS_PRESSED:		keystates[n] = KS_DOWN;		break;
+	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWN;		break;
+	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
+	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
+	    }
+	}
+    } else {
+	for (n = 0 ; n < SDLK_LAST ; ++n) {
+	    switch (keystates[n]) {
+	      case KS_STRUCK:		keystates[n] = KS_OFF;		break;
+	      case KS_PRESSED:		keystates[n] = KS_DOWNBUTOFF1;	break;
+	      case KS_DOWNBUTOFF1:	keystates[n] = KS_DOWNBUTOFF2;	break;
+	      case KS_DOWNBUTOFF2:	keystates[n] = KS_DOWN;		break;
+	      case KS_REPRESSED:	keystates[n] = KS_DOWN;		break;
+	    }
+	}
+    }
+}
+
 /*
  * Exported functions.
  */
@@ -182,10 +183,10 @@ int anykey(void)
     int	n;
 
     resetkeystates();
-    _sdleventupdate(FALSE);
+    sdlg.eventupdate(FALSE);
     for (;;) {
 	resetkeystates();
-	_sdleventupdate(TRUE);
+	sdlg.eventupdate(TRUE);
 	for (n = 0 ; n < SDLK_LAST ; ++n)
 	    if (keystates[n] == KS_STRUCK || keystates[n] == KS_PRESSED
 					  || keystates[n] == KS_REPRESSED)
@@ -206,7 +207,7 @@ int input(int wait)
 
     for (;;) {
 	resetkeystates();
-	_sdleventupdate(wait);
+	sdlg.eventupdate(wait);
 
 	cmd = CmdNone;
 	for (i = 0 ; i < (int)(sizeof keycmds / sizeof *keycmds) ; ++i) {
@@ -276,6 +277,8 @@ int setkeyboardrepeat(int holdrepeat, int polling)
  */
 int _sdlinputinitialize(void)
 {
+    sdlg.keyeventcallback = keyeventcallback;
+
     setkeyboardrepeat(TRUE);
     return TRUE;
 }

@@ -7,6 +7,7 @@
 #include	<stdlib.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
+#include	"../defs.h"
 
 /* By default, a second of game time lasts for 1000 milliseconds of
  * real time.

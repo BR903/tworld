@@ -17,7 +17,7 @@ oshwglobals	sdlg;
 
 /* Dispatch all events sitting in the SDL event queue. 
  */
-void _sdleventupdate(int wait)
+static void eventupdate(int wait)
 {
     SDL_Event	event;
 
@@ -27,10 +27,10 @@ void _sdleventupdate(int wait)
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_ALLEVENTS)) {
 	switch (event.type) {
 	  case SDL_KEYDOWN:
-	    _sdlkeyeventcallback(event.key.keysym.sym, TRUE);
+	    sdlg.keyeventcallback(event.key.keysym.sym, TRUE);
 	    break;
 	  case SDL_KEYUP:
-	    _sdlkeyeventcallback(event.key.keysym.sym, FALSE);
+	    sdlg.keyeventcallback(event.key.keysym.sym, FALSE);
 	    break;
 	  case SDL_QUIT:
 	    exit(EXIT_SUCCESS);
@@ -63,6 +63,8 @@ static void shutdown(void)
  */
 int oshwinitialize(int silence, int showhistogram)
 {
+    sdlg.eventupdate = eventupdate;
+
     (void)silence;
     atexit(shutdown);
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -70,8 +72,10 @@ int oshwinitialize(int silence, int showhistogram)
 
     setsubtitle(NULL);
 
-    return _sdlresourceinitialize()
-	&& _sdloutputinitialize()
+    return _sdltimerinitialize(showhistogram)
+	&& _sdlresourceinitialize()
+	&& _sdltextinitialize()
+	&& _sdltileinitialize()
 	&& _sdlinputinitialize()
-	&& _sdltimerinitialize(showhistogram);
+	&& _sdloutputinitialize();
 }

@@ -11,7 +11,6 @@
 #include	"SDL.h"
 #include	"sdlgen.h"
 #include	"../err.h"
-#include	"../state.h"
 
 /* An automatically-generated file.
  */
@@ -25,15 +24,12 @@
 
 static int setfontresource(int width, int height, unsigned char *fontdata)
 {
-    fontinfo	font;
-
     memset(fontdata, 0, 32 * height);
     memset(fontdata + 127 * height, 0, 33 * height);
-    font.bits = fontdata;
-    font.w = width;
-    font.h = height;
-    font.color = font.bkgnd = 0;
-    _sdlsettextfont(&font);
+    sdlg.font.bits = fontdata;
+    sdlg.font.w = width;
+    sdlg.font.h = height;
+    sdlg.font.color = sdlg.font.bkgnd = 0;
 }
 
 #endif

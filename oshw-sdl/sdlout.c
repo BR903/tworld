@@ -12,8 +12,6 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 #include	"../state.h"
-#include	"sdltext.h"
-#include	"sdltile.h"
 
 /* Space to leave between graphic objects.
  */
@@ -254,7 +252,7 @@ static void drawtransptile(int xpos, int ypos, Uint32 const *src)
     endsrc = src + sdlg.cptile;
     for ( ; src != endsrc ; src += sdlg.wtile, dest += cxscreen)
 	for (x = 0 ; x < sdlg.wtile ; ++x)
-	    if (src[x] != (Uint32)sdlg.transpixel)
+	    if (src[x] != sdlg.transpixel)
 		dest[x] = src[x];
 }
 #endif
@@ -299,7 +297,7 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
     src += (tclip - ypos) * sdlg.wtile - xpos;
     for (y = bclip - tclip ; y ; --y, dest += cxscreen, src += sdlg.wtile)
 	for (x = lclip ; x < rclip ; ++x)
-	    if (src[x] != (Uint32)sdlg.transpixel)
+	    if (src[x] != sdlg.transpixel)
 		dest[x] = src[x];
 }
 
@@ -344,8 +342,8 @@ static void displaymapview(gamestate const *state)
 					   - (xdisppos * sdlg.wtile / 4),
 				  ydisplay + (y * sdlg.htile)
 					   - (ydisppos * sdlg.htile / 4),
-				  _sdlgetcellimage(state->map[pos].top.id,
-						   state->map[pos].bot.id));
+				  sdlg.getcellimage(state->map[pos].top.id,
+						    state->map[pos].bot.id));
 	}
     }
 
@@ -372,7 +370,7 @@ static void displaymapview(gamestate const *state)
 				       - (xdisppos * sdlg.wtile / 4),
 			      ydisplay + (y * sdlg.htile / 4)
 				       - (ydisppos * sdlg.htile / 4),
-			      _sdlgetcreatureimage(cr->id, cr->dir, 0));
+			      sdlg.getcreatureimage(cr->id, cr->dir, 0));
     }
     SDL_SetClipRect(screen, NULL);
 }
@@ -394,30 +392,30 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    x = 0;
 	    n = cxtitle / ccfont.w;
 	}
-	_sdlputntext(xtitle + x, ytitle, n, state->game->name);
+	sdlg.putntext(xtitle + x, ytitle, n, state->game->name);
     }
 
     y = yinfo;
 
     sprintf(buf, "Level %d", state->game->number);
-    _sdlputtext(xinfo, y, buf);
+    sdlg.puttext(xinfo, y, buf);
     y += ccfont.h;
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);
-	_sdlputtext(xinfo, y, buf);
+	sdlg.puttext(xinfo, y, buf);
     }
     y += 2 * ccfont.h;
 
     sprintf(buf, "Chips %3d", state->chipsneeded);
-    _sdlputtext(xinfo, y, buf);
+    sdlg.puttext(xinfo, y, buf);
     y += ccfont.h;
 
     if (timeleft < 0)
 	strcpy(buf, "Time  ---");
     else
 	sprintf(buf, "Time  %3d", timeleft);
-    _sdlputtext(xinfo, y, buf);
+    sdlg.puttext(xinfo, y, buf);
     y += ccfont.h;
 
     if (besttime) {
@@ -428,16 +426,17 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	color = ccfont.color;
 	if (state->game->replacebest)
 	    ccfont.color = clr_gray;
-	_sdlputtext(xinfo, y, buf);
+	sdlg.puttext(xinfo, y, buf);
 	ccfont.color = color;
     }
 
     for (n = 0 ; n < 4 ; ++n) {
 	drawopaquetile(xinventory + n * sdlg.wtile, yinventory,
-		_sdlgettileimage(state->keys[n] ? Key_Red + n : Empty, FALSE));
+		sdlg.gettileimage(state->keys[n] ? Key_Red + n : Empty,
+				  FALSE));
 	drawopaquetile(xinventory + n * sdlg.wtile, yinventory + sdlg.htile,
-		_sdlgettileimage(state->boots[n] ? Boots_Ice + n : Empty,
-				 FALSE));
+		sdlg.gettileimage(state->boots[n] ? Boots_Ice + n : Empty,
+				  FALSE));
     }
 
     text.x = xhint;
@@ -445,13 +444,13 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     text.w = cxhint;
     text.h = cyhint;
     if (state->statusflags & SF_INVALID)
-	_sdlputmltext(&text, "This level cannot be played.");
+	sdlg.putmltext(&text, "This level cannot be played.");
     else if (state->statusflags & SF_SHOWHINT)
-	_sdlputmltext(&text, state->game->hinttext);
+	sdlg.putmltext(&text, state->game->hinttext);
 
     if ((state->statusflags & SF_ONOMATOPOEIA) && state->soundeffects)
-	_sdlputtext(xonomatopoeia, yonomatopoeia,
-		    getonomatopoeia(state->soundeffects));
+	sdlg.puttext(xonomatopoeia, yonomatopoeia,
+		     getonomatopoeia(state->soundeffects));
 }
 
 /*
@@ -497,23 +496,23 @@ int displaylist(char const *title, char const *header,
 	list.h -= ccfont.h;
     }
 
-    _sdlcreatescroll(&scroll, &list, clr_yellow, itemcount, items);
-    _sdlscrollsetindex(&scroll, *index);
+    sdlg.createscroll(&scroll, &list, clr_yellow, itemcount, items);
+    sdlg.scrollsetindex(&scroll, *index);
 
     for (;;) {
 	SDL_FillRect(screen, NULL, clr_black);
-	_sdlputtext(xlist, ylist + cylist, title);
+	sdlg.puttext(xlist, ylist + cylist, title);
 	if (header)
-	    _sdlputtext(xlist, ylist, header);
-	_sdlscrollredraw(&scroll);
+	    sdlg.puttext(xlist, ylist, header);
+	sdlg.scrollredraw(&scroll);
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 	n = 0;
 	if (!(*inputcallback)(&n))
 	    break;
-	_sdlscrollmove(&scroll, n);
+	sdlg.scrollmove(&scroll, n);
     }
     if (n)
-	*index = _sdlscrollindex(&scroll);
+	*index = sdlg.scrollindex(&scroll);
     return n;
 }
 
@@ -559,7 +558,7 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
     help.w = cxlist;
     help.h = cylist;
 
-    _sdlputtext(xlist, ylist + cylist, title);
+    sdlg.puttext(xlist, ylist + cylist, title);
 
     if (type == HELP_TABTEXT) {
 	tabbedtext = text;
@@ -574,8 +573,8 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 
 	for (i = 0 ; i < textcount ; ++i) {
 	    n = strchr(tabbedtext[i], '\t') - tabbedtext[i];
-	    _sdlputntext(xlist, help.y, n, tabbedtext[i]);
-	    _sdlputmltext(&help, tabbedtext[i] + n + 1);
+	    sdlg.putntext(xlist, help.y, n, tabbedtext[i]);
+	    sdlg.putmltext(&help, tabbedtext[i] + n + 1);
 	}
     } else if (type == HELP_OBJECTS) {
 	help.x += sdlg.wtile * 2 + ccfont.w;
@@ -587,16 +586,16 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    else
 		id = entitydirtile(objtext[n].item1, EAST);
 	    drawopaquetile(xlist + sdlg.wtile, help.y,
-			   _sdlgettileimage(id, FALSE));
+			   sdlg.gettileimage(id, FALSE));
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
 		    id = floortile(objtext[n].item2);
 		else
 		    id = entitydirtile(objtext[n].item2, EAST);
-		drawopaquetile(xlist, help.y, _sdlgettileimage(id, FALSE));
+		drawopaquetile(xlist, help.y, sdlg.gettileimage(id, FALSE));
 	    }
 	    y = help.y;
-	    _sdlputmltext(&help, objtext[n].desc);
+	    sdlg.putmltext(&help, objtext[n].desc);
 	    y = sdlg.htile - (help.y - y);
 	    if (y > 0) {
 		help.y += y;

@@ -12,7 +12,6 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 #include	"../state.h"
-#include	"sdltile.h"
 
 typedef	struct tilemap {
     Uint32     *opaque;
@@ -155,7 +154,7 @@ static tilemap		tileptr[NTILES];
 
 /* Return a pointer to a specific tile image.
  */
-Uint32 const *_sdlgettileimage(int id, int transp)
+static Uint32 const *gettileimage(int id, int transp)
 {
     if (transp)
 	return tileptr[id].transp ? tileptr[id].transp
@@ -167,7 +166,7 @@ Uint32 const *_sdlgettileimage(int id, int transp)
 
 /* Return a pointer to a tile image for a creature.
  */
-Uint32 const *_sdlgetcreatureimage(int id, int dir, int moving)
+static Uint32 const *getcreatureimage(int id, int dir, int moving)
 {
     (void)moving;
     id += (0x30210 >> (dir * 2)) & 3;
@@ -178,7 +177,7 @@ Uint32 const *_sdlgetcreatureimage(int id, int dir, int moving)
  * transparent, the appropriate image is created in the overlay
  * buffer.
  */
-Uint32 const *_sdlgetcellimage(int top, int bot)
+static Uint32 const *getcellimage(int top, int bot)
 {
     Uint32     *src;
     Uint32     *dest;
@@ -220,12 +219,11 @@ static int initializetileset(SDL_Surface *bmp, int wset, int hset,
     SDL_Color		pal[2];
     int			x, y, z, n;
 
-    temp = sdlg.screen;
-    if (!temp) {
+    if (!sdlg.screen) {
 	warn("initializetileset() called before creating 32-bit screen");
 	fmt = SDL_GetVideoInfo()->vfmt;
     } else
-	fmt = temp->format;
+	fmt = sdlg.screen->format;
 
     temp = SDL_CreateRGBSurface(SDL_SWSURFACE,
 				wset * sdlg.wtile, hset * sdlg.htile, 32,
@@ -355,4 +353,16 @@ int loadsmalltileset(char const *filename, int complain)
 int loadlargetileset(char const *filename, int complain)
 {
     return loadsmalltileset(filename, complain);
+}
+
+/*
+ *
+ */
+
+int _sdltileinitialize(void)
+{
+    sdlg.gettileimage = gettileimage;
+    sdlg.getcreatureimage = getcreatureimage;
+    sdlg.getcellimage = getcellimage;
+    return TRUE;
 }
