@@ -960,7 +960,8 @@ static int teleportcreature(creature *cr)
 	    pos += CXGRID * CYGRID;
 	if (floorat(pos) == Teleport) {
 	    cr->pos = pos;
-	    n = canmakemove(cr, cr->dir, 0);
+	    n = !issomeoneat(pos) &&
+			(cr->dir == NIL || canmakemove(cr, cr->dir, 0));
 	    cr->pos = origpos;
 	    if (n)
 		break;
@@ -979,6 +980,9 @@ static int teleportcreature(creature *cr)
     cr->pos = pos;
     if (cr->id != Chip)
 	claimlocation(cr->pos);
+
+    if (cr->id == Chip)
+	addsoundeffect(SND_TELEPORTING);
     return TRUE;
 }
 
@@ -1285,11 +1289,6 @@ static int endmovement(creature *cr)
 	}
 	survived = FALSE;
 	break;
-      case Teleport:
-	if (cr->id == Chip)
-	    addsoundeffect(SND_TELEPORTING);
-	teleportcreature(cr);
-	break;
       case Beartrap:
 	addsoundeffect(SND_TRAP_ENTERED);
 	break;
@@ -1544,6 +1543,12 @@ static void finalhousekeeping(void)
     for (cr = creaturelist() ; cr->id ; ++cr)
 	if (!cr->hidden && isanimation(cr->id))
 	    --cr->frame;
+    for (--cr ; cr >= creaturelist() ; --cr) {
+	if (cr->hidden || cr->moving || isanimation(cr->id))
+	    continue;
+	if (floorat(cr->pos) == Teleport)
+	    teleportcreature(cr);
+    }
 }
 
 /* Set the state fields specifically used to produce the output.
