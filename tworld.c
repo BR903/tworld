@@ -598,7 +598,8 @@ static int startinput(gamespec *gs)
 static int endinput(gamespec *gs)
 {
     char	yn[2] = "";
-    int		bscore = 0, tscore = 0, gscore = 0;
+    int		bscore = 0, tscore = 0;
+    long	gscore = 0;
     int		n;
 
     if (gs->status < 0) {

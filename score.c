@@ -15,7 +15,7 @@
 
 /* Translate a number into an ASCII string, complete with commas.
  */
-static char const *commify(int number)
+static char const *commify(unsigned long number)
 {
     static char	buf[32];
     char       *dest = buf + sizeof buf;
@@ -37,13 +37,15 @@ static char const *commify(int number)
 /* Return the user's scores for a given level.
  */
 int getscoresforlevel(gameseries const *series, int level,
-		      int *base, int *bonus, int *total)
+		      int *base, int *bonus, long *total)
 {
-    gamesetup	       *game;
-    int			levelscore, timescore;
-    unsigned int	totalscore;
-    int			n;
+    gamesetup   *game;
+    int		levelscore, timescore;
+    long	totalscore;
+    int		n;
 
+    *base = 0;
+    *bonus = 0;
     totalscore = 0;
     for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
 	if (n >= series->allocated)
@@ -76,15 +78,15 @@ int getscoresforlevel(gameseries const *series, int level,
 int createscorelist(gameseries const *series, int usepasswds,
 		    int **plevellist, int *pcount, tablespec *table)
 {
-    gamesetup	       *game;
-    char	      **ptrs;
-    char	       *textheap;
-    char	       *blank;
-    int		       *levellist = NULL;
-    unsigned int	levelscore, timescore;
-    unsigned int	totalscore;
-    int			count;
-    int			used, j, n;
+    gamesetup  *game;
+    char      **ptrs;
+    char       *textheap;
+    char       *blank;
+    int	       *levellist = NULL;
+    int		levelscore, timescore;
+    long	totalscore;
+    int		count;
+    int		used, j, n;
 
     if (plevellist) {
 	levellist = malloc((series->count + 2) * sizeof *levellist);

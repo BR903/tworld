@@ -59,10 +59,6 @@ static int		fullscreen = FALSE;
 
 /* Coordinates specifying the placement of the various screen elements.
  */
-#if 0
-static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
-static SDL_Rect		promptloc, displayloc, messageloc;
-#endif
 static int		screenw, screenh;
 static SDL_Rect		rinfoloc;
 static SDL_Rect		locrects[7];
@@ -167,10 +163,10 @@ static int createprompticons(void)
 static int layoutscreen(void)
 {
     static char const  *scoretext = "888  DRAWN AND QUARTERED"
-				    "   8,888  888,888  888,888";
-    static char const  *hinttext = "Total Score  8888888";
+				    "   88,888  8,888,888  8,888,888";
+    static char const  *hinttext = "Total Score  88888888";
     static char const  *chipstext = "Chips";
-    static char const  *timertext = " 888";
+    static char const  *timertext = " 88888";
 
     int			fullw, infow, texth;
 
@@ -589,7 +585,7 @@ int displaygame(void const *state, int timeleft, int besttime)
  * If the latter, then the other arguments can contain point values
  * that will be reported to the user.
  */
-int displayendmessage(int basescore, int timescore, int totalscore,
+int displayendmessage(int basescore, int timescore, long totalscore,
 		      int completed)
 {
     char	buf[32];
@@ -606,7 +602,7 @@ int displayendmessage(int basescore, int timescore, int totalscore,
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
 	n = sprintf(buf, "Level Score %05d", timescore + basescore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Total Score %07d", totalscore);
+	n = sprintf(buf, "Total Score %07ld", totalscore);
 	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
 	fillrect(&rect);
 	SDL_UpdateRect(sdlg.screen, hintloc.x, hintloc.y,

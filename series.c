@@ -151,9 +151,9 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
     if (!filereadint16(file, &val16, NULL))
 	return FALSE;
     levelsize = val16;
-    if (!datfilereadint16(file, &game->number, &levelsize, 1, 999)
-		|| !datfilereadint16(file, &game->time, &levelsize, 0, 999)
-		|| !datfilereadint16(file, &game->chips, &levelsize, 0, 999))
+    if (!datfilereadint16(file, &game->number, &levelsize, 1, 65535)
+		|| !datfilereadint16(file, &game->time, &levelsize, 0, 65535)
+		|| !datfilereadint16(file, &game->chips, &levelsize, 0, 65535))
 	goto badlevel;
 
     while (levelsize) {
@@ -225,8 +225,8 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
     return TRUE;
 
   badlevel:
-    data = filereadbuf(file, levelsize, NULL);
-    free(data);
+    if (datfilereadbuf(file, &data, levelsize, &levelsize))
+	free(data);
     return FALSE;
 }
 
@@ -235,8 +235,9 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
  * to the original Lynx levels. A rather "ad hack" way to accomplish
  * this, but it permits this fixup to occur without requiring the user
  * to perform a special one-time task. Four passwords are repaired, a
- * (possibly) missing wall is restored, the beartrap wiring of level
- * 99 is fixed, and level 145 is removed.
+ * possibly missing wall in level 88 is restored, the beartrap wirings
+ * of levels 99 and 111 are fixed, the layout changes to 121 and 127
+ * are undone, and level 145 is removed.
  */
 static int undomschanges(gameseries *series)
 {

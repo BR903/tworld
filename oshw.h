@@ -157,7 +157,7 @@ extern int displaygame(void const *state, int timeleft, int besttime);
  * for the level, and the user's total score for the series; these
  * scores will be displayed to the user.
  */
-extern int displayendmessage(int basescore, int timescore, int totalscore,
+extern int displayendmessage(int basescore, int timescore, long totalscore,
 			     int completed);
 
 /* Display a (very short) message for the given number of
