@@ -7,6 +7,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<math.h>
 #include	"defs.h"
 #include	"err.h"
 #include	"play.h"
@@ -196,10 +197,11 @@ int createtimelist(gameseries const *series, int showfractions,
     char	      **ptrs;
     char	       *textheap;
     char	       *untimed;
+    char		tmp[16];
     int		       *levellist = NULL;
     long		leveltime;
     int			count;
-    int			used, j, n;
+    int			used, secs, j, n;
 
     if (plevellist) {
 	levellist = malloc((series->count + 1) * sizeof *levellist);
@@ -236,36 +238,22 @@ int createtimelist(gameseries const *series, int showfractions,
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used, "1-%.64s", game->name);
 	if (game->time) {
-	    leveltime = (game->time + 1) * TICKS_PER_SECOND;
-	    leveltime -= game->besttime + 1;
+	    leveltime = game->time * TICKS_PER_SECOND - game->besttime;
 	    ptrs[n++] = textheap + used;
 	    used += 1 + sprintf(textheap + used, "1+%d", game->time);
 	} else {
-	    leveltime = 1000 * TICKS_PER_SECOND - game->besttime - 1;
+	    leveltime = 999 * TICKS_PER_SECOND - game->besttime;
 	    ptrs[n++] = untimed;
 	}
+	secs = (leveltime + TICKS_PER_SECOND - 1) / TICKS_PER_SECOND;
 	ptrs[n++] = textheap + used;
-	switch (showfractions) {
-	  case 0:
-	    used += 1 + sprintf(textheap + used, "1+%ld",
-				leveltime / TICKS_PER_SECOND);
-	    break;
-	  case 1:
-	    if (leveltime < TICKS_PER_SECOND - 1) {
-		leveltime = TICKS_PER_SECOND - leveltime;
-		used += 1 + sprintf(textheap + used, "1+-%ld - .%01ld",
-			      leveltime / TICKS_PER_SECOND,
-			      ((10 * leveltime) / TICKS_PER_SECOND) % 10);
-	    } else {
-		used += 1 + sprintf(textheap + used, "1+%ld - .%01ld",
-			      leveltime / TICKS_PER_SECOND,
-			      9 - ((10 * leveltime) / TICKS_PER_SECOND) % 10);
-	    }
-	    break;
-	  default:
-	    used += 1 + sprintf(textheap + used, "1+%.*f", showfractions,
-				(double)leveltime / TICKS_PER_SECOND);
-	    break;
+	if (showfractions) {
+	    double i, f;
+	    f = modf((double)leveltime / TICKS_PER_SECOND, &i);
+	    sprintf(tmp, "%.*f", showfractions, (f < 0 ? -f : 1.0 - f));
+	    used += 1 + sprintf(textheap + used, "1+%d - %s", secs, tmp + 1);
+	} else {
+	    used += 1 + sprintf(textheap + used, "1+%d", secs);
 	}
 	if (plevellist)
 	    levellist[count] = j;
