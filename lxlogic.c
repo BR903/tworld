@@ -1131,7 +1131,7 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    floorat(cr->pos) = Dirt;
-	    addanimation(cr->pos, NIL, 0, Dirt_Splash, 12);
+	    addanimation(cr->pos, NIL, 0, Water_Splash, 12);
 	    addsoundeffect(SND_WATER_SPLASH);
 	    removecreature(cr);
 	    break;
@@ -1157,7 +1157,7 @@ static int endmovement(creature *cr)
     switch (floor) {
       case Bomb:
 	floorat(cr->pos) = Empty;
-	addanimation(cr->pos, NIL, 0, Bomb_Explosion, 10);
+	addanimation(cr->pos, NIL, 0, Bomb_Explosion, 12);
 	addsoundeffect(SND_BOMB_EXPLODES);
 	if (cr->id == Chip)
 	    removechip(FALSE, NULL);
@@ -1718,6 +1718,7 @@ static int advancegame(gamelogic *logic)
 	    resetfloorsounds(TRUE);
 	    return iscompleted() ? +1 : -1;
 	}
+	--state->timeoffset;
     }
 
     return 0;

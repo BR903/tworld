@@ -56,5 +56,6 @@ extern int hassolution(gamesetup const *game);
  * no solution was replaced.
  */
 extern int replacesolution(void);
+extern int checksolution(void);
 
 #endif

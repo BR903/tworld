@@ -114,9 +114,9 @@ enum
     Entity_Reserved1	= 0x78,
 
     Water_Splash	= 0x7C,
-    Dirt_Splash		= 0x7D,
-    Bomb_Explosion	= 0x7E,
-    Entity_Explosion	= 0x7F
+    Bomb_Explosion	= 0x7D,
+    Entity_Explosion	= 0x7E,
+    Animation_Reserved1	= 0x7F
 };
 
 /* Macros to assist in identifying types of tiles.
@@ -127,7 +127,7 @@ enum
 #define	iskey(f)	((f) >= Key_Red && (f) <= Key_Green)
 #define	isboots(f)	((f) >= Boots_Ice && (f) <= Boots_Water)
 #define	iscreature(f)	((f) >= Chip && (f) < Water_Splash)
-#define	isanimation(f)	((f) >= Water_Splash && (f) <= Entity_Explosion)
+#define	isanimation(f)	((f) >= Water_Splash && (f) <= Animation_Reserved1)
 
 /* Getting a specific creature tile.
  */
@@ -198,6 +198,7 @@ typedef struct gamestate {
     int			replay;			/* playback move index */
     int			timelimit;		/* maximum time permitted */
     int			currenttime;		/* the current tick count */
+    int			timeoffset;		/* offset for displayed time */
     short		currentinput;		/* the current keystroke */
     short		chipsneeded;		/* no. of chips still needed */
     short		xviewpos;		/* the visible part of the */

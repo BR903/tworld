@@ -527,6 +527,8 @@ static int playbackgame(gamespec *gs)
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
     if (n > 0) {
+	if (checksolution())
+	    savesolutions(&gs->series);
 	if (gs->series.games[gs->currentgame].number == gs->series.final)
 	    n = 0;
 	else if (gs->currentgame + 1 >= gs->series.count)

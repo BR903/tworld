@@ -80,6 +80,7 @@ int initgamestate(gamesetup *game, int ruleset)
     state.ruleset = ruleset;
     state.replay = -1;
     state.currenttime = -1;
+    state.timeoffset = 0;
     state.currentinput = NIL;
     state.lastmove = NIL;
     state.initrndslidedir = NIL;
@@ -166,8 +167,10 @@ int doturn(int cmd)
  */
 int drawscreen(void)
 {
+    int	currenttime;
     int timeleft, besttime;
 
+    currenttime = state.currenttime + state.timeoffset;
     if (hassolution(state.game)) {
 	besttime = (state.game->time ? state.game->time : 999)
 				- state.game->besttime / TICKS_PER_SECOND;
@@ -177,7 +180,7 @@ int drawscreen(void)
 	besttime = 0;
 
     if (state.game->time)
-	timeleft = state.game->time - state.currenttime / TICKS_PER_SECOND;
+	timeleft = state.game->time - currenttime / TICKS_PER_SECOND;
     else
 	timeleft = -1;
 
@@ -210,16 +213,39 @@ int hassolution(gamesetup const *game)
  */
 int replacesolution(void)
 {
+    int	currenttime;
+
     if (state.statusflags & SF_NOSAVING)
 	return FALSE;
+    currenttime = state.currenttime + state.timeoffset;
     if (hassolution(state.game) && !(state.game->sgflags & SGF_REPLACEABLE)
-				&& state.currenttime >= state.game->besttime)
+				&& currenttime >= state.game->besttime)
 	return FALSE;
 
-    state.game->besttime = state.currenttime;
+    state.game->besttime = currenttime;
     state.game->sgflags &= ~SGF_REPLACEABLE;
     state.game->savedrndslidedir = state.initrndslidedir;
     state.game->savedrndseed = getinitialseed(&state.mainprng);
     copymovelist(&state.game->savedsolution, &state.moves);
     return TRUE;
+}
+
+int checksolution(void)
+{
+    int	currenttime;
+
+    if (!hassolution(state.game))
+	return FALSE;
+    currenttime = state.currenttime + state.timeoffset;
+    if (currenttime == state.game->besttime)
+	return FALSE;
+    warn("saved game has solution time of %d ticks", state.game->besttime);
+    warn("but replay took %d ticks", currenttime);
+    if (state.game->besttime == state.currenttime) {
+	warn("difference matches offset; fixing.");
+	state.game->besttime = currenttime;
+	return TRUE;
+    }
+    warn("reason for difference unknown.");
+    return FALSE;
 }
