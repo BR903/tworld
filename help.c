@@ -143,7 +143,7 @@ static objhelptext const gameplay_monsters[] = {
 /* About this program.
  */
 static char const *about[] = {
-    "\267\tTile World: version 0.7.1 (alpha)",
+    "\267\tTile World: version 0.7.2 (alpha)",
     "\tCopyright \251 2001 by Brian Raiter",
     "\tcompiled " __DATE__ " " __TIME__,
     "\267\tThis program is free software; you can redistribute it"
