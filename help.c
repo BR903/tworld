@@ -40,7 +40,7 @@ static char *yowzitch_items[] = {
     "3-NAME specifies which data file to use.",
     "3-LEVEL specifies which level to start at."
 };
-static tablespec const yowzitch_table = { 20, 3, 2, -1, yowzitch_items };
+static tablespec const yowzitch_table = { 21, 3, 2, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
 
 /* Version and license information.
