@@ -46,6 +46,7 @@ struct lxstate {
     unsigned char	endgametimer;	/* end-game countdown timer */
     unsigned char	couldntmove;	/* can't-move sound has been played */
     unsigned char	pushing;	/* Chip is pushing against something */
+    unsigned char	stuck;		/* Chip is stuck on a teleport */
     unsigned char	completed;	/* level completed successfully */
     creature	       *chiptocr;	/* is Chip colliding with a creature */
     short		chiptopos;	/*   just starting to move itself? */
@@ -120,6 +121,7 @@ static gamestate       *state;
 #define	completed()		(getlxstate()->completed)
 #define	couldntmove()		(getlxstate()->couldntmove)
 #define	chippushing()		(getlxstate()->pushing)
+#define	chipstuck()		(getlxstate()->stuck)
 #define	chiptopos()		(getlxstate()->chiptopos)
 #define	chiptocr()		(getlxstate()->chiptocr)
 #define	prngvalue1()		(getlxstate()->prng1)
@@ -307,7 +309,6 @@ static void resetfloorsounds(int includepushing)
 #define	CS_SLIDETOKEN		0x10	/* can move off of a slide floor */
 #define	CS_REVERSE		0x20	/* needs to turn around */
 #define	CS_PUSHED		0x40	/* block was pushed by Chip */
-#define	CS_STUCK		0x80	/* creature is permanently stuck */
 
 #define	getfdir(cr)	((cr)->state & CS_FDIRMASK)
 #define	setfdir(cr, d)	((cr)->state = ((cr)->state & ~CS_FDIRMASK) \
@@ -1009,10 +1010,8 @@ static int teleportcreature(creature *cr)
 	    if (n)
 		break;
 	    if (pos == origpos) {
-		if (cr->id == Chip) {
-		    warn("making chip be stuck");
-		    cr->state |= CS_STUCK;
-		}
+		if (cr->id == Chip)
+		    chipstuck() = TRUE;
 		return FALSE;
 	    }
 	}
@@ -1143,10 +1142,6 @@ static int startmovement(creature *cr, int releasing)
 	return -1;
     }
     cr->pos += delta[dir];
-/*
-    if (ismarkedanimated(cr->pos))
-	stopanimationat(cr->pos);
-*/
     if (cr->id != Chip)
 	claimlocation(cr->pos);
 
@@ -1185,7 +1180,7 @@ static int continuemovement(creature *cr)
 
     _assert(cr->moving > 0);
 
-    if (cr->state & CS_STUCK)
+    if (cr->id == Chip && chipstuck())
 	return TRUE;
 
     speed = cr->id == Blob ? 1 : 2;
@@ -1329,9 +1324,11 @@ static int endmovement(creature *cr)
 	}
 	survived = FALSE;
 	break;
+#if 0
       case Teleport:
 	teleportcreature(cr);
 	break;
+#endif
       case Beartrap:
 	addsoundeffect(SND_TRAP_ENTERED);
 	break;
@@ -1900,6 +1897,7 @@ static int initgame(gamelogic *logic)
     resetendgametimer();
     couldntmove() = FALSE;
     chippushing() = FALSE;
+    chipstuck() = FALSE;
     completed() = FALSE;
     chiptopos() = -1;
     chiptocr() = NULL;
@@ -1954,6 +1952,16 @@ static int advancegame(gamelogic *logic)
 	setfdir(cr, NIL);
 	if (floorat(cr->pos) == Button_Brown && cr->moving <= 0)
 	    springtrap(trapfrombutton(cr->pos));
+    }
+
+    for (cr = creaturelist() ; cr->id ; ++cr) ;
+    for (--cr ; cr >= creaturelist() ; --cr) {
+	if (cr->hidden)
+	    continue;
+	if (cr->moving)
+	    continue;
+	if (floorat(cr->pos) == Teleport)
+	    teleportcreature(cr);
     }
 
     finalhousekeeping();
