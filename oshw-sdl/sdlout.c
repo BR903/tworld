@@ -64,12 +64,12 @@ static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
 static SDL_Rect		promptloc, displayloc, messageloc;
 #endif
 static int		screenw, screenh;
-static SDL_Rect		infoloc;
+static SDL_Rect		rinfoloc;
 static SDL_Rect		locrects[7];
 
 #define	displayloc	(locrects[0])
 #define	titleloc	(locrects[1])
-#define	rinfoloc	(locrects[2])
+#define	infoloc		(locrects[2])
 #define	invloc		(locrects[3])
 #define	hintloc		(locrects[4])
 #define	messageloc	(locrects[5])
