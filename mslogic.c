@@ -37,10 +37,9 @@ struct msstate {
     unsigned char	chipwait;	/* ticks since Chip's last movement */
     unsigned char	chipstatus;	/* Chip's status (one of CHIP_*) */
     unsigned char	controllerdir;	/* current controller direction */
-    unsigned char	deferbuttons;	/* button actions are being deferred */
+    unsigned char	completed;	/* level completed successfully */
     signed char		xviewoffset;	/* offset of map view center */
     signed char		yviewoffset;	/*   position from position of Chip */
-    unsigned char	completed;	/* level completed successfully */
 };
 
 /* Forward declaration of a central function.
@@ -97,7 +96,6 @@ static int			stepping = 0;
 #define	getmsstate()		((struct msstate*)state->localstateinfo)
 
 #define	completed()		(getmsstate()->completed)
-#define	deferbuttons()		(getmsstate()->deferbuttons)
 #define	chipstatus()		(getmsstate()->chipstatus)
 #define	chipwait()		(getmsstate()->chipwait)
 #define	controllerdir()		(getmsstate()->controllerdir)
@@ -569,6 +567,7 @@ static void togglewalls(void)
 #define	CS_TURNING		0x08	/* is turning around */
 #define	CS_SLIP			0x10	/* is on the slip list */
 #define	CS_SLIDE		0x20	/* is on the slip list but can move */
+#define	CS_DEFERPUSH		0x40	/* button pushes will be delayed */
 
 /* Return the creature located at pos. Ignores Chip unless includechip
  * is TRUE. Return NULL if no such creature is present.
@@ -782,7 +781,7 @@ static void endfloormovement(creature *cr)
 static int pushblock(int pos, int dir, int collapse)
 {
     creature   *cr;
-    int		slipdir;
+    int		slipdir, r;
 
     _assert(cellat(pos)->top.id == Block_Static);
     _assert(dir != NIL);
@@ -800,12 +799,12 @@ static int pushblock(int pos, int dir, int collapse)
     if (collapse && cellat(pos)->bot.id == Block_Static)
 	cellat(pos)->bot.id = Empty;
 
-    if (advancecreature(cr, dir)) {
-	return TRUE;
-    } else {
+    cr->state |= CS_DEFERPUSH;
+    r = advancecreature(cr, dir);
+    cr->state &= ~CS_DEFERPUSH;
+    if (!r)
 	endfloormovement(cr);
-	return FALSE;
-    }
+    return r;
 }
 
 /*
@@ -1204,7 +1203,6 @@ static void choosechipmove(creature *cr, int discard)
 static int teleportcreature(creature *cr, int start)
 {
     maptile    *tile;
-    int		defer;
     int		dest, origpos, f;
 
     _assert(!cr->hidden);
@@ -1217,8 +1215,6 @@ static int teleportcreature(creature *cr, int start)
     origpos = cr->pos;
     dest = start;
 
-    defer = deferbuttons();
-    deferbuttons() = FALSE;
     for (;;) {
 	--dest;
 	if (dest < 0)
@@ -1235,7 +1231,6 @@ static int teleportcreature(creature *cr, int start)
 	if (f)
 	    break;
     }
-    deferbuttons() = defer;
 
     return dest;
 }
@@ -1555,27 +1550,27 @@ static void endmovement(creature *cr, int dir)
 
     switch (floor) {
       case Button_Blue:
-	if (deferbuttons())
+	if (cr->state & CS_DEFERPUSH)
 	    tile->state |= FS_BUTTONDOWN;
 	else
 	    turntanks(cr);
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Green:
-	if (deferbuttons())
+	if (cr->state & CS_DEFERPUSH)
 	    tile->state |= FS_BUTTONDOWN;
 	else
 	    togglewalls();
 	break;
       case Button_Red:
-	if (deferbuttons())
+	if (cr->state & CS_DEFERPUSH)
 	    tile->state |= FS_BUTTONDOWN;
 	else
 	    activatecloner(newpos);
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Brown:
-	if (deferbuttons())
+	if (cr->state & CS_DEFERPUSH)
 	    tile->state |= FS_BUTTONDOWN;
 	else
 	    springtrap(newpos);
@@ -1643,34 +1638,20 @@ static int advancecreature(creature *cr, int dir)
     if (dir == NIL)
 	return TRUE;
 
-    if (cr->id == Chip) {
+    if (cr->id == Chip)
 	chipwait() = 0;
-	resetbuttons();
-	deferbuttons() = TRUE;
-    }
 
     if (!startmovement(cr, dir)) {
 	if (cr->id == Chip) {
 	    addsoundeffect(SND_CANT_MOVE);
-	    deferbuttons() = FALSE;
 	    resetbuttons();
 	}
 	return FALSE;
     }
 
-#if 0
-    endmovement(cr, dir);
-    if (cr->id == Chip) {
-	deferbuttons() = FALSE;
-	handlebuttons();
-    }
-#else
-    if (cr->id == Chip)
-	deferbuttons() = FALSE;
     endmovement(cr, dir);
     if (cr->id == Chip)
 	handlebuttons();
-#endif
 
     return TRUE;
 }
@@ -2194,7 +2175,6 @@ static int initgame(gamelogic *logic)
     chipwait() = 0;
     completed() = FALSE;
     chipstatus() = CHIP_OKAY;
-    deferbuttons() = FALSE;
     controllerdir() = NIL;
     xviewoffset() = 0;
     yviewoffset() = 0;
