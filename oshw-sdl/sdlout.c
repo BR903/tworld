@@ -39,43 +39,25 @@ static SDL_Surface     *screen = NULL;
  */
 static SDL_Surface     *prompticons = NULL;
 
-/* Special pixel values.
- */
-static Uint32		clr_black, clr_white, clr_gray, clr_dkgray, clr_yellow;
-
 /* Coordinates specifying the layout of the screen elements.
  */
 static SDL_Rect		titleloc, infoloc, invloc, hintloc, promptloc;
 static SDL_Rect		displayloc;
 static int		screenw, screenh;
 
-/* Display a row of tab-delimited columnar texts.
+/*
  */
-static void drawtextrow(SDL_Rect *rects, char const *text, int const *flags,
-			int count)
+static fontcolors makefontcolors(int rbkgnd, int gbkgnd, int bbkgnd,
+				 int rtext, int gtext, int btext)
 {
-    char const *str;
-    int		lowest;
-    int		x, n;
+    fontcolors	colors;
 
-    lowest = 0;
-    for (x = 0 ; x < count ; ++x) {
-	str = strchr(text, '\t');
-	if (str)
-	    n = str - text;
-	else
-	    n = strlen(text);
-	puttext(rects + x, text, n, (flags ? flags[x] : 0) | PT_UPDATERECT);
-	if (rects[lowest].y < rects[x].y)
-	    lowest = x;
-	if (!str)
-	    break;
-	text = str + 1;
-    }
-    for (x = 0 ; x < count ; ++x) {
-	rects[x].y = rects[lowest].y;
-	rects[x].h = rects[lowest].h;
-    }
+    colors.c[0] = SDL_MapRGB(sdlg.screen->format, rbkgnd, gbkgnd, bbkgnd);
+    colors.c[2] = SDL_MapRGB(sdlg.screen->format, rtext, gtext, btext);
+    colors.c[1] = SDL_MapRGB(sdlg.screen->format, (rbkgnd + rtext) / 2,
+						  (gbkgnd + gtext) / 2,
+						  (bbkgnd + btext) / 2);
+    return colors;
 }
 
 /* Create some simple icons used to prompt the user.
@@ -123,11 +105,11 @@ static int createprompticons(void)
 	    warn("couldn't create SDL surface: %s", SDL_GetError());
 	    return FALSE;
 	}
-	SDL_GetRGB(sdlg.bkgndcolor, screen->format,
+	SDL_GetRGB(bkgndcolor(sdlg.dimtextclr), screen->format,
 		   &prompticons->format->palette->colors[0].r,
 		   &prompticons->format->palette->colors[0].g,
 		   &prompticons->format->palette->colors[0].b);
-	SDL_GetRGB(sdlg.halfcolor, screen->format,
+	SDL_GetRGB(textcolor(sdlg.dimtextclr), screen->format,
 		   &prompticons->format->palette->colors[1].r,
 		   &prompticons->format->palette->colors[1].g,
 		   &prompticons->format->palette->colors[1].b);
@@ -231,7 +213,7 @@ static int setdisplaysize(void)
  */
 void cleardisplay(void)
 {
-    SDL_FillRect(sdlg.screen, NULL, sdlg.bkgndcolor);
+    SDL_FillRect(sdlg.screen, NULL, bkgndcolor(sdlg.textclr));
 }
 
 /*
@@ -396,7 +378,6 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
     SDL_Rect	rect;
     char	buf[32];
-    int		color, hcolor;
     int		n;
 
     puttext(&titleloc, state->game->name, -1, PT_CENTER);
@@ -428,15 +409,8 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %3d", besttime);
-	color = sdlg.textcolor;
-	hcolor = sdlg.halfcolor;
-	if (state->game->replacebest) {
-	    sdlg.textcolor = clr_gray;
-	    sdlg.halfcolor = clr_dkgray;
-	}
-	puttext(&rect, buf, -1, PT_UPDATERECT);
-	sdlg.textcolor = color;
-	sdlg.halfcolor = hcolor;
+	n = state->game->replacebest ? PT_DIM : 0;
+	puttext(&rect, buf, -1, PT_UPDATERECT | n);
     }
     fillrect(&rect);
 
@@ -528,12 +502,10 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 		int completed)
 {
     objhelptext const  *objtext;
-    char *const	       *tabbedtext;
+    tablespec const    *tabletext;
     SDL_Rect		left, right;
-    SDL_Rect		cols[8];
-    int			flags[8];
-    int			colcount;
-    int			col, id, i;
+    SDL_Rect	       *cols;
+    int			col, id, i, n;
 
     cleardisplay();
     if (SDL_MUSTLOCK(screen))
@@ -548,24 +520,11 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
     left.y = MARGINH;
 
     if (type == HELP_TABTEXT) {
-	tabbedtext = text;
-	colcount = measurecolumns(tabbedtext, cols, textcount);
-	col = MARGINW;
-	for (i = 0 ; i < colcount ; ++i) {
-	    cols[i].x = col;
-	    cols[i].y = left.y;
-	    cols[i].h = left.h;
-	    col += cols[i].w + MARGINW;
-	    flags[i] = 0;
-	}
-	if (col > screenw) {
-	    while (cols[colcount - 1].x >= screenw - MARGINW)
-		--colcount;
-	    cols[colcount - 1].w = screenw - MARGINW - cols[colcount - 1].x;
-	}
-	flags[colcount - 1] = PT_MULTILINE;
-	for (i = 0 ; i < textcount ; ++i)
-	    drawtextrow(cols, tabbedtext[i], flags, colcount);
+	tabletext = text;
+	cols = measuretable(&left, tabletext);
+	for (i = 0, n = 0 ; i < tabletext->rows ; ++i)
+	    drawtablerow(tabletext, cols, &n, 0);
+	free(cols);
     } else if (type == HELP_OBJECTS) {
 	right = left;
 	col = sdlg.wtile * 2 + MARGINW;
@@ -613,17 +572,15 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 /* Display a scrollable list, calling the callback function to manage
  * the selection until it returns FALSE.
  */
-int displaylist(char const *title, char const **items, int itemcount, int *idx,
-		int columncount, int const *just, int (*inputcallback)(int*))
+int displaylist(char const *title, void const *tab, int *idx,
+		int (*inputcallback)(int*))
 {
-    SDL_Rect	area;
-    SDL_Rect   *columns;
-    SDL_Rect   *colstmp;
-    Uint32	textcolor;
-    int	       *flags;
-    int		linecount, topitem, index;
-    int		widest;
-    int		n, x;
+    tablespec const    *table = tab;
+    SDL_Rect		area;
+    SDL_Rect	       *cols;
+    SDL_Rect	       *colstmp;
+    int			linecount, itemcount, topitem, index;
+    int			j, n;
 
     cleardisplay();
     area.x = MARGINW;
@@ -633,44 +590,12 @@ int displaylist(char const *title, char const **items, int itemcount, int *idx,
     puttext(&area, title, -1, 0);
     area.h = area.y - MARGINH;
     area.y = MARGINH;
+    cols = measuretable(&area, table);
+    colstmp = malloc(table->cols * sizeof *colstmp);
 
-    linecount = area.h / sdlg.font.h - 1;
+    itemcount = table->rows - 1;
     topitem = 0;
-    n = columncount * sizeof(SDL_Rect);
-    columns = malloc(n);
-    colstmp = malloc(n);
-    if (!columns || !colstmp)
-	memerrexit();
-    measurecolumns(items, columns, itemcount);
-    --itemcount;
-    x = area.x;
-    widest = 0;
-    for (n = 0 ; n < columncount ; ++n) {
-	columns[n].y = area.y;
-	columns[n].h = area.h;
-	columns[n].x = x;
-	x += columns[n].w + MARGINW;
-	if (columns[n].w > columns[widest].w)
-	    widest = n;
-    }
-    x -= area.x;
-    if (x > area.w) {
-	x -= area.w;
-	if (columns[widest].w < x)
-	    die("Can't fit this fucking table thing in the window");
-	columns[widest].w -= x;
-	for (n = widest + 1 ; n < columncount ; ++n)
-	    columns[n].x -= x;
-    }
-
-    textcolor = sdlg.textcolor;
-
-    flags = NULL;
-    if (just) {
-	flags = malloc(columncount * sizeof *flags);
-	for (n = 0 ; n < columncount ; ++n)
-	    flags[n] = just[n] ? just[n] > 0 ? PT_RIGHT : 0 : PT_CENTER;
-    }
+    linecount = area.h / sdlg.font.h - 1;
 
     n = *idx;
     for (;;) {
@@ -700,17 +625,15 @@ int displaylist(char const *title, char const **items, int itemcount, int *idx,
 		topitem = index - n;
 	}
 
-	memcpy(colstmp, columns, columncount * sizeof *colstmp);
-	drawtextrow(colstmp, items[0], flags, columncount);
-	for (n = topitem ; n < itemcount ; ++n) {
-	    if (colstmp[0].h < sdlg.font.h)
-		break;
-	    if (n == index)
-		sdlg.textcolor = clr_yellow;
-	    drawtextrow(colstmp, items[n + 1], flags, columncount);
-	    if (n == index)
-		sdlg.textcolor = textcolor;
-	}
+	n = 0;
+	SDL_FillRect(screen, &area, bkgndcolor(sdlg.textclr));
+	memcpy(colstmp, cols, table->cols * sizeof *colstmp);
+	drawtablerow(table, colstmp, &n, 0);
+	for (j = 0 ; j < topitem ; ++j)
+	    drawtablerow(table, NULL, &n, 0);
+	for ( ; j < topitem + linecount ; ++j)
+	    drawtablerow(table, colstmp, &n, j == index ? PT_HILIGHT : 0);
+
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 
 	n = SCROLL_NOP;
@@ -720,9 +643,8 @@ int displaylist(char const *title, char const **items, int itemcount, int *idx,
     if (n)
 	*idx = index;
 
-    free(columns);
+    free(cols);
     free(colstmp);
-    free(flags);
     cleardisplay();
     return n;
 }
@@ -744,6 +666,8 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(void)
 {
+    Uint32	black;
+
     if (screenw <= 0 || screenh <= 0) {
 	screenw = 640;
 	screenh = 480;
@@ -751,22 +675,18 @@ int _sdloutputinitialize(void)
     if (!setdisplaysize())
 	return FALSE;
 
-    clr_black = SDL_MapRGBA(screen->format, 0, 0, 0, 255);
-    clr_white = SDL_MapRGBA(screen->format, 255, 255, 255, 255);
-    clr_gray = SDL_MapRGBA(screen->format, 192, 192, 192, 255);
-    clr_dkgray = SDL_MapRGBA(screen->format, 128, 128, 128, 255);
-    clr_yellow = SDL_MapRGBA(screen->format, 255, 255, 0, 255);
-
+    black = SDL_MapRGBA(screen->format, 0, 0, 0, 255);
     sdlg.transpixel = SDL_MapRGBA(screen->format, 0, 0, 0, 0);
-    if (sdlg.transpixel == clr_black) {
+    if (sdlg.transpixel == black) {
 	sdlg.transpixel = 0xFFFFFFFF;
 	sdlg.transpixel &= ~(screen->format->Rmask | screen->format->Gmask
 						   | screen->format->Bmask);
     }
 
-    sdlg.textcolor = clr_white;
-    sdlg.halfcolor = clr_gray;
-    sdlg.bkgndcolor = clr_black;
+    sdlg.textclr = makefontcolors(0, 0, 0, 255, 255, 255);
+    sdlg.dimtextclr = makefontcolors(0, 0, 0, 192, 192, 192);
+    sdlg.hilightclr = makefontcolors(0, 0, 0, 255, 255, 0);
+
     cleardisplay();
 
     if (!createprompticons())

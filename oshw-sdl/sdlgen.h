@@ -15,12 +15,22 @@
  */
 #define	NTILES		128
 
+/* The data defining a font.
+ */
 typedef	struct fontinfo {
     signed char	h;		/* height of each character */
     signed char	w[256];		/* width of each character */
     void       *memory;		/* memory allocated for the font */
     char       *bits[256];	/* pointers to each glyph */
 } fontinfo;
+
+/* The data defining a font's coloring.
+ */
+typedef	struct fontcolors { Uint32 c[3]; } fontcolors;
+
+#define	bkgndcolor(fc)	((fc).c[0])	/* the background color */
+#define	halfcolor(fc)	((fc).c[1])	/* the antialiasing color */
+#define	textcolor(fc)	((fc).c[2])	/* the main color of the glyphs */
 
 /* Flags to the puttext functions.
  */
@@ -29,10 +39,14 @@ typedef	struct fontinfo {
 #define	PT_MULTILINE	0x0004		/* span lines & break at whitespace */
 #define	PT_UPDATERECT	0x0008		/* return the unused area in rect */
 #define	PT_CALCSIZE	0x0010		/* determine area needed for text */
+#define	PT_DIM		0x0020
+#define	PT_HILIGHT	0x0040
 
-/* Values global to this module. All the globals are placed in here,
+/*
+ * Values global to this module. All the globals are placed in here,
  * in order to minimize the namespace pollution of the calling module.
  */
+
 typedef	struct oshwglobals
 {
     /* 
@@ -43,9 +57,9 @@ typedef	struct oshwglobals
     short		htile;		/* height of one tile in pixels */
     short		cptile;		/* size of one tile in pixels */
     short		cbtile;		/* size of one tile in bytes */
-    Uint32		textcolor;
-    Uint32		bkgndcolor;
-    Uint32		halfcolor;
+    fontcolors		textclr;
+    fontcolors		dimtextclr;
+    fontcolors		hilightclr;
     Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
@@ -70,9 +84,18 @@ typedef	struct oshwglobals
      */
     void (*puttextfunc)(SDL_Rect *area, char const *text, int len, int flags);
 
-    /* Determine the widths of the columns of a table of text.
+    /* Determine the widths of the columns of a table of text. Each
+     * member of rows is one row of the table, with tabs separating
+     * the individual columns. The width fields of the rects array are
+     * filled in with the minimum width needed to display all the
+     * entries in each column. The return value is the number of
+     * columns in the entire table.
      */
-    int (*measurecolumnsfunc)(void const*, SDL_Rect*, int);
+    SDL_Rect *(*measuretablefunc)(SDL_Rect const *area,
+				  tablespec const *table);
+
+    int (*drawtablerowfunc)(tablespec const *table, SDL_Rect *cols,
+			    int *row, int flags);
 
     /* Return a pointer to a specific tile image.
      */
@@ -97,7 +120,8 @@ extern oshwglobals sdlg;
 #define eventupdate		(*sdlg.eventupdatefunc)
 #define	keyeventcallback	(*sdlg.keyeventcallbackfunc)
 #define	puttext			(*sdlg.puttextfunc)
-#define	measurecolumns		(*sdlg.measurecolumnsfunc)
+#define	measuretable		(*sdlg.measuretablefunc)
+#define	drawtablerow		(*sdlg.drawtablerowfunc)
 #define	createscroll		(*sdlg.createscrollfunc)
 #define	scrollmove		(*sdlg.scrollmovefunc)
 #define	gettileimage		(*sdlg.gettileimagefunc)
@@ -110,7 +134,6 @@ extern oshwglobals sdlg;
 extern int _sdltimerinitialize(int showhistogram);
 extern int _sdlresourceinitialize(void);
 extern int _sdltextinitialize(void);
-extern int _sdlptextinitialize(void);
 extern int _sdltileinitialize(void);
 extern int _sdlinputinitialize(void);
 extern int _sdloutputinitialize(void);

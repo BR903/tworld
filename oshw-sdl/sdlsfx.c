@@ -83,8 +83,9 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
     for (i = 0 ; i < SND_COUNT ; ++i) {
 	if (!sounds[i].wave)
 	    continue;
-	if (!sounds[i].playing && !sounds[i].pos)
-	    continue;
+	if (!sounds[i].playing)
+	    if (!sounds[i].pos || i >= SND_ONESHOT_COUNT)
+		continue;
 	n = sounds[i].len - sounds[i].pos;
 	if (n > len) {
 	    SDL_MixAudio(wave, sounds[i].wave + sounds[i].pos, len,
@@ -97,6 +98,11 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
 	    if (i < SND_ONESHOT_COUNT) {
 		sounds[i].playing = FALSE;
 	    } else if (sounds[i].playing) {
+		while (len - n >= (int)sounds[i].len) {
+		    SDL_MixAudio(wave + n, sounds[i].wave, sounds[i].len,
+				 SDL_MIX_MAXVOLUME);
+		    n += sounds[i].len;
+		}
 		sounds[i].pos = len - n;
 		SDL_MixAudio(wave + n, sounds[i].wave, sounds[i].pos,
 			     SDL_MIX_MAXVOLUME);
@@ -223,8 +229,19 @@ void playsoundeffects(unsigned long sfx)
 
 void clearsoundeffects(void)
 {
-    if (!hasaudio)
+    int	i;
+
+    if (!hasaudio) {
 	displaysoundeffects(0, FALSE);
+	return;
+    }
+
+    SDL_LockAudio();
+    for (i = 0 ; i < SND_COUNT ; ++i) {
+	sounds[i].playing = FALSE;
+	sounds[i].pos = 0;
+    }
+    SDL_UnlockAudio();
 }
 
 void selectsoundset(int ruleset)

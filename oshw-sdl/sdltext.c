@@ -93,41 +93,6 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
 
 /*
  */
-int _measurecolumns(void const *_texts, SDL_Rect *rects, int count)
-{
-    unsigned char const* const* texts = _texts;
-    unsigned char const	       *p;
-    int				maxcol;
-    int				w, x, y;
-
-    maxcol = 0;
-    rects[0].w = 0;
-    for (y = 0 ; y < count ; ++y) {
-	x = 0;
-	w = 0;
-	p = texts[y];
-	for (;;) {
-	    if (*p == '\0' || *p == '\t') {
-		if (w > rects[x].w)
-		    rects[x].w = w;
-		if (*p == '\0')
-		    break;
-		++x;
-		w = 0;
-		if (x > maxcol) {
-		    rects[x].w = 0;
-		    maxcol = x;
-		}
-	    }
-	    w += sdlg.font.w[*p];
-	    ++p;
-	}
-    }
-    return maxcol + 1;
-}
-
-/*
- */
 static int measuremltext(unsigned char const *text, int len, int maxwidth)
 {
     int	brk, w, h, n;
@@ -160,7 +125,7 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
  *
  */
 
-static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 colors[],
+static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 *clr,
 			      unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
@@ -170,15 +135,14 @@ static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 colors[],
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
 	for (x = 0 ; w && x < sdlg.font.w[text[n]] ; ++x, --w)
-	    scanline[x] = (Uint8)colors[glyph[x]];
+	    scanline[x] = (Uint8)clr[glyph[x]];
 	scanline += x;
     }
     if (w)
-	memset(scanline, colors[0], w);
+	memset(scanline, clr[0], w);
 }
 
-static void drawtextscanline16(Uint16 *scanline, int w, int y,
-			       Uint32 colors[],
+static void drawtextscanline16(Uint16 *scanline, int w, int y, Uint32 *clr,
 			       unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
@@ -188,15 +152,14 @@ static void drawtextscanline16(Uint16 *scanline, int w, int y,
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
 	for (x = 0 ; x < sdlg.font.w[text[n]] ; ++x)
-	    scanline[x] = (Uint16)colors[glyph[x]];
+	    scanline[x] = (Uint16)clr[glyph[x]];
 	scanline += x;
     }
     while (w--)
-	scanline[w] = colors[0];
+	scanline[w] = (Uint16)clr[0];
 }
 
-static void drawtextscanline24(Uint8 *scanline, int w, int y,
-			       Uint32 colors[],
+static void drawtextscanline24(Uint8 *scanline, int w, int y, Uint32 *clr,
 			       unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
@@ -207,7 +170,7 @@ static void drawtextscanline24(Uint8 *scanline, int w, int y,
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
 	for (x = 0 ; w && x < sdlg.font.w[text[n]] ; ++x, --w) {
-	    c = colors[glyph[x]];
+	    c = clr[glyph[x]];
 	    if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
 		*scanline++ = (Uint8)(c >> 16);
 		*scanline++ = (Uint8)(c >> 8);
@@ -219,7 +182,7 @@ static void drawtextscanline24(Uint8 *scanline, int w, int y,
 	    }
 	}
     }
-    c = colors[0];
+    c = clr[0];
     while (w--) {
 	if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
 	    *scanline++ = (Uint8)(c >> 16);
@@ -233,8 +196,7 @@ static void drawtextscanline24(Uint8 *scanline, int w, int y,
     }
 }
 
-static void *drawtextscanline32(Uint32 *scanline, int w, int y,
-				Uint32 colors[],
+static void *drawtextscanline32(Uint32 *scanline, int w, int y, Uint32 *clr,
 				unsigned char const *text, int len)
 {
     unsigned char const	       *glyph;
@@ -244,11 +206,11 @@ static void *drawtextscanline32(Uint32 *scanline, int w, int y,
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
 	for (x = 0 ; w && x < sdlg.font.w[text[n]] ; ++x, --w)
-	    scanline[x] = colors[glyph[x]];
+	    scanline[x] = clr[glyph[x]];
 	scanline += x;
     }
     while (w--)
-	*scanline++ = colors[0];
+	*scanline++ = clr[0];
     return scanline;
 }
 
@@ -257,7 +219,7 @@ static void *drawtextscanline32(Uint32 *scanline, int w, int y,
 static void drawtext(SDL_Rect *rect, unsigned char const *text,
 		     int len, int flags)
 {
-    Uint32	colors[3];
+    Uint32     *clr;
     void       *p;
     void       *q;
     int		l, r;
@@ -288,22 +250,25 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
 	r = rect->w - w;
     }
 
-    colors[0] = sdlg.bkgndcolor;
-    colors[1] = sdlg.halfcolor;
-    colors[2] = sdlg.textcolor;
+    if (flags & PT_DIM)
+	clr = sdlg.dimtextclr.c;
+    else if (flags & PT_HILIGHT)
+	clr = sdlg.hilightclr.c;
+    else
+	clr = sdlg.textclr.c;
 
     pitch = sdlg.screen->pitch;
     bpp = sdlg.screen->format->BytesPerPixel;
     p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch + rect->x * bpp;
     for (y = 0 ; y < sdlg.font.h && y < rect->h ; ++y) {
 	switch (bpp) {
-	  case 1: drawtextscanline8(p, w, y, colors, text, len);  break;
-	  case 2: drawtextscanline16(p, w, y, colors, text, len); break;
-	  case 3: drawtextscanline24(p, w, y, colors, text, len); break;
+	  case 1: drawtextscanline8(p, w, y, clr, text, len);  break;
+	  case 2: drawtextscanline16(p, w, y, clr, text, len); break;
+	  case 3: drawtextscanline24(p, w, y, clr, text, len); break;
 	  case 4:
-	    q = drawtextscanline32(p, l, y, colors, "", 0);
-	    q = drawtextscanline32(q, w, y, colors, text, len);
-	    q = drawtextscanline32(q, r, y, colors, "", 0);
+	    q = drawtextscanline32(p, l, y, clr, "", 0);
+	    q = drawtextscanline32(q, w, y, clr, text, len);
+	    q = drawtextscanline32(q, r, y, clr, "", 0);
 	    break;
 	}
 	p = (unsigned char*)p + pitch;
@@ -363,6 +328,142 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
     }
 }
 
+/* Draw a line of text.
+ */
+static void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
+{
+    if (!sdlg.font.h)
+	die("No font!");
+
+    if (len < 0)
+	len = text ? strlen(text) : 0;
+
+    if (SDL_MUSTLOCK(sdlg.screen))
+	SDL_LockSurface(sdlg.screen);
+
+    if (flags & PT_MULTILINE)
+	drawmultilinetext(rect, (unsigned char const*)text, len, flags);
+    else
+	drawtext(rect, (unsigned char const*)text, len, flags);
+
+    if (SDL_MUSTLOCK(sdlg.screen))
+	SDL_UnlockSurface(sdlg.screen);
+}
+
+/*
+ */
+static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
+{
+    SDL_Rect		       *cols;
+    unsigned char const	       *p;
+    int				sep, ml;
+    int				n, i, j, w, x, c;
+
+    cols = malloc(table->cols * sizeof *cols);
+    for (i = 0 ; i < table->cols ; ++i) {
+	cols[i].x = 0;
+	cols[i].y = area->y;
+	cols[i].w = 0;
+	cols[i].h = area->h;
+    }
+
+    ml = -1;
+    n = 0;
+    for (j = 0 ; j < table->rows ; ++j) {
+	for (i = 0 ; i < table->cols ; ++n) {
+	    c = table->items[n][0] - '0';
+	    if (c == 1) {
+		if (table->items[n][1] == '!') {
+		    ml = i;
+		} else {
+		    w = 0;
+		    for (p = table->items[n] + 2 ; *p ; ++p)
+			w += sdlg.font.w[*p];
+		    if (w > cols[i].w)
+			cols[i].w = w;
+		}
+	    }
+	    i += c;
+	}
+    }
+    sep = sdlg.font.w[' '] * table->sep;
+    w = -sep;
+    for (i = 0 ; i < table->cols ; ++i)
+	w += cols[i].w + sep;
+    if (w > area->w) {
+	w -= area->w;
+	if (table->collapse >= 0 && cols[table->collapse].w > w)
+	    cols[table->collapse].w -= w;
+    } else if (ml >= 0) {
+	cols[ml].w += area->w - w;
+    }
+
+    x = 0;
+    for (i = 0 ; i < table->cols && x < area->w ; ++i) {
+	cols[i].x = area->x + x;
+	x += cols[i].w + sep;
+	if (x >= area->w)
+	    cols[i].w = area->x + area->w - cols[i].x;
+    }
+    for ( ; i < table->cols ; ++i) {
+	cols[i].x = area->x + area->w;
+	cols[i].w = 0;
+    }
+
+    return cols;
+}
+
+/*
+ */
+static int _drawtablerow(tablespec const *table, SDL_Rect *cols,
+			 int *row, int flags)
+{
+    SDL_Rect			rect;
+    unsigned char const	       *p;
+    int				c, f, n, i, y;
+
+    if (!cols) {
+	for (i = 0 ; i < table->cols ; i += table->items[(*row)++][0] - '0') ;
+	return TRUE;
+    }
+
+    if (SDL_MUSTLOCK(sdlg.screen))
+	SDL_LockSurface(sdlg.screen);
+
+    y = cols[0].y;
+    n = *row;
+    for (i = 0 ; i < table->cols ; ++n) {
+	p = table->items[n];
+	c = p[0] - '0';
+	rect = cols[i];
+	i += c;
+	if (c > 1)
+	    rect.w = cols[i - 1].x + cols[i - 1].w - rect.x;
+	f = flags | PT_UPDATERECT;
+	if (p[1] == '+')
+	    f |= PT_RIGHT;
+	else if (p[1] == '.')
+	    f |= PT_CENTER;
+	if (p[1] == '!')
+	    drawmultilinetext(&rect, p + 2, -1, f);
+	else
+	    drawtext(&rect, p + 2, -1, f);
+	if (rect.y > y)
+	    y = rect.y;
+    }
+
+    if (SDL_MUSTLOCK(sdlg.screen))
+	SDL_UnlockSurface(sdlg.screen);
+
+    *row = n;
+    for (i = 0 ; i < table->cols ; ++i) {
+	cols[i].h -= y - cols[i].y;
+	cols[i].y = y;
+    }
+
+    return TRUE;
+}
+
 /*
  * Exported text-drawing function.
  */
@@ -396,33 +497,12 @@ int loadfontfromfile(char const *filename)
     return TRUE;
 }
 
-/* Draw a line of text.
- */
-void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
-{
-    if (!sdlg.font.h)
-	die("No font!");
-
-    if (len < 0)
-	len = text ? strlen(text) : 0;
-
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_LockSurface(sdlg.screen);
-
-    if (flags & PT_MULTILINE)
-	drawmultilinetext(rect, (unsigned char const*)text, len, flags);
-    else
-	drawtext(rect, (unsigned char const*)text, len, flags);
-
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_UnlockSurface(sdlg.screen);
-}
-
 int _sdltextinitialize(void)
 {
     sdlg.font.h = 0;
     sdlg.puttextfunc = _puttext;
-    sdlg.measurecolumnsfunc = _measurecolumns;
+    sdlg.measuretablefunc = _measuretable;
+    sdlg.drawtablerowfunc = _drawtablerow;
     return TRUE;
 }
 
