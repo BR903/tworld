@@ -40,11 +40,10 @@
 #define	RES_SND_SLIDING		SND_SLIDING
 #define	RES_LASTSOUND		SND_SLIDING
 
-#define	RES_SILENT		(RES_LASTSOUND + 1)
-#define	RES_TILEIMAGES		(RES_LASTSOUND + 2)
-#define	RES_USEANIM		(RES_LASTSOUND + 3)
+#define	RES_TILEIMAGES		(RES_LASTSOUND + 1)
+#define	RES_USEANIM		(RES_LASTSOUND + 2)
 
-#define	RES_COUNT		(RES_LASTSOUND + 4)
+#define	RES_COUNT		(RES_LASTSOUND + 3)
 
 typedef	struct rcitem {
     char const *name;
@@ -82,7 +81,6 @@ static rcitem rclist[] = {
     { "skatingforwardsound",	FALSE },
     { "skatingturnsound",	FALSE },
     { "slidingsound",		FALSE },
-    { "silent",			TRUE },
     { "tileimages",		FALSE },
     { "useanimation",		TRUE }
 };
@@ -120,7 +118,6 @@ static void initresourcedefaults(void)
     strcpy(globalresources[RES_SND_BOMB_EXPLODES].str,	"hit3.wav");
     strcpy(globalresources[RES_SND_WATER_SPLASH].str,	"water2.wav");
     strcpy(globalresources[RES_TILEIMAGES].str,		"tiles.bmp");
-    globalresources[RES_SILENT].num = TRUE;
     globalresources[RES_USEANIM].num = FALSE;
 
     memcpy(ms_resources, globalresources, sizeof ms_resources);

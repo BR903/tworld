@@ -1288,7 +1288,8 @@ static int startmovement(creature *cr, int dir)
 
     floor = cellat(cr->pos)->bot.id;
     if (!canmakemove(cr, dir, 0)) {
-	if (cr->id == Chip || (floor != Beartrap && floor != CloneMachine)) {
+	if (cr->id == Chip || (floor != Beartrap && floor != CloneMachine
+						 && !(cr->state & CS_SLIP))) {
 	    cr->dir = dir;
 	    updatecreature(cr);
 	}
@@ -1604,9 +1605,10 @@ static void floormovements(void)
 	    floor = cellat(cr->pos)->bot.id;
 	    if (isice(floor) || (floor == Teleport && cr->id == Chip)) {
 		slipdir = icewallturn(floor, back(slipdir));
-		if (advancecreature(cr, slipdir))
+		if (advancecreature(cr, slipdir)) {
 		    if (cr->id == Chip)
 			cr->state &= ~CS_HASMOVED;
+		}
 	    }
 	    if (cr->id != Chip || (cr->state & (CS_SLIP | CS_SLIDE))) {
 		endfloormovement(cr);
