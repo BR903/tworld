@@ -21,6 +21,12 @@
 				        " (%s)\nPlease report this error to"  \
 				        " breadbox@muppetlabs.com", #test), 0))
 
+/* A list of ways for Chip to lose.
+ */
+enum {
+    RMC_NONE, RMC_DROWNED, RMC_BURNED, RMC_BOMBED, RMC_OUTOFTIME, RMC_COLLIDED
+};
+
 /* Internal status flags.
  */
 #define	SF_ENDGAMETIMERBITS	0x000F	/* end-game countdown timer */
@@ -354,21 +360,39 @@ static int stopanimation(int pos)
 
 /* What happens when Chip dies.
  */
-static void removechip(int explode, creature *also)
+static void removechip(int reason, creature *also)
 {
     creature  *chip = getchip();
 
-    if (explode) {
-	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
+    switch (reason) {
+      case RMC_DROWNED:
+	addsoundeffect(SND_WATER_SPLASH);
+	addanimation(chip->pos, NIL, 0, Water_Splash, 12);
+	break;
+      case RMC_BOMBED:
+	addsoundeffect(SND_BOMB_EXPLODES);
+	addanimation(chip->pos, NIL, 0, Bomb_Explosion, 12);
+	break;
+      case RMC_OUTOFTIME:
+	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	break;
+      case RMC_BURNED:
 	addsoundeffect(SND_DEREZZ);
+	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	break;
+      case RMC_COLLIDED:
+	addsoundeffect(SND_DEREZZ);
+	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	if (also) {
+	    addanimation(also->pos, also->dir, also->moving,
+			 Entity_Explosion, 12);
+	    removecreature(also);
+	}
+	break;
     }
-    if (also)
-	addanimation(also->pos, also->dir, also->moving, Entity_Explosion, 12);
+    removecreature(chip);
     resetfloorsounds(FALSE);
     startendgametimer();
-    removecreature(chip);
-    if (also)
-	removecreature(also);
 }
 
 /*
@@ -1003,14 +1027,14 @@ static int startmovement(creature *cr, int releasing)
     cr->moving += 8;
 
     if (cr->id != Chip && cr->pos == chippos() && !getchip()->hidden) {
-	removechip(TRUE, cr);
+	removechip(RMC_COLLIDED, cr);
 	return FALSE;
     }
     if (cr->id == Chip) {
 	resetcouldntmove();
 	cr = lookupcreature(cr->pos, FALSE);
 	if (cr) {
-	    removechip(TRUE, cr);
+	    removechip(RMC_COLLIDED, cr);
 	    return FALSE;
 	}
     }
@@ -1061,15 +1085,12 @@ static int endmovement(creature *cr)
     if (cr->id == Chip) {
 	switch (floor) {
 	  case Water:
-	    if (!possession(Boots_Water)) {
-		addanimation(cr->pos, NIL, 0, Water_Splash, 12);
-		addsoundeffect(SND_WATER_SPLASH);
-		removechip(FALSE, NULL);
-	    }
+	    if (!possession(Boots_Water))
+		removechip(RMC_DROWNED, NULL);
 	    break;
 	  case Fire:
 	    if (!possession(Boots_Fire))
-		removechip(TRUE, NULL);
+		removechip(RMC_BURNED, NULL);
 	    break;
 	  case Dirt:
 	  case BlueWall_Fake:
@@ -1157,12 +1178,13 @@ static int endmovement(creature *cr)
     switch (floor) {
       case Bomb:
 	floorat(cr->pos) = Empty;
-	addanimation(cr->pos, NIL, 0, Bomb_Explosion, 12);
-	addsoundeffect(SND_BOMB_EXPLODES);
-	if (cr->id == Chip)
-	    removechip(FALSE, NULL);
-	else
+	if (cr->id == Chip) {
+	    removechip(RMC_BOMBED, NULL);
+	} else {
+	    addanimation(cr->pos, NIL, 0, Bomb_Explosion, 12);
+	    addsoundeffect(SND_BOMB_EXPLODES);
 	    removecreature(cr);
+	}
 	break;
       case Teleport:
 	teleportcreature(cr);
@@ -1681,7 +1703,7 @@ static int advancegame(gamelogic *logic)
     setstate(logic);
 
     if (!inendgame() && timelimit() && currenttime() >= timelimit())
-	removechip(TRUE, NULL);
+	removechip(RMC_OUTOFTIME, NULL);
 
     initialhousekeeping();
 
