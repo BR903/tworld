@@ -222,8 +222,9 @@ extern void freesfx(int index);
  */
 extern void ding(void);
 
-/* Set the program's "subtitle" (displayed as part the window
- * dressing, if any).
+/* Set the program's subtitle. A NULL subtitle is equivalent to the
+ * empty string. The subtitle is displayed in the window dressing (if
+ * any).
  */
 extern void setsubtitle(char const *subtitle);
 

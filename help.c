@@ -218,11 +218,9 @@ void onlinehelp(int topic)
     };
     static tablespec const table = { 6, 2, 4, 1, items };
 
-    for (;;) {
-	if (!displaylist("HELP", &table, &topic, scrollinputcallback)) {
-	    cleardisplay();
-	    return;
-	}
+    while (displaylist("HELP", &table, &topic, scrollinputcallback)) {
+	if (!topic)
+	    break;
 	switch (topic) {
 	  case Help_KeysDuringGame:
 	    displaytable("KEYS - DURING THE GAME",
@@ -245,9 +243,8 @@ void onlinehelp(int topic)
 	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
 	    anykey();
 	    break;
-	  default:
-	    cleardisplay();
-	    return;
 	}
     }
+
+    cleardisplay();
 }
