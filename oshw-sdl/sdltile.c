@@ -226,9 +226,6 @@ static SDL_Surface *newsurface(int w, int h, int transparency)
 				 0x000000FF, 0x0000FF00,
 				 0x00FF0000, 0xFF000000);
 #endif
-	if (!s)
-	    die("couldn't create surface: %s", SDL_GetError());
-	SDL_SetAlpha(s, SDL_SRCALPHA | SDL_RLEACCEL, 0);
     } else {
 	s = SDL_CreateRGBSurface(SDL_SWSURFACE,
 				 w, h, sdlg.screen->format->BitsPerPixel,
@@ -236,12 +233,12 @@ static SDL_Surface *newsurface(int w, int h, int transparency)
 				 sdlg.screen->format->Gmask,
 				 sdlg.screen->format->Bmask,
 				 sdlg.screen->format->Amask);
-	if (!s)
-	    die("couldn't create surface: %s", SDL_GetError());
-	if (sdlg.screen->format->palette)
-	    SDL_SetColors(s, sdlg.screen->format->palette->colors,
-			  0, sdlg.screen->format->palette->ncolors);
     }
+    if (!s)
+	die("couldn't create surface: %s", SDL_GetError());
+    if (!transparency && sdlg.screen->format->palette)
+	SDL_SetColors(s, sdlg.screen->format->palette->colors,
+		      0, sdlg.screen->format->palette->ncolors);
     return s;
 }
 
@@ -475,7 +472,8 @@ static SDL_Surface *extractkeyedtile(SDL_Surface *src,
     dest = SDL_DisplayFormatAlpha(temp);
     SDL_FreeSurface(temp);
     if (!dest)
-	die("SDL_DisplayFormat", SDL_GetError());
+	die("%s", SDL_GetError());
+    SDL_SetAlpha(dest, SDL_SRCALPHA | SDL_RLEACCEL, 0);
     return dest;
 }
 
@@ -507,7 +505,7 @@ static SDL_Surface *extractemptytile(SDL_Surface *src,
     dest = SDL_DisplayFormat(temp);
     SDL_FreeSurface(temp);
     if (!dest)
-	die("SDL_DisplayFormat", SDL_GetError());
+	die("%s", SDL_GetError());
     return dest;
 }
 
@@ -559,7 +557,8 @@ static SDL_Surface *extractmaskedtile(SDL_Surface *src,
     dest = SDL_DisplayFormatAlpha(temp);
     SDL_FreeSurface(temp);
     if (!dest)
-	die("SDL_DisplayFormat", SDL_GetError());
+	die("%s", SDL_GetError());
+    SDL_SetAlpha(dest, SDL_SRCALPHA | SDL_RLEACCEL, 0);
     return dest;
 }
 
