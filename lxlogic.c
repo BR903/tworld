@@ -1212,12 +1212,15 @@ static void verifymap(void)
 	    die("%d: Undefined floor state %02X at (%d %d)",
 		currenttime(), state->map[pos].top.id,
 		pos % CXGRID, pos / CXGRID);
-	if (isanimation(state->map[pos].top.id) && cr->moving > 12)
-	    die("%d: Too-large animation frame %02X at (%d %d)",
-		currenttime(), cr->moving, pos % CXGRID, pos / CXGRID);
     }
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
+	if (isanimation(state->map[pos].top.id)) {
+	    if (cr->moving > 12)
+		die("%d: Too-large animation frame %02X at (%d %d)",
+		    currenttime(), cr->moving, pos % CXGRID, pos / CXGRID);
+	    continue;
+	}
 	if (cr->id < 0x40 || cr->id >= 0x80)
 	    die("%d: Undefined creature %d:%d at (%d %d)",
 		currenttime(), cr - creaturelist(), cr->id,
