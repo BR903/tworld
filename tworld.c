@@ -171,18 +171,21 @@ static int scrollinputcallback(int *move)
 static void showscores(gamespec *gs)
 {
     tablespec	table;
-    int		n;
+    int	       *levellist;
+    int		count, n;
 
-    if (!createscorelist(&gs->series, &n, &table)) {
+    if (!createscorelist(&gs->series, &levellist, &count, &table)) {
 	bell();
 	return;
     }
     setsubtitle(NULL);
-    n = gs->currentgame;
+    for (n = 0 ; n < count ; ++n)
+	if (levellist[n] == gs->currentgame)
+	    break;
     if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
-	if (n >= 0 && n < gs->series.total)
-	    gs->currentgame = n;
-    freescorelist(&table);
+	if (levellist[n] >= 0)
+	    gs->currentgame = levellist[n];
+    freescorelist(levellist, &table);
 }
 
 /* Mark the current level's solution as replaceable.
@@ -190,6 +193,68 @@ static void showscores(gamespec *gs)
 static void replaceablesolution(gamespec *gs)
 {
     gs->series.games[gs->currentgame].sgflags ^= SGF_REPLACEABLE;
+}
+
+/* Mark the current level's password as known to the user.
+ */
+static void passwordseen(gamespec *gs)
+{
+    if (!(gs->series.games[gs->currentgame].sgflags & SGF_HASPASSWD)) {
+	gs->series.games[gs->currentgame].sgflags |= SGF_HASPASSWD;
+	savesolutions(&gs->series);
+    }
+}
+
+/* Change the current game, ensuring that the user is not granted
+ * access to a forbidden level. FALSE is returned if the current game
+ * could not be changed at all.
+ */
+static int changecurrentgame(gamespec *gs, int offset)
+{
+    int	sign;
+    int	m, n;
+
+    if (offset == 0)
+	return TRUE;
+
+    m = gs->currentgame;
+    n = m + offset;
+    if (n < 0)
+	n = 0;
+    else if (n >= gs->series.total)
+	n = gs->series.total - 1;
+
+    sign = offset < 0 ? -1 : +1;
+    for ( ; n >= 0 && n < gs->series.total ; n += sign) {
+	if (hassolution(gs->series.games + n)
+		    || (gs->series.games[n].sgflags & SGF_HASPASSWD)
+		    || (n > 0 && hassolution(gs->series.games + n - 1))) {
+	    m = n;
+	    break;
+	}
+    }
+    n = m;
+
+    if (n == gs->currentgame && offset != sign) {
+	n = gs->currentgame + offset - sign;
+	for ( ; n != gs->currentgame ; n -= sign) {
+	    if (n < 0 || n >= gs->series.total)
+		continue;
+	    if (hassolution(gs->series.games + n)
+			|| (gs->series.games[n].sgflags & SGF_HASPASSWD)
+			|| (n > 0 && hassolution(gs->series.games + n - 1))) {
+		m = n;
+		break;
+	    }
+	}
+    }
+
+    if (n == gs->currentgame) {
+	bell();
+	return FALSE;
+    }
+    gs->currentgame = n;
+    return TRUE;
 }
 
 /* Get a keystroke from the user at the completion of the current
@@ -207,6 +272,7 @@ static void endinput(gamespec *gs, int status)
 
     for (;;) {
 	switch (input(TRUE)) {
+#if 0
 	  case CmdPrev10:	gs->currentgame -= 10;		return;
 	  case CmdPrevLevel:	--gs->currentgame;		return;
 	  case CmdPrev:		--gs->currentgame;		return;
@@ -216,6 +282,17 @@ static void endinput(gamespec *gs, int status)
 	  case CmdNext:		++gs->currentgame;		return;
 	  case CmdNext10:	gs->currentgame += 10;		return;
 	  case CmdProceed:	if (status > 0) ++gs->currentgame; return;
+#else
+	  case CmdPrev10:	changecurrentgame(gs, -10);	return;
+	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
+	  case CmdPrev:		changecurrentgame(gs, -1);	return;
+	  case CmdSameLevel:					return;
+	  case CmdSame:						return;
+	  case CmdNextLevel:	changecurrentgame(gs, +1);	return;
+	  case CmdNext:		changecurrentgame(gs, +1);	return;
+	  case CmdNext10:	changecurrentgame(gs, +10);	return;
+	  case CmdProceed:	if (status > 0) changecurrentgame(gs, +1); return;
+#endif
 	  case CmdPlayback:	gs->playback = !gs->playback;	return;
 	  case CmdHelp:		gameplayhelp();			return;
 	  case CmdSeeScores:	showscores(gs);			return;
@@ -234,16 +311,27 @@ static void playgame(gamespec *gs)
     int	cmd, n;
 
     drawscreen();
+    passwordseen(gs);
+
     cmd = input(TRUE);
     switch (cmd) {
       case CmdNorth: case CmdWest:				break;
       case CmdSouth: case CmdEast:				break;
+#if 0
       case CmdPrev10:		gs->currentgame -= 10;		return;
       case CmdPrev:		--gs->currentgame;		return;
       case CmdPrevLevel:	--gs->currentgame;		return;
       case CmdNextLevel:	++gs->currentgame;		return;
       case CmdNext:		++gs->currentgame;		return;
       case CmdNext10:		gs->currentgame += 10;		return;
+#else
+      case CmdPrev10:		changecurrentgame(gs, -10);	return;
+      case CmdPrev:		changecurrentgame(gs, -1);	return;
+      case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
+      case CmdNextLevel:	changecurrentgame(gs, +1);	return;
+      case CmdNext:		changecurrentgame(gs, +1);	return;
+      case CmdNext10:		changecurrentgame(gs, +10);	return;
+#endif
       case CmdPlayback:		gs->playback = TRUE;		return;
       case CmdSeeScores:	showscores(gs);			return;
       case CmdKillSolution:	replaceablesolution(gs);	return;
@@ -312,7 +400,11 @@ static void playgame(gamespec *gs)
 
   quitloop:
     setgameplaymode(EndPlay);
+#if 0
     gs->currentgame += n;
+#else
+    changecurrentgame(gs, n);
+#endif
 }
 
 /* Play back the user's best solution for the current level.
@@ -331,8 +423,13 @@ static void playbackgame(gamespec *gs)
 	    break;
 	waitfortick();
 	switch (input(FALSE)) {
+#if 0
 	  case CmdPrevLevel:	--gs->currentgame;		goto quitloop;
 	  case CmdNextLevel:	++gs->currentgame;		goto quitloop;
+#else
+	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
+	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
+#endif
 	  case CmdSameLevel:					goto quitloop;
 	  case CmdPlayback:	gs->playback = FALSE;		goto quitloop;
 	  case CmdQuitLevel:	gs->playback = FALSE;		goto quitloop;
@@ -366,21 +463,33 @@ static void playbackgame(gamespec *gs)
  */
 static void noplaygame(gamespec *gs)
 {
+    drawscreen();
+    passwordseen(gs);
+
     for (;;) {
-	drawscreen();
 	switch (input(TRUE)) {
+#if 0
 	  case CmdPrev10:	gs->currentgame -= 10;	return;
 	  case CmdPrev:		--gs->currentgame;	return;
 	  case CmdPrevLevel:	--gs->currentgame;	return;
 	  case CmdNextLevel:	++gs->currentgame;	return;
 	  case CmdNext:		++gs->currentgame;	return;
 	  case CmdNext10:	gs->currentgame += 10;	return;
+#else
+	  case CmdPrev10:	changecurrentgame(gs, -10);	return;
+	  case CmdPrev:		changecurrentgame(gs, -1);	return;
+	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
+	  case CmdNextLevel:	changecurrentgame(gs, +1);	return;
+	  case CmdNext:		changecurrentgame(gs, +1);	return;
+	  case CmdNext10:	changecurrentgame(gs, +10);	return;
+#endif
 	  case CmdSeeScores:	showscores(gs);		return;
 	  case CmdHelp:		gameplayhelp();		return;
 	  case CmdQuitLevel:				exit(0);
 	  case CmdQuit:					exit(0);
 	  default:		bell();			break;
 	}
+	drawscreen();
     }
 }
 
@@ -561,7 +670,7 @@ static int startup(gamespec *gs, startupdata const *start)
 	    return FALSE;
 	if (start->listscores) {
 	    freeserieslist(&table);
-	    if (!createscorelist(&gs->series, &listsize, &table))
+	    if (!createscorelist(&gs->series, NULL, NULL, &table))
 		return FALSE;
 	    printtable(&table);
 	    exit(EXIT_SUCCESS);
@@ -621,6 +730,7 @@ int main(int argc, char *argv[])
     cleardisplay();
 
     for (;;) {
+#if 0
 	if (spec.currentgame < 0) {
 	    spec.currentgame = 0;
 	    bell();
@@ -634,6 +744,7 @@ int main(int argc, char *argv[])
 	    spec.playback = FALSE;
 	    bell();
 	}
+#endif
 
 	spec.invalid = !initgamestate(spec.series.games + spec.currentgame,
 				      spec.series.ruleset, spec.playback);

@@ -65,15 +65,23 @@ int getscoresforlevel(gameseries const *series, int level,
 
 /* Produce a table that breaks down the player's current score.
  */
-int createscorelist(gameseries const *series, int *pcount, tablespec *table)
+int createscorelist(gameseries const *series,
+		    int **plevellist, int *pcount, tablespec *table)
 {
     gamesetup	       *game;
     char	      **ptrs;
     char	       *textheap;
-    int			levelscore, timescore;
+    int		       *levellist;
+    unsigned int	levelscore, timescore;
     unsigned int	totalscore;
+    int			count;
     int			used, j, n;
 
+    if (plevellist) {
+	levellist = malloc((series->count + 2) * sizeof *levellist);
+	if (!levellist)
+	    memerrexit();
+    }
     ptrs = malloc((series->count + 2) * 5 * sizeof *ptrs);
     textheap = malloc((series->count + 2) * 96);
     if (!ptrs || !textheap)
@@ -93,9 +101,17 @@ int createscorelist(gameseries const *series, int *pcount, tablespec *table)
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1+Score");
 
+    count = 0;
     for (j = 0, game = series->games ; j < series->count ; ++j, ++game) {
 	if (j >= series->allocated)
 	    break;
+#if 0
+	if (!(game->sgflags & SGF_HASPASSWD))
+	    continue;
+	if (plevellist)
+	    levellist[count] = j;
+	++count;
+#endif
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used, "1+%d", game->number);
 	if (hassolution(game)) {
@@ -119,32 +135,56 @@ int createscorelist(gameseries const *series, int *pcount, tablespec *table)
 	    used += 1 + sprintf(textheap + used, "1+%s",
 				commify(levelscore + timescore));
 	    totalscore += levelscore + timescore;
+#if 1
+	    if (plevellist)
+		levellist[count] = j;
+	    ++count;
+#endif
 	} else {
 	    ptrs[n++] = textheap + used;
+#if 0
 	    used += 1 + sprintf(textheap + used, "4-%s", game->name);
+#else
+	    if (game->sgflags & SGF_HASPASSWD) {
+		used += 1 + sprintf(textheap + used, "4-%s", game->name);
+		if (plevellist)
+		    levellist[count] = j;
+	    } else {
+		used += 1 + sprintf(textheap + used, "4- ");
+		if (plevellist)
+		    levellist[count] = -1;
+	    }
+	    ++count;
+#endif
 	}
     }
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "2-Total Score");
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "3+%s", commify(totalscore));
+    if (plevellist)
+	levellist[count] = -1;
+    ++count;
 
-    table->rows = series->count + 2;
+    if (plevellist)
+	*plevellist = levellist;
+    if (pcount)
+	*pcount = count;
+
+    table->rows = count + 1;
     table->cols = 5;
     table->sep = 2;
     table->collapse = 1;
     table->items = ptrs;
-
-    if (pcount)
-	*pcount = series->count;
 
     return TRUE;
 }
 
 /* Free the memory allocated by createscorelist().
  */
-void freescorelist(tablespec *table)
+void freescorelist(int *levellist, tablespec *table)
 {
+    free(levellist);
     free(table->items[0]);
     free(table->items);
 }

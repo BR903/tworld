@@ -96,7 +96,7 @@ int initgamestate(gamesetup *game, int ruleset, int replay)
     return (*initgame)(&state);
 }
 
-/* Put the program into game-play mode.
+/* Put the program into a game-play mode.
  */
 void setgameplaymode(int mode)
 {
