@@ -119,6 +119,11 @@ static int		xviewoffset, yviewoffset;
 
 #define	chipsneeded()		(state->chipsneeded)
 
+#define	clonerlist()		(state->game->cloners)
+#define	clonerlistsize()	(state->game->clonercount)
+#define	traplist()		(state->game->traps)
+#define	traplistsize()		(state->game->trapcount)
+
 #define	addsoundeffect(sfx)	(state->soundeffects |= 1 << (sfx))
 #define	stopsoundeffect(sfx)	(state->soundeffects &= ~(1 << (sfx)))
 
@@ -215,26 +220,35 @@ static void applyicewallturn(creature *cr)
     cr->dir = dir;
 }
 
-/* Find the location of a beartrap or cloner from one of its buttons.
+/* Find the location of a beartrap from one of its buttons.
  */
-static int floorfrombutton(int floor, int buttonpos)
+static int trapfrombutton(int pos)
 {
-    int	pos;
+    xyconn     *xy;
+    int		i;
 
-    pos = buttonpos;
-    do {
-	++pos;
-	if (pos >= CXGRID * CYGRID)
-	    pos -= CXGRID * CYGRID;
-	if (floorat(pos) == floor)
-	    return pos;
-    } while (pos != buttonpos);
-
+    for (xy = traplist(), i = traplistsize() ; i ; ++xy, --i)
+	if (xy->from == pos)
+	    return xy->to;
+    warn("unconnected trap button at (%d %d)",
+	 xy->from % CXGRID, xy->from / CXGRID);
     return -1;
 }
 
-#define	trapfrombutton(pos)	(floorfrombutton(Beartrap, (pos)))
-#define	clonerfrombutton(pos)	(floorfrombutton(CloneMachine, (pos)))
+/* Find the location of a clone machine from one of its buttons.
+ */
+static int clonerfrombutton(int pos)
+{
+    xyconn     *xy;
+    int		i;
+
+    for (xy = clonerlist(), i = clonerlistsize() ; i ; ++xy, --i)
+	if (xy->from == pos)
+	    return xy->to;
+    warn("unconnected clone machine button at (%d %d)",
+	 xy->from % CXGRID, xy->from / CXGRID);
+    return -1;
+}
 
 /* Flip-flop the state of any and all toggle walls.
  */
@@ -962,7 +976,8 @@ static int activatecloner(int pos)
     creature   *cr;
     creature   *clone;
 
-    assert(pos >= 0);
+    if (pos < 0)
+	return FALSE;
     assert(floorat(pos) == CloneMachine);
     cr = lookupcreature(pos, TRUE);
     if (!cr)
@@ -984,6 +999,8 @@ static void springtrap(int pos)
 {
     creature   *cr;
 
+    if (pos < 0)
+	return;
     cr = lookupcreature(pos, TRUE);
     if (cr && cr->dir != NIL)
 	advancecreature(cr, TRUE);
@@ -1668,6 +1685,7 @@ static int initgame(gamelogic *logic)
     creature		crtemp;
     creature	       *cr;
     gamesetup	       *game;
+    xyconn	       *xy;
     int			pos, n;
 
     setstate(logic);
@@ -1736,7 +1754,7 @@ static int initgame(gamelogic *logic)
 	    cr->hidden = FALSE;
 	    if (cr->id == Chip) {
 		if (n >= 0) {
-		    warn("Multiple Chips on the map!");
+		    warn("Level %d: multiple Chips on the map!", game->number);
 		    markinvalid();
 		}
 		n = cr - creaturelist();
@@ -1752,23 +1770,42 @@ static int initgame(gamelogic *logic)
 	}
     }
     if (n < 0) {
-	warn("Chip isn't on the map!");
+	warn("Level %d: Chip isn't on the map!", game->number);
 	markinvalid();
 	n = cr - creaturelist();
 	cr->pos = 0;
 	cr->hidden = TRUE;
 	++cr;
     }
-
     cr->pos = -1;
     cr->id = Nothing;
     cr->dir = NIL;
-
     if (n) {
 	cr = creaturelist();
 	crtemp = cr[0];
 	cr[0] = cr[n];
 	cr[n] = crtemp;
+    }
+
+    for (xy = traplist(), n = traplistsize() ; n ; --n, ++xy) {
+	if (floorat(xy->from) != Button_Brown) {
+	    warn("Level %d: invalid beartrap wiring: no button at (%d %d)",
+		 game->number, xy->from % CXGRID, xy->to / CXGRID);
+	} else if (floorat(xy->to) != Beartrap) {
+	    warn("Level %d: disabling miswired beartrap button at (%d %d)",
+		 game->number, xy->to % CXGRID, xy->to / CXGRID);
+	    xy->from = -1;
+	}
+    }
+    for (xy = clonerlist(), n = clonerlistsize() ; n ; --n, ++xy) {
+	if (floorat(xy->from) != Button_Red) {
+	    warn("Level %d: invalid cloner wiring: no button at (%d %d)",
+		 game->number, xy->from % CXGRID, xy->to / CXGRID);
+	} else if (floorat(xy->to) != CloneMachine) {
+	    warn("Level %d: disabling miswired cloner button at (%d %d)",
+		 game->number, xy->to % CXGRID, xy->to / CXGRID);
+	    xy->from = -1;
+	}
     }
 
     chipsneeded() = game->chips;

@@ -512,11 +512,13 @@ int main(int argc, char *argv[])
     int		from, to;
     int		i, x, y;
 
-    if (argc < 2)
+    if (argc < 2) {
 	argv[1] = DEFAULTFILE;
-    else if (argc < 3) {
 	from = 0;
-	to = 0;
+	to = 65535;
+    } else if (argc < 3) {
+	from = 0;
+	to = 65535;
     } else if (argc == 3) {
 	from = atoi(argv[2]);
 	to = from;
