@@ -493,11 +493,13 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
     s.count = 0;
     s.usedatdir = FALSE;
     if (preferred && *preferred && haspathname(preferred)) {
-	if (getseriesfile((char*)preferred, &s) <= 0 || !s.count)
+	if (getseriesfile((char*)preferred, &s) < 0 || !s.count)
 	    die("%s: couldn't read data file", preferred);
 	*seriesdir = '\0';
 	*savedir = '\0';
     } else {
+	if (!*seriesdir)
+	    return FALSE;
 	if (!findfiles(seriesdir, &s, getseriesfile) || !s.count)
 	    die("%s: directory contains no data files", seriesdir);
 	if (preferred && *preferred) {
