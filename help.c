@@ -1,6 +1,6 @@
 /* help.c: Displaying online help.
  *
- * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -40,18 +40,18 @@ tablespec const *yowzitch = &yowzitch_table;
 /* Version and license information.
  */
 static char *vourzhon_items[] = {
-    "1+*", "1-Tile World: version " VERSION,
-    "1+",  "1-Copyright (C) 2001 by Brian Raiter",
+    "1+=", "1-Tile World: version " VERSION,
+    "1+",  "1-Copyright (C) 2001,2002 by Brian Raiter",
     "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
-    "1+*", "1-This program is free software; you can redistribute it and/or",
+    "1+=", "1-This program is free software; you can redistribute it and/or",
     "1+",  "1-modify it under the terms of the GNU General Public License as",
     "1+",  "1-published by the Free Software Foundation; either version 2 of",
     "1+",  "1-the License, or (at your option) any later version.",
-    "1+*", "1-This program is distributed in the hope that it will be useful,",
+    "1+=", "1-This program is distributed in the hope that it will be useful,",
     "1+",  "1-but WITHOUT ANY WARRANTY; without even the implied warranty of",
     "1+",  "1-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
     "1+",  "1-GNU General Public License for more details.",
-    "1+*", "1-Bug reports are appreciated, and can be sent to",
+    "1+=", "1-Bug reports are appreciated, and can be sent to",
     "1+",  "1-breadbox@muppetlabs.com."
 };
 static tablespec const vourzhon_table = { 13, 2, 1, -1, vourzhon_items };

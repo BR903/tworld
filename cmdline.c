@@ -1,7 +1,7 @@
 /* cmdline.c: a reentrant version of getopt().
  *
- * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
- * License. No warranty. See COPYING for details.
+ * Written 1997-2001 by Brian Raiter. This code is in the public
+ * domain.
  */
 
 #include	<stdlib.h>

@@ -1,6 +1,6 @@
 /* sdlin.c: Reading the keyboard.
  * 
- * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -143,6 +143,8 @@ static keycmdmap const inputkeycmds[] = {
     { 0, 0, 0, 0, 0, 0 }
 };
 
+static int mergeable[CmdCount];
+
 static keycmdmap const *keycmds = gamekeycmds;
 
 /*
@@ -265,13 +267,14 @@ int anykey(void)
 int input(int wait)
 {
     int	lingerflag = FALSE;
-    int	cmd, i, n;
+    int	cmd1, cmd;
+    int	i, n;
 
     for (;;) {
 	resetkeystates();
 	eventupdate(wait);
 
-	cmd = CmdNone;
+	cmd1 = cmd = 0;
 	for (i = 0 ; keycmds[i].scancode ; ++i) {
 	    n = keystates[keycmds[i].scancode];
 	    if (!n)
@@ -289,17 +292,27 @@ int input(int wait)
 						|| keystates[SDLK_RALT]))
 		    continue;
 
-	    if (n == KS_PRESSED || (keycmds[i].hold && n == KS_DOWN))
-		return keycmds[i].cmd;
-	    else if (n == KS_STRUCK || n == KS_REPRESSED)
+	    if (n == KS_PRESSED || (keycmds[i].hold && n == KS_DOWN)) {
+		if (!cmd1) {
+		    cmd1 = keycmds[i].cmd;
+		    if (!joystickstyle || !mergeable[cmd1])
+			return cmd1;
+		} else {
+		    if ((mergeable[cmd1] & keycmds[i].cmd) == keycmds[i].cmd)
+			return cmd1 | keycmds[i].cmd;
+		}
+	    } else if (n == KS_STRUCK || n == KS_REPRESSED) {
 		cmd = keycmds[i].cmd;
-	    else if (n == KS_DOWNBUTOFF1 || n == KS_DOWNBUTOFF2)
+	    } else if (n == KS_DOWNBUTOFF1 || n == KS_DOWNBUTOFF2) {
 		lingerflag = TRUE;
+	    }
 	}
-	if (cmd != CmdNone || !wait)
+	if (cmd1)
+	    return cmd1;
+	if (cmd || !wait)
 	    break;
     }
-    if (cmd == CmdNone && lingerflag)
+    if (!cmd && lingerflag)
 	cmd = CmdPreserve;
     return cmd;
 }
@@ -336,6 +349,9 @@ int setkeyboardinputmode(int enable)
 int _sdlinputinitialize(void)
 {
     sdlg.keyeventcallbackfunc = _keyeventcallback;
+
+    mergeable[CmdNorth] = mergeable[CmdSouth] = CmdWest | CmdEast;
+    mergeable[CmdWest] = mergeable[CmdEast] = CmdNorth | CmdSouth;
 
     setkeyboardrepeat(TRUE);
     return TRUE;
