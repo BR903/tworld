@@ -326,43 +326,6 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
  *
  */
 
-#if 0
-/* Translate the given surface to one with the same color layout as
- * the display surface.
- */
-static SDL_Surface *copytilesto32(SDL_Surface *src, int wset, int hset)
-{
-    SDL_PixelFormat    *fmt;
-    SDL_Surface	       *dest;
-    SDL_Rect		rect;
-
-    rect.x = 0;
-    rect.y = 0;
-    if (wset && hset) {
-	rect.w = wset * sdlg.wtile;
-	rect.h = hset * sdlg.htile;
-    } else {
-	rect.w = src->w;
-	rect.h = src->h;
-    }
-
-    if (!sdlg.screen) {
-	warn("copytilesto32() called before creating 32-bit surface");
-	fmt = SDL_GetVideoInfo()->vfmt;
-    } else
-	fmt = sdlg.screen->format;
-
-    dest = SDL_CreateRGBSurface(SDL_SWSURFACE, rect.w, rect.h, 32,
-				fmt->Rmask, fmt->Gmask,
-				fmt->Bmask, fmt->Amask);
-    if (!dest)
-	return NULL;
-
-    SDL_BlitSurface(src, &rect, dest, &rect);
-
-    return dest;
-}
-#else
 /* Translate the given surface to one with the same color layout as
  * the display surface.
  */
@@ -405,7 +368,6 @@ static SDL_Surface *loadtilesto32(char const *filename)
     SDL_FreeSurface(bmp);
     return tiles;
 }
-#endif
 
 /* Extract the mask section of the given image to an 8-bit surface.
  */
@@ -585,7 +547,7 @@ static void extractopaquetileseq(SDL_Surface *tiles, SDL_Rect const *rect,
 
     dest = *pdest;
     tile = (Uint32*)((char*)tiles->pixels + rect->y * tiles->pitch) + rect->x;
-    for (n = count - 1 ; n >= 0 ; --n) {
+    for (n = 0 ; n < count ; ++n) {
 	ptrs[n] = dest;
 	p = tile;
 	memcpy(dest, tileptr[Empty].opaque[0], sdlg.cbtile);
