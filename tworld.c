@@ -193,6 +193,10 @@ static void vourzhon(int longform)
 	puts(VERSION);
 }
 
+/*
+ * Callback functions for oshw.
+ */
+
 /* A callback functions for handling the keyboard while collecting
  * input.
  */
@@ -237,33 +241,8 @@ static int scrollinputcallback(int *move)
 }
 
 /*
- * The top-level user interface functions.
+ * Basic actions.
  */
-
-/* Display the user's current score.
- */
-static int showscores(gamespec *gs)
-{
-    tablespec	table;
-    int	       *levellist;
-    int		count, n;
-
-    if (!createscorelist(&gs->series, gs->usepasswds,
-			 &levellist, &count, &table)) {
-	bell();
-	return FALSE;
-    }
-    setsubtitle(NULL);
-    for (n = 0 ; n < count ; ++n)
-	if (levellist[n] == gs->currentgame)
-	    break;
-    if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
-	n = levellist[n];
-    freescorelist(levellist, &table);
-    if (n >= 0)
-	gs->currentgame = n;
-    return n >= 0;
-}
 
 /* Mark the current level's solution as replaceable.
  */
@@ -280,29 +259,6 @@ static void passwordseen(gamespec *gs)
 	gs->series.games[gs->currentgame].sgflags |= SGF_HASPASSWD;
 	savesolutions(&gs->series);
     }
-}
-
-/* Obtain a password from the user and move to the requested level.
- */
-static int selectlevelbypassword(gamespec *gs)
-{
-    char	passwd[5] = "";
-    int		n;
-
-    setgameplaymode(BeginInput);
-    n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
-    setgameplaymode(EndInput);
-    if (!n)
-	return FALSE;
-
-    n = findlevelinseries(&gs->series, 0, passwd);
-    if (n < 0) {
-	bell();
-	return FALSE;
-    }
-
-    gs->currentgame = n;
-    return TRUE;
 }
 
 /* Change the current game, ensuring that the user is not granted
@@ -353,6 +309,54 @@ static int changecurrentgame(gamespec *gs, int offset)
 	bell();
 	return FALSE;
     }
+    gs->currentgame = n;
+    return TRUE;
+}
+
+/* Display the user's current score.
+ */
+static int showscores(gamespec *gs)
+{
+    tablespec	table;
+    int	       *levellist;
+    int		count, n;
+
+    if (!createscorelist(&gs->series, gs->usepasswds,
+			 &levellist, &count, &table)) {
+	bell();
+	return FALSE;
+    }
+    setsubtitle(NULL);
+    for (n = 0 ; n < count ; ++n)
+	if (levellist[n] == gs->currentgame)
+	    break;
+    if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
+	n = levellist[n];
+    freescorelist(levellist, &table);
+    if (n >= 0)
+	gs->currentgame = n;
+    return n >= 0;
+}
+
+/* Obtain a password from the user and move to the requested level.
+ */
+static int selectlevelbypassword(gamespec *gs)
+{
+    char	passwd[5] = "";
+    int		n;
+
+    setgameplaymode(BeginInput);
+    n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
+    setgameplaymode(EndInput);
+    if (!n)
+	return FALSE;
+
+    n = findlevelinseries(&gs->series, 0, passwd);
+    if (n < 0) {
+	bell();
+	return FALSE;
+    }
+
     gs->currentgame = n;
     return TRUE;
 }
@@ -841,9 +845,13 @@ static int initializesystem(void)
 
 static void shutdownsystem(void)
 {
-     setsubtitle(NULL);
-     shutdowngamestate();
-     freeallresources();
+    setsubtitle(NULL);
+    shutdowngamestate();
+    freeallresources();
+    free(resdir);
+    free(seriesdir);
+    free(seriesdatdir);
+    free(savedir);
 }
 
 /* Initialize the program. The list of available data files is drawn
@@ -974,10 +982,5 @@ int main(int argc, char *argv[])
     }
 
     shutdownsystem();
-    free(resdir);
-    free(seriesdir);
-    free(seriesdatdir);
-    free(savedir);
-
     return f == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
