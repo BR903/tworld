@@ -212,7 +212,6 @@ typedef struct gamestate {
 #define	SF_INVALID		0x10000000	/* level is not playable */
 #define	SF_SHOWHINT		0x08000000	/* display the hint text */
 #define	SF_ONOMATOPOEIA		0x04000000	/* use textual sound effects */
-#define	SF_CHIPPUSHING		0x02000000	/* Chip is pushing something */
 
 /* gamestate accessor macros.
  */

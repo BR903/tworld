@@ -23,8 +23,9 @@
 
 /* Internal status flags.
  */
-#define	SF_GREENTOGGLE		0x0001
-#define	SF_COULDNTMOVE		0x0002
+#define	SF_GREENTOGGLE		0x0001	/* green button has been toggled */
+#define	SF_COULDNTMOVE		0x0002	/* can't-move sound has been played */
+#define	SF_CHIPPUSHING		0x0004	/* Chip is pushing against something */
 
 static int advancecreature(creature *cr, int oob);
 
@@ -83,6 +84,9 @@ static int xviewoffset = 0, yviewoffset = 0;
 #define	iscouldntmoveset()	(state->statusflags & SF_COULDNTMOVE)
 #define	setcouldntmove()	(state->statusflags |= SF_COULDNTMOVE)
 #define	resetcouldntmove()	(state->statusflags &= ~SF_COULDNTMOVE)
+#define	ispushing()		(state->statusflags & SF_CHIPPUSHING)
+#define	setpushing()		(state->statusflags |= SF_CHIPPUSHING)
+#define	resetpushing()		(state->statusflags &= ~SF_CHIPPUSHING)
 
 #define	chipsneeded()		(state->chipsneeded)
 
@@ -474,8 +478,12 @@ static int canpushblock(creature *block, int dir, int noreally);
  * possible side effects are exposing a blue/hidden wall, and causing
  * a block to be pushed.)
  */
-static int canmakemove(creature const *cr, int dir,
-		       int noreally, int releasing)
+
+#define	CMM_EXPOSEWALLS		0x0001
+#define	CMM_PUSHBLOCKS		0x0002
+#define	CMM_RELEASING		0x0004
+
+static int canmakemove(creature const *cr, int dir, int flags)/*noreally, int releasing)*/
 {
     creature   *other;
     int		floorfrom, floorto;
@@ -495,7 +503,7 @@ static int canmakemove(creature const *cr, int dir,
     floorfrom = floorat(cr->pos);
     floorto = floorat(to);
 
-    if ((floorfrom == Beartrap || floorfrom == CloneMachine) && !releasing)
+    if ((floorfrom == Beartrap || floorfrom == CloneMachine) && !(flags & CMM_RELEASING))
 	return FALSE;
 
     if (isslide(floorfrom) && (cr->id != Chip || !possession(Boots_Slide)))
@@ -513,11 +521,11 @@ static int canmakemove(creature const *cr, int dir,
 	    return FALSE;
 	other = lookupcreature(to, FALSE);
 	if (other && other->id == Block) {
-	    if (!canpushblock(other, dir, noreally))
+	    if (!canpushblock(other, dir, flags & ~CMM_RELEASING))
 		return FALSE;
 	}
 	if (floorto == HiddenWall_Temp || floorto == BlueWall_Real) {
-	    if (noreally)
+	    if (flags & CMM_EXPOSEWALLS)
 		floorat(to) = Wall;
 	    return FALSE;
 	}
@@ -548,18 +556,20 @@ static int canmakemove(creature const *cr, int dir,
  * direction. If noreally is two or more, then the indicated movement
  * of the block will be initiated.
  */
-static int canpushblock(creature *block, int dir, int noreally)
+static int canpushblock(creature *block, int dir, int flags)
 {
     assert(block && block->id == Block);
     assert(floorat(block->pos) != CloneMachine);
     assert(dir != NIL);
 
-    if (!canmakemove(block, dir, noreally, FALSE))
+    if (!canmakemove(block, dir, flags))
 	return FALSE;
-    if (noreally > 1) {
+    if (flags & CMM_PUSHBLOCKS) {
 	block->tdir = dir;
-	if (advancecreature(block, FALSE))
+	if (advancecreature(block, FALSE)) {
 	    addsoundeffect(SND_BLOCK_MOVING);
+	    setpushing();
+	}
     }
 
     return TRUE;
@@ -659,7 +669,7 @@ static void choosecreaturemove(creature *cr)
     }
     for (n = 0 ; n < 4 && choices[n] != NIL ; ++n) {
 	cr->tdir = choices[n];
-	if (canmakemove(cr, choices[n], 0, FALSE))
+	if (canmakemove(cr, choices[n], 0))
 	    return;
     }
 
@@ -679,10 +689,12 @@ static void choosechipmove(creature *cr, int discard)
     currentinput() = NIL;
     if (dir == NIL || discard) {
 	cr->tdir = NIL;
-	return;
+    } else {
+	lastmove() = dir;
+	cr->tdir = dir;
     }
-    lastmove() = dir;
-    cr->tdir = dir;
+    if (cr->tdir == NIL)
+	resetpushing();
 }
 
 /* This function determines if the given creature is currently being
@@ -759,13 +771,15 @@ static int teleportcreature(creature *cr)
 	    pos += CXGRID * CYGRID;
 	if (floorat(pos) == Teleport) {
 	    cr->pos = pos;
-	    n = canmakemove(cr, cr->dir, 0, FALSE);
+	    n = canmakemove(cr, cr->dir, 0);
 	    cr->pos = origpos;
 	    if (n)
 		break;
 	    if (pos == origpos) {
-		if (cr->id == Chip)
+		if (cr->id == Chip) {
 		    addsoundeffect(SND_CANT_MOVE);
+		    setpushing();
+		}
 		return TRUE;
 	    }
 	}
@@ -844,14 +858,18 @@ static int startmovement(creature *cr, int releasing)
 
     floorfrom = floorat(cr->pos);
 
-    if (cr->id == Chip && !possession(Boots_Slide)) {
-	if (isslide(floorfrom) && cr->tdir == NIL)
-	    cr->state |= CS_SLIDETOKEN;
-	else if (!isice(floorfrom) || possession(Boots_Ice))
-	    cr->state &= ~CS_SLIDETOKEN;
+    if (cr->id == Chip) {
+	resetpushing();
+	if (!possession(Boots_Slide)) {
+	    if (isslide(floorfrom) && cr->tdir == NIL)
+		cr->state |= CS_SLIDETOKEN;
+	    else if (!isice(floorfrom) || possession(Boots_Ice))
+		cr->state &= ~CS_SLIDETOKEN;
+	}
     }
 
-    if (!canmakemove(cr, dir, 2, releasing)) {
+    if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS
+		     | (releasing ? CMM_RELEASING : 0))) {/*2, releasing)) {*/
 	if (isice(floorfrom) && (cr->id != Chip || !possession(Boots_Ice))) {
 	    cr->dir = back(dir);
 	    applyicewallturn(cr);
@@ -861,6 +879,7 @@ static int startmovement(creature *cr, int releasing)
 		setcouldntmove();
 		addsoundeffect(SND_CANT_MOVE);
 	    }
+	    setpushing();
 	}
 	return FALSE;
     }
@@ -1183,6 +1202,9 @@ static void verifymap(void)
  */
 static void initialhousekeeping(void)
 {
+    if (getchip()->id == Pushing_Chip)
+	getchip()->id = Chip;
+
     if (isgreentoggleset())
 	togglewalls();
     resetgreentoggle();
@@ -1307,6 +1329,9 @@ static void preparedisplay(void)
 		addsoundeffect(SND_SLIDING);
 	}
     }
+
+    if (ispushing())
+	cr->id = Pushing_Chip;
 }
 
 /*
@@ -1531,7 +1556,7 @@ int lynx_initgame(gamestate *pstate)
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
-				    && !canmakemove(cr, cr->dir, 0, FALSE)) {
+				    && !canmakemove(cr, cr->dir, 0)) {
 	     cr->dir = back(cr->dir);
 	     applyicewallturn(cr);
 	}
