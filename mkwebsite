@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#
+# Copy over the distribution files that appear on the website.
+#
+
+cp -f BUGS.html Changelog.html README.html website/.
+(cd docs && ./mkdocs tworld.doc && cp -f tworld.html ../website/.)
+(cd res && cp -i bomb.wav bump.wav chack.wav click.wav death.wav \
+                 derezz.wav ding.wav door.wav oof.wav popup.wav \
+                 socket.wav splash.wav tada.wav teleport.wav thief.wav \
+                 tick.wav ting.wav traphit.wav whisk.wav ../website/wav/.)
+
+#
+# Roll up the website files into a single tarball.
+#
+
+rm -f twdocs.tar twdocs.tar.gz
+cd website
+tar -cf twdocs.tar *
+gzip -9 twdocs.tar
+mv twdocs.tar.gz ..
+cd ..
