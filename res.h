@@ -13,4 +13,6 @@ extern char	       *resdir;
 
 extern int loadgameresources(int ruleset);
 
+extern int initresources(void);
+
 #endif

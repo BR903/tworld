@@ -12,12 +12,10 @@
 #include	"../err.h"
 #include	"../state.h"
 
-/* The requested settings for the sound output. The sample buffer is
- * set especially low so that sounds can come and go on every tick.
+/* Some generic default settings for the audio output.
  */
 #define DEFAULT_SND_FMT		AUDIO_S16LSB
 #define DEFAULT_SND_FREQ	22050
-#define	DEFAULT_SND_SAMP	512
 #define	DEFAULT_SND_CHAN	1
 
 typedef	struct sfxinfo {
@@ -28,19 +26,27 @@ typedef	struct sfxinfo {
     char const	       *textsfx;
 } sfxinfo;
 
-static SDL_AudioSpec	spec;
 static sfxinfo		sounds[SND_COUNT];
+static SDL_AudioSpec	spec;
+static int		hasaudio = FALSE;
 
 /*
  *
  */
 
-static void displaysoundeffects(unsigned long sfx)
+static void displaysoundeffects(unsigned long sfx, int display)
 {
     static char const  *playing = NULL;
+    static Uint32	playtime = 0;
     char const	       *play;
     unsigned long	flag;
     int			i;
+
+    if (!display) {
+	playing = NULL;
+	playtime = 0;
+	return;
+    }
 
     play = NULL;
     for (flag = 1, i = 0 ; flag ; flag <<= 1, ++i) {
@@ -49,15 +55,20 @@ static void displaysoundeffects(unsigned long sfx)
 	    break;
 	}
     }
-    if (!play && playing) {
-	play = playing;
-	playing = NULL;
-    } else
+    if (play) {
 	playing = play;
+	playtime = SDL_GetTicks();
+    } else if (playing) {
+	if (SDL_GetTicks() - playtime < 400)
+	    play = playing;
+	else
+	    playing = NULL;
+    }
 
-    if (!play)
-	play = "";
-    puttext(&sdlg.textsfxrect, play, -1, 0);
+    if (play)
+	puttext(&sdlg.textsfxrect, play, -1, PT_CENTER);
+    else
+	puttext(&sdlg.textsfxrect, "", 0, 0);
 }
 
 /*
@@ -101,12 +112,13 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
 int setaudiosystem(int active)
 {
     SDL_AudioSpec	des;
+    int			n;
 
     if (!active) {
-	if (spec.freq) {
+	if (hasaudio) {
 	    SDL_PauseAudio(TRUE);
 	    SDL_CloseAudio();
-	    spec.freq = 0;
+	    hasaudio = FALSE;
 	}
 	return TRUE;
     }
@@ -118,19 +130,21 @@ int setaudiosystem(int active)
 	}
     }
 
-    if (spec.freq)
+    if (hasaudio)
 	return TRUE;
+
     des.freq = DEFAULT_SND_FREQ;
     des.format = DEFAULT_SND_FMT;
-    des.samples = DEFAULT_SND_SAMP;
     des.channels = DEFAULT_SND_CHAN;
     des.callback = sfxcallback;
     des.userdata = NULL;
+    for (n = 1 ; n <= des.freq / TICKS_PER_SECOND ; n <<= 1) ;
+    des.samples = n >> 2;
     if (SDL_OpenAudio(&des, &spec) < 0) {
 	warn("can't access audio output: %s\n", SDL_GetError());
-	spec.freq = 0;
 	return FALSE;
     }
+    hasaudio = TRUE;
     SDL_PauseAudio(FALSE);
 
     return TRUE;
@@ -148,7 +162,7 @@ int loadsfxfromfile(int index, char const *filename)
 	freesfx(index);
 	return TRUE;
     }
-    if (!spec.freq)
+    if (!hasaudio)
 	return FALSE;
 
     if (!SDL_LoadWAV(filename, &specin, &wavein, &lengthin)) {
@@ -190,20 +204,27 @@ void playsoundeffects(unsigned long sfx)
     unsigned long	flag;
     int			i;
 
-    if (!spec.freq) {
-	displaysoundeffects(sfx);
+    if (!hasaudio) {
+	displaysoundeffects(sfx, TRUE);
 	return;
     }
+
     SDL_LockAudio();
     for (i = 0, flag = 1 ; i < SND_COUNT ; ++i, flag <<= 1) {
 	if (sfx & flag) {
-	    if (sounds[i].playing && i < SND_ONESHOT_COUNT)
-		sounds[i].pos = 0;
 	    sounds[i].playing = TRUE;
+	    if (sounds[i].pos && i < SND_ONESHOT_COUNT)
+		sounds[i].pos = 0;
 	} else
 	    sounds[i].playing = FALSE;
     }
     SDL_UnlockAudio();
+}
+
+void clearsoundeffects(void)
+{
+    if (!hasaudio)
+	displaysoundeffects(0, FALSE);
 }
 
 void selectsoundset(int ruleset)
@@ -227,7 +248,6 @@ void selectsoundset(int ruleset)
 	sounds[SND_CHIP_LOSES].textsfx      = "Splat!";
 	sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
 	sounds[SND_CANT_MOVE].textsfx       = "Thunk!";
-	sounds[SND_IC_COLLECTED].textsfx    = "Slurp!";
 	sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
 	sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
 	sounds[SND_TELEPORTING].textsfx     = "Bamff!";

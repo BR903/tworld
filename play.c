@@ -67,25 +67,25 @@ static int setrulesetbehavior(int ruleset)
 /* Initialize the current state to the starting position of the
  * current level.
  */
-int initgamestate(gameseries *series, int level, int replay)
+int initgamestate(gamesetup *game, int ruleset, int replay)
 {
-    if (!setrulesetbehavior(series->ruleset))
+    if (!setrulesetbehavior(ruleset))
 	return FALSE;
 
     memset(&state, 0, sizeof state);
-    state.game = &series->games[level];
-    state.ruleset = series->ruleset;
+    state.game = game;
+    state.ruleset = ruleset;
     state.lastmove = NIL;
     state.soundeffects = 0;
-    state.timelimit = state.game->time * TICKS_PER_SECOND;
+    state.timelimit = game->time * TICKS_PER_SECOND;
 
     if (replay) {
-	if (!state.game->savedsolution.count)
+	if (!game->savedsolution.count)
 	    return FALSE;
 	state.replay = 0;
-	copymovelist(&state.moves, &state.game->savedsolution);
-	state.initrndslidedir = state.game->savedrndslidedir;
-	restartprng(&state.mainprng, state.game->savedrndseed);
+	copymovelist(&state.moves, &game->savedsolution);
+	state.initrndslidedir = game->savedrndslidedir;
+	restartprng(&state.mainprng, game->savedrndseed);
     } else {
 	state.replay = -1;
 	initmovelist(&state.moves);
@@ -154,7 +154,7 @@ int doturn(int cmd)
  */
 int drawscreen(void)
 {
-    int currtime, besttime;
+    int timeleft, besttime;
 
     if (hassolution(state.game)) {
 	besttime = (state.game->time ? state.game->time : 999)
@@ -165,16 +165,17 @@ int drawscreen(void)
 	besttime = 0;
 
     if (state.game->time)
-	currtime = state.game->time - state.currenttime / TICKS_PER_SECOND;
+	timeleft = state.game->time - state.currenttime / TICKS_PER_SECOND;
     else
-	currtime = -1;
+	timeleft = -1;
 
     playsoundeffects(state.soundeffects);
-    return displaygame(&state, currtime, besttime);
+    return displaygame(&state, timeleft, besttime);
 }
 
 int endgamestate(void)
 {
+    clearsoundeffects();
     return (*endgame)(&state);
 }
 

@@ -74,6 +74,7 @@ extern int loadsmalltileset(char const *filename, int complain);
 extern int loadlargetileset(char const *filename, int complain);
 extern void freetileset(void);
 extern int loadfontfromfile(char const *filename);
+extern void freefont(void);
 
 /*
  * Video output functions.
@@ -97,7 +98,8 @@ extern int displaygame(void const *state, int timeleft, int besttime);
 /* Display a short message appropriate to the end of a level's game
  * play. completed is TRUE if the level was successfully completed.
  */
-extern int displayendmessage(int completed);
+extern int displayendmessage(int basescore, int timescore, int totalscore,
+			     int completed);
 
 /* Display a scrollable list of strings. title provides the title of
  * the list. header provides a single line of text at the top of the
@@ -113,8 +115,9 @@ extern int displayendmessage(int completed);
  * displaylist() ends, returning the value that was stored via the
  * pointer argument.
  */
-extern int displaylist(char const *title, char const *header,
+extern int displaylist(char const *title,
 		       char const **items, int itemcount, int *index,
+		       int columncount, int const *flags,
 		       int (*inputcallback)(int*));
 
 /* Symbolic values for moving the selection of a scrolling list.
@@ -138,6 +141,7 @@ extern void selectsoundset(int ruleset);
 extern int loadsfxfromfile(int index, char const *filename);
 extern void freesfx(int index);
 extern void playsoundeffects(unsigned long sfx);
+extern void clearsoundeffects(void);
 
 /*
  * Miscellaneous functions.

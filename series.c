@@ -365,15 +365,16 @@ static int getseriesfiles(char const *filename, gameseries **list, int *count)
 /* Produce an array of strings that describe the available data files.
  */
 int createserieslist(char const *preferredfile, gameseries **pserieslist,
-		     char ***pptrs, int *pcount, char const **pheader)
+		     char ***pptrs, int *pcount, int const **align)
 {
+    static int const	alignment[] = { -1, +1, 0 };
     static char const  *rulesetname[Ruleset_Count];
-    static char		header[64];
+    static char		header[80];
     gameseries	       *serieslist;
     char	      **ptrs;
     char	       *textheap;
     int			listsize;
-    int			count, used, col, n;
+    int			used, col, n;
 
     if (!getseriesfiles(preferredfile, &serieslist, &listsize))
 	return FALSE;
@@ -387,32 +388,41 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     for (n = 0 ; n < listsize ; ++n)
 	if (col < (int)strlen(serieslist[n].name))
 	    col = strlen(serieslist[n].name);
-    if (col > 40)
-	col = 40;
+    if (col > 56)
+	col = 56;
 
     rulesetname[Ruleset_Lynx] = "Lynx";
     rulesetname[Ruleset_MS] = "MS";
-    ptrs = malloc(listsize * sizeof *ptrs);
-    textheap = malloc(listsize * 64);
-    count = 0;
-    used = 0;
+    ptrs = malloc((listsize + 1) * sizeof *ptrs);
+    textheap = malloc((listsize + 1) * sizeof header);
+    if (align)
+	strcpy(textheap, "Filename\tNumber of levels\tRuleset");
+    else
+	sprintf(textheap, "%-*.*s  Number of levels  Ruleset",
+			  col - 13, col - 13, "Filename");
+    ptrs[0] = textheap;
+    used = strlen(textheap) + 1;
+
     for (n = 0 ; n < listsize ; ++n) {
-	ptrs[count] = textheap + used;
-	used += sprintf(ptrs[count], "%-*.*s  %3d  %-4s", col, col,
-				     serieslist[n].name, serieslist[n].total,
-				     rulesetname[serieslist[n].ruleset]);
+	ptrs[n + 1] = textheap + used;
+	if (align)
+	    used += sprintf(ptrs[n + 1], "%s\t%d\t%s",
+					 serieslist[n].name,
+					 serieslist[n].total,
+					 rulesetname[serieslist[n].ruleset]);
+	else
+	    used += sprintf(ptrs[n + 1], "%-*.*s  %3d  %-4s",
+					 col, col, serieslist[n].name,
+					 serieslist[n].total,
+					 rulesetname[serieslist[n].ruleset]);
 	++used;
-	++count;
     }
 
     *pserieslist = serieslist;
     *pptrs = ptrs;
-    *pcount = count;
-    if (pheader) {
-	sprintf(header, "%-*.*s  Number of levels  Ruleset",
-			col - 13, col - 13, "Filename");
-	*pheader = header;
-    }
+    *pcount = n + 1;
+    if (align)
+	*align = alignment;
     return TRUE;
 }
 

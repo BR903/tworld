@@ -16,7 +16,8 @@
 #define	RES_IMG_TILES		0
 #define	RES_IMG_USEANIM		1
 #define	RES_IMG_FONT		2
-#define	RES_IMG_LAST		RES_IMG_FONT
+#define	RES_IMG_PFONT		3
+#define	RES_IMG_LAST		RES_IMG_PFONT
 
 #define	RES_SND_BASE		(RES_IMG_LAST + 1)
 #define	RES_SND_CHIP_LOSES	(RES_SND_BASE + SND_CHIP_LOSES)
@@ -62,6 +63,7 @@ static rcitem rclist[] = {
     { "tileimages",		FALSE },
     { "useanimation",		TRUE },
     { "font",			FALSE },
+    { "pfont",			FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
@@ -99,7 +101,7 @@ static int		currentruleset = Ruleset_None;
 
 /* The directory containing all the resource files.
  */
-char	       *resdir = NULL;
+char		       *resdir = NULL;
 
 /*
  *
@@ -109,6 +111,7 @@ static void initresourcedefaults(void)
 {
     strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
     strcpy(globalresources[RES_IMG_FONT].str, "font.psf");
+    strcpy(globalresources[RES_IMG_PFONT].str, "pfont.bmp");
     globalresources[RES_IMG_USEANIM].num = FALSE;
 #if 0
     strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
@@ -214,7 +217,8 @@ static int loadimages(void)
 	f = resources[RES_IMG_USEANIM].num ? loadlargetileset(path, TRUE)
 					   : loadsmalltileset(path, TRUE);
     }
-    if (!f && *globalresources[RES_IMG_TILES].str) {
+    if (!f && resources != globalresources
+	   && *globalresources[RES_IMG_TILES].str) {
 	combinepath(path, resdir, globalresources[RES_IMG_TILES].str);
 	f = loadsmalltileset(path, TRUE);
     }
@@ -236,12 +240,13 @@ static int loadfont(void)
 
     f = FALSE;
     path = getpathbuffer();
-    if (*resources[RES_IMG_FONT].str) {
-	combinepath(path, resdir, resources[RES_IMG_FONT].str);
+    if (*resources[RES_IMG_PFONT].str) {
+	combinepath(path, resdir, resources[RES_IMG_PFONT].str);
 	f = loadfontfromfile(path);
     }
-    if (!f && *globalresources[RES_IMG_FONT].str) {
-	combinepath(path, resdir, globalresources[RES_IMG_FONT].str);
+    if (!f && resources != globalresources
+	   && *globalresources[RES_IMG_PFONT].str) {
+	combinepath(path, resdir, globalresources[RES_IMG_PFONT].str);
 	f = loadfontfromfile(path);
     }
     free(path);
@@ -266,7 +271,8 @@ static int loadsounds(void)
 	    combinepath(path, resdir, resources[RES_SND_BASE + n].str);
 	    f = loadsfxfromfile(n, path);
 	}
-	if (!f && *globalresources[RES_SND_BASE + n].str) {
+	if (!f && resources != globalresources
+	       && *globalresources[RES_SND_BASE + n].str) {
 	    combinepath(path, resdir, globalresources[RES_SND_BASE + n].str);
 	    f = loadsfxfromfile(n, path);
 	}
@@ -284,6 +290,7 @@ static int loadsounds(void)
 
 int loadgameresources(int ruleset)
 {
+#if 0
     static int	initialized = FALSE;
 
     if (!initialized) {
@@ -291,7 +298,7 @@ int loadgameresources(int ruleset)
 	initresourcedefaults();
 	readrcfile();
     }
-
+#endif
     currentruleset = ruleset;
     resources = allresources[ruleset];
     loadfont();
@@ -299,4 +306,11 @@ int loadgameresources(int ruleset)
 	return FALSE;
     loadsounds();
     return TRUE;
+}
+
+int initresources(void)
+{
+    initresourcedefaults();
+    resources = allresources[Ruleset_None];
+    return readrcfile() && loadfont();
 }

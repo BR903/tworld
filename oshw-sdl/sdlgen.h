@@ -15,29 +15,14 @@
  */
 #define	NTILES		128
 
-/* The definition of a font.
- */
 typedef	struct fontinfo {
-    short		w;	/* width of each character */
-    short		h;	/* height of each character */
-    unsigned char      *bits;	/* 256 characters times h bytes */
+    signed char	h;		/* height of each character */
+    signed char	w[256];		/* width of each character */
+    void       *memory;		/* memory allocated for the font */
+    char       *bits[256];	/* pointers to each glyph */
 } fontinfo;
 
-/* The data mantained for a scrolling list.
- */
-typedef	struct scrollinfo {
-    SDL_Rect		area;		/* the rectangle to draw in */
-    Uint32		bkgnd;		/* the background color index */
-    Uint32		highlight;	/* the highlight color index */
-    int			itemcount;	/* the number of items in the list */
-    short		linecount;	/* how many lines fit in area */
-    short		maxlen;		/* how many chars fit in one line */
-    int			topitem;	/* the uppermost visible line */
-    int			index;		/* the line currently selected */
-    char const	      **items;		/* the list of lines of text */
-} scrollinfo;
-
-/* Flags to the various puttext functions.
+/* Flags to the puttext functions.
  */
 #define	PT_CENTER	0x0001		/* center the text horizontally */
 #define	PT_RIGHT	0x0002		/* right-align the text */
@@ -60,6 +45,7 @@ typedef	struct oshwglobals
     short		cbtile;		/* size of one tile in bytes */
     Uint32		textcolor;
     Uint32		bkgndcolor;
+    Uint32		halfcolor;
     Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
@@ -80,20 +66,13 @@ typedef	struct oshwglobals
      */
     void (*keyeventcallbackfunc)(int scancode, int down);
 
-    /* Display a line (or more) of text.
+    /* Display a line (or more) of text in the font.
      */
     void (*puttextfunc)(SDL_Rect *area, char const *text, int len, int flags);
 
-    /* Create a scrolling list, initializing the given scrollinfo
-     * structure with the other arguments.
+    /* Determine the widths of the columns of a table of text.
      */
-    int (*createscrollfunc)(scrollinfo *scroll, SDL_Rect const *area,
-			    Uint32 highlightcolor,
-			    int itemcount, char const **items);
-
-    /* Change the index of the scrolling list's selection by delta.
-     */
-    int (*scrollmovefunc)(scrollinfo *scroll, int delta);
+    int (*measurecolumnsfunc)(void const*, SDL_Rect*, int);
 
     /* Return a pointer to a specific tile image.
      */
@@ -118,6 +97,7 @@ extern oshwglobals sdlg;
 #define eventupdate		(*sdlg.eventupdatefunc)
 #define	keyeventcallback	(*sdlg.keyeventcallbackfunc)
 #define	puttext			(*sdlg.puttextfunc)
+#define	measurecolumns		(*sdlg.measurecolumnsfunc)
 #define	createscroll		(*sdlg.createscrollfunc)
 #define	scrollmove		(*sdlg.scrollmovefunc)
 #define	gettileimage		(*sdlg.gettileimagefunc)
@@ -130,6 +110,7 @@ extern oshwglobals sdlg;
 extern int _sdltimerinitialize(int showhistogram);
 extern int _sdlresourceinitialize(void);
 extern int _sdltextinitialize(void);
+extern int _sdlptextinitialize(void);
 extern int _sdltileinitialize(void);
 extern int _sdlinputinitialize(void);
 extern int _sdloutputinitialize(void);

@@ -9,6 +9,11 @@
 
 #include	"defs.h"
 
+/* Return the various scores for a given level.
+ */
+extern int getscoresforlevel(gameseries const *series, int level,
+			     int *base, int *bonus, int *total);
+
 /* Produce a list of the player's scores for the given series,
  * formatted in columns. Each level in the series is listed in a
  * separate string, with an extra string at the end giving a grand
@@ -19,7 +24,7 @@
  * the columns of the other strings.
  */
 extern int createscorelist(gameseries const *series,
-			   char ***pptrs, int *pcount, char const **pheader);
+			   char ***pptrs, int *pcount, int const **align);
 
 /* Free the memory allocated by createscorelist().
  */

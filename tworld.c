@@ -112,18 +112,18 @@ static int scrollinputcallback(int *move)
 static void showscores(gamespec *gs)
 {
     char      **texts;
-    char const *header;
+    int const  *justify;
     int		listsize, n;
 
-    if (!createscorelist(&gs->series, &texts, &listsize, &header)) {
+    if (!createscorelist(&gs->series, &texts, &listsize, &justify)) {
 	bell();
 	return;
     }
     n = gs->currentgame;
     setsubtitle(NULL);
-    if (displaylist(gs->series.name, header, (char const**)texts, listsize, &n,
-		    scrollinputcallback))
-	if (n < listsize - 1)
+    if (displaylist(gs->series.name, (char const**)texts, listsize, &n,
+		    5, justify, scrollinputcallback))
+	if (n >= 0 && n < gs->series.total)
 	    gs->currentgame = n;
     freescorelist(texts, listsize);
 }
@@ -141,7 +141,13 @@ static void replaceablesolution(gamespec *gs)
  */
 static void endinput(gamespec *gs, int status)
 {
-    displayendmessage(status);
+    int	bscore = 0, tscore = 0, gscore = 0;
+
+    if (status >= 0)
+	getscoresforlevel(&gs->series, gs->currentgame,
+			  &bscore, &tscore, &gscore);
+
+    displayendmessage(bscore, tscore, gscore, status);
 
     for (;;) {
 	switch (input(TRUE)) {
@@ -454,6 +460,8 @@ static int initializesystem(void)
 {
     if (!oshwinitialize(silence, showhistogram))
 	return FALSE;
+    if (!initresources())
+	return FALSE;
     setsubtitle(NULL);
     setkeyboardrepeat(TRUE);
     return TRUE;
@@ -475,31 +483,34 @@ static int startup(gamespec *gs, startupdata const *start)
 {
     gameseries *serieslist;
     char      **texts;
-    char const *header;
+    int const  *justify;
     int		listsize, n;
 
-    if (!createserieslist(start->filename, &serieslist,
-			  &texts, &listsize, &header))
-	return FALSE;
-    if (listsize < 1)
-	return FALSE;
-
     if (start->listseries) {
-	puts(header);
+	if (!createserieslist(start->filename, &serieslist,
+			      &texts, &listsize, NULL))
+	    die("Unable to create list of available files.");
 	for (n = 0 ; n < listsize ; ++n)
 	    puts(texts[n]);
+	if (listsize <= 1)
+	    puts("(no files)");
 	exit(EXIT_SUCCESS);
     }
 
-    if (listsize == 1) {
+    if (!createserieslist(start->filename, &serieslist,
+			  &texts, &listsize, &justify))
+	return FALSE;
+    if (listsize <= 1)
+	return FALSE;
+
+    if (listsize == 2) {
 	gs->series = serieslist[0];
 	if (!readseriesfile(&gs->series))
 	    return FALSE;
 	if (start->listscores) {
 	    freeserieslist(texts, listsize);
-	    if (!createscorelist(&gs->series, &texts, &listsize, &header))
+	    if (!createscorelist(&gs->series, &texts, &listsize, NULL))
 		return FALSE;
-	    puts(header);
 	    for (n = 0 ; n < listsize ; ++n)
 		puts(texts[n]);
 	    exit(EXIT_SUCCESS);
@@ -511,10 +522,10 @@ static int startup(gamespec *gs, startupdata const *start)
 	    return FALSE;
 	n = 0;
 	if (!displaylist("    Welcome to Tile World. Select your destination.",
-			 header, (char const**)texts, listsize, &n,
-			 scrollinputcallback))
+			 (char const**)texts, listsize, &n,
+			 3, justify, scrollinputcallback))
 	    exit(EXIT_SUCCESS);
-	if (n < 0 || n >= listsize)
+	if (n < 0 || n >= listsize - 1)
 	    return FALSE;
 	gs->series = serieslist[n];
 	if (!readseriesfile(&gs->series))
@@ -574,8 +585,8 @@ int main(int argc, char *argv[])
 	    bell();
 	}
 
-	spec.invalid = !initgamestate(&spec.series, spec.currentgame,
-						    spec.playback);
+	spec.invalid = !initgamestate(spec.series.games + spec.currentgame,
+				      spec.series.ruleset, spec.playback);
 	setsubtitle(spec.series.games[spec.currentgame].name);
 	if (spec.invalid)
 	    noplaygame(&spec);

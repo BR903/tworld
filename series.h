@@ -31,7 +31,7 @@ extern int readseriesfile(gameseries *series);
  */
 extern int createserieslist(char const *preferredfile,
 			    gameseries **pserieslist,
-			    char ***pptrs, int *pcount, char const **pheader);
+			    char ***pptrs, int *pcount, int const **align);
 
 /* Free all memory allocated by createserieslist().
  */

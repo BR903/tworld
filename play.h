@@ -14,9 +14,9 @@
 enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay };
 
 /* Initialize the current state to the starting position of the
- * specified level.
+ * given level.
  */
-extern int initgamestate(gameseries *series, int level, int replay);
+extern int initgamestate(gamesetup *game, int ruleset, int replay);
 
 /* Move the program in and out of game-play mode. This affects
  * the running of the timer and the handling of the keyboard.
