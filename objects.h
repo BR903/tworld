@@ -63,6 +63,10 @@ enum
     Boots_Water,
     Boots_Fire,
 
+    Water_Splash,
+    Dirt_Splash,
+    Bomb_Explosion,
+
     Count_Floors
 };
 
@@ -92,5 +96,6 @@ enum
 #define	isdoor(f)	((f) >= Door_Blue && (f) <= Door_Yellow)
 #define	iskey(f)	((f) >= Key_Blue && (f) <= Key_Yellow)
 #define	isboots(f)	((f) >= Boots_Slide && (f) <= Boots_Fire)
+#define	isdecaying(f)	((f) >= Water_Splash && (f) <= Bomb_Explosion)
 
 #endif

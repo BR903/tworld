@@ -39,6 +39,8 @@ extern char const      *currentfilename;
  */
 extern void die(char const *fmt, ...);
 
+extern void warn(char const *fmt, ...);
+
 /* Displays a message appropriate to the last error, or msg if errno
  * is zero. Returns FALSE.
  */

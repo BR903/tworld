@@ -19,9 +19,13 @@ extern long randomval;
  */
 extern int randominitialize(void);
 
-/* Return a random integer between 0 and 3 inclusive.
+/* Return a random number between 0 and 3 inclusive.
  */
 extern int random4(void);
+
+/* Randomly select an element from a list of three values.
+ */
+extern int randomof3(int a, int b, int c);
 
 /* Randomly permute an array of three elements.
  */

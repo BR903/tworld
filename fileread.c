@@ -79,6 +79,7 @@ static int getseriesfile(char *filename, void *data)
     series->filename = filename;
     series->mapfp = NULL;
     series->solutionfp = NULL;
+    series->solutionflags = 0;
     series->allmapsread = FALSE;
     series->allsolutionsread = FALSE;
     series->allocated = 0;
@@ -148,11 +149,16 @@ int readlevelinseries(gameseries *series, int level)
 		series->solutionfp = openfileindir(savedir, 
 						   series->filename, "rb");
 		if (series->solutionfp) {
+		    if (!readsolutionheader(series->solutionfp,
+					    &series->solutionflags))
+			return fileerr(NULL);
 		    savedirchecked = TRUE;
 		    series->solutionsreadonly = TRUE;
 		}
-	    } else
+	    } else {
 		series->solutionfp = NULL;
+		series->solutionflags = 0;
+	    }
 	}
 	while (!series->allmapsread && series->count <= level) {
 	    while (series->count >= series->allocated) {

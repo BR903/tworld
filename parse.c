@@ -45,9 +45,10 @@ int readlevelmap(FILE *fp, gamesetup *game)
     /*uchar	layer2[CXGRID * CYGRID];*/
     int		levelsize, id, size, i;
 
-    if ((levelsize = readushrt(fp)) < 0 || (game->number = readushrt(fp)) < 0
-					|| (game->time = readushrt(fp)) < 0
-					|| (game->chips = readushrt(fp)) < 0)
+    if ((levelsize = readushrt(fp)) < 0)
+	return FALSE;
+    if ((game->number = readushrt(fp)) < 0 || (game->time = readushrt(fp)) < 0
+					  || (game->chips = readushrt(fp)) < 0)
 	return fileerr("missing data");
     levelsize -= 6;
 
