@@ -157,10 +157,10 @@ static int layoutscreen(void)
 	infoloc.w = infow;
     infoloc.h = 6 * texth;
 
-    puttext(&rinfoloc, "Best Time:  ", 12, PT_CALCSIZE);
-    rinfoloc.x = infoloc.x + rinfoloc.w;
+    puttext(&rinfoloc, "Chips", 5, PT_CALCSIZE);
+    rinfoloc.x = infoloc.x + rinfoloc.w + MARGINW;
     rinfoloc.y = infoloc.y;
-    puttext(&rinfoloc, "-8888", 5, PT_CALCSIZE);
+    puttext(&rinfoloc, " 888", 4, PT_CALCSIZE);
     rinfoloc.h = 2 * texth;
 
     invloc.x = infoloc.x;
@@ -420,7 +420,7 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	if (timeleft < 0)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
-	    sprintf(buf, "Best time: %3d", besttime);
+	    sprintf(buf, "Best time: %d", besttime);
 	n = (state->game->sgflags & SGF_REPLACEABLE) ? PT_DIM : 0;
 	puttext(&rect, buf, -1, PT_UPDATERECT | n);
     }
