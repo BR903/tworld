@@ -303,10 +303,10 @@ static void replaceablesolution(gamespec *gs, int change)
 
 /* Mark the current level's password as known to the user.
  */
-static void passwordseen(gamespec *gs)
+static void passwordseen(gamespec *gs, int number)
 {
-    if (!(gs->series.games[gs->currentgame].sgflags & SGF_HASPASSWD)) {
-	gs->series.games[gs->currentgame].sgflags |= SGF_HASPASSWD;
+    if (!(gs->series.games[number].sgflags & SGF_HASPASSWD)) {
+	gs->series.games[number].sgflags |= SGF_HASPASSWD;
 	savesolutions(&gs->series);
     }
 }
@@ -322,8 +322,7 @@ static int setcurrentgame(gamespec *gs, int n)
 
     if (gs->usepasswds)
 	if (n > 0 && !(gs->series.games[n].sgflags & SGF_HASPASSWD)
-		  && !hassolution(gs->series.games + n - 1)
-		  && !(n == gs->currentgame + 1 && gs->melindacount >= 10))
+		  && !hassolution(gs->series.games + n - 1))
 	    return FALSE;
 
     gs->currentgame = n;
@@ -353,8 +352,7 @@ static int changecurrentgame(gamespec *gs, int offset)
 	sign = offset < 0 ? -1 : +1;
 	for ( ; n >= 0 && n < gs->series.total ; n += sign) {
 	    if (!n || (gs->series.games[n].sgflags & SGF_HASPASSWD)
-		   || hassolution(gs->series.games + n - 1)
-		   || (n == gs->currentgame + 1 && gs->melindacount >= 10)) {
+		   || hassolution(gs->series.games + n - 1)) {
 		m = n;
 		break;
 	    }
@@ -366,8 +364,7 @@ static int changecurrentgame(gamespec *gs, int offset)
 		if (n < 0 || n >= gs->series.total)
 		    continue;
 		if (!n || (gs->series.games[n].sgflags & SGF_HASPASSWD)
-		       || hassolution(gs->series.games + n - 1)
-		       || (n == gs->currentgame + 1 && gs->melindacount >= 10))
+		       || hassolution(gs->series.games + n - 1))
 		    break;
 	    }
 	}
@@ -458,6 +455,7 @@ static int selectlevelbypassword(gamespec *gs)
 	bell();
 	return FALSE;
     }
+    passwordseen(gs, n);
     return setcurrentgame(gs, n);
 }
 
@@ -505,7 +503,7 @@ static int startinput(gamespec *gs)
     int	cmd;
 
     drawscreen();
-    passwordseen(gs);
+    passwordseen(gs, gs->currentgame);
 
     for (;;) {
 	cmd = input(TRUE);
@@ -565,8 +563,10 @@ static int endinput(gamespec *gs)
 		setgameplaymode(BeginInput);
 		n = displayinputprompt("Skip level?", yn, 1, yninputcallback);
 		setgameplaymode(EndInput);
-		if (n && *yn == 'Y')
+		if (n && *yn == 'Y') {
+		    passwordseen(gs, gs->currentgame + 1);
 		    changecurrentgame(gs, +1);
+		}
 		gs->melindacount = 0;
 		return TRUE;
 	    }
