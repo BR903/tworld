@@ -116,7 +116,7 @@ enum
     Water_Splash	= 0x7C,
     Dirt_Splash		= 0x7D,
     Bomb_Explosion	= 0x7E,
-    Animation_Reserved1	= 0x7F
+    Entity_Explosion	= 0x7F
 };
 
 /* Macros to assist in identifying types of tiles.
@@ -127,7 +127,7 @@ enum
 #define	iskey(f)	((f) >= Key_Red && (f) <= Key_Green)
 #define	isboots(f)	((f) >= Boots_Ice && (f) <= Boots_Water)
 #define	iscreature(f)	((f) >= Chip && (f) < Water_Splash)
-#define	isanimation(f)	((f) >= Water_Splash && (f) <= Animation_Reserved1)
+#define	isanimation(f)	((f) >= Water_Splash && (f) <= Entity_Explosion)
 
 /* Getting a specific creature tile.
  */
@@ -176,11 +176,11 @@ typedef struct creature {
     unsigned char	id;		/* type of creature */
     unsigned char	dir;		/* current direction of creature */
     signed char		moving;		/* positional offset of creature */
+    unsigned char	frame;		/* explicit animation index */
     unsigned char	hidden;		/* TRUE if creature is invisible */
     unsigned char	state;		/* internal state value */
     unsigned char	fdir;		/* internal state value */
     unsigned char	tdir;		/* internal state value */
-    signed char		waits;		/* internal state value */
 } creature;
 #endif
 

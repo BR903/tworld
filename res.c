@@ -105,9 +105,11 @@ char		       *resdir = NULL;
 
 static void initresourcedefaults(void)
 {
+    strcpy(allresources[Ruleset_None][RES_IMG_TILES].str, "tiles.bmp");
+    strcpy(allresources[Ruleset_None][RES_IMG_FONT].str, "font.bmp");
+#if 0
     strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
     strcpy(globalresources[RES_IMG_FONT].str, "font.bmp");
-#if 0
     strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
     strcpy(globalresources[RES_SND_CHIP_WINS].str, "ditty1.wav");
     strcpy(globalresources[RES_SND_TIME_OUT].str, "bell.wav");
@@ -123,10 +125,10 @@ static void initresourcedefaults(void)
     strcpy(globalresources[RES_SND_BOMB_EXPLODES].str, "hit3.wav");
     strcpy(globalresources[RES_SND_WATER_SPLASH].str, "water2.wav");
 #endif
-    memcpy(&allresources[Ruleset_MS], &globalresources,
-	   sizeof globalresources);
-    memcpy(&allresources[Ruleset_Lynx], &globalresources,
-	   sizeof globalresources);
+    memcpy(&allresources[Ruleset_MS], &allresources[Ruleset_None],
+				sizeof allresources[Ruleset_None]);
+    memcpy(&allresources[Ruleset_Lynx], &allresources[Ruleset_None],
+				sizeof allresources[Ruleset_None]);
 }
 
 static int readrcfile(void)

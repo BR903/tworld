@@ -205,9 +205,9 @@ static creature *allocatecreature(void)
     cr->fdir = NIL;
     cr->tdir = NIL;
     cr->state = 0;
+    cr->frame = 0;
     cr->hidden = FALSE;
     cr->moving = 0;
-    cr->waits = 0;
     return cr;
 }
 
