@@ -184,7 +184,7 @@ static int readrcfile(void)
     int			lineno, i, j;
 
     memset(&file, 0, sizeof file);
-    if (!openfileindir(&file, resdir, "rc", "r", NULL))
+    if (!openfileindir(&file, resdir, "rc", "r", "can't open"))
 	return FALSE;
 
     ruleset = Ruleset_None;
@@ -246,22 +246,22 @@ static int loadcolors(void)
 
     bkgnd = strtol(resources[RES_CLR_BKGND].str, &end, 16);
     if (*end || bkgnd < 0 || bkgnd > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for background: %06X", bkgnd);
+	warn("rc: invalid color ID for background");
 	bkgnd = -1;
     }
     text = strtol(resources[RES_CLR_TEXT].str, &end, 16);
     if (*end || text < 0 || text > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for text: %06X", text);
+	warn("rc: invalid color ID for text");
 	text = -1;
     }
     bold = strtol(resources[RES_CLR_BOLD].str, &end, 16);
     if (*end || bold < 0 || bold > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for bold text: %06X", bold);
+	warn("rc: invalid color ID for bold text");
 	bold = -1;
     }
     dim = strtol(resources[RES_CLR_DIM].str, &end, 16);
     if (*end || dim < 0 || dim > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for dim text: %06X", dim);
+	warn("rc: invalid color ID for dim text");
 	dim = -1;
     }
 
@@ -313,6 +313,9 @@ static int loadfont(void)
 	f = loadfontfromfile(path, TRUE);
     }
     free(path);
+
+    if (!f)
+	errmsg(resdir, "no valid font found");
     return f;
 }
 
@@ -357,7 +360,8 @@ int loadgameresources(int ruleset)
     loadfont();
     if (!loadimages())
 	return FALSE;
-    loadsounds();
+    if (loadsounds() == 0)
+	setaudiosystem(FALSE);
     return TRUE;
 }
 

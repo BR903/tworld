@@ -276,8 +276,6 @@ static int readlevelinseries(gameseries *series, int level)
 {
     int	n;
 
-    if (level < 0)
-	return FALSE;
     if (series->count > level)
 	return TRUE;
 
@@ -308,7 +306,7 @@ static int readlevelinseries(gameseries *series, int level)
 	    }
 	}
     }
-    return series->count > level;
+    return TRUE;
 }
 
 /* Load all levels from the given data file, and all of the user's
@@ -318,6 +316,10 @@ int readseriesfile(gameseries *series)
 {
     if (series->gsflags & GSF_ALLMAPSREAD)
 	return TRUE;
+    if (series->total <= 0) {
+	errmsg(series->filebase, "cannot read from empty level set");
+	return FALSE;
+    }
     xalloc(series->games, series->total * sizeof *series->games);
     memset(series->games + series->allocated, 0,
 	   (series->total - series->allocated) * sizeof *series->games);
@@ -551,15 +553,21 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
     s.count = 0;
     s.usedatdir = FALSE;
     if (preferred && *preferred && haspathname(preferred)) {
-	if (getseriesfile((char*)preferred, &s) < 0 || !s.count)
-	    die("%s: couldn't read data file", preferred);
+	if (getseriesfile((char*)preferred, &s) < 0)
+	    return FALSE;
+	if (!s.count) {
+	    errmsg(preferred, "couldn't read data file");
+	    return FALSE;
+	}
 	*seriesdir = '\0';
 	*savedir = '\0';
     } else {
 	if (!*seriesdir)
 	    return FALSE;
-	if (!findfiles(seriesdir, &s, getseriesfile) || !s.count)
-	    die("%s: directory contains no data files", seriesdir);
+	if (!findfiles(seriesdir, &s, getseriesfile) || !s.count) {
+	    errmsg(seriesdir, "directory contains no data files");
+	    return FALSE;
+	}
 	if (preferred && *preferred) {
 	    for (n = 0 ; n < s.count ; ++n) {
 		if (!strcmp(s.list[n].name, preferred)) {
@@ -569,8 +577,10 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
 		    break;
 		}
 	    }
-	    if (n == s.count)
-		die("%s: no such data file", preferred);
+	    if (n == s.count) {
+		errmsg(preferred, "no such data file");
+		return FALSE;
+	    }
 	}
 	if (s.count > 1)
 	    qsort(s.list, s.count, sizeof *s.list, gameseriescmp);

@@ -46,6 +46,7 @@ typedef	struct startupdata {
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
     int		listtimes;	/* TRUE if the times should be listed */
+    int		finished;	/* TRUE if the program is done */
 } startupdata;
 
 /* Structure used to hold the complete list of available series.
@@ -581,7 +582,7 @@ static int startinput(gamespec *gs)
  */
 static int endinput(gamespec *gs)
 {
-    char	yn[2];
+    char	yn[2] = "";
     int		bscore = 0, tscore = 0, gscore = 0;
     int		n;
 
@@ -919,12 +920,12 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 	return 0;
 
     if (!readseriesfile(&gs->series)) {
-	errmsg(gs->series.mapfilename, "cannot read data file");
+	errmsg(gs->series.filebase, "cannot read data file");
 	freeseriesdata(&gs->series);
 	return -1;
     }
     if (gs->series.total < 1) {
-	errmsg(gs->series.mapfilename, "no levels found in data file");
+	errmsg(gs->series.filebase, "no levels found in data file");
 	freeseriesdata(&gs->series);
 	return -1;
     }
@@ -1183,59 +1184,61 @@ static void shutdownsystem(void)
  * the user returns to the series list later on, the choosegame()
  * function is called instead.
  */
-static void choosegameatstartup(gamespec *gs, startupdata const *start)
+static int choosegameatstartup(gamespec *gs, startupdata const *start)
 {
     seriesdata	series;
     tablespec	table;
-    int		f;
 
     if (!createserieslist(start->filename,
 			  &series.list, &series.count, &series.table))
-	die("unable to create list of available level sets");
+	return -1;
+
     free(start->filename);
 
-    if (series.count <= 0)
-	die("no level sets found");
+    if (series.count <= 0) {
+	errmsg(NULL, "no level sets found");
+	return -1;
+    }
 
     if (start->listseries) {
 	printtable(stdout, &series.table);
 	if (!series.count)
 	    puts("(no files)");
-	exit(EXIT_SUCCESS);
+	return 0;
     }
 
     if (series.count == 1) {
-	if (!readseriesfile(series.list))
-	    die("cannot read level set");
+	if (!readseriesfile(series.list)) {
+	    errmsg(series.list[0].filebase, "cannot read level set");
+	    return -1;
+	}
 	if (start->listscores) {
 	    if (!createscorelist(series.list, start->usepasswds,
 				 NULL, NULL, &table))
-		exit(EXIT_FAILURE);
+		return -1;
 	    freeserieslist(series.list, series.count, &series.table);
 	    printtable(stdout, &table);
 	    freescorelist(NULL, &table);
-	    exit(EXIT_SUCCESS);
+	    return 0;
 	}
 	if (start->listtimes) {
 	    if (!createtimelist(series.list,
 				series.list->ruleset == Ruleset_Lynx,
 				NULL, NULL, &table))
-		exit(EXIT_FAILURE);
+		return -1;
 	    freeserieslist(series.list, series.count, &series.table);
 	    printtable(stdout, &table);
 	    freetimelist(NULL, &table);
-	    exit(EXIT_SUCCESS);
+	    return 0;
 	}
     }
 
-    if (!initializesystem())
-	die("cannot initialize program due to previous errors");
+    if (!initializesystem()) {
+	errmsg(NULL, "cannot initialize program due to previous errors");
+	return -1;
+    }
 
-    f = selectseriesandlevel(gs, &series, TRUE, NULL, start->levelnum);
-    if (f < 0)
-	die("cannot proceed due to previous errors");
-    else if (f == 0)
-	exit(EXIT_SUCCESS);
+    return selectseriesandlevel(gs, &series, TRUE, NULL, start->levelnum);
 }
 
 /*
@@ -1252,7 +1255,11 @@ int main(int argc, char *argv[])
     if (!initoptionswithcmdline(argc, argv, &start))
 	return EXIT_FAILURE;
 
-    choosegameatstartup(&spec, &start);
+    f = choosegameatstartup(&spec, &start);
+    if (f < 0)
+	return EXIT_FAILURE;
+    else if (f == 0)
+	return EXIT_SUCCESS;
 
     do {
 	pushsubtitle(NULL);

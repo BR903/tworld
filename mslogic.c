@@ -11,11 +11,13 @@
 #include	"random.h"
 #include	"logic.h"
 
-#undef assert
-#define	assert(test)	((test) || (die("internal error: failed sanity check" \
+#ifdef NDEBUG
+#define	_assert(test)
+#else
+#define	_assert(test)	((test) || (die("internal error: failed sanity check" \
 				        " (%s)\nPlease report this error to"  \
-				        " breadbox@muppetlabs.com\n", \
- 				        "\"" #test "\""), 0))
+				        " breadbox@muppetlabs.com", #test), 0))
+#endif
 
 /* Internal game status flags.
  */
@@ -123,7 +125,7 @@ static short *_possession(int obj)
       case Water:		return &state->boots[3];
     }
     warn("Invalid object %d handed to possession()", obj);
-    assert(!"possession() called with an invalid object");
+    _assert(!"possession() called with an invalid object");
     return NULL;
 }
 
@@ -548,8 +550,7 @@ static creature *lookupblock(int pos)
     else if (creatureid(id) == Block)
 	cr->dir = creaturedirid(id);
     else
-	die("lookupblock() called for (%d %d) which contains non-block %02X",
-	    pos % CXGRID, pos / CXGRID, id);
+	_assert(!"lookupblock() called on blockless location");
 
     if (cellat(pos)->bot.id == Beartrap) {
 	for (n = 0 ; n < traplistsize() ; ++n) {
@@ -612,9 +613,9 @@ static int getcontrollerdir(creature const *cr)
 {
     int	n;
 
-    assert(cr != getchip());
+    _assert(cr != getchip());
     for (n = 0 ; n < creaturecount && creatures[n] != cr ; ++n) ;
-    assert(n < creaturecount);
+    _assert(n < creaturecount);
     for (--n ; n >= 0 ; --n) {
 	if (creatures[n]->hidden)
 	    continue;
@@ -731,8 +732,8 @@ static int pushblock(int pos, int dir, int collapse)
     creature   *cr;
     int		slipdir;
 
-    assert(cellat(pos)->top.id == Block_Static);
-    assert(dir != NIL);
+    _assert(cellat(pos)->top.id == Block_Static);
+    _assert(dir != NIL);
 
     cr = lookupblock(pos);
     if (!cr) {
@@ -855,8 +856,8 @@ static int canmakemove(creature const *cr, int dir, int flags)
     int		floor;
     int		id, y, x;
 
-    assert(cr);
-    assert(dir != NIL);
+    _assert(cr);
+    _assert(dir != NIL);
 
     y = cr->pos / CXGRID;
     x = cr->pos % CXGRID;
@@ -999,7 +1000,7 @@ static void choosecreaturemove(creature *cr)
 	    break;
 	  default:
 	    warn("Non-creature %02X trying to move", cr->id);
-	    assert(!"Unknown creature trying to move");
+	    _assert(!"Unknown creature trying to move");
 	    break;
 	}
     } else {
@@ -1069,7 +1070,7 @@ static void choosecreaturemove(creature *cr)
 	    break;
 	  default:
 	    warn("Non-creature %02X trying to move", cr->id);
-	    assert(!"Unknown creature trying to move");
+	    _assert(!"Unknown creature trying to move");
 	    break;
 	}
     }
@@ -1126,7 +1127,7 @@ static int teleportcreature(creature *cr, int start)
     int		defer;
     int		dest, origpos, f;
 
-    assert(!cr->hidden);
+    _assert(!cr->hidden);
     if (cr->dir == NIL) {
 	warn("%d: directionless creature %02X on teleport at (%d %d)",
 	     currenttime(), cr->id, cr->pos % CXGRID, cr->pos / CXGRID);
@@ -1290,7 +1291,7 @@ static int startmovement(creature *cr, int dir)
 {
     int	floor;
 
-    assert(dir != NIL);
+    _assert(dir != NIL);
 
     floor = cellat(cr->pos)->bot.id;
     if (!canmakemove(cr, dir, 0)) {
@@ -1303,7 +1304,7 @@ static int startmovement(creature *cr, int dir)
     }
 
     if (floor == Beartrap)
-	assert(cr->state & CS_RELEASED);
+	_assert(cr->state & CS_RELEASED);
     cr->state &= ~CS_RELEASED;
 
     cr->dir = dir;
@@ -1359,7 +1360,7 @@ static void endmovement(creature *cr, int dir)
 	  case Door_Blue:
 	  case Door_Yellow:
 	  case Door_Green:
-	    assert(possession(floor));
+	    _assert(possession(floor));
 	    if (floor != Door_Green)
 		--possession(floor);
 	    poptile(newpos);
@@ -1391,7 +1392,7 @@ static void endmovement(creature *cr, int dir)
 	    addsoundeffect(SND_IC_COLLECTED);
 	    break;
 	  case Socket:
-	    assert(chipsneeded() == 0);
+	    _assert(chipsneeded() == 0);
 	    poptile(newpos);
 	    addsoundeffect(SND_SOCKET_OPENED);
 	    break;
@@ -1524,7 +1525,7 @@ static void endmovement(creature *cr, int dir)
 	}
     } else {
 	if (iscreature(cell->bot.id)) {
-	    assert(creatureid(cell->bot.id) == Chip
+	    _assert(creatureid(cell->bot.id) == Chip
 			|| creatureid(cell->bot.id) == Swimming_Chip);
 	    setchipstatus(SF_CHIPHIT);
 	    return;
@@ -1641,6 +1642,8 @@ static void createclones(void)
 	    creatures[n]->state &= ~CS_CLONING;
 }
 
+#ifndef NDEBUG
+
 /*
  * Debugging functions.
  */
@@ -1715,17 +1718,19 @@ static void verifymap(void)
     for (n = 0 ; n < creaturecount ; ++n) {
 	cr = creatures[n];
 	if (cr->id < 0x40 || cr->id >= 0x80)
-	    die("%d: Undefined creature %02X at (%d %d)",
-		state->currenttime, cr->id,
-		cr->pos % CXGRID, cr->pos / CXGRID);
+	    warn("%d: Undefined creature %02X at (%d %d)",
+		 state->currenttime, cr->id,
+		 cr->pos % CXGRID, cr->pos / CXGRID);
 	if (!cr->hidden && (cr->pos < 0 || cr->pos >= CXGRID * CYGRID))
-	    die("%d: Creature %02X has left the map: %04X",
-		state->currenttime, cr->id, cr->pos);
+	    warn("%d: Creature %02X has left the map: %04X",
+		 state->currenttime, cr->id, cr->pos);
 	if (cr->dir > EAST && (cr->dir != NIL || cr->id != Block))
-	    die("%d: Creature %d lacks direction (%d)",
-		state->currenttime, cr->id, cr->dir);
+	    warn("%d: Creature %d lacks direction (%d)",
+		 state->currenttime, cr->id, cr->dir);
     }
 }
+
+#endif
 
 /*
  * Per-tick maintenance functions.
@@ -1737,6 +1742,7 @@ static void initialhousekeeping(void)
 {
     int	n;
 
+#ifndef NDEBUG
     if (currentinput() == CmdDebugCmd2) {
 	dumpmap();
 	exit(0);
@@ -1767,6 +1773,7 @@ static void initialhousekeeping(void)
 	currentinput() = NIL;
 	setnosaving();
     }
+#endif
 
     if (!(currenttime() & 3)) {
 	for (n = 1 ; n < creaturecount ; ++n) {

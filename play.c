@@ -68,12 +68,14 @@ static int setrulesetbehavior(int ruleset)
 	settimersecond(1100 * mudsucking);
 	break;
       default:
-	die("Unknown ruleset requested");
+	errmsg(NULL, "unknown ruleset requested (ruleset=%d)", ruleset);
 	return FALSE;
     }
 
-    if (!loadgameresources(ruleset) || !creategamedisplay())
-	die("Unable to proceed due to previous errors.");
+    if (!loadgameresources(ruleset) || !creategamedisplay()) {
+	die("unable to proceed due to previous errors.");
+	return FALSE;
+    }
 
     logic->state = &state;
     return TRUE;
@@ -85,7 +87,7 @@ static int setrulesetbehavior(int ruleset)
 int initgamestate(gamesetup *game, int ruleset)
 {
     if (!setrulesetbehavior(ruleset))
-	die("Unable to initialize the system for the requested ruleset");
+	die("unable to initialize the system for the requested ruleset");
 
     memset(state.map, 0, sizeof state.map);
     memset(state.keys, 0, sizeof state.keys);
@@ -160,8 +162,8 @@ int doturn(int cmd)
     } else {
 	if (state.replay < state.moves.count) {
 	    if (state.currenttime > state.moves.list[state.replay].when)
-		die("Replay: Got ahead of saved solution: %d > %d!",
-		    state.currenttime, state.moves.list[state.replay].when);
+		warn("Replay: Got ahead of saved solution: %d > %d!",
+		     state.currenttime, state.moves.list[state.replay].when);
 	    if (state.currenttime == state.moves.list[state.replay].when) {
 		state.currentinput = state.moves.list[state.replay].dir;
 		++state.replay;

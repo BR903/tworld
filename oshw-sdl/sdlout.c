@@ -218,21 +218,27 @@ static int layoutscreen(void)
 
 /* Create or change the program's display surface.
  */
-static void createdisplay(void)
+static int createdisplay(void)
 {
     if (sdlg.screen) {
 	SDL_FreeSurface(sdlg.screen);
 	sdlg.screen = NULL;
     }
-    if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh, 32, SDL_HWSURFACE)))
-	die("Cannot open %dx%d display: %s\n",
-	    screenw, screenh, SDL_GetError());
+    if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh,
+					 32, SDL_HWSURFACE))) {
+	errmsg(NULL, "cannot open %dx%d display: %s\n",
+		     screenw, screenh, SDL_GetError());
+	return FALSE;
+    }
+    if (sdlg.screen->format->BitsPerPixel != 32) {
+	errmsg(NULL, "couldn't open 32-bit display; got %d-bit instead",
+		     sdlg.screen->format->BitsPerPixel);
+	return FALSE;
+    }
     if (sdlg.screen->w != screenw || sdlg.screen->h != screenh)
-	warn("Requested a %dx%d display, got %dx%d instead!",
+	warn("requested a %dx%d display, got %dx%d instead",
 	     sdlg.screen->w, sdlg.screen->h);
-    if (sdlg.screen->format->BitsPerPixel != 32)
-	warn("Requested a display with 32-bit depth, got %d-bit instead!",
-	     sdlg.screen->format->BitsPerPixel);
+    return TRUE;
 }
 
 /* Wipe the display.
@@ -889,9 +895,8 @@ int displayinputprompt(char const *prompt, char *input, int maxlen,
  */
 int creategamedisplay(void)
 {
-    if (!layoutscreen())
+    if (!layoutscreen() || !createdisplay())
 	return FALSE;
-    createdisplay();
     cleardisplay();
     return TRUE;
 }

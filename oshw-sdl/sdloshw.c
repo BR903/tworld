@@ -73,9 +73,13 @@ int oshwinitialize(int silence, int showhistogram)
 
     sdlg.eventupdatefunc = _eventupdate;
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-	die("Cannot initialize SDL system: %s\n", SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+	errmsg(NULL, "Cannot initialize SDL system: %s\n", SDL_GetError());
+	return FALSE;
+    }
     atexit(shutdown);
+
+    setsubtitle(NULL);
 
     icon = SDL_CreateRGBSurfaceFrom(cciconimage, CXCCICON, CYCCICON,
 				    32, 4 * CXCCICON,
@@ -85,8 +89,6 @@ int oshwinitialize(int silence, int showhistogram)
 	SDL_FreeSurface(icon);
     } else
 	warn("couldn't create icon surface: %s", SDL_GetError());
-
-    setsubtitle(NULL);
 
     return _sdltimerinitialize(showhistogram)
 	&& _sdltextinitialize()

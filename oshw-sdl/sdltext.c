@@ -354,7 +354,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 static void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
 {
     if (!sdlg.font.h)
-	die("No font available!");
+	die("no font available! (how did I get this far??)");
 
     if (len < 0)
 	len = text ? strlen(text) : 0;
