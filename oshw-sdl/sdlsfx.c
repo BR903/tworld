@@ -320,7 +320,7 @@ int changevolume(int delta, int display)
     volume = (SDL_MIX_MAXVOLUME * v + 9) / 10;
     if (display) {
 	sprintf(buf, "Volume: %d", v);
-	setdisplaymsg(buf, 1000, 1000);
+	setdisplaymsg(buf, 1000, -1);
     }
     return TRUE;
 }

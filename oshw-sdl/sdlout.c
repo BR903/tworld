@@ -334,8 +334,8 @@ static void displaymsg(int update)
 	if (!currentmsglen)
 	    return;
 	f = PT_CENTER;
-	if (msgbolduntil < SDL_GetTicks())
-	    f |= PT_DIM;
+	if (msgbolduntil >= SDL_GetTicks())
+	    f |= PT_HILIGHT;
     }
     puttext(&messageloc, currentmsg, currentmsglen, f);
     if (update)
