@@ -46,15 +46,15 @@
  * 00DDddDD
  *
  * 01234567
- * 10DDTTTT
+ * 10DDDTTT
  *
  * 01234567 89012345
- * 01DDTTTT TTTTTTTT
+ * 01DDDTTT TTTTTTTT
  *
  * 01234567 89012345 67890123 45678901
- * 11DDTTTT TTTTTTTT TTTTTTTT TTTTTTTT
+ * 11DDDTTT TTTTTTTT TTTTTTTT TTTTTTTT
  *
- * Ignoring for the moment the first form, in each case the two bits
+ * Ignoring for the moment the first form, in each case the three bits
  * marked D contain the direction of the move, and the bits marked T
  * indicate the amount of time, in ticks, between this move and the
  * prior move, less one (i.e., a value of T=0 indicates a move that
@@ -75,6 +75,24 @@
  */
 #define	CSSIG		0x999B3335UL
 
+/*
+ * 0 = NORTH		0001 = 1
+ * 1 = WEST		0010 = 2
+ * 2 = SOUTH		0100 = 4
+ * 3 = EAST		1000 = 8
+ * 4 = NORTHWEST	0011 = 3
+ * 5 = SOUTHWEST	0110 = 6
+ * 6 = NORTHEAST	1001 = 9
+ * 7 = SOUTHEAST	1100 = C
+ */
+static int const diridx8[16] = {
+    -1,  0,  1,  4,  2, -1,  5, -1,  3,  6, -1, -1,  7, -1, -1, -1
+};
+static int const idxdir8[8] = {
+    NORTH, WEST, SOUTH, EAST,
+    NORTH | WEST, SOUTH | WEST, NORTH | EAST, SOUTH | EAST
+};
+
 /* The path of the directory containing the user's solution files.
  */
 char		       *savedir = NULL;
@@ -82,7 +100,6 @@ char		       *savedir = NULL;
 /* FALSE if savedir's existence is unverified.
  */
 int			savedirchecked = FALSE;
-
 
 /*
  * Functions for manipulating move lists.
@@ -187,43 +204,43 @@ static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
 	--n;
 	switch (byte & 3) {
 	  case 0:
-	    act.dir = idxdir((byte >> 2) & 3);
+	    act.dir = idxdir8[(byte >> 2) & 3];
 	    act.when += 4;
 	    addtomovelist(moves, act);
-	    act.dir = idxdir((byte >> 4) & 3);
+	    act.dir = idxdir8[(byte >> 4) & 3];
 	    act.when += 4;
 	    addtomovelist(moves, act);
-	    act.dir = idxdir((byte >> 6) & 3);
+	    act.dir = idxdir8[(byte >> 6) & 3];
 	    act.when += 4;
 	    addtomovelist(moves, act);
 	    break;
 	  case 1:
-	    act.dir = idxdir((byte >> 2) & 3);
-	    act.when += (byte >> 4) & 15;
+	    act.dir = idxdir8[(byte >> 2) & 7];
+	    act.when += (byte >> 5) & 7;
 	    ++act.when;
 	    addtomovelist(moves, act);
 	    break;
 	  case 2:
-	    act.dir = idxdir((byte >> 2) & 3);
-	    act.when += (byte >> 4) & 15;
+	    act.dir = idxdir8[(byte >> 2) & 7];
+	    act.when += (byte >> 5) & 7;
 	    if (!filereadint8(file, &byte, "unexpected EOF"))
 		return FALSE;
 	    --n;
-	    act.when += (unsigned long)byte << 4;
+	    act.when += (unsigned long)byte << 3;
 	    ++act.when;
 	    addtomovelist(moves, act);
 	    break;
 	  case 3:
-	    act.dir = idxdir((byte >> 2) & 3);
-	    act.when += (byte >> 4) & 15;
+	    act.dir = idxdir8[(byte >> 2) & 7];
+	    act.when += (byte >> 5) & 7;
 	    if (!filereadint8(file, &byte, "unexpected EOF"))
 		return FALSE;
 	    --n;
-	    act.when += (unsigned long)byte << 4;
+	    act.when += (unsigned long)byte << 3;
 	    if (!filereadint16(file, &word, "unexpected EOF"))
 		return FALSE;
 	    n -= 2;
-	    act.when += (unsigned long)word << 12;
+	    act.when += (unsigned long)word << 11;
 	    ++act.when;
 	    addtomovelist(moves, act);
 	    break;
@@ -256,31 +273,34 @@ static int writemovelist(fileinfo *file, actlist const *moves,
 	when = moves->list[n].when;
 	delta += when;
 	if (delta == 3 && n + 2 < moves->count
+	        && diridx8[moves->list[n].dir] < 4
 		&& moves->list[n + 1].when - moves->list[n].when == 4
-		&& moves->list[n + 2].when - moves->list[n + 1].when == 4) {
-	    byte = 0x00 | (diridx(moves->list[n].dir) << 2)
-			| (diridx(moves->list[n + 1].dir) << 4)
-			| (diridx(moves->list[n + 2].dir) << 6);
+	        && diridx8[moves->list[n + 1].dir] < 4
+		&& moves->list[n + 2].when - moves->list[n + 1].when == 4
+	        && diridx8[moves->list[n + 2].dir] < 4) {
+	    byte = 0x00 | (diridx8[moves->list[n].dir] << 2)
+			| (diridx8[moves->list[n + 1].dir] << 4)
+			| (diridx8[moves->list[n + 2].dir] << 6);
 	    if (!filewriteint8(file, byte, "write error"))
 		return FALSE;
 	    when = moves->list[n + 2].when;
 	    ++size;
 	    n += 2;
-	} else if (delta < (1 << 4)) {
-	    byte = 0x01 | (diridx(moves->list[n].dir) << 2)
-			| ((delta << 4) & 0xF0);
+	} else if (delta < (1 << 3)) {
+	    byte = 0x01 | (diridx8[moves->list[n].dir] << 2)
+			| ((delta << 5) & 0xE0);
 	    if (!filewriteint8(file, byte, "write error"))
 		return FALSE;
 	    ++size;
-	} else if (delta < (1 << 12)) {
-	    word = 0x02 | (diridx(moves->list[n].dir) << 2)
-			| ((delta << 4) & 0xFFF0);
+	} else if (delta < (1 << 11)) {
+	    word = 0x02 | (diridx8[moves->list[n].dir] << 2)
+			| ((delta << 5) & 0xFFE0);
 	    if (!filewriteint16(file, word, "write error"))
 		return FALSE;
 	    size += 2;
-	} else if (delta < (1 << 28)) {
-	    dwrd = 0x03 | (diridx(moves->list[n].dir) << 2)
-			| ((delta << 4) & 0xFFFFFFF0);
+	} else if (delta < (1 << 27)) {
+	    dwrd = 0x03 | (diridx8[moves->list[n].dir] << 2)
+			| ((delta << 5) & 0xFFFFFFE0);
 	    if (!filewriteint32(file, dwrd, "write error"))
 		return FALSE;
 	    size += 4;
@@ -336,7 +356,7 @@ static int readsolution(fileinfo *file, gamesetup *game)
 	return FALSE;
     if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
-    game->savedrndslidedir = idxdir(val8);
+    game->savedrndslidedir = idxdir8[val8];
     if (!filereadint32(file, &val32, "unexpected EOF"))
 	return FALSE;
     game->savedrndseed = val32;
@@ -372,7 +392,7 @@ static int writesolution(fileinfo *file, gamesetup const *game)
     if (!filewriteint16(file, game->number, "write error")
 		|| !filewrite(file, game->passwd, 4, "write error")
 		|| !filewriteint8(file, 0, "write error")
-		|| !filewriteint8(file, diridx((int)game->savedrndslidedir),
+		|| !filewriteint8(file, diridx8[(int)game->savedrndslidedir],
 					"write error")
 		|| !filewriteint32(file, game->savedrndseed, "write error")
 		|| !filewriteint32(file, game->besttime, "write error")

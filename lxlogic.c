@@ -964,17 +964,14 @@ static int startmovement(creature *cr, int releasing)
       case CmdSouth | CmdWest:
       case CmdSouth | CmdEast:
 	assert(cr->id == Chip);
-	warn("resolving diagonal movement %02X", dir);
 	if (!(cr->dir & dir)) {
 	    dir &= CmdEast | CmdWest;
-	    warn("taking horizontal %02X", dir);
 	} else {
 	    f1 = canmakemove(cr, cr->dir,
 			      CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    f2 = canmakemove(cr, dir ^ cr->dir,
 			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
-	    warn("taking %02X after testing both directions", dir);
 	}
 	break;
     }
