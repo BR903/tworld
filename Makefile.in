@@ -64,4 +64,4 @@ clean:
 install: tworld
 	cp -i ./tworld $(bindir)/.
 	mkdir -p $(sharedir)/data
-	cp -i ./rc ./*.bmp $(sharedir)/.
+	cp -i ./rc ./*.bmp ./*.psf $(sharedir)/.

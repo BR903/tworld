@@ -12,6 +12,7 @@ err.c
 err.h
 fileio.c
 fileio.h
+font.psf
 gen.h
 help.c
 help.h
@@ -42,6 +43,7 @@ ver.h
 oshw-sdl/Makefile.in
 oshw-sdl/ccfont.c
 oshw-sdl/ccicon.c
+oshw-sdl/mkfont
 oshw-sdl/sdlerr.c
 oshw-sdl/sdlgen.h
 oshw-sdl/sdlin.c
