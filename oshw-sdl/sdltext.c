@@ -158,7 +158,7 @@ static void *drawtextscanline16(Uint16 *scanline, int w, int y, Uint32 *clr,
     for (n = 0 ; n < len ; ++n) {
 	glyph = sdlg.font.bits[text[n]];
 	glyph += y * sdlg.font.w[text[n]];
-	for (x = 0 ; x < sdlg.font.w[text[n]] ; ++x, --w)
+	for (x = 0 ; w && x < sdlg.font.w[text[n]] ; ++x, --w)
 	    scanline[x] = (Uint16)clr[glyph[x]];
 	scanline += x;
     }
