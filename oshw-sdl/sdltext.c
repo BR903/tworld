@@ -1,4 +1,4 @@
-/* sdlfont.c: Font-rendering functions for SDL.
+/* sdltext.c: Font-rendering functions for SDL.
  *
  * Copyright (C) 2001 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
