@@ -147,7 +147,7 @@ static void endinput(gamespec *gs, int status)
 	  case CmdNext10:	gs->currentgame += 10;		return;
 	  case CmdProceed:	if (status > 0) ++gs->currentgame; return;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return;
-	  case CmdHelp:		gameplayhelp();			break;
+	  case CmdHelp:		gameplayhelp();			return;
 	  case CmdSeeScores:	showscores(gs);			return;
 	  case CmdKillSolution:	replaceablesolution(gs);	return;
 	  case CmdQuitLevel:					exit(0);
