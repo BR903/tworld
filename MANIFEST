@@ -36,8 +36,6 @@ state.h
 tworld.c
 ver.h
 docs/tworld.6
-docs/fontbmp.html
-docs/tilebmp.html
 docs/tworld.html
 oshw-sdl/Makefile.in
 oshw-sdl/ccicon.c

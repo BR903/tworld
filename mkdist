@@ -5,6 +5,8 @@
 /home/breadbox/p/html2txt < ./INSTALL.html > ./INSTALL
 /home/breadbox/p/html2txt < ./Changelog.html > ./Changelog
 
+(cd docs && ./mkdocs tworld.doc)
+
 VER=`tr -cd 0123456789. < ver.h`
 
 mkdir tworld-$VER
