@@ -13,7 +13,7 @@
 #include	"logic.h"
 
 #ifdef NDEBUG
-#define	_assert(test)
+#define	_assert(test)	((void)0)
 #else
 #define	_assert(test)	((test) || (die("internal error: failed sanity check" \
 				        " (%s)\nPlease report this error to"  \
