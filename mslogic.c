@@ -456,8 +456,7 @@ static void togglewalls(void)
 
 /* Creature state flags.
  */
-#define	CS_RELEASED		0x01	/* can leave a trap/cloner */
-#define	CS_TELEPORTED		0x02	/* can leave a teleport */
+#define	CS_RELEASED		0x01	/* can leave a trap/cloner/teleport */
 #define	CS_HASMOVED		0x04	/* already used current move */
 #define	CS_TURNING		0x08	/* is turning around */
 #define	CS_SLIP			0x10	/* is on the slip list */
@@ -852,11 +851,9 @@ static int canmakemove(creature const *cr, int dir, int exposewalls)
 	floorfrom = cellat(cr->pos)->bot.id;
     floorto = floorat(to);
 
-    if (floorfrom == Beartrap || floorfrom == CloneMachine)
+    if (floorfrom == Beartrap || floorfrom == CloneMachine
+			      || floorfrom == Teleport)
 	if (!(cr->state & CS_RELEASED))
-	    return FALSE;
-    if (floorfrom == Teleport)
-	if (!(cr->state & CS_TELEPORTED))
 	    return FALSE;
 
     if (cellat(to)->bot.id == CloneMachine)
@@ -1114,13 +1111,13 @@ static void teleportcreature(creature *cr)
 	     currenttime(), cr->id, cr->pos % CXGRID, cr->pos / CXGRID);
 	return;
     }
-    if (cr->state & CS_TELEPORTED) {
+    if (cr->state & CS_RELEASED) {
 	warn("%d: tried to teleport teleported creature %02X at (%d %d)",
 	     currenttime(), cr->id, cr->pos % CXGRID, cr->pos / CXGRID);
 	return;
     }
 
-    cr->state |= CS_TELEPORTED;
+    cr->state |= CS_RELEASED;
 
     origpos = pos = cr->pos;
 
@@ -1193,7 +1190,7 @@ static int getslipmove(creature *cr)
 	cr->fdir = getslidedir(floor, TRUE);
 	return cr->id != Chip;
     } else if (floor == Teleport) {
-	if (!(cr->state & CS_TELEPORTED))
+	if (!(cr->state & CS_RELEASED))
 	    return FALSE;
 	cr->fdir = cr->dir;
 	return TRUE;
@@ -1282,13 +1279,9 @@ static int startmovement(creature *cr, int dir)
 	return FALSE;
     }
 
-    if (floor == Beartrap || floor == CloneMachine) {
+    if (floor == Beartrap || floor == CloneMachine || floor == Teleport) {
 	assert(cr->state & CS_RELEASED);
 	cr->state &= ~CS_RELEASED;
-    }
-    if (floor == Teleport) {
-	assert(cr->state & CS_TELEPORTED);
-	cr->state &= ~CS_TELEPORTED;
     }
 
     if (floor == CloneMachine)
@@ -1588,7 +1581,7 @@ static void teleportations(void)
 	    continue;
 	if (cellat(creatures[n]->pos)->bot.id != Teleport)
 	    continue;
-	if (creatures[n]->state & CS_TELEPORTED)
+	if (creatures[n]->state & CS_RELEASED)
 	    continue;
 	teleportcreature(creatures[n]);
     }
@@ -1597,7 +1590,7 @@ static void teleportations(void)
 	    continue;
 	if (cellat(blocks[n]->pos)->bot.id != Teleport)
 	    continue;
-	if (creatures[n]->state & CS_TELEPORTED)
+	if (creatures[n]->state & CS_RELEASED)
 	    continue;
 	teleportcreature(blocks[n]);
     }
@@ -2031,10 +2024,9 @@ int ms_initgame(gamestate *pstate)
 
     addsoundeffect(NULL);
 
-    if (chip->pos < 0) {
-	warn("Level %d: Chip nowhere on map!", game->number);
+    if (chip->pos < 0)
 	chip->pos = 0;
-    }
+
     preparedisplay();
     return TRUE;
 }
