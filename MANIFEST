@@ -51,5 +51,4 @@ oshw-sdl/sdlres.c
 oshw-sdl/sdlres.h
 oshw-sdl/sdltext.c
 oshw-sdl/sdltext.h
-oshw-sdl/sdltile.c
 oshw-sdl/sdltimer.c
