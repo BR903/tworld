@@ -48,7 +48,6 @@ oshw-sdl/sdlin.c
 oshw-sdl/sdloshw.c
 oshw-sdl/sdlout.c
 oshw-sdl/sdlres.c
-oshw-sdl/sdlres.h
 oshw-sdl/sdltext.c
-oshw-sdl/sdltext.h
+oshw-sdl/sdltile.c
 oshw-sdl/sdltimer.c
