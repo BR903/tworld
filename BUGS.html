@@ -37,6 +37,12 @@ Chip remains on the slide list, pushing against the new Chip tile,
 until the player makes a move. In TW, Chip exits in the expected
 direction. The teleport always vanishes, and the block never does.
 <li>
+Start Chip out on top of a bomb square, and let a teeth monster
+approach. When it arrives, it will be destroyed by the bomb. However,
+instead of leaving behind Chip on top of an empty square, there will
+be an empty square on top of a bomb. (Chip will typically be redrawn
+on the next frame, at which point the bomb becomes visible again.)
+<li>
 The MS game permits movement via the mouse, which allows for a few
 unusual maneuvers not otherwise possible. Tile World does not have any
 form of mouse input.
@@ -83,13 +89,14 @@ towards him. That is, a block starts moving into the square that Chip
 occupies, but in the same frame, Chip starts pushing the block in the
 opposite direction. This is impossible to do in TW.
 <li>
-Teleports are handled incorrectly when a creature enters a teleport
-and no exit is available, including at the teleport just entered. In
-Tile World the creature becomes trapped on that teleport, unable to
-move unless and until an exit becomes available. In the real Lynx
-game, Chip becomes trapped permanently, even if an exit opens up on
-the next frame. For other creatures, a teleport with no exits behaves
-almost entirely like a normal floor.
+Teleports are handled incorrectly when a creature other than Chip
+enters a teleport and no exit is available, including at the teleport
+just entered. In Tile World the creature becomes trapped on that
+teleport, unable to move unless and until an exit becomes available.
+In the real Lynx game, a teleport with no exits behaves almost
+entirely like a normal floor. (There are also some further, more
+obscure inconsistencies that can be seen when an teleport exit opens
+up after Chip becomes trapped on a teleport.)
 </ol>
 <p>
 <hr>
