@@ -165,17 +165,17 @@ static int mergeable[CmdCount];
 static void _keyeventcallback(int scancode, int down)
 {
     switch (scancode) {
-      case KMOD_LSHIFT:
-      case KMOD_RSHIFT:
-      case KMOD_LCTRL:
-      case KMOD_RCTRL:
-      case KMOD_LALT:
-      case KMOD_RALT:
-      case KMOD_LMETA:
-      case KMOD_RMETA:
-      case KMOD_NUM:
-      case KMOD_CAPS:
-      case KMOD_MODE:
+      case SDLK_LSHIFT:
+      case SDLK_RSHIFT:
+      case SDLK_LCTRL:
+      case SDLK_RCTRL:
+      case SDLK_LALT:
+      case SDLK_RALT:
+      case SDLK_LMETA:
+      case SDLK_RMETA:
+      case SDLK_NUMLOCK:
+      case SDLK_CAPSLOCK:
+      case SDLK_MODE:
 	keystates[scancode] = down ? KS_ON : KS_OFF;
 	break;
       default:
