@@ -18,22 +18,30 @@
 #define DEFAULT_SND_FREQ	22050
 #define	DEFAULT_SND_CHAN	1
 
+/* The data needed for each sound.
+ */
 typedef	struct sfxinfo {
-    Uint8	       *wave;
-    Uint32		len;
-    int			pos;
-    int			playing;
-    char const	       *textsfx;
+    Uint8	       *wave;		/* the actual wave data */
+    Uint32		len;		/* size of the wave data */
+    int			pos;		/* how much has been played already */
+    int			playing;	/* is the wave currently playing? */
+    char const	       *textsfx;	/* the onomatopoeia string */
 } sfxinfo;
 
-static sfxinfo		sounds[SND_COUNT];
+/* The data needed to talk to the sound output device.
+ */
 static SDL_AudioSpec	spec;
+
+/* All of the sound effects.
+ */
+static sfxinfo		sounds[SND_COUNT];
+
+/* TRUE if there is a sound device to talk to.
+ */
 static int		hasaudio = FALSE;
 
-/*
- *
+/* Display the onomatopoeia for the currently playing sound effect.
  */
-
 static void displaysoundeffects(unsigned long sfx, int display)
 {
     static char const  *playing = NULL;
@@ -71,10 +79,9 @@ static void displaysoundeffects(unsigned long sfx, int display)
 	puttext(&sdlg.textsfxrect, "", 0, 0);
 }
 
-/*
- *
+/* The function that is called by the sound driver to supply the
+ * latest sound effects.
  */
-
 static void sfxcallback(void *data, Uint8 *wave, int len)
 {
     int	i, n;
@@ -112,9 +119,11 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
 }
 
 /*
- *
+ * The exported functions.
  */
 
+/* Activate or deactivate the sound system.
+ */
 int setaudiosystem(int active)
 {
     SDL_AudioSpec	des;
@@ -156,6 +165,55 @@ int setaudiosystem(int active)
     return TRUE;
 }
 
+/* Select the text to use for the onomatopoeia based on the given
+ * ruleset.
+ */
+void selectsoundset(int ruleset)
+{
+    if (ruleset == Ruleset_MS) {
+	sounds[SND_CHIP_LOSES].textsfx      = "\"Bummer\"";
+	sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
+	sounds[SND_TIME_OUT].textsfx        = "Clang!";
+	sounds[SND_TIME_LOW].textsfx        = "Ktick!";
+	sounds[SND_CANT_MOVE].textsfx       = "Mnphf!";
+	sounds[SND_IC_COLLECTED].textsfx    = "Chack!";
+	sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
+	sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
+	sounds[SND_TELEPORTING].textsfx     = "Whing!";
+	sounds[SND_DOOR_OPENED].textsfx     = "Spang!";
+	sounds[SND_SOCKET_OPENED].textsfx   = "Chack!";
+	sounds[SND_BUTTON_PUSHED].textsfx   = "Click!";
+	sounds[SND_BOMB_EXPLODES].textsfx   = "Booom!";
+	sounds[SND_WATER_SPLASH].textsfx    = "Plash!";
+    } else {
+	sounds[SND_CHIP_LOSES].textsfx      = "Splat!";
+	sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
+	sounds[SND_CANT_MOVE].textsfx       = "Thunk!";
+	sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
+	sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
+	sounds[SND_TELEPORTING].textsfx     = "Bamff!";
+	sounds[SND_DOOR_OPENED].textsfx     = "Spang!";
+	sounds[SND_SOCKET_OPENED].textsfx   = "Slurp!";
+	sounds[SND_BUTTON_PUSHED].textsfx   = "Click!";
+	sounds[SND_TILE_EMPTIED].textsfx    = "Whisk!";
+	sounds[SND_WALL_CREATED].textsfx    = "Chunk!";
+	sounds[SND_TRAP_ENTERED].textsfx    = "Shunk!";
+	sounds[SND_BOMB_EXPLODES].textsfx   = "Booom!";
+	sounds[SND_WATER_SPLASH].textsfx    = "Plash!";
+	sounds[SND_SKATING_TURN].textsfx    = "Whing!";
+	sounds[SND_SKATING_FORWARD].textsfx = "Whizz ...";
+	sounds[SND_SLIDING].textsfx         = "Drrrr ...";
+	sounds[SND_BLOCK_MOVING].textsfx    = "Scrrr ...";
+	sounds[SND_SLIDEWALKING].textsfx    = "slurp slurp ...";
+	sounds[SND_ICEWALKING].textsfx      = "snick snick ...";
+	sounds[SND_WATERWALKING].textsfx    = "plip plip ...";
+	sounds[SND_FIREWALKING].textsfx     = "crackle crackle ...";
+    }
+}
+
+/* Load a wave file into memory. The wave data is converted to the
+ * format expected by the sound device.
+ */
 int loadsfxfromfile(int index, char const *filename)
 {
     SDL_AudioSpec	specin;
@@ -204,6 +262,8 @@ int loadsfxfromfile(int index, char const *filename)
     return TRUE;
 }
 
+/* Select the sounds effects to be played.
+ */
 void playsoundeffects(unsigned long sfx)
 {
     unsigned long	flag;
@@ -226,6 +286,8 @@ void playsoundeffects(unsigned long sfx)
     SDL_UnlockAudio();
 }
 
+/* Stop playing all sounds immediately.
+ */
 void clearsoundeffects(void)
 {
     int	i;
@@ -243,49 +305,8 @@ void clearsoundeffects(void)
     SDL_UnlockAudio();
 }
 
-void selectsoundset(int ruleset)
-{
-    if (ruleset == Ruleset_MS) {
-	sounds[SND_CHIP_LOSES].textsfx      = "\"Bummer\"";
-	sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
-	sounds[SND_TIME_OUT].textsfx        = "Clang!";
-	sounds[SND_TIME_LOW].textsfx        = "Ktick!";
-	sounds[SND_CANT_MOVE].textsfx       = "Mnphf!";
-	sounds[SND_IC_COLLECTED].textsfx    = "Chack!";
-	sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
-	sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
-	sounds[SND_TELEPORTING].textsfx     = "Whing!";
-	sounds[SND_DOOR_OPENED].textsfx     = "Spang!";
-	sounds[SND_SOCKET_OPENED].textsfx   = "Chack!";
-	sounds[SND_BUTTON_PUSHED].textsfx   = "Click!";
-	sounds[SND_BOMB_EXPLODES].textsfx   = "Booom!";
-	sounds[SND_WATER_SPLASH].textsfx    = "Plash!";
-    } else {
-	sounds[SND_CHIP_LOSES].textsfx      = "Splat!";
-	sounds[SND_CHIP_WINS].textsfx       = "Tadaa!";
-	sounds[SND_CANT_MOVE].textsfx       = "Thunk!";
-	sounds[SND_ITEM_COLLECTED].textsfx  = "Slurp!";
-	sounds[SND_BOOTS_STOLEN].textsfx    = "Flonk!";
-	sounds[SND_TELEPORTING].textsfx     = "Bamff!";
-	sounds[SND_DOOR_OPENED].textsfx     = "Spang!";
-	sounds[SND_SOCKET_OPENED].textsfx   = "Slurp!";
-	sounds[SND_BUTTON_PUSHED].textsfx   = "Click!";
-	sounds[SND_TILE_EMPTIED].textsfx    = "Whisk!";
-	sounds[SND_WALL_CREATED].textsfx    = "Chunk!";
-	sounds[SND_TRAP_ENTERED].textsfx    = "Shunk!";
-	sounds[SND_BOMB_EXPLODES].textsfx   = "Booom!";
-	sounds[SND_WATER_SPLASH].textsfx    = "Plash!";
-	sounds[SND_SKATING_TURN].textsfx    = "Whing!";
-	sounds[SND_SKATING_FORWARD].textsfx = "Whizz ...";
-	sounds[SND_SLIDING].textsfx         = "Drrrr ...";
-	sounds[SND_BLOCK_MOVING].textsfx    = "Scrrr ...";
-	sounds[SND_SLIDEWALKING].textsfx    = "slurp slurp ...";
-	sounds[SND_ICEWALKING].textsfx      = "snick snick ...";
-	sounds[SND_WATERWALKING].textsfx    = "plip plip ...";
-	sounds[SND_FIREWALKING].textsfx     = "crackle crackle ...";
-    }
-}
-
+/* Release all memory used for the given sound effect.
+ */
 void freesfx(int index)
 {
     if (sounds[index].wave) {
@@ -298,6 +319,8 @@ void freesfx(int index)
     }
 }
 
+/* Shut down the sound system.
+ */
 static void shutdown(void)
 {
     setaudiosystem(FALSE);
@@ -305,6 +328,8 @@ static void shutdown(void)
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
+/* Initialize the sound system.
+ */
 int _sdlsfxinitialize(int silence)
 {
     atexit(shutdown);

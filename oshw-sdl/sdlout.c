@@ -598,8 +598,9 @@ int displaylist(char const *title, void const *tab, int *idx,
     topitem = 0;
     linecount = area.h / sdlg.font.h - 1;
 
-    index = n = *idx;
-    for (;;) {
+    index = *idx;
+    n = SCROLL_NOP;
+    do {
 	switch (n) {
 	  case SCROLL_NOP:						break;
 	  case SCROLL_UP:		--index;			break;
@@ -638,9 +639,7 @@ int displaylist(char const *title, void const *tab, int *idx,
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 
 	n = SCROLL_NOP;
-	if (!(*inputcallback)(&n))
-	    break;
-    }
+    } while ((*inputcallback)(&n));
     if (n)
 	*idx = index;
 

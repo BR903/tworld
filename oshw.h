@@ -70,11 +70,27 @@ extern int anykey(void);
  * Resource-loading functions.
  */
 
-extern int loadsmalltileset(char const *filename, int complain);
-extern int loadlargetileset(char const *filename, int complain);
-extern void freetileset(void);
+/* Use the the given file as the program's font.
+ */
 extern int loadfontfromfile(char const *filename);
+
+/* Free all memory associated with the current font.
+ */
 extern void freefont(void);
+
+/* Load the tile images stored in the given file. If complain is FALSE,
+ * no error messages will be displayed if the file could not be used.
+ */
+extern int loadsmalltileset(char const *filename, int complain);
+
+/* Same as the last function, but reads the full set of tiles,
+ * including the animated sequences used in the Lynx emulation.
+ */
+extern int loadlargetileset(char const *filename, int complain);
+
+/* Free all memory associated with the current tile images.
+ */
+extern void freetileset(void);
 
 /*
  * Video output functions.
@@ -136,12 +152,31 @@ enum {
  * Sound functions.
  */
 
+/* Activate or deactivate the sound system.
+ */
 extern int setaudiosystem(int active);
-extern void selectsoundset(int ruleset);
+
+/* Load a wave file into memory and associate it with the given sound
+ * effect.
+ */
 extern int loadsfxfromfile(int index, char const *filename);
-extern void freesfx(int index);
+
+/* Select the onomatopoeia to be used for textual sound effects based
+ * on the given ruleset.
+ */
+extern void selectsoundset(int ruleset);
+
+/* Select the sounds effects to be played at this time.
+ */
 extern void playsoundeffects(unsigned long sfx);
+
+/* Immediately turn off all sounds effects.
+ */
 extern void clearsoundeffects(void);
+
+/* Release all memory used for the given sound effect.
+ */
+extern void freesfx(int index);
 
 /*
  * Miscellaneous functions.
