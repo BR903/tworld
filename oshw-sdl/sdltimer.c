@@ -77,6 +77,7 @@ int waitfortick(void)
 	    ++hist[ms >= 0 ? ms + 1 : 0];
 
     if (ms <= 0) {
+	++utick;
 	nexttickat += mspertick;
 	return FALSE;
     }
