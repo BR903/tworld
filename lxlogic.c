@@ -359,17 +359,17 @@ static void removechip(int explode, creature *also)
 {
     creature  *chip = getchip();
 
-    removecreature(chip);
     if (explode) {
 	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
 	addsoundeffect(SND_DEREZZ);
     }
+    if (also)
+	addanimation(also->pos, also->dir, also->moving, Entity_Explosion, 12);
     resetfloorsounds(FALSE);
     startendgametimer();
-    if (also) {
+    removecreature(chip);
+    if (also)
 	removecreature(also);
-	addanimation(also->pos, also->dir, also->moving, Entity_Explosion, 12);
-    }
 }
 
 /*
@@ -891,7 +891,8 @@ static int activatecloner(int pos)
 	return FALSE;
     *clone = *cr;
     if (!advancecreature(cr, TRUE)) {
-	clone->hidden = TRUE;
+	if (!cr->hidden)
+	    clone->hidden = TRUE;
 	return FALSE;
     }
     return TRUE;
@@ -992,29 +993,6 @@ static int startmovement(creature *cr, int releasing)
     return TRUE;
 }
 
-#if 0
-/* Determine the speed of a moving creature. (Speed is measured in
- * eighths of a tile per tick.)
- */
-static int movementspeed(creature *cr)
-{
-    int	floor, speed;
-
-    if (cr->state & CS_NASCENT)
-	return 0;
-
-    speed = cr->id == Blob ? 1 : 2;
-
-    floor = floorat(cr->pos);
-    if (isslide(floor) && (cr->id != Chip || !possession(Boots_Slide))) {
-	speed *= 2;
-    } else if (isice(floor) && (cr->id != Chip || !possession(Boots_Ice))) {
-	speed *= 2;
-    }
-
-    return speed;
-}
-#else
 /* Determine the speed of a moving creature. (Speed is measured in
  * eighths of a tile per tick.)
  */
@@ -1037,7 +1015,6 @@ static int continuemovement(creature *cr)
     cr->frame = cr->moving / 2;
     return cr->moving > 0;
 }
-#endif
 
 /* Complete the movement of the given creature. Most side effects
  * produced by moving onto a tile occur at this point.
@@ -1060,9 +1037,9 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    if (!possession(Boots_Water)) {
-		removechip(FALSE, NULL);
 		addanimation(cr->pos, NIL, 0, Water_Splash, 12);
 		addsoundeffect(SND_WATER_SPLASH);
+		removechip(FALSE, NULL);
 	    }
 	    break;
 	  case Fire:
@@ -1125,10 +1102,10 @@ static int endmovement(creature *cr)
     } else if (cr->id == Block) {
 	switch (floor) {
 	  case Water:
-	    removecreature(cr);
 	    floorat(cr->pos) = Dirt;
 	    addanimation(cr->pos, NIL, 0, Dirt_Splash, 12);
 	    addsoundeffect(SND_WATER_SPLASH);
+	    removecreature(cr);
 	    break;
 	  case Key_Blue:
 	    floorat(cr->pos) = Empty;
@@ -1138,9 +1115,9 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    if (cr->id != Glider) {
-		removecreature(cr);
 		addanimation(cr->pos, NIL, 0, Water_Splash, 12);
 		addsoundeffect(SND_WATER_SPLASH);
+		removecreature(cr);
 	    }
 	    break;
 	  case Key_Blue:
@@ -1151,13 +1128,13 @@ static int endmovement(creature *cr)
 
     switch (floor) {
       case Bomb:
+	floorat(cr->pos) = Empty;
+	addanimation(cr->pos, NIL, 0, Bomb_Explosion, 10);
+	addsoundeffect(SND_BOMB_EXPLODES);
 	if (cr->id == Chip)
 	    removechip(FALSE, NULL);
 	else
 	    removecreature(cr);
-	floorat(cr->pos) = Empty;
-	addanimation(cr->pos, NIL, 0, Bomb_Explosion, 10);
-	addsoundeffect(SND_BOMB_EXPLODES);
 	break;
       case Teleport:
 	teleportcreature(cr);
@@ -1210,14 +1187,8 @@ static int advancecreature(creature *cr, int releasing)
 	}
 	cr->tdir = NIL;
     }
-#if 0
-    cr->moving -= movementspeed(cr);
-    if (cr->moving <= 0)
-	endmovement(cr);
-#else
     if (!continuemovement(cr))
 	endmovement(cr);
-#endif
     return TRUE;
 }
 
