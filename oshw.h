@@ -73,6 +73,7 @@ extern int anykey(void);
 extern int loadsmalltileset(char const *filename, int complain);
 extern int loadlargetileset(char const *filename, int complain);
 extern void freetileset(void);
+extern int loadfontfromfile(char const *filename);
 
 /*
  * Video output functions.
@@ -105,9 +106,9 @@ extern int displayendmessage(int completed);
  * upon return, the value will be changed to the item that was finally
  * selected. inputcallback points to a function that is called after
  * displaying the list. The function is passed a pointer to an
- * integer; this value should be filled in with an enum value indicating
- * how the selection is to be moved. If the return value from the
- * function is TRUE, the display is updated and the function is called
+ * integer; this value should be filled in with a value indicating how
+ * the selection is to be moved. If the return value from the function
+ * is TRUE, the display is updated and the function is called
  * again. If the return value from the function is FALSE,
  * displaylist() ends, returning the value that was stored via the
  * pointer argument.
@@ -116,15 +117,17 @@ extern int displaylist(char const *title, char const *header,
 		       char const **items, int itemcount, int *index,
 		       int (*inputcallback)(int*));
 
-/* Enum values for moving the selection.
+/* Symbolic values for moving the selection of a scrolling list.
  */
-enum {
-    ScrollNop = 0,
-    ScrollUp,		ScrollDn,
-    ScrollPageUp,	ScrollPageDn,
-    ScrollHalfPageUp,	ScrollHalfPageDn,
-    ScrollToTop,	ScrollToBot
-};
+#define	SCROLL_NOP		(-1)
+#define	SCROLL_UP		(-2)
+#define	SCROLL_DN		(-3)
+#define	SCROLL_PAGE_UP		(-4)
+#define	SCROLL_PAGE_DN		(-5)
+#define	SCROLL_HALFPAGE_UP	(-6)
+#define	SCROLL_HALFPAGE_DN	(-7)
+#define	SCROLL_ALLTHEWAY_UP	(-8)
+#define	SCROLL_ALLTHEWAY_DN	(-9)
 
 /*
  * Miscellaneous functions.

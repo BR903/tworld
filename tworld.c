@@ -92,14 +92,14 @@ static int	showhistogram = FALSE;
 static int scrollinputcallback(int *move)
 {
     switch (input(TRUE)) {
-      case CmdPrev10:		*move = ScrollHalfPageUp;	break;
-      case CmdNorth:		*move = ScrollUp;		break;
-      case CmdPrev:		*move = ScrollUp;		break;
-      case CmdPrevLevel:	*move = ScrollUp;		break;
-      case CmdSouth:		*move = ScrollDn;		break;
-      case CmdNext:		*move = ScrollDn;		break;
-      case CmdNextLevel:	*move = ScrollDn;		break;
-      case CmdNext10:		*move = ScrollHalfPageDn;	break;
+      case CmdPrev10:		*move = SCROLL_HALFPAGE_UP;	break;
+      case CmdNorth:		*move = SCROLL_UP;		break;
+      case CmdPrev:		*move = SCROLL_UP;		break;
+      case CmdPrevLevel:	*move = SCROLL_UP;		break;
+      case CmdSouth:		*move = SCROLL_DN;		break;
+      case CmdNext:		*move = SCROLL_DN;		break;
+      case CmdNextLevel:	*move = SCROLL_DN;		break;
+      case CmdNext10:		*move = SCROLL_HALFPAGE_DN;	break;
       case CmdProceed:		*move = TRUE;			return FALSE;
       case CmdQuitLevel:	*move = FALSE;			return FALSE;
       case CmdQuit:						exit(0);

@@ -42,8 +42,9 @@
 
 #define	RES_TILEIMAGES		(RES_LASTSOUND + 1)
 #define	RES_USEANIM		(RES_LASTSOUND + 2)
+#define	RES_FONTFILE		(RES_LASTSOUND + 3)
 
-#define	RES_COUNT		(RES_LASTSOUND + 3)
+#define	RES_COUNT		(RES_LASTSOUND + 4)
 
 typedef	struct rcitem {
     char const *name;
@@ -82,7 +83,8 @@ static rcitem rclist[] = {
     { "skatingturnsound",	FALSE },
     { "slidingsound",		FALSE },
     { "tileimages",		FALSE },
-    { "useanimation",		TRUE }
+    { "useanimation",		TRUE },
+    { "font",			FALSE }
 };
 
 static resourceitem	globalresources[RES_COUNT];
@@ -118,6 +120,7 @@ static void initresourcedefaults(void)
     strcpy(globalresources[RES_SND_BOMB_EXPLODES].str,	"hit3.wav");
     strcpy(globalresources[RES_SND_WATER_SPLASH].str,	"water2.wav");
     strcpy(globalresources[RES_TILEIMAGES].str,		"tiles.bmp");
+    strcpy(globalresources[RES_FONTFILE].str,		"font.psf");
     globalresources[RES_USEANIM].num = FALSE;
 
     memcpy(ms_resources, globalresources, sizeof ms_resources);
@@ -248,53 +251,35 @@ static int loadimages(void)
     return f;
 }
 
-#if 0
-
 /*
  *
  */
 
 static int loadfont(void)
 {
-    fileinfo		file;
-    unsigned char      *fontdata;
-    unsigned short	sig;
-    unsigned char	n;
+    char       *path;
+    char const *filename;
+    int		f;
 
-    memset(&file, 0, sizeof file);
-    if (!openfileindir(&file, resdir, "font.psf", "rb", "cannot access font"))
+    switch (currentruleset) {
+      case Ruleset_Lynx:filename = lynx_resources[RES_FONTFILE].str;	break;
+      case Ruleset_MS:	filename = ms_resources[RES_FONTFILE].str;	break;
+      case Ruleset_None:filename = NULL;				break;
+      default:		filename = NULL;				break;
+    }
+    if (!filename)
+	filename = globalresources[RES_FONTFILE].str;
+    if (!filename) {
+	errmsg(resdir, "no font defined");
 	return FALSE;
-    if (!filereadint16(&file, &sig, "cannot read font file"))
-	goto failure;
-    if (sig != PSF_SIG) {
-	fileerr(&file, "not a PSF font file");
-	goto failure;
     }
-    if (!filereadint8(&file, &n, "not a valid PSF font file"))
-	goto failure;
-    if (!filereadint8(&file, &n, "not a valid PSF font file"))
-	goto failure;
-    if (n < 8 || n > 32) {
-	fileerr(&file, "invalid font size");
-	goto failure;
-    }
-    fontdata = filereadbuf(&file, n * 256, "invalid font file");
-    if (!fontdata)
-	goto failure;
-    if (!setfontresource(9, n, fontdata))
-	goto failure;
 
-    fileclose(&file, NULL);
-    return TRUE;
-
-  failure:
-    if (fontdata)
-	free(fontdata);
-    fileclose(&file, NULL);
-    return FALSE;
+    path = getpathbuffer();
+    combinepath(path, resdir, filename);
+    f = loadfontfromfile(path);
+    free(path);
+    return f;
 }
-
-#endif
 
 /*
  *
@@ -322,6 +307,7 @@ int loadgameresources(int ruleset)
     currentruleset = ruleset;
     if (!loadimages())
 	return FALSE;
+    loadfont();
     loadsounds();
     return TRUE;
 }

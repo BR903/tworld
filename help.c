@@ -16,7 +16,7 @@
 /* A list of the available keyboard commands.
  */
 static char const *gameplay_keys[] = {
-    "\240\240\240\240During the Game\t\240",
+    "    During the Game\t ",
     "arrows\tmove Chip",
     "2 4 6 8 (keypad)\talso move Chip",
     "q\tquit the current game",
@@ -25,8 +25,8 @@ static char const *gameplay_keys[] = {
     "Ctrl-R\trestart the current level",
     "Ctrl-P\tjump to the previous level",
     "Ctrl-N\tjump to the next level",
-    "\240\t\240",
-    "\240\240\240\240Inbetween Games\t\240",
+    " \t ",
+    "    Inbetween Games\t ",
     "q\texit the program",
     "p\tjump to the previous level",
     "n\tjump to the next level",
@@ -144,18 +144,18 @@ static objhelptext const gameplay_monsters[] = {
 /* About this program.
  */
 static char const *about[] = {
-    "\267\tTile World: version " VERSION,
-    "\tCopyright \251 2001 by Brian Raiter",
+    "*\tTile World: version " VERSION,
+    "\tCopyright 2001 by Brian Raiter",
     "\tcompiled " __DATE__ " " __TIME__ " PST",
-    "\267\tThis program is free software; you can redistribute it"
+    "*\tThis program is free software; you can redistribute it"
     " and/or modify it under the terms of the GNU General Public"
     " License as published by the Free Software Foundation; either"
     " version 2 of the License, or (at your option) any later version.",
-    "\267\tThis program is distributed in the hope that it will be"
+    "*\tThis program is distributed in the hope that it will be"
     " useful, but WITHOUT ANY WARRANTY; without even the implied"
     " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
     " See the GNU General Public License for more details.",
-    "\267\tBug reports are appreciated, and can be sent to"
+    "*\tBug reports are appreciated, and can be sent to"
     " breadbox@muppetlabs.com, or posted to the"
     " annexcafe.chips.challenge newsgroup."
 };
@@ -175,12 +175,16 @@ static inline int helpscreen(int type, char const *title,
  */
 int gameplayhelp(void)
 {
-    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), +1)
+    int	ret;
+
+    ret =  helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), +1)
 	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), +1)
 	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), +1)
 	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), +1)
 	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), +1)
 	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), +1)
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0)
-	&& (cleardisplay(), TRUE);
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0);
+
+    cleardisplay();
+    return ret;
 }

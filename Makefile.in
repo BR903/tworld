@@ -58,7 +58,7 @@ mklynxcc: mklynxcc.c
 all: tworld mklynxcc
 
 clean:
-	rm -f $(OBJS) tworld mklynxcc
+	rm -f $(OBJS) tworld mklynxcc config.*
 	(cd oshw && make clean)
 
 install: tworld
