@@ -22,6 +22,10 @@ extern int initgamestate(gamesetup *game, int ruleset);
  */
 extern int prepareplayback(void);
 
+/* Return the amount of time passed in the current game, in seconds.
+ */
+extern int secondsplayed(void);
+
 /* Move the program in and out of game-play mode. This affects
  * the running of the timer and the handling of the keyboard.
  */

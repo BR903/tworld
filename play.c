@@ -120,6 +120,13 @@ int prepareplayback(void)
     return TRUE;
 }
 
+/* Return the amount of time passed in the current game, in seconds.
+ */
+int secondsplayed(void)
+{
+    return (state.currenttime + state.timeoffset) / TICKS_PER_SECOND;
+}
+
 /* Put the program into a game-play mode.
  */
 void setgameplaymode(int mode)
