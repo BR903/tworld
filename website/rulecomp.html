@@ -1,0 +1,352 @@
+<html>
+<head>
+<title>
+Chip's Challenge: Differences between the MS and Lynx versions
+</title>
+</head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align=center>
+<center>
+<h1>
+Chip's Challenge: Differences between the MS and Lynx versions
+</h1>
+</center>
+<p>
+<h2>
+Level Layout
+</h2>
+<p>
+Under MS, each tile of the map can contain up to two things, one atop
+the other. No distinction is made between creatures and other objects.
+Creatures, keys, and boots are "transparent", in that they partially
+expose the contents of the lower tile layer. Opaque objects can
+sometimes be removed from the upper layer, making the lower layer
+topmost. Under Lynx, each tile of the map can contain only one object
+and/or one creature. Blocks are one type of creature, as is Chip.
+<p>
+Under MS, the creatures are ordered by a separately specified list.
+This "creature list" determines the order of the creatures' movements.
+As a side effect of this, creatures can be made immobile by omitting
+them from the list. Under Lynx, the creature list is generated
+automatically from the initial placement of creatures on the map. It
+is not possible to have immobile creatures. [Note: this has since been
+shown to be untrue.]
+<p>
+Under MS, the mappings of brown buttons to beartraps and red buttons
+to clone machines are explicitly specified. Buttons can be unconnected
+by omitting them from the list. Under Lynx, a button of either type is
+always connected to the first beartrap/clone machine that comes after
+it on the map, in reading order (i.e., going from left-to-right, then
+top-to-bottom, and returning to the top from the bottom if necessary).
+[Note: this is no longer true in Tile World's Lynx emulation --
+explicit specification of button connections is permitted.]
+<p>
+<h2>
+General Movement
+</h2>
+<p>
+Under Lynx, it takes 1/5 of a second (aka two ticks, or four frames)
+to make a normal move. Under MS, moves are instantaneous, but
+constrained to only happen 5 times a second (again, under normal
+circumstances).
+<p>
+Lynx displays movement over four frames of animation. When Chip begins
+a move, he is immediately treated as having vacated the tile he's
+moving from and is in the tile he's moving towards. In this regard,
+the two games are the same. However, side effects triggered by moving
+into a square generally take place once the move is completed (i.e.,
+1/5 of a second after the move began). Under MS, these side effects
+essentially occur simultaneously with the movement.
+<p>
+Under MS, Chip can normally move only once per 1/5-second interval. If
+he attempts a move that cannot be made, he must wait until the next
+interval to attempt another move. All other creatures move at the end
+of each interval. Under Lynx, no such restriction is in effect. If
+Chip (or any other creature) makes a failed attempt to move, another
+attempt can be made on the very next frame (i.e., 1/20 of a second
+later).
+<p>
+Under MS, walkers and blobs always move when it is their turn and it
+is possible for them to do so. That is to say, they will never attempt
+to move in a direction that is blocked. Under Lynx, walkers and blobs
+select their new direction from all four possibilities, and thus can
+wind up remaining still next to a barrier for one or more frames,
+until a direction is chosen which happens to be free.
+<p>
+Under MS, creatures move in the order dictated by the internal
+creature list. Because all creatures complete their moves
+instantaneously, there is never an issue with two creatures attempting
+to move into the same tile simultaneously. Under Lynx, all creatures
+select their moves for a frame first, and then the moves begin to be
+executed in the order of the internal creature list. A creature can
+thus find that it has chosen to move into a tile which is now in the
+process of being occupied by a creature that moved first. When this
+happens, the later creature loses its turn and does not move during
+that frame.
+<p>
+<h2>
+Involuntary Movement
+</h2>
+<p>
+(Involuntary movement is my generic term to refer to all types of
+movement that are caused by what Chip or a creature is standing on.
+Ice, force floors, teleports, beartraps, and clone machines are the
+causes of involuntary movement.)
+<p>
+Ice and force floors cause creatures to move at double-speed. Under
+Lynx, when Chip is moving along a sequence of force floors he can,
+after having been moved involuntarily once, substitute the next force
+floor's movement with a voluntary movement. After having done so, and
+presuming he is still on a force floor, he must allow himself to
+undergo another involuntary move before he can attempt a second
+voluntary move. (This is true whether or not the voluntary move was
+successful.) Under MS, when Chip is on a force floor he can attempt a
+voluntary move on every tick. The 5-moves-per-second restriction is
+not in effect during this time. A voluntary move occurs during the same
+tick as the involuntary move, instead of replacing it. (Notice that
+the two versions wind up giving Chip the same freedom of movement, but
+the overall movement happens twice as fast under MS.)
+<p>
+A side effect of how involuntary movement works under MS is that Chip
+can attempt an extra move immediately after leaving a force floor. Due
+to the temporary lifting of the 5-moves-per-second restriction, Chip
+will always have a move available to him afterwards. This also means
+that an extra move is available on tiles that do not force movement at
+double-speed, such as teleports. Under Lynx, teleports, beartraps, and
+clone machines also cause forced movement, but only at normal speed.
+(Actually, movement into and out of beartraps and clone machines
+happen slightly faster than normal; the details are outside the scope
+of this document.)
+<p>
+Under MS, creatures entering ice, force floors, etc. make their first
+involuntary move on the same tick. Thus, they pass through that first
+tile instantaneously. This does not happen for Chip, although his
+ability to make an extra move upon regaining normal ground allows him
+to keep pace with the monsters in the final reckoning. Under Lynx,
+Chip does not move differently from other creatures.
+<p>
+Under Lynx, the double-speed of force floors is actually a doubling of
+speed. In particular, blobs on ice and force floors move at 5 moves
+per second, which is double their normal speed. Under MS, all
+creatures have the same double-speed rate of 10 moves per second.
+<p>
+Under Lynx, it is the floor Chip is moving onto that determines
+whether or not he moves at double speed, not the floor he is leaving.
+(This is because Chip's location while in mid-move is considered to be
+the destination tile.) This obliquely accounts for another difference:
+under MS, force floors and the like do not take effect until after a
+creature successfully moves. Thus if Chip or any other creature starts
+a level located on a square of ice, they can leave it in any
+direction, and at any time. (If the move takes them onto another
+square of ice, though, they will then be subject to its effects.)
+[Note: some or all of this latter point may actually be true for
+Lynx.]
+<p>
+Under MS, Chip can use his voluntary move to move opposite the
+direction of the force floor. Under Lynx, such an attempt will fail.
+(Both games forbid attempts to move voluntarily in the same direction
+as a force floor.) In this case, it is the floor that Chip is
+currently on, not the floor that he is attempting to move onto, that
+determines which direction is forbidden.
+<p>
+Under MS, random force floors are truly random; there is no pattern to
+the direction they push in on a given tick. Under Lynx, random force
+floors cycle through the four directions in clockwise order, pushing
+east, then south, then west, then north, etcetera. The current
+direction is shared between all random force floors in a level, and
+carries over from level to level. (Thus it can be to one's advantage,
+before playing a level with random force floors, to go to a level like
+GRAIL or SCOUNDREL and "pre-set" the random force floor direction.)
+The first time a random force floor is ever used in a session, it will
+push east.
+<p>
+Under MS, there is the amazing "slide delay", which causes creatures
+blocked from making an involuntary movement to potentially alter the
+order and amount of involuntary moves made by the other creatures in
+the level. No such feature exists under Lynx.
+<p>
+<h2>
+Forbidden Moves
+</h2>
+<p>
+The rules of what creatures can enter and exit what types of tiles
+differ slightly between the games.
+<p>
+The most significant one, of course, is fire. Under Lynx, no creatures
+except fireballs (and blocks) will ever enter a tile containing
+fire. Under MS, tanks, balls, blobs, paramecia, teeth, and gliders
+will also enter fire tiles, and are destroyed when they do so.
+<p>
+Under Lynx, creatures (including blocks) cannot enter a hint button
+tile, and blocks cannot cross an exit tile or a tile containing
+footgear. Under MS, all these are permitted.
+<p>
+Under MS, no creatures except blocks can enter random force floor
+tiles. Under Lynx, all creatures can enter random force floor tiles.
+<p>
+Under MS, creatures (including blocks) can all cross tiles containing
+keys. Under Lynx, creatures cannot cross over yellow keys or green
+keys. Red keys can be crossed. Blue keys can also be crossed, but the
+key is destroyed in the process.
+<p>
+Under MS, when Chip is wearing the skates, he can walk through ice
+corners. Blocks can also be pushed through ice corners, when Chip is
+given the opportunity to do so. (Basically, ice corners are pretty
+much ignored except when creatures are actually sliding on the ice.)
+Under Lynx, two sides of an ice corner act like walls at all times.
+<p>
+<h2>
+Beartraps and Clone Machines
+</h2>
+<p>
+Under Lynx, creatures always exit beartraps and clone machines in the
+direction they are facing. Chip is the only creature (except perhaps
+tanks?) that can turn around while held in a beartrap. Under MS,
+blobs, bugs, paramecia and teeth can exit beartraps and clone machines
+in a new direction. Tanks will turn around in a beartrap when a blue
+button is pushed. Blobs always exit in a random direction. Bugs,
+paramecia, and teeth choose their direction via a complex set of rules
+that I won't go into here.
+<p>
+Under Lynx, a creature (including Chip) will leave a beartrap the
+moment a brown button is pressed. The movement is involuntary. Under
+MS, pressing a brown button simply permits the creature to begin
+moving normally again. For example, Chip may continue standing on a
+beartrap, and then leave at a later point, even if the brown button
+has since been released. The sole exception to this is when a block
+enters a beartrap via involuntary movement. In that one case, the
+block will leave the beartrap, also via involuntary movement, when the
+brown button is pressed. (In all other cases, blocks do not move out
+of beartraps by themselves.)
+<p>
+Under Lynx, a creature leaves a clone machine the moment a red button
+is pressed. If the clone's direction is blocked, the clone is not
+created.
+<p>
+Under MS, only blocks leave a clone machine immediately upon a red
+button being pressed, and if the exit direction is blocked, the clone
+is not created. Other creatures wait one tick before exiting. If the
+exit becomes blocked during that one-tick pause, the clone is still
+created, and can exit at a later time if the direction becomes
+clear. Note that in the case of blobs, bugs, paramecia, and teeth, the
+direction that needs to be clear can change with every tick. Their
+original direction only matters when determining if the clone is
+created in the first place.
+<p>
+<h2>
+Miscellaneous
+</h2>
+<p>
+Under Lynx, exploding bombs and blocks pushed into water have a period
+of 6 ticks (12 frames) in which Chip cannot enter the tile while the
+appropriate animation is displaying. (Other creatures can still enter
+the tile, which stops the animation.) Under MS, these actions complete
+instantaneously.
+<p>
+Under Lynx, if a creature (including a block) enters a teleport and no
+teleport, including the original one, permits exit in the given
+direction, the creature will remain trapped on the original teleport
+(presumably until a direction becomes free). Under MS, this is true
+for all creatures except Chip; if Chip cannot exit any teleport, he
+will "bounce back", returning to the tile he was on before he entered
+the teleport.
+<p>
+Under Lynx, pressing a blue button only turns around tanks that are
+not in mid-move at the time. Under MS, tanks are never "in mid-move",
+so this does not apply.
+<p>
+<h2>
+The Original Level Set
+</h2>
+<p>
+There are a surprising number of differences in the actual data for
+the original set of levels.
+<p>
+Of course, level 145 (Thanks to...) only exists in the MS version.
+<p>
+Level 88 (SPIRALS) has a wall removed on some but not all copies of
+MS's version, as is well-documented elsewhere. It has been theorized,
+and I find it highly plausible, that MS intentionally removed the wall
+to alleviate the unintended difficulty of this level caused by the
+variant behavior of their walkers.
+<p>
+Level 99 (CATACOMBS) has a different wiring of seven or eight bear
+trap buttons. The changes to the MS version appear to have been
+introduced completely arbitrarily, without rhyme or reason.
+<p>
+Level 111 (TIME LAPSE) contains two bear traps; again, both of their
+buttons are miswired.
+<p>
+Level 121 (PERFECT MATCH) has an extra patch of ice near the bottom
+right corner of the inner area. Presumably it was added to correct for
+the different timings of sliding creatures on ice and force floors.
+(It is interesting to note that if this extra ice patch is duplicated
+in the Lynx levels, it introduces only a slight difference in the two
+rings, small enough for the beartraps' timing to smooth out.)
+<p>
+Level 127 (SKELZIE) has a taller central section. (In the Lynx map,
+the central section is a perfect square.) Again, this change was
+probably added to fix a problem introduced by the different timings of
+sliding creatures on teleports.
+<p>
+Four of the passwords are different between Lynx and MS. These are as
+follows:
+<p>
+<table>
+<tr>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>6 (LESSON 6)&nbsp;</td>
+<td>10 (BRUSHFIRE)&nbsp;</td>
+<td>28 (PING PONG)&nbsp;</td>
+<td>96 (PARANOIA)</td>
+</tr>
+<tr>
+<td>MS&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;WNLD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;UVWS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;UJDO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;BIFQ</td>
+</tr>
+<tr>
+<td>Lynx&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;WNLP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;VUWS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;UJDD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;WVHY</td>
+</tr>
+</table>
+<p>
+The first three are clearly transcription errors. Level 96 is likewise
+a simple error; it is a repeat of the password to level 95.
+<p>
+What is interesting about this is that in the first three cases, MS's
+password matches the code given in Jaime Villacourt's notes, even
+though Jaime Villacourt was describing the Lynx version of the game.
+This seems to indicate that the MS passwords were keyed in by someone
+who was, directly or indirectly, working from Villacourt's notes, and
+thus faithfully duplicated his typos.
+<p>
+Finally, I note that in the Lynx version of the game, there are
+messages of encouragement after every ten levels. The MS version
+follows the same pattern and uses the same messages, except that they
+omit the first four messages. Surprise, surprise: Jaime Villacourt's
+notes on the Lynx game neglect to mention the first four messages, but
+do contain the full text of the remaining ones.
+<p>
+(One begins to wonder, after all of this, whether the programmer(s) at
+MS ever played the original Lynx game at all, or if they just worked
+off of other people's descriptions of the game.)
+<p>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/tworld/">
+Tile World</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/">Software
+</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/">Brian
+Raiter</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/">Muppetlabs</a></font>
+</body>
+</html>

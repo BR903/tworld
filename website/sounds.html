@@ -1,0 +1,160 @@
+<html>
+<head>
+<title>
+Tile World's Foley Studio
+</title>
+</head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align=center>
+<center>
+<h1>
+Tile World's Foley Studio
+</h1>
+</center>
+<p>
+I essentially made the sound effects for Tile World in my basement in
+one weekend (all except one or two sounds, which were rerecorded later
+on). I originally expected that these would be purely temporary. I was
+just in the process of adding real sound effects to Tile World, and so
+I needed a set of wav files that I could legally distribute. Not
+having an appropriate set of public-domain sounds handy, I set out to
+cobble together a set to be used for the time being. I fully expected
+that, like the tile images I drew, someone would eventually volunteer
+and produce something better to replace them. But, to my surprise, my
+sound effect actually turned out pretty well, and nobody seemed to
+think that they really needed replacing. And so they remain in the
+current version.
+<p>
+As far as equipment goes, all I had was a microphone, my Linux
+machine, and two programs: sox and snd. I used snd for splicing and
+chopping parts, and sox provided some simple effects processing. The
+only other "equipment" was whatever possessions I had that could make
+noise.
+<p>
+The very first sound I created was
+<a href="wav/force.wav">force.wav</a>, the sound of the Lynx force
+floors. For this I used an actual musical instrument -- a pair of
+orchestral woodblocks. These things are loud enough to fill a concert
+hall. I recorded a lightly tapped high-low-high-low sequence, and then
+spliced out the pauses to make it fast and rhythmically perfect.
+<p>
+Once I had that, I sat down and recorded a variety of "mouth sounds",
+which I then played around with via sox to see what I could come up
+with. I discovered that using a simple band-pass filter was often
+enough to transform the sound into something that no longer sounded
+organic in origin. <a href="wav/click.wav">click.wav</a>, the button
+sound, was a simple tongue-click altered in this fashion. The sound
+for picking up an IC chip is named
+<a href="wav/chack.wav">chack.wav</a> because it started out as me
+saying "chk!". A short, quiet exhalation into the microphone became
+<a href="wav/whisk.wav">whisk.wav</a>, which is heard when a fake blue
+wall is cleared away under Lynx.
+<p>
+I also discovered that the same raw material could be used to provide
+more than one sound effect. For example, the sound played when picking
+up an object is <a href="wav/ting.wav">ting.wav</a> -- a short, high,
+silvery chime. This sound is just <a href="wav/ding.wav">ding.wav</a>,
+the sound played when Chip runs out of time on an MS level, played at
+double speed. The sound comes from an oven timer.
+<p>
+A quick tap on the microphone became
+<a href="wav/bump.wav">bump.wav</a>, played when the Lynx Chip can't
+make an attempted move. (The analogous sound under MS is
+<a href="wav/oof.wav">oof.wav</a>, which is just me saying "mmf!",
+unaltered.) This same microphone tap played backwards produced
+<a href="wav/bump.wav">traphit.wav</a>, played when a creature enters
+a Lynx beartrap. Augmented with some reverb, the sound then became
+<a href="wav/popup.wav">popup.wav</a>, played when Chip walks over a
+Lynx popup wall.
+<p>
+<a href="wav/door.wav">door.wav</a> is the sound played when a door is
+unlocked. This was originally a repeated tongue-clucking, which became
+nicely dry, like metal against wood, after going through a bandpass
+filter. It may surprise you to know that the same sound was used to
+make <a href="wav/thief.wav">thief.wav</a>. A reverb filter, when the
+reverb speed is set fast enough, will transform almost any sound into
+something artificial and electronic-sounding. After putting the
+original tongue-cluck through the reverb, I spliced together three
+repetitions, forward-backward-forward, to make the final sound.
+<p>
+If the reverb speed is set too fast, the result will be short,
+high-pitched, loud, and staticky. This is where I got
+<a href="wav/derezz.wav">derezz.wav</a>, the sound played when Chip
+dies by colliding with another creature in Lynx. I fed ting.wav
+through the filter to get this sound, but the results were remarkably
+similar no matter what I started with.
+<p>
+An echo filter can also feed back destructively, but it generally
+takes longer. Playing ting.wav backwards through such an echo filter
+gave me <a href="wav/teleport.wav">teleport.wav</a>, the teleporting
+sound, which I cut off just before the sound began to distort.
+<p>
+A couple of sound effects are noteworthy for having undergone no
+processing at all. <a href="wav/tick.wav">tick.wav</a>, played during
+the 15 seconds before time runs out under MS, came from a small
+metronome. <a href="wav/socket.wav">socket.wav</a>, played when Chip
+opens the chip socket under MS, was made by giving a Chinese abacus a
+sharp, twisting shake.
+<p>
+Two short musical sounds, <a href="wav/death.wav">death.wav</a> and
+<a href="wav/tada.wav">tada.wav</a>, were also created without
+processing. Both were made using a melodica, a.k.a a hooter (a simple
+musical instrument that can basically be thought of as a harmonica
+with a keyboard).
+<p>
+There are a number of continuous sound effects in the Lynx rules.
+These required a slightly different approach, so as to make sound
+effects that can be played in a loop.
+<a href="wav/block.wav">block.wav</a> was made by rubbing together two
+cinder blocks. <a href="wav/crackle.wav">crackle.wav</a> was made by
+surrounding the microphone with plastic-wrap and gently crumpling it.
+<p>
+<a href="wav/skate.wav">skate.wav</a>, heard when Chip is sliding on
+ice, started out by my saying "shhhhh" into the microphone. I then ran
+it through echo and reverb filters until the sound had become
+completely homogenous, and then finally treated it to a high-pass
+filter. <a href="wav/skaturn.wav">skaturn.wav</a>, played when Chip is
+passing through an ice corner-wall, was made by running the original
+skate.wav through a phaser.
+<p>
+<a href="wav/slurp.wav">slurp.wav</a>, the sound played when Chip is
+walking past a force floor using boots, is a simple sound made with
+the tongue. Likewise, <a href="wav/snick.wav">snick.wav</a>, meant to
+sound like cleats on ice, was made with my teeth.
+<a href="wav/plip.wav">plip.wav</a>, heard when Chip is walking across
+water, was made by quickly tapping my index finger on the surface of
+water sitting in a pan. All of these sounds were also made without any
+processing.
+<p>
+<a href="wav/bomb.wav">bomb.wav</a>, the sound of an exploding bomb,
+was surprisingly difficult to make. My first attempts were made by
+subjecting white noise to various filters, but they all sounded wrong.
+I finally had to make the sound myself. I made an explosion noise, the
+way kids do when playing at war, and then ran it through a severe
+low-pass filter until it no longer sounded like a human noise.
+<p>
+The sound that gave me the most trouble was
+<a href="wav/splash.wav">splash.wav</a>, the sound played when a block
+is pushed into water. I tried recording the sound of an object falling
+into water, but the result was really a slapping noise. The original
+MS sound effect is more like water sloshing around, and this was the
+sort of effect I wanted. After thinking about it all weekend, I
+finally came up with a way to do it. I took a large glass vase, filled
+with water, and placed a large pot upside-down on top of it. I then
+turned the whole thing over, giving me an upside-down water-filled
+vase inside a pot. I was then able to just lift up the vase, and the
+water rushing out and filling the pan made the perfect sound effect.
+<p>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/tworld/">
+Tile World</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/">Software
+</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/">Brian
+Raiter</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/">Muppetlabs</a></font>
+</body>
+</html>

@@ -1,0 +1,204 @@
+ruleset ms
+
+%%%
+
+title   Buried Brown Button I
+passwd  BDHP
+
+tiles
+*	beartrap
+0	toggle wall open + brown button
+G	glider north
+F	fireball west
+end
+
+map
+E | G   | G
+        , 0     F
+    * @   *
+  , 0   F
+  _  |  _  |
+and
+E | 1   | 2
+        , x     3
+    y @   x
+  , y   4
+  _  |  _  |
+end
+
+% Action: None.
+% TW result: Both traps are permanently closed.
+% MS result: Left-hand glider becomes trapped, right-hand glider does
+% not. The left-hand glider moves from where the button used to be
+% directly into the trap, whereas the right-hand glider does not. Chip
+% can test this by moving through the right-hand trap. Only if he
+% enters it from the north will he get stuck.
+
+%%%
+
+title   Buried Brown Button II
+passwd  JXMJ
+
+tiles
+*	beartrap
+.	brown button
+;	red key + brown button
+>	glider east
+<	glider west
+end
+
+map
+# # # #     # # # #
+#     # @   #     #
+# # * # . . # * # #
+# > ; #     # . < #
+# # # #   E # # # #
+end
+
+traps 2 3 -> 2 2
+traps 4 2 -> 2 2
+traps 5 2 -> 7 2
+traps 7 3 -> 7 2
+
+% Action: Variously press and release the brown buttons.
+% TW result: After the brown button under the red key goes away, the
+% left-hand trap behaves as if it had never been there.
+% MS result: The left-hand glider can pass through the trap without
+% Chip standing on the brown button, but only when moving south. When
+% moving north (i.e. out of the square where the button used to be),
+% the glider will be trapped.
+
+%%%
+
+title   Buried Brown Button III
+passwd  ECBQ
+
+tiles
+*	beartrap
+.	brown button
+;	red key + brown button
+>	glider east
+<	glider west
+end
+
+map
+# # # #     # # # #
+#     # @   #     #
+# # * # . . # * # #
+# > ; #     # . < #
+# # # #   E # # # #
+end
+
+traps 2 3 -> 2 2
+traps 7 3 -> 7 2
+traps 4 2 -> 2 2
+traps 5 2 -> 7 2
+
+% Action: Variously press and release the brown buttons.
+% TW result: Both traps behave as if the extra buttons are not present.
+% MS result: The left-hand glider will become stuck when moving north
+% into the trap, whether or not Chip is standing on the button at the
+% time. It can only be released by Chip pressing the button *after*
+% the glider has become stuck. The right-hand glider shows the same
+% behavior when entering the trap from the north or from the south.
+% The only difference between this level and the previous one is the
+% order in which the trap connections are listed.
+
+%%%
+
+title   Buried Brown Button IV
+passwd  YMCJ
+
+tiles
+*	beartrap
+.	brown button
+;	red key + brown button
+o	ball east
+O	ball north
+end
+
+map
+E     #
+  . @
+   
+# o ; *     #
+
+      O
+      #
+end
+
+% Action: Variously press and release the brown button.
+% TW result: The trap behaves as if the extra button (under the key)
+% was never there.
+% MS result: The vertical ball always passed through the trap without
+% becoming trapped. The horizontal ball will become trapped when
+% moving eastwards into the trap unless Chip is standing on the brown
+% button.
+
+%%%
+
+title   You Win I
+passwd  TQKB
+
+tiles
+.	red button
+o	ball north
+end
+
+map
+    v]# o
+  . [v@ #
+    E #
+end
+
+creatures
+
+% Action: Move west.
+% TW result: Chip is hit with a cloned block and dies.
+% MS result: Chip is forced south into the exit before the cloned
+% block arrives. The cloned block and the force floor are replaced by
+% an extra (south-facing) Chip tile.
+
+%%%
+
+title   You Win II
+passwd  WNLP
+
+tiles
+.	red button
+o	ball north
+end
+
+map
+    v]# o
+  . [v@ #
+    E #
+end
+
+% Action: Move west.
+% TW result: Chip is hit with a cloned block and dies.
+% MS result: Sometimes the same as "You Win I", and sometimes Chip is
+% hit with a cloned block and dies. The only difference between this
+% level and the previous one is that here the ball is alive.
+
+%%%
+
+title   Buffering Weirdness
+passwd  FXQO
+
+tiles
+G	glider west
+end
+
+map 10 10
+# # # # # # # # # # # #
+# @ > > > > < < < < G #
+# # # # # # E # # # # #
+end
+
+% Action: Move east, and then use the mouse to move south just before
+% Chip is directly above the exit. 
+% TW result: N/A -- no mouse interface.
+% MS result: When timed correctly, Chip makes it into the exit.
+
+%%%
