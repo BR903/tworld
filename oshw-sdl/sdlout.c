@@ -511,17 +511,42 @@ int displayendmessage(int basescore, int timescore, int totalscore,
     return displayprompticon(completed);
 }
 
-/* Display some online help text, either arranged in columns, or with
- * illustrations on the side.
+/* Display some tabular information.
  */
-int displayhelp(int type, char const *title, void const *text, int textcount,
-		int completed)
+int displaytable(char const *title, tablespec const *table, int completed)
 {
-    objhelptext const  *objtext;
-    tablespec const    *tabletext;
-    SDL_Rect		left, right;
-    SDL_Rect	       *cols;
-    int			col, id, i, n;
+    SDL_Rect	area;
+    SDL_Rect   *cols;
+    int		i, n;
+
+    cleardisplay();
+
+    area.x = MARGINW;
+    area.y = screenh - MARGINH - sdlg.font.h;
+    area.w = screenw - 2 * MARGINW;
+    area.h = sdlg.font.h;
+    puttext(&area, title, -1, 0);
+    area.h = area.y - MARGINH;
+    area.y = MARGINH;
+
+    cols = measuretable(&area, table);
+    for (i = table->rows, n = 0 ; i ; --i)
+	drawtablerow(table, cols, &n, 0);
+    free(cols);
+
+    displayprompticon(completed);
+    SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
+    return TRUE;
+}
+
+
+/* Display some text with illustrations on the side.
+ */
+int displaytiletable(char const *title,
+		     tiletablerow const *rows, int count, int completed)
+{
+    SDL_Rect	left, right;
+    int		col, id, i;
 
     cleardisplay();
     if (SDL_MUSTLOCK(sdlg.screen))
@@ -535,44 +560,32 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
     left.h = left.y - MARGINH;
     left.y = MARGINH;
 
-    if (type == HELP_TABTEXT) {
-	tabletext = text;
-	cols = measuretable(&left, tabletext);
-	for (i = 0, n = 0 ; i < tabletext->rows ; ++i)
-	    drawtablerow(tabletext, cols, &n, 0);
-	free(cols);
-    } else if (type == HELP_OBJECTS) {
-	right = left;
-	col = sdlg.wtile * 2 + MARGINW;
-	right.x += col;
-	right.w -= col;
-	objtext = text;
-	for (i = 0 ; i < textcount ; ++i) {
-	    if (objtext[i].isfloor)
-		id = objtext[i].item1;
+    right = left;
+    col = sdlg.wtile * 2 + MARGINW;
+    right.x += col;
+    right.w -= col;
+    for (i = 0 ; i < count ; ++i) {
+	if (rows[i].isfloor)
+	    id = rows[i].item1;
+	else
+	    id = crtile(rows[i].item1, EAST);
+	drawopaquetile(left.x + sdlg.wtile, left.y, gettileimage(id, FALSE));
+	if (rows[i].item2) {
+	    if (rows[i].isfloor)
+		id = rows[i].item2;
 	    else
-		id = crtile(objtext[i].item1, EAST);
-	    drawopaquetile(left.x + sdlg.wtile, left.y,
-			   gettileimage(id, FALSE));
-	    if (objtext[i].item2) {
-		if (objtext[i].isfloor)
-		    id = objtext[i].item2;
-		else
-		    id = crtile(objtext[i].item2, EAST);
-		drawopaquetile(left.x, left.y,
-			       gettileimage(id, FALSE));
-	    }
-	    left.y += sdlg.htile;
-	    left.h -= sdlg.htile;
-	    puttext(&right, objtext[i].desc, -1,
-			    PT_MULTILINE | PT_UPDATERECT);
-	    if (left.y < right.y) {
-		left.y = right.y;
-		left.h = right.h;
-	    } else {
-		right.y = left.y;
-		right.h = left.h;
-	    }
+		id = crtile(rows[i].item2, EAST);
+	    drawopaquetile(left.x, left.y, gettileimage(id, FALSE));
+	}
+	left.y += sdlg.htile;
+	left.h -= sdlg.htile;
+	puttext(&right, rows[i].desc, -1, PT_MULTILINE | PT_UPDATERECT);
+	if (left.y < right.y) {
+	    left.y = right.y;
+	    left.h = right.h;
+	} else {
+	    right.y = left.y;
+	    right.h = left.h;
 	}
     }
 
@@ -746,22 +759,18 @@ int creategamedisplay(void)
     return TRUE;
 }
 
-int createinitialdisplay(void)
-{
-    if (screenw <= 0 || screenh <= 0) {
-	screenw = 640;
-	screenh = 480;
-    }
-    createdisplay();
-    cleardisplay();
-    return TRUE;
-}
-
-/* Initialize a generic display surface capable of displaying text.
+/* Initialize with a generic display surface capable of displaying text.
  */
 int _sdloutputinitialize(void)
 {
-    createinitialdisplay();
+    screenw = 640;
+    screenh = 480;
+    promptloc.x = screenw - MARGINW - ENDICONW;
+    promptloc.y = screenh - MARGINH - ENDICONH;
+    promptloc.w = ENDICONW;
+    promptloc.h = ENDICONH;
+    createdisplay();
+    cleardisplay();
 
     sdlg.transpixel = SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 0);
     if (sdlg.transpixel == SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 255)) {
