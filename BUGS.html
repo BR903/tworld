@@ -12,6 +12,8 @@ Bugs in the MS game logic emulation
 Bugs in the Lynx game logic emulation
 <li>
 Other bugs and misfeatures
+<li>
+TODO: Missing features
 </ul>
 <p>
 <hr>
@@ -20,10 +22,13 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-The behavior of the paramecia in Eric Schmidt's level 29 ("PARAMECIA")
-<i>still</i> does not match the real game (although it's much closer
-than it was before). I don't yet know what the root cause of the
-discrepancy is.
+Several of the weirder obscure bugs aren't reproduced faithfully. (For
+example, the tank-hits-red-button-cloning-block-which-hits-blue-button
+bug correctly produces an extra tank in the emulation, but the first
+tank still gets turned around.) For the most part, I'm not
+particularly motivated to improve the emulation of these, as they are
+pretty obscure. However, their existence may point to areas where the
+emulator could be mirroring the internal logic of the MS game better.
 <li>
 (It is debatable whether or not this one qualifies as a bug.) The
 keyboard is scanned twice per tick, once at the beginning and once in
@@ -32,14 +37,6 @@ tick, the game does not update the display twice in a row (once after
 the creatures move and once after Chip moves), but just does it once.
 In a few places this does have a non-trivial effect on how the game
 appears, most notably when Chip tries to move against a force floor.
-<li>
-Several of the weirder obscure bugs aren't reproduced faithfully. (For
-example, the tank-hits-red-button-cloning-block-which-hits-blue-button
-bug correctly produces an extra tank in the emulation, but the first
-tank still gets turned around.) For the most part, I'm not
-particularly motivated to improve the emulation of these, as they are
-pretty obscure. However, their existence may point to areas where the
-emulator could be mirroring the internal logic of the MS game better.
 </ol>
 <p>
 <hr>
@@ -92,9 +89,26 @@ Other bugs and misfeatures
 There ought to be a way to return to the file list, instead of having
 to shut down and restart the program. That drives me crazy.
 <li>
-The display code needs to be revamped to run more efficiently across
-the various display resolutions (right now it runs well on 32-bit
-displays and poorly on 8-bit displays).
+When playing with a 32x32 tile set, there isn't enough room to display
+the longer hint texts. The program needs to check for this and
+commandeer some more real estate in that situation.
+</ol>
+<p>
+<hr>
+<p>
+TODO: Missing features
+<p>
+<ol>
+<li>
+The program needs to do more with the passwords than just display
+them. It should probably follow the MS pattern -- namely, that you can
+visit any level you've solved in the past, and the level immediately
+after it, or any level for which you can supply the password. All
+other levels are off limits. (This will require another change to the
+save file format -- sigh.)
+<li>
+Anything else? I thought there was a bunch of things, but I can't
+remember any others right now.
 </ol>
 </body>
 </html>
