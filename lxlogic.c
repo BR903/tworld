@@ -391,11 +391,11 @@ static void removechip(int reason, creature *also)
 	addanimation(chip->pos, NIL, 0, Bomb_Explosion, 12);
 	break;
       case RMC_OUTOFTIME:
-	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
 	break;
       case RMC_BURNED:
 	addsoundeffect(SND_CHIP_LOSES);
-	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
 	break;
       case RMC_COLLIDED:
 	addsoundeffect(SND_CHIP_LOSES);
@@ -415,6 +415,7 @@ static void removechip(int reason, creature *also)
     removecreature(chip);
     resetfloorsounds(FALSE);
     startendgametimer();
+    state->timeoffset = 1;
 }
 
 /*
