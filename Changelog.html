@@ -3,12 +3,27 @@
 <title>Tile World Changelog</title>
 </head>
 <body>
-2001 Nov ??: version 0.8.5
+2001 Nov ??: version 0.9.0
 <p>
 <ul>
 <li>
 Found and fixed the obscure slide delay bug that was causing the
 discrepancy in Eric Schmidt's level 29 ("PARAMECIA")!
+<li>
+Threw out all the text-drawing code and replaced it with routines that
+handle proportional fonts. Which naturally necessitated rewriting a
+bunch of the code that uses these functions. Lots of changes.
+<li>
+Created an abstract table "object", so that my tables could be
+realized either on the text console or in a proportional font equally
+well.
+<li>
+Implemented sound! Spent an entire weekend making 25 wave files -- and
+they still sound ridiculous. (But the fact that the game finally has
+sound is nice.) Onomatopoeia is still available via a cmdline switch.
+<li>
+Various bug fixes that I've forgotten all about while working on the
+other things.
 </ul>
 <p>
 2001 Nov 14: version 0.8.4
