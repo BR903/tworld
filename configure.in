@@ -15,8 +15,8 @@ dnl
 AC_ARG_WITH(debug,
 	    [  --with-debug            Build with debugging info],
 	    [if test $withval = yes ; then
-	       CFLAGS=" -Wall -W -ggdb"
-	       LDFLAGS=" -Wall -W -ggdb"
+	       CFLAGS=" -Wall -W -O2 -ggdb"
+	       LDFLAGS=" -Wall -W -O2 -ggdb"
 	     fi])
 
 LOADLIBES=""
