@@ -193,9 +193,9 @@ static int layoutscreen(void)
     return TRUE;
 }
 
-/* Change the dimensions of the game surface.
+/* Create or change the program's display surface.
  */
-static int setdisplaysize(void)
+static void createdisplay(void)
 {
     if (sdlg.screen) {
 	SDL_FreeSurface(sdlg.screen);
@@ -210,8 +210,6 @@ static int setdisplaysize(void)
     if (sdlg.screen->format->BitsPerPixel != 32)
 	warn("Requested a display with 32-bit depth, got %d-bit instead!",
 	     sdlg.screen->format->BitsPerPixel);
-
-    return TRUE;
 }
 
 /* Wipe the display.
@@ -743,8 +741,18 @@ int creategamedisplay(void)
 {
     if (!layoutscreen())
 	return FALSE;
-    if (!setdisplaysize())
-	return FALSE;
+    createdisplay();
+    cleardisplay();
+    return TRUE;
+}
+
+int createinitialdisplay(void)
+{
+    if (screenw <= 0 || screenh <= 0) {
+	screenw = 640;
+	screenh = 480;
+    }
+    createdisplay();
     cleardisplay();
     return TRUE;
 }
@@ -753,18 +761,10 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(void)
 {
-    Uint32	black;
+    createinitialdisplay();
 
-    if (screenw <= 0 || screenh <= 0) {
-	screenw = 640;
-	screenh = 480;
-    }
-    if (!setdisplaysize())
-	return FALSE;
-
-    black = SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 255);
     sdlg.transpixel = SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 0);
-    if (sdlg.transpixel == black) {
+    if (sdlg.transpixel == SDL_MapRGBA(sdlg.screen->format, 0, 0, 0, 255)) {
 	sdlg.transpixel = 0xFFFFFFFF;
 	sdlg.transpixel &= ~(sdlg.screen->format->Rmask
 					| sdlg.screen->format->Gmask

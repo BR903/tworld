@@ -274,7 +274,6 @@ int input(int wait)
     for (;;) {
 	resetkeystates();
 	eventupdate(wait);
-
 	cmd = CmdNone;
 	for (i = 0 ; keycmds[i].scancode ; ++i) {
 	    n = keystates[keycmds[i].scancode];
