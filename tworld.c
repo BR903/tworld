@@ -685,7 +685,7 @@ static int finalinput(gamespec *gs)
  */
 static int playgame(gamespec *gs, int firstcmd)
 {
-    int	render;
+    int	render, lastrendered;
     int	cmd, n;
 
     cmd = firstcmd;
@@ -694,10 +694,11 @@ static int playgame(gamespec *gs, int firstcmd)
 
     gs->status = 0;
     setgameplaymode(BeginPlay);
-    render = TRUE;
+    render = lastrendered = TRUE;
     for (;;) {
 	n = doturn(cmd);
 	drawscreen(render);
+	lastrendered = render;
 	if (n)
 	    break;
 	render = waitfortick();
@@ -759,7 +760,7 @@ static int playgame(gamespec *gs, int firstcmd)
     return TRUE;
 
   quitloop:
-    if (!render)
+    if (!lastrendered)
 	drawscreen(TRUE);
     quitgamestate();
     setgameplaymode(EndPlay);
@@ -774,17 +775,17 @@ static int playgame(gamespec *gs, int firstcmd)
  */
 static int playbackgame(gamespec *gs)
 {
-    int	render;
-    int	n;
+    int	render, lastrendered, n;
 
     drawscreen(TRUE);
 
     gs->status = 0;
     setgameplaymode(BeginPlay);
-    render = TRUE;
+    render = lastrendered = TRUE;
     for (;;) {
 	n = doturn(CmdNone);
 	drawscreen(render);
+	lastrendered = render;
 	if (n)
 	    break;
 	render = waitfortick();
@@ -828,7 +829,7 @@ static int playbackgame(gamespec *gs)
     return TRUE;
 
   quitloop:
-    if (!render)
+    if (!lastrendered)
 	drawscreen(TRUE);
     quitgamestate();
     setgameplaymode(EndPlay);
