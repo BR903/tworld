@@ -82,11 +82,12 @@ tworldres.o: tworld.ico
 install: tworld
 	cp -i ./tworld $(bindir)/.
 	mkdir -p $(sharedir)/sets
-	cp -i sets/*.dac $(sharedir)/sets/.
 	mkdir -p $(sharedir)/data
-	cp -i resources/rc $(sharedir)/.
-	cp -i resources/*.bmp $(sharedir)/.
-	cp -i resources/*.wav $(sharedir)/.
+	mkdir -p $(sharedir)/res
+	cp -i sets/*.dac $(sharedir)/sets/.
+	cp -i resources/rc $(sharedir)/res/.
+	cp -i resources/*.bmp $(sharedir)/res/.
+	cp -i resources/*.wav $(sharedir)/res/.
 
 clean:
 	rm -f $(OBJS) tworld mklynxcc config.*

@@ -382,7 +382,7 @@ static void removechip(int reason, creature *also)
 	break;
       case RMC_COLLIDED:
 	addsoundeffect(SND_DEREZZ);
-	addanimation(chip->pos, NIL, 0, Entity_Explosion, 12);
+	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
 	if (also) {
 	    addanimation(also->pos, also->dir, also->moving,
 			 Entity_Explosion, 12);

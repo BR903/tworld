@@ -39,20 +39,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License, included in this distribution in the file
 COPYING, for more details.
 <p>
-(NOTE: Until the program is officially in beta, I request that you
-voluntarily refrain from giving out copies of this program. You are
-legally permitted to do so, but I would prefer that the distribution
-of this version of the program be kept to a small, known group of
-people until it is in a more acceptable state.)
-<p>
 <h2>Some Notes on the External Resource Files</h2>
 <p>
 Tile World loads most of its resource data at runtime from external
 files. (The one exception is the program icon, which is hard-coded.)
-Under Windows, these files are stored in the same directory as the
-executable; under Linux, these files are in the shared data directory
-(by default, <tt>/usr/local/share/tworld</tt>). You can also specify a
-different directory at runtime using the -R command-line option.
+These files are stored in the <tt>res</tt> directory. You can specify
+a different directory at runtime using the -R command-line option.
 <p>
 The <tt>rc</tt> file in this directory lists the actual file names for
 each resource. Different files can be used for any or all resources

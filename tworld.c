@@ -687,7 +687,7 @@ static void initdirs(char const *series, char const *seriesdat,
 	    warn("Value of environment variable TWORLDSAVEDIR is too long");
     }
 
-    if (!res || !series) {
+    if (!res || !series || !seriesdat) {
 	if ((dir = getenv("TWORLDDIR")) && *dir) {
 	    if (strlen(dir) < maxpath - 8)
 		root = dir;
@@ -707,7 +707,7 @@ static void initdirs(char const *series, char const *seriesdat,
     if (res)
 	strcpy(resdir, res);
     else
-	strcpy(resdir, root);
+	combinepath(resdir, root, "res");
 
     seriesdir = getpathbuffer();
     if (series)
