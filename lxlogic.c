@@ -70,6 +70,9 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
  */
 static int		lastrndslidedir = NORTH;
 
+/* The current stepping value, giving the subsecond offset of the
+ * timer. This affects when teeth move.
+ */
 static int		stepping = 2;
 
 /* The memory used to hold the list of creatures.
@@ -286,6 +289,10 @@ static void togglewalls(void)
 	    floorat(pos) = SwitchWall_Open;
 }
 
+/* Quell any continuous sound effects coming from what Chip is
+ * standing on. If includepushing is TRUE, also quell the sound of any
+ * blocks being pushed.
+ */
 static void resetfloorsounds(int includepushing)
 {
     stopsoundeffect(SND_SKATING_FORWARD);
@@ -332,7 +339,7 @@ static creature *lookupcreature(int pos, int includechip)
     return NULL;
 }
 
-/* Return a new creature.
+/* Return a fresh creature.
  */
 static creature *newcreature(void)
 {
@@ -352,7 +359,7 @@ static creature *newcreature(void)
     return cr;
 }
 
-/* Turn around any and all tanks not currently inbetween moves.
+/* Flag all tanks to turn around.
  */
 static void turntanks(void)
 {
@@ -370,7 +377,8 @@ static void turntanks(void)
 }
 
 /* Start an animation sequence at the spot (formerly) occupied by the
- * given creature.
+ * given creature. The creature's slot in the creature list is reused
+ * by the animation sequence.
  */
 static void removecreature(creature *cr, int animationid)
 {
@@ -391,7 +399,8 @@ static void removecreature(creature *cr, int animationid)
     markanimated(cr->pos);
 }
 
-/* Mark a creature as dead.
+/* End the given animation sequence (thus removing the final vestige
+ * of an ex-creature).
  */
 static void removeanimation(creature *cr)
 {
@@ -414,7 +423,8 @@ static int stopanimationat(int pos)
     return FALSE;
 }
 
-/* What happens when Chip dies.
+/* What happens when Chip dies. reason indicates the cause of death.
+ * also is either NULL or points to a creature that dies with Chip.
  */
 static void removechip(int reason, creature *also)
 {
@@ -624,12 +634,15 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     { 0, 0, 0 }
 };
 
-/* Including the flag CMM_RELEASING in a call to canmakemove indicates
- * that the creature in question is being moved out of a beartrap or
- * clone machine, moves that would normally be forbidden.
+/* Including the flag CMM_RELEASING in a call to canmakemove()
+ * indicates that the creature in question is being moved out of a
+ * beartrap or clone machine, moves that would normally be forbidden.
  * CMM_EXPOSEWALLS causes blue and hidden walls to be exposed in the
  * case of Chip. CMM_PUSHBLOCKS causes blocks to be pushed when in the
- * way of Chip.
+ * way of Chip. CMM_PUSHBLOCKSNOW causes blocks to be pushed
+ * immediately, instead of waiting for the block's turn to move.
+ * CMM_CLEARANIMATIONS causes animations in the destination square to
+ * be immediately quelled.
  */
 #define	CMM_RELEASING		0x0001
 #define	CMM_EXPOSEWALLS		0x0002
@@ -638,7 +651,7 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
 #define	CMM_CLEARANIMATIONS	0x0010
 
 /* Return TRUE if the given block is allowed to be moved in the given
- * direction. If flags includes CMM_PUSHBLOCKS, then the indicated
+ * direction. If flags includes CMM_PUSHBLOCKSNOW, then the indicated
  * movement of the block will be initiated.
  */
 static int canpushblock(creature *block, int dir, int flags)
@@ -664,7 +677,8 @@ static int canpushblock(creature *block, int dir, int flags)
 }
 
 /* Return TRUE if the given creature is allowed to attempt to move in
- * the given direction.
+ * the given direction. Side effects can and will occur from calling
+ * this function, as indicated by flags.
  */
 static int canmakemove(creature const *cr, int dir, int flags)
 {
@@ -970,6 +984,9 @@ static int choosemove(creature *cr)
     return cr->tdir != NIL || getfdir(cr) != NIL;
 }
 
+/* Update the location that Chip is currently moving into (and reset
+ * the pointer to the creature that Chip is colliding with).
+ */
 static void checkmovingto(void)
 {
     creature   *cr;
@@ -1177,8 +1194,7 @@ static int startmovement(creature *cr, int releasing)
     return +1;
 }
 
-/* Determine the speed of a moving creature. (Speed is measured in
- * eighths of a tile per tick.)
+/* Continue the given creature's move.
  */
 static int continuemovement(creature *cr)
 {
@@ -1634,7 +1650,7 @@ static void preparedisplay(void)
 }
 
 /*
- * The exported functions.
+ * The functions provided by the gamelogic struct.
  */
 
 /* Translation table for the codes used by the data file to define the
@@ -1988,12 +2004,16 @@ static int advancegame(gamelogic *logic)
     return 0;
 }
 
+/* Free resources associated with the current game state.
+ */
 static int endgame(gamelogic *logic)
 {
     (void)logic;
     return TRUE;
 }
 
+/* Free all allocated resources for this module.
+ */
 static void shutdown(gamelogic *logic)
 {
     (void)logic;
@@ -2001,6 +2021,9 @@ static void shutdown(gamelogic *logic)
     creaturearray = NULL;
 }
 
+/* The exported function: Initialize and return the module's gamelogic
+ * structure.
+ */
 gamelogic *lynxlogicstartup(void)
 {
     static gamelogic	logic;

@@ -52,6 +52,9 @@ static int advancecreature(creature *cr, int dir);
  */
 static gamestate	       *state;
 
+/* The current stepping value, giving the subsecond offset of the
+ * timer. This affects when teeth and blobs move.
+ */
 static int			stepping = 0;
 
 /*
@@ -136,30 +139,42 @@ static short *_possession(int obj)
 }
 
 /*
- * Memory allocation.
+ * Memory allocation functions for the various arenas.
  */
 
+/* The data associated with a sliding object.
+ */
 typedef	struct slipper {
     creature   *cr;
     int		dir;
 } slipper;
 
+/* The linked list of creature pools, forming the creature arena.
+ */
 static creature	       *creaturepool = NULL;
 static void	       *creaturepoolend = NULL;
 static int const	creaturepoolchunk = 256;
 
+/* The list of active creatures.
+ */
 static creature	      **creatures = NULL;
 static int		creaturecount = 0;
 static int		creaturesallocated = 0;
 
+/* The list of "active" blocks.
+ */
 static creature	      **blocks = NULL;
 static int		blockcount = 0;
 static int		blocksallocated = 0;
 
+/* The list of sliding creatures.
+ */
 static slipper	       *slips = NULL;
 static int		slipcount = 0;
 static int		slipsallocated = 0;
 
+/* Mark all entries in the creature arena as unused.
+ */
 static void resetcreaturepool(void)
 {
     if (!creaturepoolend)
@@ -172,6 +187,8 @@ static void resetcreaturepool(void)
     creaturepool = (creature*)creaturepoolend - creaturepoolchunk + 1;
 }
 
+/* Destroy the creature arena.
+ */
 static void freecreaturepool(void)
 {
     if (!creaturepoolend)
@@ -186,6 +203,8 @@ static void freecreaturepool(void)
     }
 }
 
+/* Return a pointer to a fresh creature.
+ */
 static creature *allocatecreature(void)
 {
     creature   *cr;
@@ -219,11 +238,15 @@ static creature *allocatecreature(void)
     return cr;
 }
 
+/* Empty the list of active creatures.
+ */
 static void resetcreaturelist(void)
 {
     creaturecount = 0;
 }
 
+/* Append the given creature to the end of the creature list.
+ */
 static creature *addtocreaturelist(creature *cr)
 {
     if (creaturecount >= creaturesallocated) {
@@ -236,11 +259,15 @@ static creature *addtocreaturelist(creature *cr)
     return cr;
 }
 
+/* Empty the list of "active" blocks.
+ */
 static void resetblocklist(void)
 {
     blockcount = 0;
 }
 
+/* Append the given block to the end of the block list.
+ */
 static creature *addtoblocklist(creature *cr)
 {
     if (blockcount >= blocksallocated) {
@@ -253,11 +280,15 @@ static creature *addtoblocklist(creature *cr)
     return cr;
 }
 
+/* Empty the list of sliding creatures.
+ */
 static void resetsliplist(void)
 {
     slipcount = 0;
 }
 
+/* Append the given creature to the end of the slip list.
+ */
 static creature *appendtosliplist(creature *cr, int dir)
 {
     int	n;
@@ -281,6 +312,8 @@ static creature *appendtosliplist(creature *cr, int dir)
     return cr;
 }
 
+/* Add the given creature to the start of the slip list.
+ */
 static creature *prependtosliplist(creature *cr, int dir)
 {
     int	n;
@@ -304,6 +337,8 @@ static creature *prependtosliplist(creature *cr, int dir)
     return cr;
 }
 
+/* Return the sliding direction of a creature on the slip list.
+ */
 static int getslipdir(creature *cr)
 {
     int	n;
@@ -314,6 +349,8 @@ static int getslipdir(creature *cr)
     return NIL;
 }
 
+/* Remove the given creature from the slip list.
+ */
 static void removefromsliplist(creature *cr)
 {
     int	n;
@@ -396,6 +433,8 @@ static int clonerfrombutton(int pos)
     return -1;
 }
 
+/* Return the floor tile found at the given location.
+ */
 static int floorat(int pos)
 {
     mapcell    *cell;
@@ -410,6 +449,9 @@ static int floorat(int pos)
     return Empty;
 }
 
+/* Return a pointer to the tile that forms the floor at the given
+ * location.
+ */
 static maptile *getfloorat(int pos)
 {
     mapcell    *cell;
@@ -424,6 +466,9 @@ static maptile *getfloorat(int pos)
     return &cell->bot; /* ? */
 }
 
+/* Return TRUE if a creature (other than Chip) is at the given
+ * location.
+ */
 static int issomeoneat(int pos)
 {
     mapcell    *cell;
@@ -439,6 +484,9 @@ static int issomeoneat(int pos)
     return iscreature(id);
 }
 
+/* Return TRUE if a creature, a block, or Chip is at the given
+ * location.
+ */
 static int isoccupied(int pos)
 {
     int	id;
@@ -447,6 +495,9 @@ static int isoccupied(int pos)
     return id == Block_Static || iscreature(id);
 }
 
+/* Place a new tile at the given location, causing the current upper
+ * tile to become the lower tile.
+ */
 static void pushtile(int pos, maptile tile)
 {
     mapcell    *cell;
@@ -456,6 +507,9 @@ static void pushtile(int pos, maptile tile)
     cell->top = tile;
 }
 
+/* Remove the upper tile from the given location, causing the current
+ * lower tile to become uppermost.
+ */
 static maptile poptile(int pos)
 {
     maptile	tile;
@@ -517,7 +571,7 @@ static void togglewalls(void)
 #define	CS_SLIDE		0x20	/* is on the slip list but can move */
 
 /* Return the creature located at pos. Ignores Chip unless includechip
- * is TRUE.
+ * is TRUE. Return NULL if no such creature is present.
  */
 static creature *lookupcreature(int pos, int includechip)
 {
@@ -535,6 +589,11 @@ static creature *lookupcreature(int pos, int includechip)
     return NULL;
 }
 
+/* Return the block located at pos. If the block in question is not
+ * currently "active", then it is automatically added to the block
+ * list. (Why is a block on a beartrap automatically released? Or
+ * rather, why is this done in this function? I don't know.)
+ */
 static creature *lookupblock(int pos)
 {
     creature   *cr;
@@ -569,6 +628,9 @@ static creature *lookupblock(int pos)
     return addtoblocklist(cr);
 }
 
+/* Update the given creature's tile on the map to reflect its current
+ * state.
+ */
 static void updatecreature(creature const *cr)
 {
     maptile    *tile;
@@ -600,6 +662,8 @@ static void updatecreature(creature const *cr)
     tile->state = 0;
 }
 
+/* Add the given creature's tile to the map.
+ */
 static void addcreaturetomap(creature const *cr)
 {
     static maptile const dummy = { Empty, 0 };
@@ -639,7 +703,8 @@ static void removecreature(creature *cr)
 	cr->hidden = TRUE;
 }
 
-/* Turn around any and all tanks.
+/* Turn around any and all tanks. (A tank that is halfway through the
+ * process of moving at the time is given special treatment.)
  */
 static void turntanks(creature const *inmidmove)
 {
@@ -670,8 +735,8 @@ static void turntanks(creature const *inmidmove)
  * Maintaining the slip list.
  */
 
-/* Add the given creature to the slip list if it is not already on it.
- * If nosliding is FALSE, the creature is still permitted to slide.
+/* Add the given creature to the slip list if it is not already on it
+ * (assuming that the given floor is a kind that causes slipping).
  */
 static void startfloormovement(creature *cr, int floor)
 {
@@ -731,22 +796,16 @@ static int pushblock(int pos, int dir, int collapse)
 	slipdir = getslipdir(cr);
 	if (dir == slipdir || dir == back(slipdir))
 	    return FALSE;
-#if 0
-	endfloormovement(cr);
-#endif
     }
     if (collapse && cellat(pos)->bot.id == Block_Static)
 	cellat(pos)->bot.id = Empty;
-#if 0
-    return advancecreature(cr, dir);
-#else
+
     if (advancecreature(cr, dir)) {
 	return TRUE;
     } else {
 	endfloormovement(cr);
 	return FALSE;
     }
-#endif
 }
 
 /*
@@ -837,16 +896,23 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     /* Floor_Reserved1 */	{ 0, 0, 0 },
 };
 
+/* Including the flag CMM_NOLEAVECHECK in a call to canmakemove()
+ * indicates that the tile the creature is moving out of is
+ * automatically presumed to permit such movement. CMM_NOEXPOSEWALLS
+ * causes blue and hidden walls to remain unexposed.
+ * CMM_CLONECANTBLOCK means that the creature will not be prevented
+ * from moving by an identical creature standing in the way. Finally,
+ * CMM_NOCOLLAPSEBLOCKS stops a block atop another block from being
+ * treated as a single block when pushed.
+ */
 #define	CMM_NOLEAVECHECK	0x0001
 #define	CMM_NOEXPOSEWALLS	0x0002
 #define	CMM_CLONECANTBLOCK	0x0004
 #define	CMM_NOCOLLAPSEBLOCKS	0x0008
 
 /* Return TRUE if the given creature is allowed to attempt to move in
- * the given direction. If skipleavecheck is TRUE, the tile the
- * creature is moving out of will be assumed to permit movement in the
- * given direction. If exposewalls is FALSE, hidden walls will not be
- * exposed by calling this function.
+ * the given direction. Side effects can and will occur from calling
+ * this function, as indicated by flags.
  */
 static int canmakemove(creature const *cr, int dir, int flags)
 {
@@ -946,8 +1012,10 @@ static int canmakemove(creature const *cr, int dir, int flags)
  */
 
 /* This function embodies the movement behavior of all the creatures.
- * Given a creature, this function enumerates its desired direction
- * of movement and selects the first one that is permitted.
+ * Given a creature, this function enumerates its desired direction of
+ * movement and selects the first one that is permitted. Note that
+ * calling this function also updates the current controller
+ * direction.
  */
 static void choosecreaturemove(creature *cr)
 {
@@ -1130,8 +1198,8 @@ static void choosechipmove(creature *cr, int discard)
     cr->tdir = dir;
 }
 
-/* Teleport the given creature instantaneously from one teleport tile
- * to another.
+/* Teleport the given creature instantaneously from the teleport tile
+ * at start to another teleport tile (if possible).
  */
 static int teleportcreature(creature *cr, int start)
 {
@@ -1245,6 +1313,8 @@ static void springtrap(int buttonpos)
     }
 }
 
+/* Mark all buttons everywhere as having been handled.
+ */
 static void resetbuttons(void)
 {
     int	pos;
@@ -1255,6 +1325,8 @@ static void resetbuttons(void)
     }
 }
 
+/* Apply the effects of all deferred button presses, if any.
+ */
 static void handlebuttons(void)
 {
     int	pos, id;
@@ -1297,6 +1369,8 @@ static void handlebuttons(void)
  */
 
 /* Initiate a move by the given creature in the given direction.
+ * Return FALSE if the creature cannot initiate the indicated move
+ * (side effects may still occur).
  */
 static int startmovement(creature *cr, int dir)
 {
@@ -1553,15 +1627,10 @@ static void endmovement(creature *cr, int dir)
 	startfloormovement(cr, floor);
     else if (isslide(floor) && (cr->id != Chip || !possession(Boots_Slide)))
 	startfloormovement(cr, floor);
-#if 0
-    else if (floor != Beartrap || cr->id != Block)
-	cr->state &= ~(CS_SLIP | CS_SLIDE);
-#else
     else if (floor == Beartrap && cr->id == Block && wasslipping)
 	startfloormovement(cr, floor);
     else
 	cr->state &= ~(CS_SLIP | CS_SLIDE);
-#endif
 
     if (!wasslipping && (cr->state & (CS_SLIP | CS_SLIDE)) && cr->id != Chip)
 	controllerdir() = getslipdir(cr);
@@ -1846,7 +1915,7 @@ static void preparedisplay(void)
 }
 
 /*
- * The exported functions.
+ * The functions provided by the gamelogic struct.
  */
 
 /* Translation table for the codes used by the data file to define the
@@ -2199,6 +2268,8 @@ static int endgame(gamelogic *logic)
     return TRUE;
 }
 
+/* Free all allocated resources for this module.
+ */
 static void shutdown(gamelogic *logic)
 {
     (void)logic;
@@ -2222,6 +2293,9 @@ static void shutdown(gamelogic *logic)
     creaturepoolend = NULL;
 }
 
+/* The exported function: Initialize and return the module's gamelogic
+ * structure.
+ */
 gamelogic *mslogicstartup(void)
 {
     static gamelogic	logic;
