@@ -9,7 +9,7 @@
 #include	"err.h"
 #include	"state.h"
 #include	"random.h"
-#include	"lxlogic.h"
+#include	"logic.h"
 
 /* The walker's PRNG seed value. Don't change this; it needs to
  * remain forever constant.
@@ -45,18 +45,18 @@ static prng		walkerprng;
 
 /* The memory used to hold the list of creatures.
  */
-static creature		creaturearray[CXGRID * CYGRID];
+static creature	       *creaturearray = NULL;
 
-#define	MAX_CREATURES	((int)(sizeof creaturearray / sizeof *creaturearray))
+#define	MAX_CREATURES	(CXGRID * CYGRID)
 
-static int xviewoffset = 0, yviewoffset = 0;
+static int		xviewoffset, yviewoffset;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
  * macros can be used as an lvalue.
  */
 
-#define	setstate(p)		(state = (p))
+#define	setstate(p)		(state = (p)->state)
 
 #define	creaturelist()		(state->creatures)
 
@@ -104,7 +104,8 @@ static int xviewoffset = 0, yviewoffset = 0;
 #define	decrcounter(pos)	(--state->map[pos].top.state & 0x1F)
 #define	resetcounter(pos)	(state->map[pos].top.state &= ~0x1F)
 #define	setcounter(pos, n)	\
-    (state->map[pos].top.state = (state->map[pos].top.state & ~0x1F) | ((n) & 0x1F))
+    (state->map[pos].top.state = (state->map[pos].top.state & ~0x1F) \
+			       | ((n) & 0x1F))
 
 #define	possession(obj)	(*_possession(obj))
 static short *_possession(int obj)
@@ -1221,6 +1222,13 @@ static void initialhousekeeping(void)
     creature   *chip;
     creature   *cr;
 
+    if (currenttime() == 0) {
+	if (state->initrndslidedir == NIL)
+	    state->initrndslidedir = lastrndslidedir;
+	else
+	    lastrndslidedir = state->initrndslidedir;
+    }
+
     chip = getchip();
     if (chip->id == Pushing_Chip)
 	chip->id = Chip;
@@ -1499,7 +1507,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
  * The level map is decoded and assembled, the list of creatures is
  * drawn up, and other miscellaneous initializations are performed.
  */
-int lynx_initgame(gamestate *pstate)
+static int initgame(gamelogic *logic)
 {
     unsigned char	layer1[CXGRID * CYGRID];
     unsigned char	layer2[CXGRID * CYGRID];
@@ -1508,8 +1516,9 @@ int lynx_initgame(gamestate *pstate)
     gamesetup	       *game;
     int			pos, n;
 
-    setstate(pstate);
-    game = pstate->game;
+    setstate(logic);
+
+    game = state->game;
 
     memset(layer1, 0, sizeof layer1);
     memset(layer2, 0, sizeof layer2);
@@ -1587,10 +1596,6 @@ int lynx_initgame(gamestate *pstate)
 
     resetgreentoggle();
     restartprng(&walkerprng, WALKER_PRNG_SEED);
-    if (state->initrndslidedir == NIL)
-	state->initrndslidedir = lastrndslidedir;
-    else
-	lastrndslidedir = state->initrndslidedir;
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
@@ -1604,19 +1609,13 @@ int lynx_initgame(gamestate *pstate)
     return TRUE;
 }
 
-int lynx_endgame(gamestate *pstate)
-{
-    xviewoffset = yviewoffset = 0;
-    return pstate != NULL;
-}
-
 /* Advance the game state by one tick.
  */
-int lynx_advancegame(gamestate *pstate)
+static int advancegame(gamelogic *logic)
 {
     creature   *cr;
 
-    setstate(pstate);
+    setstate(logic);
 
     if (timelimit() && currenttime() >= timelimit()) {
 	addsoundeffect(SND_CHIP_LOSES);
@@ -1653,4 +1652,37 @@ int lynx_advancegame(gamestate *pstate)
 
     preparedisplay();
     return checkforending();
+}
+
+static int endgame(gamelogic *logic)
+{
+    (void)logic;
+    xviewoffset = yviewoffset = 0;
+    return TRUE;
+}
+
+static void shutdown(void)
+{
+    free(creaturearray);
+    creaturearray = NULL;
+}
+
+gamelogic *lynxlogicstartup(void)
+{
+    static gamelogic	logic;
+
+    creaturearray = calloc(MAX_CREATURES, sizeof *creaturearray);
+    if (!creaturearray)
+	memerrexit();
+    lastrndslidedir = NORTH;
+    xviewoffset = 0;
+    yviewoffset = 0;
+
+    logic.ruleset = Ruleset_Lynx;
+    logic.initgame = initgame;
+    logic.advancegame = advancegame;
+    logic.endgame = endgame;
+    logic.shutdown = shutdown;
+
+    return &logic;
 }

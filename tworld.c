@@ -787,8 +787,14 @@ int main(int argc, char *argv[])
 
     for (;;) {
 	spec.invalid = !initgamestate(spec.series.games + spec.currentgame,
-				      spec.series.ruleset, spec.playback);
+				      spec.series.ruleset);
 	setsubtitle(spec.series.games[spec.currentgame].name);
+	if (spec.playback) {
+	    if (!prepareplayback()) {
+		bell();
+		spec.playback = FALSE;
+	    }
+	}
 	if (spec.invalid)
 	    noplaygame(&spec);
 	else if (spec.playback)

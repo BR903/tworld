@@ -11,45 +11,43 @@
 #include	"state.h"
 #include	"oshw.h"
 #include	"res.h"
-#include	"mslogic.h"
-#include	"lxlogic.h"
+#include	"logic.h"
 #include	"random.h"
 #include	"solution.h"
 #include	"play.h"
 
-/* The functions used to apply the selected ruleset.
- */
-static int	      (*initgame)(gamestate*) = NULL;
-static int	      (*advancegame)(gamestate*) = NULL;
-static int	      (*endgame)(gamestate*) = NULL;
-
 /* The current state of the current game.
  */
 static gamestate	state;
+
+/* The current logic module.
+ */
+static gamelogic       *logic = NULL;
 
 /* Configure the game logic, and some of the OS/hardware layer, to the
  * behavior expected for the given ruleset.
  */
 static int setrulesetbehavior(int ruleset)
 {
-    static int	lastruleset = Ruleset_None;
-
-    if (ruleset == lastruleset)
-	return TRUE;
-    lastruleset = ruleset;
+    if (logic) {
+	if (ruleset == logic->ruleset)
+	    return TRUE;
+	(*logic->shutdown)();
+	logic = NULL;
+    }
 
     switch (ruleset) {
       case Ruleset_Lynx:
-	initgame = lynx_initgame;
-	advancegame = lynx_advancegame;
-	endgame = lynx_endgame;
+	logic = lynxlogicstartup();
+	if (!logic)
+	    return FALSE;
 	setkeyboardarrowsrepeat(TRUE);
 	settimersecond(1000);
 	break;
       case Ruleset_MS:
-	initgame = ms_initgame;
-	advancegame = ms_advancegame;
-	endgame = ms_endgame;
+	logic = mslogicstartup();
+	if (!logic)
+	    return FALSE;
 	setkeyboardarrowsrepeat(FALSE);
 	settimersecond(1100);
 	break;
@@ -61,13 +59,14 @@ static int setrulesetbehavior(int ruleset)
     if (!loadgameresources(ruleset) || !creategamedisplay())
 	die("Unable to proceed due to previous errors.");
 
+    logic->state = &state;
     return TRUE;
 }
 
 /* Initialize the current state to the starting position of the
- * current level.
+ * given level.
  */
-int initgamestate(gamesetup *game, int ruleset, int replay)
+int initgamestate(gamesetup *game, int ruleset)
 {
     if (!setrulesetbehavior(ruleset))
 	return FALSE;
@@ -78,22 +77,26 @@ int initgamestate(gamesetup *game, int ruleset, int replay)
     state.lastmove = NIL;
     state.soundeffects = 0;
     state.timelimit = game->time * TICKS_PER_SECOND;
+    state.replay = -1;
+    initmovelist(&state.moves);
+    state.initrndslidedir = NIL;
+    resetprng(&state.mainprng);
 
-    if (replay) {
-	if (!game->savedsolution.count)
-	    return FALSE;
-	state.replay = 0;
-	copymovelist(&state.moves, &game->savedsolution);
-	state.initrndslidedir = game->savedrndslidedir;
-	restartprng(&state.mainprng, game->savedrndseed);
-    } else {
-	state.replay = -1;
-	initmovelist(&state.moves);
-	state.initrndslidedir = NIL;
-	resetprng(&state.mainprng);
-    }
+    return (*logic->initgame)(logic);
+}
 
-    return (*initgame)(&state);
+/* Change the current state to run from the recorded solution.
+ */
+int prepareplayback(void)
+{
+    if (!state.game->savedsolution.count)
+	return FALSE;
+
+    state.replay = 0;
+    copymovelist(&state.moves, &state.game->savedsolution);
+    state.initrndslidedir = state.game->savedrndslidedir;
+    restartprng(&state.mainprng, state.game->savedrndseed);
+    return TRUE;
 }
 
 /* Put the program into a game-play mode.
@@ -137,7 +140,7 @@ int doturn(int cmd)
 	}
     }
 
-    n = (*advancegame)(&state);
+    n = (*logic->advancegame)(logic);
 
     if (state.replay < 0 && state.lastmove) {
 	act.when = state.currenttime;
@@ -178,7 +181,7 @@ int drawscreen(void)
 int endgamestate(void)
 {
     clearsoundeffects();
-    return (*endgame)(&state);
+    return (*logic->endgame)(logic);
 }
 
 /* Return TRUE if a solution exists for the given level.

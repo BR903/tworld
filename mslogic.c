@@ -9,12 +9,13 @@
 #include	"err.h"
 #include	"state.h"
 #include	"random.h"
-#include	"mslogic.h"
+#include	"logic.h"
 
 #undef assert
 #define	assert(test)	((test) || (die("internal error: failed sanity check" \
 				        " (%s)\nPlease report this error to"  \
-				        " breadbox@muppetlabs.com", #test), 0))
+				        " breadbox@muppetlabs.com\n", \
+ 				        "\"" #test "\""), 0))
 
 /* Internal game status flags.
  */
@@ -38,13 +39,13 @@ static int advancecreature(creature *cr, int dir);
  */
 static gamestate       *state;
 
-static int xviewoffset = 0, yviewoffset = 0;
+static int		xviewoffset, yviewoffset;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
  * macros can be used as an lvalue.  */
 
-#define	setstate(p)		(state = (p))
+#define	setstate(p)		(state = (p)->state)
 
 #define	getchip()		(creatures[0])
 #define	chippos()		(getchip()->pos)
@@ -1915,7 +1916,7 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
  * clone machines, and active creatures are drawn up, and other
  * miscellaneous initializations are performed.
  */
-int ms_initgame(gamestate *pstate)
+static int initgame(gamelogic *logic)
 {
     static creature	dummycrlist;
     unsigned char	layer1[CXGRID * CYGRID];
@@ -1927,8 +1928,9 @@ int ms_initgame(gamestate *pstate)
     int			transparent;
     int			pos, n;
 
-    setstate(pstate);
-    game = pstate->game;
+    setstate(logic);
+
+    game = state->game;
 
     memset(layer1, 0, sizeof layer1);
     memset(layer2, 0, sizeof layer2);
@@ -2019,6 +2021,7 @@ int ms_initgame(gamestate *pstate)
 
     dummycrlist.id = 0;
     state->creatures = &dummycrlist;
+    state->initrndslidedir = NORTH;
 
     chipsneeded() = game->chips;
     possession(Key_Red) = possession(Key_Blue)
@@ -2032,25 +2035,26 @@ int ms_initgame(gamestate *pstate)
     return TRUE;
 }
 
-int ms_endgame(gamestate *pstate)
+static int endgame(gamelogic *logic)
 {
+    (void)logic;
     resetcreaturepool();
     resetcreaturelist();
     resetblocklist();
     resetsliplist();
     xviewoffset = yviewoffset = 0;
-    return pstate != NULL;
+    return TRUE;
 }
 
 /* Advance the game state by one tick.
  */
-int ms_advancegame(gamestate *pstate)
+static int advancegame(gamelogic *logic)
 {
     creature   *cr;
     int		r = 0;
     int		n;
 
-    setstate(pstate);
+    setstate(logic);
 
     if (timelimit()) {
 	if (currenttime() >= timelimit()) {
@@ -2097,4 +2101,41 @@ int ms_advancegame(gamestate *pstate)
     finalhousekeeping();
     preparedisplay();
     return r;
+}
+
+static void shutdown(void)
+{
+    resetcreaturepool();
+    free(creaturepool);
+    creaturepool = NULL;
+    creaturepoolend = NULL;
+
+    free(creatures);
+    creatures = NULL;
+    creaturecount = 0;
+    creaturesallocated = 0;
+    free(blocks);
+    blocks = NULL;
+    blockcount = 0;
+    blocksallocated = 0;
+    free(slips);
+    slips = NULL;
+    slipcount = 0;
+    slipsallocated = 0;
+}
+
+gamelogic *mslogicstartup(void)
+{
+    static gamelogic	logic;
+
+    xviewoffset = 0;
+    yviewoffset = 0;
+
+    logic.ruleset = Ruleset_MS;
+    logic.initgame = initgame;
+    logic.advancegame = advancegame;
+    logic.endgame = endgame;
+    logic.shutdown = shutdown;
+
+    return &logic;
 }
