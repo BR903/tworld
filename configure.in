@@ -21,7 +21,7 @@ AC_ARG_WITH(debug,
 
 LOADLIBES=""
 OSHWCFLAGS=$CFLAGS
-sharedir="${datadir}/tworld"
+sharedir='${datadir}/tworld'
 otherobjs=""
 
 dnl
@@ -31,8 +31,7 @@ dnl
 
 AC_ARG_WITH(sharedir,
 	    [  --with-sharedir=DIR     Explicitly set the shared data directory],
-	    [sharedir=$withval],
-	    [sharedir="$datadir/tworld"])
+	    [sharedir=$withval])
 
 dnl
 dnl	--with-sdl selects SDL as the OS/hardware layer.
