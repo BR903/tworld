@@ -194,12 +194,12 @@ int replacesolution(void)
 {
     if (state.statusflags & SF_NOSAVING)
 	return FALSE;
-    if (hassolution(state.game) && !state.game->replacebest
+    if (hassolution(state.game) && !(state.game->sgflags & SGF_REPLACEABLE)
 				&& state.currenttime >= state.game->besttime)
 	return FALSE;
 
     state.game->besttime = state.currenttime;
-    state.game->replacebest = FALSE;
+    state.game->sgflags &= ~SGF_REPLACEABLE;
     state.game->savedrndslidedir = state.initrndslidedir;
     state.game->savedrndseed = getinitialseed(&state.mainprng);
     copymovelist(&state.game->savedsolution, &state.moves);

@@ -189,8 +189,7 @@ static void showscores(gamespec *gs)
  */
 static void replaceablesolution(gamespec *gs)
 {
-    gs->series.games[gs->currentgame].replacebest =
-			!gs->series.games[gs->currentgame].replacebest;
+    gs->series.games[gs->currentgame].sgflags ^= SGF_REPLACEABLE;
 }
 
 /* Get a keystroke from the user at the completion of the current

@@ -123,7 +123,7 @@ static int readseriesheader(gameseries *series)
 
 /* Read a single level out of the data file.
  */
-int readlevelmap(fileinfo *file, gamesetup *game)
+static int readlevelmap(fileinfo *file, gamesetup *game)
 {
     unsigned char      *data;
     unsigned short	val16;

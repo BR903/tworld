@@ -409,7 +409,7 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %3d", besttime);
-	n = state->game->replacebest ? PT_DIM : 0;
+	n = (state->game->sgflags & SGF_REPLACEABLE) ? PT_DIM : 0;
 	puttext(&rect, buf, -1, PT_UPDATERECT | n);
     }
     fillrect(&rect);
@@ -635,7 +635,6 @@ int displaylist(char const *title, void const *tab, int *idx,
 	    drawtablerow(table, NULL, &n, 0);
 	for ( ; j < topitem + linecount && j < itemcount ; ++j)
 	    drawtablerow(table, colstmp, &n, j == index ? PT_HILIGHT : 0);
-
 	SDL_UpdateRect(screen, 0, 0, 0, 0);
 
 	n = SCROLL_NOP;

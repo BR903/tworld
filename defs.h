@@ -159,7 +159,7 @@ typedef	struct gamesetup {
     int			besttime;	/* time (in ticks) of best solution */
     unsigned long	savedrndseed;	/* PRNG seed of best solution */
     unsigned char	savedrndslidedir; /* rnd-slide dir of best solution */
-    int			replacebest;	/* TRUE if solution is replaceable */
+    unsigned char	sgflags;	/* saved-game flags (see below) */
     int			map1size;	/* compressed size of layer 1 */
     int			map2size;	/* compressed size of layer 2 */
     unsigned char      *map1;		/* layer 1 (top) of the map */
@@ -175,6 +175,11 @@ typedef	struct gamesetup {
     char		passwd[256];	/* the level's password */
     char		hinttext[256];	/* the level's hint */
 } gamesetup;
+
+/* Flags associated with a saved game.
+ */
+#define	SGF_HASPASSWD	0x01		/* player knows the level's password */
+#define	SGF_REPLACEABLE	0x02		/* solution is marked as replaceable */
 
 /* The collection of data maintained for each game file.
  */
