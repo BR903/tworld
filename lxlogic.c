@@ -37,31 +37,20 @@ enum {
     CHIP_NOTOKAY
 };
 
-#if 0
-/* Internal status flags.
- */
-#define	SF_ENDGAMETIMERBITS	0x000F	/* end-game countdown timer */
-#define	SF_GREENTOGGLE		0x0010	/* green button has been toggled */
-#define	SF_COULDNTMOVE		0x0020	/* can't-move sound has been played */
-#define	SF_CHIPPUSHING		0x0040	/* Chip is pushing against something */
-#define	SF_COMPLETED		0x0080	/* level completed successfully */
-#endif
-
 /* Status information specific to the Lynx game logic.
  */
-typedef	struct lxstate {
-    unsigned char	endgametimer;	/* end-game countdown timer */
+struct lxstate {
     unsigned char	greentoggle;	/* green button has been toggled */
     unsigned char	couldntmove;	/* can't-move sound has been played */
     unsigned char	pushing;	/* Chip is pushing against something */
-    unsigned char	completed;	/* level completed successfully */
+    unsigned char	endgametimer;	/* end-game countdown timer */
     prng		walkerprng;	/* the PRNG used for the walkers */
-    short		chiptopos;	/* used to detect when Chip collides */
-    creature	       *chiptocr;	/*   with a creature that is just in */
-				/* the process of moving out of its position */
-    unsigned char	xviewoffset;
-    unsigned char	yviewoffset;
-} lxstate;
+    creature	       *chiptocr;	/* is Chip colliding with a creature */
+    short		chiptopos;	/*   just starting to move itself? */
+    unsigned char	xviewoffset;	/* offset of map view center */
+    unsigned char	yviewoffset;	/*   position from position of Chip */
+    unsigned char	completed;	/* level completed successfully */
+};
 
 /* Declarations of (indirectly recursive) functions.
  */
@@ -72,11 +61,6 @@ static int advancecreature(creature *cr, int releasing);
  */
 static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
 
-/* A pointer to the game state, used so that it doesn't have to be
- * passed to every single function.
- */
-static gamestate       *state;
-
 /* The direction used the last time something stepped onto a random
  * slide floor.
  */
@@ -85,6 +69,11 @@ static int		lastrndslidedir = NORTH;
 /* The memory used to hold the list of creatures.
  */
 static creature	       *creaturearray = NULL;
+
+/* A pointer to the game state, used so that it doesn't have to be
+ * passed to every single function.
+ */
+static gamestate       *state;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
@@ -121,7 +110,7 @@ static creature	       *creaturearray = NULL;
 #define	traplist()		(state->game->traps)
 #define	traplistsize()		(state->game->trapcount)
 
-#define	getlxstate()		((lxstate*)state->localstateinfo)
+#define	getlxstate()		((struct lxstate*)state->localstateinfo)
 
 #define	completed()		(getlxstate()->completed)
 #define	greentoggle()		(getlxstate()->greentoggle)
@@ -134,8 +123,9 @@ static creature	       *creaturearray = NULL;
 #define	walkerprng()		(&(getlxstate()->walkerprng))
 
 #define	inendgame()		(getlxstate()->endgametimer)
-#define	decrendgametimer()	(--getlxstate()->endgametimer)
 #define	startendgametimer()	(getlxstate()->endgametimer = 12 + 1)
+#define	decrendgametimer()	(--getlxstate()->endgametimer)
+#define	resetendgametimer()	(getlxstate()->endgametimer = 0)
 
 #define	addsoundeffect(sfx)	(state->soundeffects |= 1 << (sfx))
 #define	stopsoundeffect(sfx)	(state->soundeffects &= ~(1 << (sfx)))
@@ -362,9 +352,10 @@ static void turntanks(void)
     }
 }
 
-/* Start an animation sequence at the given location.
+/* Start an animation sequence at the spot formerly occupied by the
+ * given creature.
  */
-static creature *addanimation(int pos, int dir, int moving, int id, int seqlen)
+static creature *addanimation(creature const *cr, int id)
 {
     creature   *anim;
 
@@ -372,21 +363,16 @@ static creature *addanimation(int pos, int dir, int moving, int id, int seqlen)
     if (!anim)
 	return NULL;
     anim->id = id;
-    anim->dir = dir;
-    anim->pos = pos;
-    anim->moving = moving;
-    anim->frame = seqlen;
+    anim->dir = cr->dir;
+    anim->pos = cr->pos;
+    anim->moving = cr->moving;
+    anim->frame = 12;
     anim->hidden = FALSE;
     anim->state = 0;
     anim->fdir = NIL;
     anim->tdir = NIL;
-    markanimated(pos);
+    markanimated(cr->pos);
     return anim;
-}
-
-static creature *cr_addanimation(creature const *cr, int id, int seqlen)
-{
-    return addanimation(cr->pos, cr->dir, cr->moving, id, seqlen);
 }
 
 /* Abort the animation sequence occuring at the given location.
@@ -409,40 +395,38 @@ static int stopanimation(int pos)
 static void removechip(int reason, creature *also)
 {
     creature  *chip = getchip();
-    int		pos, moving;
 
     switch (reason) {
       case CHIP_DROWNED:
 	addsoundeffect(SND_WATER_SPLASH);
-	cr_addanimation(chip, Water_Splash, 12);
+	addanimation(chip, Water_Splash);
+	removecreature(chip);
 	break;
       case CHIP_BOMBED:
 	addsoundeffect(SND_BOMB_EXPLODES);
-	cr_addanimation(chip, Bomb_Explosion, 12);
+	addanimation(chip, Bomb_Explosion);
+	removecreature(chip);
 	break;
       case CHIP_OUTOFTIME:
-	cr_addanimation(chip, Entity_Explosion, 12);
+	addanimation(chip, Entity_Explosion);
+	removecreature(chip);
 	break;
       case CHIP_BURNED:
 	addsoundeffect(SND_CHIP_LOSES);
-	cr_addanimation(chip, Entity_Explosion, 12);
+	addanimation(chip, Entity_Explosion);
+	removecreature(chip);
 	break;
       case CHIP_COLLIDED:
 	addsoundeffect(SND_CHIP_LOSES);
-	cr_addanimation(chip, Entity_Explosion, 12);
+	addanimation(chip, Entity_Explosion);
+	removecreature(chip);
 	if (also) {
-	    pos = also->pos;
-	    moving = also->moving;
-	    if (moving == 8) {
-		pos -= delta[also->dir];
-		moving = 0;
-	    }
-	    cr_addanimation(also, Entity_Explosion, 12);
+	    addanimation(also, Entity_Explosion);
 	    removecreature(also);
 	}
 	break;
     }
-    removecreature(chip);
+
     resetfloorsounds(FALSE);
     startendgametimer();
     timeoffset() = 1;
@@ -879,6 +863,9 @@ static int getforcedmove(creature *cr)
 
     cr->fdir = NIL;
 
+    if (currenttime() == 0)
+	return FALSE;
+
     floor = floorat(cr->pos);
 
     if (isice(floor)) {
@@ -890,8 +877,6 @@ static int getforcedmove(creature *cr)
 	cr->fdir = dir;
 	return TRUE;
     } else if (isslide(floor)) {
-	if (cr->id == Chip && currenttime() == 0)
-	    return FALSE;
 	if (cr->id == Chip && possession(Boots_Slide))
 	    return FALSE;
 	cr->fdir = getslidedir(floor, TRUE);
@@ -1244,7 +1229,7 @@ static int endmovement(creature *cr)
 	  case Water:
 	    floorat(cr->pos) = Dirt;
 	    addsoundeffect(SND_WATER_SPLASH);
-	    cr_addanimation(cr, Water_Splash, 12);
+	    addanimation(cr, Water_Splash);
 	    removecreature(cr);
 	    break;
 	  case Key_Blue:
@@ -1256,7 +1241,7 @@ static int endmovement(creature *cr)
 	  case Water:
 	    if (cr->id != Glider) {
 		addsoundeffect(SND_WATER_SPLASH);
-		cr_addanimation(cr, Water_Splash, 12);
+		addanimation(cr, Water_Splash);
 		removecreature(cr);
 	    }
 	    break;
@@ -1273,7 +1258,7 @@ static int endmovement(creature *cr)
 	    removechip(CHIP_BOMBED, NULL);
 	} else {
 	    addsoundeffect(SND_BOMB_EXPLODES);
-	    cr_addanimation(cr, Bomb_Explosion, 12);
+	    addanimation(cr, Bomb_Explosion);
 	    removecreature(cr);
 	}
 	break;
@@ -1837,16 +1822,6 @@ static int initgame(gamelogic *logic)
 	}
     }
 
-#if 1
-    for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (isice(floorat(cr->pos)) && cr->dir != NIL
-				    && !canmakemove(cr, cr->dir, 0)) {
-	     cr->dir = back(cr->dir);
-	     applyicewallturn(cr);
-	}
-    }
-#endif
-
     chipsneeded() = game->chips;
     possession(Key_Red) = possession(Key_Blue)
 			= possession(Key_Yellow)
@@ -1855,7 +1830,7 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Fire)
 			  = possession(Boots_Water) = 0;
 
-    inendgame() = 0;
+    resetendgametimer();
     greentoggle() = FALSE;
     couldntmove() = FALSE;
     chippushing() = FALSE;

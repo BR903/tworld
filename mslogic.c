@@ -32,15 +32,15 @@ enum {
 
 /* Status information specific to the MS game logic.
  */
-typedef	struct msstate {
-    unsigned char	chipwait;
-    unsigned char	chipstatus;
-    unsigned char	controllerdir;
-    unsigned char	deferbuttons;
-    unsigned char	completed;
-    unsigned char	xviewoffset;
-    unsigned char	yviewoffset;
-} msstate;
+struct msstate {
+    unsigned char	chipwait;	/* ticks since Chip's last movement */
+    unsigned char	chipstatus;	/* Chip's status (one of CHIP_*) */
+    unsigned char	controllerdir;	/* current controller direction */
+    unsigned char	deferbuttons;	/* button actions are being deferred */
+    unsigned char	xviewoffset;	/* offset of map view center */
+    unsigned char	yviewoffset;	/*   position from position of Chip */
+    unsigned char	completed;	/* level completed successfully */
+};
 
 /* Forward declaration of a central function.
  */
@@ -88,7 +88,7 @@ static gamestate	       *state;
 #define	showhint()		(state->statusflags |= SF_SHOWHINT)
 #define	hidehint()		(state->statusflags &= ~SF_SHOWHINT)
 
-#define	getmsstate()		((msstate*)state->localstateinfo)
+#define	getmsstate()		((struct msstate*)state->localstateinfo)
 
 #define	completed()		(getmsstate()->completed)
 #define	deferbuttons()		(getmsstate()->deferbuttons)
