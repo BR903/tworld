@@ -42,8 +42,8 @@ static SDL_Surface     *prompticons = NULL;
 
 /* Coordinates specifying the layout of the screen elements.
  */
-static SDL_Rect		titleloc, infoloc, invloc, hintloc, promptloc;
-static SDL_Rect		displayloc;
+static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
+static SDL_Rect		promptloc, displayloc;
 static int		screenw, screenh;
 
 /*
@@ -156,6 +156,12 @@ static int layoutscreen(void)
     if (infoloc.w < infow)
 	infoloc.w = infow;
     infoloc.h = 6 * texth;
+
+    puttext(&rinfoloc, "Best Time:  ", 12, PT_CALCSIZE);
+    rinfoloc.x = infoloc.x + rinfoloc.w;
+    rinfoloc.y = infoloc.y;
+    puttext(&rinfoloc, "-8888", 5, PT_CALCSIZE);
+    rinfoloc.h = 2 * texth;
 
     invloc.x = infoloc.x;
     invloc.y = infoloc.y + infoloc.h + MARGINH;
@@ -377,7 +383,7 @@ static void displaymapview(gamestate const *state)
  */
 static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
-    SDL_Rect	rect;
+    SDL_Rect	rect, rrect;
     char	buf[32];
     int		n;
 
@@ -396,14 +402,19 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 
     puttext(&rect, "", 0, PT_UPDATERECT);
 
-    sprintf(buf, "Chips %3d", state->chipsneeded);
-    puttext(&rect, buf, -1, PT_UPDATERECT);
-
+    rrect.x = rinfoloc.x;
+    rrect.w = rinfoloc.w;
+    rrect.y = rect.y;
+    rrect.h = rect.h;
+    puttext(&rect, "Chips", 5, PT_UPDATERECT);
+    puttext(&rect, "Time", 4, PT_UPDATERECT);
+    sprintf(buf, "%d", state->chipsneeded);
+    puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
     if (timeleft < 0)
-	strcpy(buf, "Time  ---");
+	strcpy(buf, "---");
     else
-	sprintf(buf, "Time  %3d", timeleft);
-    puttext(&rect, buf, -1, PT_UPDATERECT);
+	sprintf(buf, "%d", timeleft);
+    puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
 
     if (besttime) {
 	if (timeleft < 0)
