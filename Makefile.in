@@ -17,9 +17,9 @@ mandir = @mandir@
 
 CC = @CC@
 
-CFLAGS =@CFLAGS@ '-DROOTDIR="$(sharedir)"'
-LDFLAGS =@LDFLAGS@
-LOADLIBES =@LOADLIBES@
+CFLAGS :=@CFLAGS@ '-DROOTDIR="$(sharedir)"'
+LDFLAGS :=@LDFLAGS@
+LOADLIBES :=@LOADLIBES@
 
 #
 # End of configure section

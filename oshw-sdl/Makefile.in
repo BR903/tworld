@@ -1,6 +1,6 @@
 
 CC = @CC@
-CFLAGS =@OSHWCFLAGS@
+CFLAGS :=@OSHWCFLAGS@
 
 #
 # End of configure section
@@ -42,4 +42,4 @@ clean:
 
 spotless:
 	rm -f $(OBJS) liboshw.a # ccicon.c
-#	rm -f Makefile
+	rm -f Makefile
