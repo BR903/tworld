@@ -154,11 +154,11 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
     if (!datfilereadint16(file, &game->number, &levelsize, 1, 999)
 		|| !datfilereadint16(file, &game->time, &levelsize, 0, 999)
 		|| !datfilereadint16(file, &game->chips, &levelsize, 0, 999))
-	return FALSE;
+	goto badlevel;
 
     while (levelsize) {
 	if (!datfilereadint8(file, &id, &levelsize, 1, 10))
-	    return FALSE;
+	    goto badlevel;
 	if (id == 1) {
 	    if (!datfilereadint8(file, &i, &levelsize, 0, 0)
 			|| !datfilereadint16(file, &game->map1size,
@@ -170,11 +170,11 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 			|| !datfilereadbuf(file, &game->map2, game->map2size,
 						&levelsize)
 			|| !datfilereadint16(file, &i, &levelsize, 0, 65535))
-		return FALSE;
+		goto badlevel;
 	} else {
 	    if (!datfilereadint8(file, &size, &levelsize, 0, 255)
 			|| !datfilereadbuf(file, &data, size, &levelsize))
-		return FALSE;
+		goto badlevel;
 	    switch (id) {
 	      case 3:
 		memcpy(game->name, data, size);
@@ -223,6 +223,11 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
     if (levelsize)
 	warn("Level %d: %d bytes left over!", game->number, levelsize);
     return TRUE;
+
+  badlevel:
+    data = filereadbuf(file, levelsize, NULL);
+    free(data);
+    return FALSE;
 }
 
 /* Assuming that the series passed in is in fact the original
@@ -314,6 +319,8 @@ static int readlevelinseries(gameseries *series, int level)
 	    if (readlevelmap(&series->mapfile,
 			     series->games + series->count))
 		++series->count;
+	    else
+		--series->total;
 	    if (filetestend(&series->mapfile)) {
 		fileclose(&series->mapfile, NULL);
 		series->gsflags |= GSF_ALLMAPSREAD;
