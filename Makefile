@@ -6,9 +6,9 @@ CFLAGS = -Wall -W -O2 -fomit-frame-pointer
 LDFLAGS = -Wall -W
 LOADLIBES =
 
-#CFLAGS = -Wall -W -ggdb
-#LDFLAGS = -Wall -W -ggdb
-#LOADLIBES = -lefence
+CFLAGS = -Wall -W -ggdb
+LDFLAGS = -Wall -W -ggdb
+LOADLIBES = -lefence
 
 CFLAGS += "-DROOTDIR=\"$(ROOTDIR)\""
 

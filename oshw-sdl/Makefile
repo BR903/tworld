@@ -1,7 +1,7 @@
 CC = gcc
 
 CFLAGS = -Wall -W -O2 -fomit-frame-pointer
-#CFLAGS = -Wall -W -ggdb
+CFLAGS = -Wall -W -ggdb
 
 CFLAGS += $(shell sdl-config --cflags)
 
