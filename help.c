@@ -45,7 +45,7 @@ tablespec const *yowzitch = &yowzitch_table;
  */
 static char *vourzhon_items[] = {
     "1+\267", "1-Tile World: version " VERSION,
-    "1+",     "1-Copyright \251 2001, 2002, 2003 by Brian Raiter",
+    "1+",     "1-Copyright \251 2001-2004 by Brian Raiter",
     "1+",     "1-compiled " COMPILE_TIME,
     "1+\267", "1!This program is free software; you can redistribute it and/or"
 	      " modify it under the terms of the GNU General Public License as"
