@@ -73,7 +73,7 @@
 
 /* The signature bytes of the solution files.
  */
-#define	CSSIG		0xACAA0200UL
+#define	CSSIG		0x999B3335UL
 
 /* The path of the directory containing the user's solution files.
  */

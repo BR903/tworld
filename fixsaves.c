@@ -433,6 +433,16 @@ static int fixfile(void)
 	perror(infilename);
 	return -1;
     }
+    if (header.header[0] != 0x00 || header.header[1] != 0x02
+				 || header.header[2] != 0xAA
+				 || header.header[3] != 0xAC) {
+	fprintf(stderr, "%s: not an 0.8 save file; ignoring\n", infilename);
+	return 0;
+    }
+    header.header[0] = 0x35;
+    header.header[1] = 0x33;
+    header.header[2] = 0x9B;
+    header.header[3] = 0x99;
     if (!writeit(&header, sizeof header))
 	return -1;
     for (;;) {
