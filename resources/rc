@@ -19,6 +19,7 @@ TickSound=tick.wav
 
 [Lynx]
 TileImages=atiles.bmp
+DerezzSound=derezz.wav
 BlockedMoveSound=bump.wav
 TileEmptiedSound=whisk.wav
 WallCreatedSound=popup.wav
