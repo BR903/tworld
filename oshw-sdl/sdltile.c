@@ -640,7 +640,6 @@ static int initmaskedtileset(SDL_Surface *tiles)
 	    remembersurface(s);
 	    tileptr[id].celcount = 1;
 	    tileptr[id].opaque[0] = s;
-	    tileptr[id].transp[0] = NULL;
 	}
 	if (tileidmap[n].xtransp >= 0) {
 	    s = extractmaskedtile(tiles,
@@ -654,7 +653,6 @@ static int initmaskedtileset(SDL_Surface *tiles)
 		return FALSE;
 	    remembersurface(s);
 	    tileptr[id].celcount = 1;
-	    tileptr[id].opaque[0] = NULL;
 	    tileptr[id].transp[0] = s;
 	}
     }
