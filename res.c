@@ -107,6 +107,9 @@ char	       *resdir = NULL;
 
 static void initresourcedefaults(void)
 {
+    strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
+    strcpy(globalresources[RES_IMG_FONT].str, "font.psf");
+    globalresources[RES_IMG_USEANIM].num = FALSE;
 #if 0
     strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
     strcpy(globalresources[RES_SND_CHIP_WINS].str, "ditty1.wav");
@@ -122,15 +125,11 @@ static void initresourcedefaults(void)
     strcpy(globalresources[RES_SND_BUTTON_PUSHED].str, "pop2.wav");
     strcpy(globalresources[RES_SND_BOMB_EXPLODES].str, "hit3.wav");
     strcpy(globalresources[RES_SND_WATER_SPLASH].str, "water2.wav");
-    strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
-    strcpy(globalresources[RES_IMG_FONT].str, "font.psf");
-    globalresources[RES_IMG_USEANIM].num = FALSE;
-
+#endif
     memcpy(&allresources[Ruleset_MS], &globalresources,
 	   sizeof globalresources);
     memcpy(&allresources[Ruleset_Lynx], &globalresources,
 	   sizeof globalresources);
-#endif
 }
 
 static void lower(char *str)
