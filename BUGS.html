@@ -22,46 +22,37 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-Some of the weirder obscure bugs aren't reproduced faithfully. I will
-attempt to list them here.
-<ol>
+Situation: Tank runs over a red button connected to a block cloner,
+and the cloned block lands on a blue button. In the real game, a
+half-turned tank appears where the tank used to be, while the real
+tank, still on the red button, remains completely unturned. The new
+tank appears to be turned 90 degrees, but forcing a repaint shows that
+it is turned a complete 180 degrees. In TW, the original tank still
+turns around, and the new tank remains at 90 degrees.
 <li>
-Tank runs over a red button connected to a block cloner, and the
-cloned block lands on a blue button. In the real game, a half-turned
-tank appears where the tank used to be, while the real tank, still on
-the red button, remains completely unturned. The new tank appears to
-be turned 90 degrees, but forcing a repaint shows that it is turned a
-complete 180 degrees. In TW, the original tank still turns around,
-while the new tank remains at 90 degrees.
+Situation: Chip enters a teleport which a block cloner faces, and at
+the teleport Chip exits, there is a block in the way, next to which is
+the red button for said cloner. Thus, Chip entering the teleport
+causes the block to be pushed onto the red button. In the real game,
+Chip and the cloned block both emerge from the same teleport, which
+vanishes. However, Chip does not exit in the correct direction: he
+exits in the same direction as when he <em>last</em> exited a
+teleport. If this is the first time Chip has entered a teleport on
+this level, then Chip exits in the direction of the block, but facing
+north regardless. The block itself vanishes, and in the place of the
+teleport is a new Chip, also facing north. In this particular case,
+Chip remains on the slide list, pushing against the new Chip tile,
+until the player makes a move. In TW, Chip exits in the expected
+direction. The teleport always vanishes, and the block never does.
 <li>
-Chip enters a teleport which a block cloner faces, and at the teleport
-Chip exits, there is a block in the way, next to which is the red
-button for said cloner. Thus, Chip entering the teleport causes the
-block to be pushed onto the red button. In the real game, Chip and the
-cloned block both emerge from the same teleport, which vanishes.
-However, Chip does not exit in the correct direction: he exits in the
-same direction as when he <em>last</em> exited a teleport. If this is
-the first time Chip has entered a teleport on this level, then Chip
-exits in the direction of the block, but facing north regardless. The
-block itself vanishes, and in the place of the teleport is a new Chip,
-also facing north. In this particular case, Chip remains on the slide
-list, pushing against the new Chip tile, until the player makes a
-move. In TW, Chip exits in the expected direction. The teleport always
-vanishes, and the block never does.
-<li>
-Chip enters a teleport, and at the teleport Chip exits, there is a
-block on top of another block. In the real game, the top block is
-pushed off, leaving the bottom block behind, intact. Chip reappears at
-the new teleport, but then bounces back, since he can't push a row of
-two blocks. In TW, the blocks are pushed and preserved correctly, but
-Chip does not make it to the latter teleport (instead he either
-proceeds to a different teleport or bounces back from the original
-teleport).
-</ol>
-For the most part, I'm not particularly motivated to improve the
-emulation of these, as they are all pretty obscure. However, their
-existence may point to areas where the emulator could be mirroring the
-internal logic of the MS game better.
+Situation: Chip enters a teleport, and at the teleport Chip exits,
+there is a block on top of another block. In the real game, the top
+block is pushed off, leaving the bottom block behind, intact. Chip
+reappears at the new teleport, but then bounces back, since he can't
+push a row of two blocks. In TW, the blocks are pushed and preserved
+correctly, but Chip does not make it to the latter teleport (instead
+he either proceeds to a different teleport or bounces back from the
+original teleport).
 <li>
 The keyboard is scanned twice per tick, once at the beginning and once
 in the middle. As a result, if Chip makes a move at the beginning of a
@@ -69,12 +60,9 @@ tick, the game does not update the display twice in a row (once after
 the creatures move and once after Chip moves), but just does it once.
 In a few places this has a non-trivial effect on how the game appears,
 most notably when Chip tries to move against a force floor. I do not
-believe that this optimization ever has an real effect on the
-gameplay. It is still a bit of an open question in my mind, however,
-which is why it is mentioned here.
-<li>
-There are several other bugs currently for which I lack a good
-description.
+believe that this optimization has a real effect on the gameplay. It
+does, however, make it easier to examine the screen when pushing
+against a force floor.
 </ol>
 <p>
 <hr>
@@ -111,8 +99,12 @@ Block pushing is currently not handled correctly. Pushed blocks move
 when Chip does, when in reality they need to retain their own position
 in the ordering.
 <li>
-There are several other bugs currently for which I lack a good
-description.
+TW's handling of creatures that start out on ice isn't quite correct.
+The difference shows up most noticeably in the case of a creature on
+ice that is blocked from making its default move. There is only one
+instance of this in the original set, namely SHRINKING (98). TW
+currently corrects for this in a bad way that just happens to get the
+right results in this particular case.
 </ol>
 <p>
 <hr>
@@ -120,8 +112,9 @@ description.
 Other bugs and misfeatures
 <p>
 <ol>
-<li>The video display is too slow on some machines. It needs to be
-made more efficient.
+<li>
+TW runs too slowly on too many hardware setups. The rendering code
+needs to be made more efficient.
 </ol>
 <p>
 <hr>

@@ -1316,12 +1316,12 @@ static void endmovement(creature *cr, int dir)
     mapcell    *cell;
     maptile    *tile;
     int		dead = FALSE;
+    int		wasslipping;
     int		oldpos, newpos;
     int		floor, i;
 
     oldpos = cr->pos;
     newpos = cr->pos + delta[dir];
-    /*cr->pos = newpos;*/
 
     cell = cellat(newpos);
     tile = &cell->top;
@@ -1525,6 +1525,8 @@ static void endmovement(creature *cr, int dir)
 	}
     }
 
+    wasslipping = cr->state & (CS_SLIP | CS_SLIDE);
+
     if (floor == Teleport)
 	startfloormovement(cr, floor);
     else if (isice(floor) && (cr->id != Chip || !possession(Boots_Ice)))
@@ -1533,6 +1535,9 @@ static void endmovement(creature *cr, int dir)
 	startfloormovement(cr, floor);
     else if (floor != Beartrap || cr->id != Block)
 	cr->state &= ~(CS_SLIP | CS_SLIDE);
+
+    if (!wasslipping && (cr->state & (CS_SLIP | CS_SLIDE)) && cr->id != Chip)
+	setcontrollerdir(cr, getslipdir(cr));
 }
 
 /* Move the given creature in the given direction.

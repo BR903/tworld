@@ -375,6 +375,11 @@ static creature *addanimation(int pos, int dir, int moving, int id, int seqlen)
     return anim;
 }
 
+static creature *cr_addanimation(creature const *cr, int id, int seqlen)
+{
+    return addanimation(cr->pos, cr->dir, cr->moving, id, seqlen);
+}
+
 /* Abort the animation sequence occuring at the given location.
  */
 static int stopanimation(int pos)
@@ -400,22 +405,22 @@ static void removechip(int reason, creature *also)
     switch (reason) {
       case RMC_DROWNED:
 	addsoundeffect(SND_WATER_SPLASH);
-	addanimation(chip->pos, NIL, 0, Water_Splash, 12);
+	cr_addanimation(chip, Water_Splash, 12);
 	break;
       case RMC_BOMBED:
 	addsoundeffect(SND_BOMB_EXPLODES);
-	addanimation(chip->pos, NIL, 0, Bomb_Explosion, 12);
+	cr_addanimation(chip, Bomb_Explosion, 12);
 	break;
       case RMC_OUTOFTIME:
-	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
+	cr_addanimation(chip, Entity_Explosion, 12);
 	break;
       case RMC_BURNED:
 	addsoundeffect(SND_CHIP_LOSES);
-	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
+	cr_addanimation(chip, Entity_Explosion, 12);
 	break;
       case RMC_COLLIDED:
 	addsoundeffect(SND_CHIP_LOSES);
-	addanimation(chip->pos, chip->dir, chip->moving, Entity_Explosion, 12);
+	cr_addanimation(chip, Entity_Explosion, 12);
 	if (also) {
 	    pos = also->pos;
 	    moving = also->moving;
@@ -423,7 +428,7 @@ static void removechip(int reason, creature *also)
 		pos -= delta[also->dir];
 		moving = 0;
 	    }
-	    addanimation(pos, also->dir, moving, Entity_Explosion, 12);
+	    cr_addanimation(also, Entity_Explosion, 12);
 	    removecreature(also);
 	}
 	break;
@@ -1229,8 +1234,8 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    floorat(cr->pos) = Dirt;
-	    addanimation(cr->pos, NIL, 0, Water_Splash, 12);
 	    addsoundeffect(SND_WATER_SPLASH);
+	    cr_addanimation(cr, Water_Splash, 12);
 	    removecreature(cr);
 	    break;
 	  case Key_Blue:
@@ -1241,8 +1246,8 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    if (cr->id != Glider) {
-		addanimation(cr->pos, NIL, 0, Water_Splash, 12);
 		addsoundeffect(SND_WATER_SPLASH);
+		cr_addanimation(cr, Water_Splash, 12);
 		removecreature(cr);
 	    }
 	    break;
@@ -1258,8 +1263,8 @@ static int endmovement(creature *cr)
 	if (cr->id == Chip) {
 	    removechip(RMC_BOMBED, NULL);
 	} else {
-	    addanimation(cr->pos, NIL, 0, Bomb_Explosion, 12);
 	    addsoundeffect(SND_BOMB_EXPLODES);
+	    cr_addanimation(cr, Bomb_Explosion, 12);
 	    removecreature(cr);
 	}
 	break;
@@ -1834,7 +1839,7 @@ static int initgame(gamelogic *logic)
     resetgreentoggle();
     restartprng(&walkerprng, WALKER_PRNG_SEED);
 
-#if 0
+#if 1
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
 				    && !canmakemove(cr, cr->dir, 0)) {
