@@ -39,10 +39,11 @@ typedef	struct gamespec {
 typedef	struct startupdata {
     char       *filename;	/* which data file to use */
     int		levelnum;	/* a selected initial level */ 
+    int		usepasswds;	/* FALSE if passwords are to be ignored */
+    int		listdirs;	/* TRUE if directories should be listed */
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
     int		listtimes;	/* TRUE if the times should be listed */
-    int		usepasswds;	/* FALSE if passwords are to be ignored */
 } startupdata;
 
 /* Structure used to hold the information regarding available series.
@@ -53,40 +54,47 @@ typedef	struct seriesdata {
     tablespec	table;
 } seriesdata;
 
-/* Online help.
+/* Help for command-line options.
  */
-static char const *yowzitch = 
-	"Usage: tworld [-hvlstpqH] [-DLRS DIR] [NAME] [LEVEL]\n"
-	"   -D  Read data files from DIR instead of the default\n"
-	"   -L  Read level set files from DIR instead of the default\n"
-	"   -R  Read shared resources from DIR instead of the default\n"
-	"   -S  Save games in DIR instead of the default\n"
-	"   -p  Disable password checking\n"
-	"   -q  Run quietly\n"
-	"   -H  Produce histogram of idle time upon exit\n"
-	"   -l  Display the list of available data files and exit\n"
-	"   -s  Display your scores for the selected data file and exit\n"
-	"   -t  Display your times for the selected data file and exit\n"
-	"   -h  Display this help and exit\n"
-	"   -v  Display version information and exit\n"
-	"NAME specifies which data file to use.\n"
-	"LEVEL specifies which level to start at.\n"
-	"(Press ? during the game for further help.)\n";
+static char *yowzitch_items[] = {
+    "3-Usage: tworld [-hvVdlstpqH] [-DLRS DIR] [NAME] [LEVEL]",
+    "1-", "1+-D", "1-Read data files from DIR instead of the default.",
+    "1-", "1+-L", "1-Read level sets from DIR instead of the default.",
+    "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
+    "1-", "1+-S", "1-Save games in DIR instead of the default.",
+    "1-", "1+-p", "1-Disable password checking.",
+    "1-", "1+-q", "1-Run quietly.",
+    "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
+    "1-", "1+-l", "1-Display the list of available data files and exit.",
+    "1-", "1+-s", "1-Display scores for the selected data file and exit.",
+    "1-", "1+-t", "1-Display times for the selected data file and exit.",
+    "1-", "1+-h", "1-Display this help and exit.",
+    "1-", "1+-d", "1-Display default directories and exit.",
+    "1-", "1+-v", "1-Display version number and exit.",
+    "1-", "1+-V", "1-Display version and license information and exit.",
+    "3-NAME specifies which data file to use.",
+    "3-LEVEL specifies which level to start at."
+};
+static tablespec const yowzitch_table = { 17, 3, 2, -1, yowzitch_items };
 
-/* Online version data.
+/* Version and license information.
  */
-static char const *vourzhon =
-	"TileWorld, version " VERSION ".\n\n"
-	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
-	"General Public License; either version 2 of the License, or at\n"
-	"your option any later version.\n"
-	"   This program is distributed without any warranty, express or\n"
-	"implied. See COPYING for details.\n"
-	"   (The author also requests that you voluntarily refrain from\n"
-	"redistributing this version of the program, as it is still pretty\n"
-	"rough around the edges.)\n"
-	"   Please direct bug reports to breadbox@muppetlabs.com, or post\n"
-	"them on annexcafe.chips.challenge.\n";
+static char *vourzhon_items[] = {
+    "1+*", "1-Tile World: version " VERSION,
+    "1+",  "1-Copyright (C) 2001 by Brian Raiter",
+    "1+",  "1-compiled " __DATE__ " " __TIME__ " PST",
+    "1+*", "1-This program is free software; you can redistribute it and/or",
+    "1+",  "1-modify it under the terms of the GNU General Public License as",
+    "1+",  "1-published by the Free Software Foundation; either version 2 of",
+    "1+",  "1-the License, or (at your option) any later version.",
+    "1+*", "1-This program is distributed in the hope that it will be useful,",
+    "1+",  "1-but WITHOUT ANY WARRANTY; without even the implied warranty of",
+    "1+",  "1-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the",
+    "1+",  "1-GNU General Public License for more details.",
+    "1+*", "1-Bug reports are appreciated, and can be sent to",
+    "1+",  "1-breadbox@muppetlabs.com."
+};
+static tablespec const vourzhon_table = { 13, 2, 1, -1, vourzhon_items };
 
 /* TRUE suppresses sound and the console bell.
  */
@@ -101,12 +109,12 @@ static int	usepasswds = TRUE;
 static int	showhistogram = FALSE;
 
 /*
- * The top-level user interface functions.
+ * The program's text-mode output functions.
  */
 
 /* Render a table to standard output.
  */
-void printtable(tablespec const *table)
+void printtable(FILE *out, tablespec const *table)
 {
     int	       *colsizes;
     int		len;
@@ -144,23 +152,45 @@ void printtable(tablespec const *table)
     for (y = 0 ; y < table->rows ; ++y) {
 	for (x = 0 ; x < table->cols ; ++n) {
 	    if (x)
-		printf("%*s", table->sep, "");
+		fprintf(out, "%*s", table->sep, "");
 	    c = table->items[n][0] - '0';
 	    len = -table->sep;
 	    while (c--)
 		len += colsizes[x++] + table->sep;
 	    if (table->items[n][1] == '-')
-		printf("%-*.*s", len, len, table->items[n] + 2);
+		fprintf(out, "%-*.*s", len, len, table->items[n] + 2);
 	    else if (table->items[n][1] == '+')
-		printf("%*.*s", len, len, table->items[n] + 2);
-	    else {
+		fprintf(out, "%*.*s", len, len, table->items[n] + 2);
+	    else if (table->items[n][1] == '.') {
 		len -= (len - strlen(table->items[n] + 3)) / 2;
-		printf("%*.*s", len, len, table->items[n] + 2);
+		fprintf(out, "%*.*s", len, len, table->items[n] + 2);
 	    }
 	}
-	putchar('\n');
+	fputc('\n', out);
     }
     free(colsizes);
+}
+
+static void printdirectories(void)
+{
+    printf("Resource files read from:        %s\n", resdir);
+    printf("Level sets read from:            %s\n", seriesdir);
+    printf("Configured data files read from: %s\n", seriesdatdir);
+    printf("Solution files saved in:         %s\n", savedir);
+}
+
+static int yowzitch(int requested)
+{
+    printtable((requested ? stdout : stderr), &yowzitch_table);
+    return requested;
+}
+
+static void vourzhon(int longform)
+{
+    if (longform)
+	printtable(stdout, &vourzhon_table);
+    else
+	puts(VERSION);
 }
 
 /* A callback functions for handling the keyboard while collecting
@@ -184,29 +214,6 @@ static int keyinputcallback(void)
     return 0;
 }
 
-/* Obtain a password from the user and move to the requested level.
- */
-static int selectlevelbypassword(gamespec *gs)
-{
-    char	passwd[5] = "";
-    int		n;
-
-    setgameplaymode(BeginInput);
-    n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
-    setgameplaymode(EndInput);
-    if (!n)
-	return FALSE;
-
-    n = findlevelinseries(&gs->series, 0, passwd);
-    if (n < 0) {
-	bell();
-	return FALSE;
-    }
-
-    gs->currentgame = n;
-    return TRUE;
-}
-
 /* A callback function for handling the keyboard while displaying a
  * scrolling list.
  */
@@ -228,6 +235,10 @@ static int scrollinputcallback(int *move)
     }
     return TRUE;
 }
+
+/*
+ * The top-level user interface functions.
+ */
 
 /* Display the user's current score.
  */
@@ -269,6 +280,29 @@ static void passwordseen(gamespec *gs)
 	gs->series.games[gs->currentgame].sgflags |= SGF_HASPASSWD;
 	savesolutions(&gs->series);
     }
+}
+
+/* Obtain a password from the user and move to the requested level.
+ */
+static int selectlevelbypassword(gamespec *gs)
+{
+    char	passwd[5] = "";
+    int		n;
+
+    setgameplaymode(BeginInput);
+    n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
+    setgameplaymode(EndInput);
+    if (!n)
+	return FALSE;
+
+    n = findlevelinseries(&gs->series, 0, passwd);
+    if (n < 0) {
+	bell();
+	return FALSE;
+    }
+
+    gs->currentgame = n;
+    return TRUE;
 }
 
 /* Change the current game, ensuring that the user is not granted
@@ -323,6 +357,12 @@ static int changecurrentgame(gamespec *gs, int offset)
     return TRUE;
 }
 
+/*
+ * The top-level user interface functions.
+ */
+
+#define	leveldelta(n)	if (!changecurrentgame(gs, (n))) { bell(); continue; }
+
 /* Get a keystroke from the user at the start of the current level.
  */
 static int startinput(gamespec *gs)
@@ -331,8 +371,6 @@ static int startinput(gamespec *gs)
 
     drawscreen();
     passwordseen(gs);
-
-#define	leveldelta(n)	if (!changecurrentgame(gs, (n))) { bell(); continue; }
 
     for (;;) {
 	cmd = input(TRUE);
@@ -725,6 +763,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     char const *optseriesdir = NULL;
     char const *optseriesdatdir = NULL;
     char const *optsavedir = NULL;
+    int		listdirs;
     int		ch, n;
 
     start->filename = getpathbuffer();
@@ -733,15 +772,15 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listseries = FALSE;
     start->listscores = FALSE;
     start->listtimes = FALSE;
+    listdirs = FALSE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:hlpqstv");
+    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:Vdhlpqstv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
 	    if (*start->filename && start->levelnum) {
 		fprintf(stderr, "too many arguments: %s\n", opts.val);
-		fputs(yowzitch, stderr);
-		exit(EXIT_FAILURE);
+		return yowzitch(FALSE);
 	    }
 	    if (sscanf(opts.val, "%d", &n) == 1)
 		start->levelnum = n;
@@ -755,22 +794,21 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'H':	showhistogram = !showhistogram;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
+	  case 'd':	listdirs = TRUE;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
 	  case 't':	start->listtimes = TRUE;			break;
-	  case 'h':	fputs(yowzitch, stdout); 	   exit(EXIT_SUCCESS);
-	  case 'v':	fputs(vourzhon, stdout); 	   exit(EXIT_SUCCESS);
+	  case 'h':	yowzitch(TRUE);		 	   exit(EXIT_SUCCESS);
+	  case 'v':	vourzhon(FALSE);	 	   exit(EXIT_SUCCESS);
+	  case 'V':	vourzhon(TRUE);		 	   exit(EXIT_SUCCESS);
 	  case ':':
-	    fprintf(stderr, "option requires an argument: -%c\n%s",
-			    opts.opt, yowzitch);
-	    return FALSE;
+	    fprintf(stderr, "option requires an argument: -%c\n", opts.opt);
+	    return yowzitch(FALSE);
 	  case '?':
-	    fprintf(stderr, "unrecognized option: -%c\n%s",
-			    opts.opt, yowzitch);
-	    return FALSE;
+	    fprintf(stderr, "unrecognized option: -%c\n", opts.opt);
+	    return yowzitch(FALSE);
 	  default:
-	    fputs(yowzitch, stderr);
-	    return FALSE;
+	    return yowzitch(FALSE);
 	}
     }
 
@@ -780,6 +818,10 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->filename[getpathbufferlen() - 1] = '\0';
 
     initdirs(optseriesdir, optseriesdatdir, optresdir, optsavedir);
+    if (listdirs) {
+	printdirectories();
+	exit(EXIT_SUCCESS);
+    }
 
     return TRUE;
 }
@@ -831,7 +873,7 @@ static void choosegameatstartup(gamespec *gs, startupdata const *start)
 	die("no level sets found");
 
     if (start->listseries) {
-	printtable(&series.table);
+	printtable(stdout, &series.table);
 	if (!series.count)
 	    puts("(no files)");
 	exit(EXIT_SUCCESS);
@@ -845,7 +887,7 @@ static void choosegameatstartup(gamespec *gs, startupdata const *start)
 				 NULL, NULL, &table))
 		exit(EXIT_FAILURE);
 	    freeserieslist(series.list, series.count, &series.table);
-	    printtable(&table);
+	    printtable(stdout, &table);
 	    freescorelist(NULL, &table);
 	    exit(EXIT_SUCCESS);
 	}
@@ -855,7 +897,7 @@ static void choosegameatstartup(gamespec *gs, startupdata const *start)
 				NULL, NULL, &table))
 		exit(EXIT_FAILURE);
 	    freeserieslist(series.list, series.count, &series.table);
-	    printtable(&table);
+	    printtable(stdout, &table);
 	    freetimelist(NULL, &table);
 	    exit(EXIT_SUCCESS);
 	}
