@@ -1,4 +1,4 @@
-/* state.h: The structure embodying the state of a game in progress.
+/* state.h: Definitions for embodying the state of a game in progress.
  *
  * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -9,11 +9,7 @@
 
 #include	"defs.h"
 
-/*
- * The objects and entities of the game.
- */
-
-/* All the objects that make up Chip's universe.
+/* The tiles that make up Chip's universe.
  */
 enum
 {
@@ -119,7 +115,7 @@ enum
     Animation_Reserved1	= 0x7F
 };
 
-/* Macros to assist in identifying types of tiles.
+/* Macros to assist in identifying tile taxons.
  */
 #define	isslide(f)	((f) >= Slide_North && (f) <= Slide_Random)
 #define	isice(f)	((f) >= Ice && (f) <= IceWall_Southeast)
@@ -129,14 +125,9 @@ enum
 #define	iscreature(f)	((f) >= Chip && (f) < Water_Splash)
 #define	isanimation(f)	((f) >= Water_Splash && (f) <= Animation_Reserved1)
 
-/* Getting a specific creature tile.
+/* Macro for getting the tile ID of a creature with a specific direction.
  */
 #define	crtile(id, dir)	((id) | diridx(dir))
-
-/* Identifying an animation sequence as a creature tile.
- */
-#define	animationid(id)		((id) & ~3)
-#define	animationdir(id)	(idxdir((id) & 3))
 
 /*
  * Substructures of the game state
@@ -205,7 +196,7 @@ typedef struct gamestate {
     short		yviewpos;		/*   map (ie, where Chip is) */
     short		keys[4];		/* keys collected */
     short		boots[4];		/* boots collected */
-    unsigned long	statusflags;		/* internal status flags */
+    unsigned long	statusflags;		/* flags (see below) */
     unsigned long	soundeffects;		/* the latest sound effects */
     unsigned char	lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
@@ -222,7 +213,7 @@ typedef struct gamestate {
 #define	SF_SHOWHINT		0x10000000	/* display the hint text */
 #define	SF_NOANIMATION		0x08000000	/* suppress tile animation */
 
-/* gamestate accessor macros.
+/* Macros for the keys and boots.
  */
 #define	redkeys(st)		((st)->keys[0])
 #define	bluekeys(st)		((st)->keys[1])

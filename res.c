@@ -283,12 +283,12 @@ static int loadfont(void)
     path = getpathbuffer();
     if (*resources[RES_IMG_FONT].str) {
 	combinepath(path, resdir, resources[RES_IMG_FONT].str);
-	f = loadfontfromfile(path);
+	f = loadfontfromfile(path, TRUE);
     }
     if (!f && resources != globalresources
 	   && *globalresources[RES_IMG_FONT].str) {
 	combinepath(path, resdir, globalresources[RES_IMG_FONT].str);
-	f = loadfontfromfile(path);
+	f = loadfontfromfile(path, TRUE);
     }
     free(path);
     return f;

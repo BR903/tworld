@@ -933,8 +933,9 @@ int loadtileset(char const *filename, int complain)
 	h = tiles->h / 16;
 	mask = extractmask(tiles, 10 * w, 0, 3 * w, tiles->h);
 	if (!mask) {
-	    errmsg(filename, "couldn't create temporary mask surface: %s",
-			     SDL_GetError());
+	    if (complain)
+		errmsg(filename, "couldn't create temporary mask surface: %s",
+				 SDL_GetError());
 	    f = FALSE;
 	} else {
 	    freetileset();
@@ -948,7 +949,8 @@ int loadtileset(char const *filename, int complain)
 	f = settilesize(tiles->w / 7, tiles->h / 16)
 	    && initsmalltileset(tiles, 7, 16, 4, 0, 3, 16);
     } else {
-	errmsg(filename, "image file has invalid dimensions");
+	if (complain)
+	    errmsg(filename, "image file has invalid dimensions");
 	f = FALSE;
     }
 

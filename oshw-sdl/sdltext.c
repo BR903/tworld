@@ -493,16 +493,22 @@ void freefont(void)
 
 /* Load a proportional font from the given bitmap file.
  */
-int loadfontfromfile(char const *filename)
+int loadfontfromfile(char const *filename, int complain)
 {
     SDL_Surface	       *bmp;
     fontinfo		font;
 
     bmp = SDL_LoadBMP(filename);
-    if (!bmp)
-	die("%s: can't load font bitmap: %s", filename, SDL_GetError());
-    if (!makefontfromsurface(&font, bmp))
-	die("failed to make font");
+    if (!bmp) {
+	if (complain)
+	    errmsg(filename, "can't load font bitmap: %s", SDL_GetError());
+	return FALSE;
+    }
+    if (!makefontfromsurface(&font, bmp)) {
+	if (complain)
+	    errmsg(filename, "couldn't load font");
+	return FALSE;
+    }
     SDL_FreeSurface(bmp);
     freefont();
     sdlg.font = font;

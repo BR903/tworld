@@ -47,13 +47,14 @@ static void _eventupdate(int wait)
  */
 void setsubtitle(char const *subtitle)
 {
-    char	buf[256];
+    char	buf[270];
 
     if (subtitle && *subtitle) {
-	sprintf(buf, "Tile World - %.242s", subtitle);
+	sprintf(buf, "Tile World - %.255s", subtitle);
 	SDL_WM_SetCaption(buf, "Tile World");
-    } else
+    } else {
 	SDL_WM_SetCaption("Tile World", "Tile World");
+    }
 }
 
 /* Shut down SDL.

@@ -1,4 +1,4 @@
-/* defs.h: General definitions used throughout the program.
+/* defs.h: Definitions used throughout the program.
  *
  * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -61,15 +61,15 @@ typedef struct actlist {
     action	       *list;		/* the array */
 } actlist;
 
-/* Two x,y-coordinates give the locations of a button and the
- * beartrap/cloner it is connected to.
+/* Two x,y-coordinates give the locations of a button and what it is
+ * connected to.
  */
 typedef	struct xyconn {
     short		from;		/* location of the button */
-    short		to;		/* location of the beartrap/cloner */
+    short		to;		/* location of the trap/cloner */
 } xyconn;
 
-/* Commands from the user, both during and between games.
+/* The complete list of commands that the user can given.
  */
 enum {
     CmdNone = NIL,
@@ -153,10 +153,10 @@ enum {
 #define	SND_COUNT		26
 
 /*
- * Structures for managing the different games.
+ * Structures for defining the games proper.
  */
 
-/* The collection of data maintained for each game.
+/* The collection of data maintained for each level.
  */
 typedef	struct gamesetup {
     int			number;		/* numerical ID of the level */
@@ -187,16 +187,16 @@ typedef	struct gamesetup {
 #define	SGF_HASPASSWD	0x01		/* player knows the level's password */
 #define	SGF_REPLACEABLE	0x02		/* solution is marked as replaceable */
 
-/* The collection of data maintained for each game file.
+/* The collection of data maintained for each series.
  */
 typedef	struct gameseries {
-    int			total;		/* the number of levels in the file */
+    int			total;		/* number of levels in the series */
     int			allocated;	/* number of elements allocated */
     int			count;		/* actual size of array */
     int			final;		/* number of the ending level */
     int			ruleset;	/* the ruleset for the game file */
     int			gsflags;	/* flags (see below) */
-    gamesetup	       *games;		/* the list of levels */
+    gamesetup	       *games;		/* the array of levels */
     fileinfo		mapfile;	/* the file containing the levels */
     char	       *mapfilename;	/* the name of said file */
     fileinfo		solutionfile;	/* the file of the user's solutions */
@@ -208,7 +208,7 @@ typedef	struct gameseries {
 /* Flags associated with a series.
  */
 #define	GSF_ALLMAPSREAD		0x0001	/* finished reading the data file */
-#define	GSF_IGNOREPASSWDS	0x0002	/* dispense with needing passwords */
-#define	GSF_LYNXFIXES		0x0004	/* undo MS changes to dat file */
+#define	GSF_IGNOREPASSWDS	0x0002	/* don't require passwords */
+#define	GSF_LYNXFIXES		0x0004	/* change MS data into Lynx levels */
 
 #endif

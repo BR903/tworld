@@ -25,7 +25,7 @@
  * placement of the string in that cell: "-" to align to the left of
  * the cell, "+" to align to the right, "." to center the text, and
  * "!" to permit the cell to occupy multiple lines, with word
- * wrapping. (Only one cell per row can use word wrapping.)
+ * wrapping. At most one cell in a given row can be word-wrapped.
  */
 typedef	struct tablespec {
     short	rows;		/* number of rows */
@@ -35,12 +35,12 @@ typedef	struct tablespec {
     char      **items;		/* the table's contents */
 } tablespec;
 
-/* The size of each level's grid.
+/* The dimensions of a level.
  */
 #define	CXGRID	32
 #define	CYGRID	32
 
-/* The four directions, plus NIL.
+/* The four directions plus one non-direction.
  */
 #define	NIL	0
 #define	NORTH	1
@@ -54,7 +54,9 @@ typedef	struct tablespec {
 #define	diridx(dir)	((0x30210 >> ((dir) * 2)) & 3)
 #define	idxdir(idx)	(1 << ((idx) & 3))
 
-/* The frequency of the gameplay timer.
+/* The frequency of the gameplay timer. Note that "seconds" refers to
+ * seconds in the game, which are not necessarily the same length as
+ * real-time seconds.
  */
 #define	TICKS_PER_SECOND	20
 
