@@ -18,7 +18,7 @@ extern void _sdleventupdate(int wait);
 
 /* From sdltimer.c: Initialize the timer subsystem.
  */
-extern int _sdltimerinitialize(void);
+extern int _sdltimerinitialize(int showhistogram);
 
 /* From sdlin.c: Initialize the keyboard subsystem.
  */

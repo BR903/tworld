@@ -12,7 +12,7 @@
 /* Initialize the OS/hardware interface. This function must be called
  * before any others in the oshw library.
  */
-extern int oshwinitialize(void);
+extern int oshwinitialize(int silence, int showhistogram);
 
 /*
  * Timer functions.

@@ -4,8 +4,6 @@
  * License. No warranty. See COPYING for details.
  */
 
-/*#define HISTOGRAM*/
-
 #include	<stdlib.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
@@ -23,9 +21,11 @@ static int	utick = 0;
  */
 static int	nexttickat = 0;
 
-#ifdef HISTOGRAM
-static int	hist[1000];
-#endif
+/* A histogram of how many milliseconds the program spends sleeping
+ * per tick.
+ */
+static int	showhistogram = FALSE;
+static unsigned	hist[100];
 
 /* Set the length (in real time) of a second of game time. A value of
  * zero selects the default length of one second.
@@ -70,9 +70,8 @@ void waitfortick(void)
     int	ms;
 
     ms = nexttickat - SDL_GetTicks();
-#ifdef HISTOGRAM
-    ++hist[ms >= 0 ? ms + 1 : 0];
-#endif
+    if (showhistogram)
+	++hist[ms >= 0 ? ms + 1 : 0];
     while (ms < 0)
 	ms += mspertick;
     if (ms > 0)
@@ -83,24 +82,30 @@ void waitfortick(void)
 
 static void shutdown(void)
 {
+    unsigned long	n;
+    int			i;
+
     settimer(-1);
-#ifdef HISTOGRAM
-    {
-	int i;
-	printf("Tick-waiting histogram\n");
-	if (hist[0])
-	    printf("NEG: %d\n", hist[0]);
-	for (i = 1 ; i < 1000 ; ++i)
-	    if (hist[i])
-		printf("%3d: %d\n", i - 1, hist[i]);
+    if (showhistogram) {
+	n = 0;
+	for (i = 0 ; i < (int)(sizeof hist / sizeof *hist) ; ++i)
+	    n += hist[i];
+	if (n) {
+	    printf("Histogram of idle time (ms/tick)\n");
+	    if (hist[0])
+		printf("NEG: %.1f%%\n", (hist[0] * 100.0) / n);
+	    for (i = 1 ; i < (int)(sizeof hist / sizeof *hist) ; ++i)
+		if (hist[i])
+		    printf("%3d: %.1f%%\n", i - 1, (hist[i] * 100.0) / n);
+	}
     }
-#endif
 }
 
 /* Initialize and reset the timer.
  */
-int _sdltimerinitialize(void)
+int _sdltimerinitialize(int _showhistogram)
 {
+    showhistogram = _showhistogram;
     atexit(shutdown);
     settimer(-1);
     return TRUE;

@@ -57,8 +57,9 @@ static void shutdown(void)
 
 /* Initialize SDL.
  */
-int oshwinitialize(void)
+int oshwinitialize(int silence, int showhistogram)
 {
+    (void)silence;
     atexit(shutdown);
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	die("Cannot initialize SDL system: %s\n", SDL_GetError());
@@ -68,5 +69,5 @@ int oshwinitialize(void)
     return _sdlresourceinitialize()
 	&& _sdloutputinitialize()
 	&& _sdlinputinitialize()
-	&& _sdltimerinitialize();
+	&& _sdltimerinitialize(showhistogram);
 }

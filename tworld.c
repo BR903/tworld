@@ -41,10 +41,11 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlsq] [-DS DIR] [NAME] [LEVEL]\n"
+	"Usage: tworld [-hvlsqH] [-DS DIR] [NAME] [LEVEL]\n"
 	"   -D  Read shared data from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
 	"   -q  Run quietly\n"
+	"   -H  Produce histogram of idle time upon exit\n"
 	"   -l  Display the list of available data files and exit\n"
 	"   -s  Display your scores for the selected data file and exit\n"
 	"   -h  Display this help and exit\n"
@@ -69,6 +70,7 @@ static char const *vourzhon =
 	"them on annexcafe.chips.challenge.\n";
 
 static int	silence = FALSE;
+static int	showhistogram = FALSE;
 
 #define	bell()	(silence ? (void)0 : ding())
 
@@ -384,7 +386,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listseries = FALSE;
     start->listscores = FALSE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:S:hlqsv");
+    initoptions(&opts, argc - 1, argv + 1, "D:HS:hlqsv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -400,6 +402,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    break;
 	  case 'D':	optrootdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
+	  case 'H':	showhistogram = TRUE;				break;
 	  case 'q':	silence = TRUE;					break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
@@ -432,7 +435,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
  */
 static int initializesystem(void)
 {
-    if (!oshwinitialize())
+    if (!oshwinitialize(silence, showhistogram))
 	return FALSE;
     setsubtitle(NULL);
     setkeyboardrepeat(TRUE);
