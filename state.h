@@ -196,22 +196,23 @@ typedef struct gamestate {
     short		yviewpos;		/*   map (ie, where Chip is) */
     short		keys[4];		/* keys collected */
     short		boots[4];		/* boots collected */
-    unsigned long	statusflags;		/* flags (see below) */
-    unsigned long	soundeffects;		/* the latest sound effects */
+    short		statusflags;		/* flags (see below) */
     unsigned char	lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
+    unsigned long	soundeffects;		/* the latest sound effects */
     actlist		moves;			/* the list of moves */
     prng		mainprng;		/* the main PRNG */
     mapcell		map[CXGRID * CYGRID];	/* the game's map */
     creature	       *creatures;		/* the creature list */
+    unsigned char	localstateinfo[256];	/* rule-specific state data */
 } gamestate;
 
 /* General status flags.
  */
-#define	SF_NOSAVING		0x40000000	/* solution won't be saved */
-#define	SF_INVALID		0x20000000	/* level is not playable */
-#define	SF_SHOWHINT		0x10000000	/* display the hint text */
-#define	SF_NOANIMATION		0x08000000	/* suppress tile animation */
+#define	SF_NOSAVING		0x0001		/* solution won't be saved */
+#define	SF_INVALID		0x0002		/* level is not playable */
+#define	SF_SHOWHINT		0x0004		/* display the hint text */
+#define	SF_NOANIMATION		0x0008		/* suppress tile animation */
 
 /* Macros for the keys and boots.
  */

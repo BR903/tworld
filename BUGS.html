@@ -54,15 +54,25 @@ correctly, but Chip does not make it to the latter teleport (instead
 he either proceeds to a different teleport or bounces back from the
 original teleport).
 <li>
-The keyboard is scanned twice per tick, once at the beginning and once
-in the middle. As a result, if Chip makes a move at the beginning of a
-tick, the game does not update the display twice in a row (once after
-the creatures move and once after Chip moves), but just does it once.
-In a few places this has a non-trivial effect on how the game appears,
-most notably when Chip tries to move against a force floor. I do not
-believe that this optimization has a real effect on the gameplay. It
-does, however, make it easier to examine the screen when pushing
-against a force floor.
+The MS game permits movement via the mouse, which allows for a few
+unusual maneuvers not otherwise possible. Tile World does not have any
+form of mouse input.
+<li>
+The MS game checks for input more than once per tick. Probably this
+was done to catch last-minute keyboard events, but it has the effect
+that by having more than one input event in the queue, Chip can
+sometimes have the latter move processed after he has moved but before
+ay other creatures move.
+<li>
+In TW, the keyboard is scanned twice per tick, once at the beginning
+and once in the middle. As a result, if Chip makes a move at the
+beginning of a tick, the game does not update the display twice in a
+row (once after the creatures move and once after Chip moves), but
+just does it once. In a few places this has a non-trivial effect on
+how the game appears, most notably when Chip tries to move against a
+force floor. I do not believe that this optimization has a real effect
+on the gameplay. It does, however, make it easier to examine the
+screen when pushing against a force floor.
 </ol>
 <p>
 <hr>

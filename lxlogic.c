@@ -32,9 +32,12 @@
 /* A list of ways for Chip to lose.
  */
 enum {
-    RMC_NONE, RMC_DROWNED, RMC_BURNED, RMC_BOMBED, RMC_OUTOFTIME, RMC_COLLIDED
+    CHIP_OKAY = 0,
+    CHIP_DROWNED, CHIP_BURNED, CHIP_BOMBED, CHIP_OUTOFTIME, CHIP_COLLIDED,
+    CHIP_NOTOKAY
 };
 
+#if 0
 /* Internal status flags.
  */
 #define	SF_ENDGAMETIMERBITS	0x000F	/* end-game countdown timer */
@@ -42,6 +45,23 @@ enum {
 #define	SF_COULDNTMOVE		0x0020	/* can't-move sound has been played */
 #define	SF_CHIPPUSHING		0x0040	/* Chip is pushing against something */
 #define	SF_COMPLETED		0x0080	/* level completed successfully */
+#endif
+
+/* Status information specific to the Lynx game logic.
+ */
+typedef	struct lxstate {
+    unsigned char	endgametimer;	/* end-game countdown timer */
+    unsigned char	greentoggle;	/* green button has been toggled */
+    unsigned char	couldntmove;	/* can't-move sound has been played */
+    unsigned char	pushing;	/* Chip is pushing against something */
+    unsigned char	completed;	/* level completed successfully */
+    prng		walkerprng;	/* the PRNG used for the walkers */
+    short		chiptopos;	/* used to detect when Chip collides */
+    creature	       *chiptocr;	/*   with a creature that is just in */
+				/* the process of moving out of its position */
+    unsigned char	xviewoffset;
+    unsigned char	yviewoffset;
+} lxstate;
 
 /* Declarations of (indirectly recursive) functions.
  */
@@ -55,28 +75,16 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
  */
-static gamestate *state;
+static gamestate       *state;
 
 /* The direction used the last time something stepped onto a random
  * slide floor.
  */
-static int lastrndslidedir = NORTH;
-
-/* The PRNG used for the walkers.
- */
-static prng		walkerprng;
+static int		lastrndslidedir = NORTH;
 
 /* The memory used to hold the list of creatures.
  */
 static creature	       *creaturearray = NULL;
-
-/* Used to detect when Chip collides with a creature that is just in
- * the process of moving out of its position.
- */
-static int		pos_chipmovingto = -1;
-static creature	       *cr_chipmovingto = NULL;
-
-static int		xviewoffset, yviewoffset;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
@@ -100,26 +108,11 @@ static int		xviewoffset, yviewoffset;
 #define	xviewpos()		(state->xviewpos)
 #define	yviewpos()		(state->yviewpos)
 
-#define	iscompleted()		(state->statusflags & SF_COMPLETED)
-#define	setcompleted()		(state->statusflags |= SF_COMPLETED)
 #define	setnosaving()		(state->statusflags |= SF_NOSAVING)
 #define	showhint()		(state->statusflags |= SF_SHOWHINT)
+#define	hidehint()		(state->statusflags &= ~SF_SHOWHINT)
 #define	markinvalid()		(state->statusflags |= SF_INVALID)
 #define	ismarkedinvalid()	(state->statusflags & SF_INVALID)
-
-#define	inendgame()		(state->statusflags & SF_ENDGAMETIMERBITS)
-#define	decrendgametimer()	(--state->statusflags & SF_ENDGAMETIMERBITS)
-#define	startendgametimer()	(state->statusflags |= SF_ENDGAMETIMERBITS)
-#define	hidehint()		(state->statusflags &= ~SF_SHOWHINT)
-#define	isgreentoggleset()	(state->statusflags & SF_GREENTOGGLE)
-#define	togglegreen()		(state->statusflags ^= SF_GREENTOGGLE)
-#define	resetgreentoggle()	(state->statusflags &= ~SF_GREENTOGGLE)
-#define	iscouldntmoveset()	(state->statusflags & SF_COULDNTMOVE)
-#define	setcouldntmove()	(state->statusflags |= SF_COULDNTMOVE)
-#define	resetcouldntmove()	(state->statusflags &= ~SF_COULDNTMOVE)
-#define	ispushing()		(state->statusflags & SF_CHIPPUSHING)
-#define	setpushing()		(state->statusflags |= SF_CHIPPUSHING)
-#define	resetpushing()		(state->statusflags &= ~SF_CHIPPUSHING)
 
 #define	chipsneeded()		(state->chipsneeded)
 
@@ -127,6 +120,22 @@ static int		xviewoffset, yviewoffset;
 #define	clonerlistsize()	(state->game->clonercount)
 #define	traplist()		(state->game->traps)
 #define	traplistsize()		(state->game->trapcount)
+
+#define	getlxstate()		((lxstate*)state->localstateinfo)
+
+#define	completed()		(getlxstate()->completed)
+#define	greentoggle()		(getlxstate()->greentoggle)
+#define	couldntmove()		(getlxstate()->couldntmove)
+#define	chippushing()		(getlxstate()->pushing)
+#define	chiptopos()		(getlxstate()->chiptopos)
+#define	chiptocr()		(getlxstate()->chiptocr)
+#define	xviewoffset()		(getlxstate()->xviewoffset)
+#define	yviewoffset()		(getlxstate()->yviewoffset)
+#define	walkerprng()		(&(getlxstate()->walkerprng))
+
+#define	inendgame()		(getlxstate()->endgametimer)
+#define	decrendgametimer()	(--getlxstate()->endgametimer)
+#define	startendgametimer()	(getlxstate()->endgametimer = 12 + 1)
 
 #define	addsoundeffect(sfx)	(state->soundeffects |= 1 << (sfx))
 #define	stopsoundeffect(sfx)	(state->soundeffects &= ~(1 << (sfx)))
@@ -403,22 +412,22 @@ static void removechip(int reason, creature *also)
     int		pos, moving;
 
     switch (reason) {
-      case RMC_DROWNED:
+      case CHIP_DROWNED:
 	addsoundeffect(SND_WATER_SPLASH);
 	cr_addanimation(chip, Water_Splash, 12);
 	break;
-      case RMC_BOMBED:
+      case CHIP_BOMBED:
 	addsoundeffect(SND_BOMB_EXPLODES);
 	cr_addanimation(chip, Bomb_Explosion, 12);
 	break;
-      case RMC_OUTOFTIME:
+      case CHIP_OUTOFTIME:
 	cr_addanimation(chip, Entity_Explosion, 12);
 	break;
-      case RMC_BURNED:
+      case CHIP_BURNED:
 	addsoundeffect(SND_CHIP_LOSES);
 	cr_addanimation(chip, Entity_Explosion, 12);
 	break;
-      case RMC_COLLIDED:
+      case CHIP_COLLIDED:
 	addsoundeffect(SND_CHIP_LOSES);
 	cr_addanimation(chip, Entity_Explosion, 12);
 	if (also) {
@@ -643,7 +652,7 @@ static int canpushblock(creature *block, int dir, int flags)
     if (flags & CMM_PUSHBLOCKS) {
 	block->tdir = dir;
 	if (advancecreature(block, FALSE)) {
-	    setpushing();
+	    chippushing() = TRUE;
 	    addsoundeffect(SND_BLOCK_MOVING);
 	    block->state |= CS_NOISYMOVEMENT;
 	} else {
@@ -796,7 +805,7 @@ static void choosecreaturemove(creature *cr)
 	break;
       case Walker:
 	choices[0] = dir;
-	choices[1] = randomof3(&walkerprng,
+	choices[1] = randomof3(walkerprng(),
 			       left(dir), back(dir), right(dir));
 	break;
       case Blob:
@@ -853,7 +862,7 @@ static void choosechipmove(creature *cr, int discard)
 	cr->tdir = dir;
     }
     if (cr->tdir == NIL)
-	resetpushing();
+	chippushing() = FALSE;
 }
 
 /* This function determines if the given creature is currently being
@@ -921,17 +930,17 @@ static void checkmovingto(void)
     cr = getchip();
     dir = cr->tdir;
     if (dir == NIL) {
-	pos_chipmovingto = -1;
-	cr_chipmovingto = NULL;
+	chiptopos() = -1;
+	chiptocr() = NULL;
 	return;
     }
     if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST))) {
-	pos_chipmovingto = -1;
-	cr_chipmovingto = NULL;
+	chiptopos() = -1;
+	chiptocr() = NULL;
 	return;
     }
-    pos_chipmovingto = cr->pos + delta[dir];
-    cr_chipmovingto = NULL;
+    chiptopos() = cr->pos + delta[dir];
+    chiptocr() = NULL;
 }
 
 /*
@@ -962,7 +971,7 @@ static int teleportcreature(creature *cr)
 	    if (pos == origpos) {
 		if (cr->id == Chip) {
 		    addsoundeffect(SND_CANT_MOVE);
-		    setpushing();
+		    chippushing() = TRUE;
 		}
 		return TRUE;
 	    }
@@ -1062,7 +1071,7 @@ static int startmovement(creature *cr, int releasing)
 
     if (cr->id == Chip) {
 	_assert(!cr->hidden);
-	resetpushing();
+	chippushing() = FALSE;
 	if (!possession(Boots_Slide)) {
 	    if (isslide(floorfrom) && cr->tdir == NIL)
 		cr->state |= CS_SLIDETOKEN;
@@ -1074,17 +1083,17 @@ static int startmovement(creature *cr, int releasing)
     if (!canmakemove(cr, dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS
 					| (releasing ? CMM_RELEASING : 0))) {
 	if (cr->id == Chip) {
-	    if (!iscouldntmoveset()) {
-		setcouldntmove();
+	    if (!couldntmove()) {
+		couldntmove() = TRUE;
 		addsoundeffect(SND_CANT_MOVE);
 	    }
-	    setpushing();
+	    chippushing() = TRUE;
 	}
 	if (isice(floorfrom) && (cr->id != Chip || !possession(Boots_Ice))) {
 	    cr->dir = back(dir);
 	    applyicewallturn(cr);
 	    if (cr->id == Chip)
-		resetpushing();
+		chippushing() = FALSE;
 	}
 	return FALSE;
     }
@@ -1094,11 +1103,11 @@ static int startmovement(creature *cr, int releasing)
 
     if (cr->id != Chip) {
 	removeclaim(cr->pos);
-	if (cr->id != Block && cr->pos == pos_chipmovingto)
-	    cr_chipmovingto = cr;
-    } else if (cr_chipmovingto && !cr_chipmovingto->hidden) {
-	cr_chipmovingto->moving = 8;
-	removechip(RMC_COLLIDED, cr_chipmovingto);
+	if (cr->id != Block && cr->pos == chiptopos())
+	    chiptocr() = cr;
+    } else if (chiptocr() && !chiptocr()->hidden) {
+	chiptocr()->moving = 8;
+	removechip(CHIP_COLLIDED, chiptocr());
 	return FALSE;
     }
     cr->pos += delta[dir];
@@ -1110,14 +1119,14 @@ static int startmovement(creature *cr, int releasing)
     cr->moving += 8;
 
     if (cr->id != Chip && cr->pos == chippos() && !getchip()->hidden) {
-	removechip(RMC_COLLIDED, cr);
+	removechip(CHIP_COLLIDED, cr);
 	return FALSE;
     }
     if (cr->id == Chip) {
-	resetcouldntmove();
+	couldntmove() = FALSE;
 	cr = lookupcreature(cr->pos, FALSE);
 	if (cr) {
-	    removechip(RMC_COLLIDED, cr);
+	    removechip(CHIP_COLLIDED, cr);
 	    return FALSE;
 	}
     }
@@ -1169,11 +1178,11 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    if (!possession(Boots_Water))
-		removechip(RMC_DROWNED, NULL);
+		removechip(CHIP_DROWNED, NULL);
 	    break;
 	  case Fire:
 	    if (!possession(Boots_Fire))
-		removechip(RMC_BURNED, NULL);
+		removechip(CHIP_BURNED, NULL);
 	    break;
 	  case Dirt:
 	  case BlueWall_Fake:
@@ -1226,7 +1235,7 @@ static int endmovement(creature *cr)
 	    break;
 	  case Exit:
 	    cr->hidden = TRUE;
-	    setcompleted();
+	    completed() = TRUE;
 	    addsoundeffect(SND_CHIP_WINS);
 	    break;
 	}
@@ -1261,7 +1270,7 @@ static int endmovement(creature *cr)
       case Bomb:
 	floorat(cr->pos) = Empty;
 	if (cr->id == Chip) {
-	    removechip(RMC_BOMBED, NULL);
+	    removechip(CHIP_BOMBED, NULL);
 	} else {
 	    addsoundeffect(SND_BOMB_EXPLODES);
 	    cr_addanimation(cr, Bomb_Explosion, 12);
@@ -1281,7 +1290,7 @@ static int endmovement(creature *cr)
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Green:
-	togglegreen();
+	greentoggle() = !greentoggle();
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Red:
@@ -1440,16 +1449,16 @@ static void initialhousekeeping(void)
 
     if (!inendgame()) {
 	if (timelimit() && currenttime() >= timelimit())
-	    removechip(RMC_OUTOFTIME, NULL);
-	if (iscompleted()) {
+	    removechip(CHIP_OUTOFTIME, NULL);
+	if (completed()) {
 	    startendgametimer();
 	    timeoffset() = 1;
 	}
     }
 
-    if (isgreentoggleset())
+    if (greentoggle())
 	togglewalls();
-    resetgreentoggle();
+    greentoggle() = FALSE;
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (cr->hidden)
@@ -1483,11 +1492,11 @@ static void initialhousekeeping(void)
     }
     if (currentinput() >= CmdCheatNorth && currentinput() <= CmdCheatICChip) {
 	switch (currentinput()) {
-	  case CmdCheatNorth:		--yviewoffset;			break;
-	  case CmdCheatWest:		--xviewoffset;			break;
-	  case CmdCheatSouth:		++yviewoffset;			break;
-	  case CmdCheatEast:		++xviewoffset;			break;
-	  case CmdCheatHome:		xviewoffset = yviewoffset = 0;	break;
+	  case CmdCheatNorth:		--yviewoffset();		break;
+	  case CmdCheatWest:		--xviewoffset();		break;
+	  case CmdCheatSouth:		++yviewoffset();		break;
+	  case CmdCheatEast:		++xviewoffset();		break;
+	  case CmdCheatHome:		xviewoffset()=yviewoffset()= 0;	break;
 	  case CmdCheatKeyRed:		++possession(Key_Red);		break;
 	  case CmdCheatKeyBlue:		++possession(Key_Blue);		break;
 	  case CmdCheatKeyYellow:	++possession(Key_Yellow);	break;
@@ -1503,8 +1512,8 @@ static void initialhousekeeping(void)
     }
 #endif
 
-    pos_chipmovingto = -1;
-    cr_chipmovingto = NULL;
+    chiptopos() = -1;
+    chiptocr() = NULL;
 }
 
 /* Actions and checks that occur at the end of every tick.
@@ -1528,8 +1537,8 @@ static void preparedisplay(void)
     chip = getchip();
     floor = floorat(chip->pos);
 
-    xviewpos() = (chip->pos % CXGRID) * 8 + xviewoffset * 8;
-    yviewpos() = (chip->pos / CXGRID) * 8 + yviewoffset * 8;
+    xviewpos() = (chip->pos % CXGRID) * 8 + xviewoffset() * 8;
+    yviewpos() = (chip->pos / CXGRID) * 8 + yviewoffset() * 8;
     if (chip->moving) {
 	switch (chip->dir) {
 	  case NORTH:	yviewpos() += chip->moving;	break;
@@ -1544,7 +1553,7 @@ static void preparedisplay(void)
 	    showhint();
 	else
 	    hidehint();
-	if (ispushing())
+	if (chippushing())
 	    chip->id = Pushing_Chip;
 	if (chip->moving) {
 	    resetfloorsounds(FALSE);
@@ -1828,17 +1837,6 @@ static int initgame(gamelogic *logic)
 	}
     }
 
-    chipsneeded() = game->chips;
-    possession(Key_Red) = possession(Key_Blue)
-			= possession(Key_Yellow)
-			= possession(Key_Green) = 0;
-    possession(Boots_Ice) = possession(Boots_Slide)
-			  = possession(Boots_Fire)
-			  = possession(Boots_Water) = 0;
-
-    resetgreentoggle();
-    restartprng(&walkerprng, WALKER_PRNG_SEED);
-
 #if 1
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (isice(floorat(cr->pos)) && cr->dir != NIL
@@ -1849,7 +1847,24 @@ static int initgame(gamelogic *logic)
     }
 #endif
 
-    xviewoffset = yviewoffset = 0;
+    chipsneeded() = game->chips;
+    possession(Key_Red) = possession(Key_Blue)
+			= possession(Key_Yellow)
+			= possession(Key_Green) = 0;
+    possession(Boots_Ice) = possession(Boots_Slide)
+			  = possession(Boots_Fire)
+			  = possession(Boots_Water) = 0;
+
+    inendgame() = 0;
+    greentoggle() = FALSE;
+    couldntmove() = FALSE;
+    chippushing() = FALSE;
+    completed() = FALSE;
+    chiptopos() = -1;
+    chiptocr() = NULL;
+    xviewoffset() = 0;
+    yviewoffset() = 0;
+    restartprng(walkerprng(), WALKER_PRNG_SEED);
 
     preparedisplay();
     return !ismarkedinvalid();
@@ -1877,7 +1892,7 @@ static int advancegame(gamelogic *logic)
 
     cr = getchip();
     if (cr->fdir == NIL && cr->tdir == NIL)
-	resetcouldntmove();
+	couldntmove() = FALSE;
     else
 	checkmovingto();
 
@@ -1900,7 +1915,7 @@ static int advancegame(gamelogic *logic)
 	--timeoffset();
 	if (!decrendgametimer()) {
 	    resetfloorsounds(TRUE);
-	    return iscompleted() ? +1 : -1;
+	    return completed() ? +1 : -1;
 	}
     }
 
@@ -1928,8 +1943,6 @@ gamelogic *lynxlogicstartup(void)
     if (!creaturearray)
 	memerrexit();
     lastrndslidedir = NORTH;
-    xviewoffset = 0;
-    yviewoffset = 0;
 
     logic.ruleset = Ruleset_Lynx;
     logic.initgame = initgame;
