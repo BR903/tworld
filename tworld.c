@@ -227,7 +227,7 @@ static void playgame(gamespec *gs)
     if (n > 0) {
 	if (replacesolution())
 	    savesolutions(&gs->series);
-	if (gs->currentgame >= gs->series.count)
+	if (gs->currentgame + 1 >= gs->series.count)
 	    n = 0;
     }
     endinput(gs, n);
@@ -297,7 +297,7 @@ static void playbackgame(gamespec *gs)
     }
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
-    if (n > 0 && gs->currentgame >= gs->series.count)
+    if (n > 0 && gs->currentgame + 1 >= gs->series.count)
 	n = 0;
     endinput(gs, n);
     return;

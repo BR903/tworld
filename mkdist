@@ -1,9 +1,9 @@
 #!/bin/bash
 
-~/p/html2txt < ./README.html > ./README
-~/p/html2txt < ./BUGS.html > ./BUGS
-~/p/html2txt < ./INSTALL.html > ./INSTALL
-~/p/html2txt < ./Changelog.html > ./Changelog
+/home/breadbox/p/html2txt < ./README.html > ./README
+/home/breadbox/p/html2txt < ./BUGS.html > ./BUGS
+/home/breadbox/p/html2txt < ./INSTALL.html > ./INSTALL
+/home/breadbox/p/html2txt < ./Changelog.html > ./Changelog
 
 VER=`tr -cd 0123456789. < ver.h`
 

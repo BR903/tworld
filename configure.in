@@ -1,0 +1,53 @@
+dnl	configure.in script for Tile World
+
+AC_INIT(tworld.c)
+
+test -z "$CC" && CC="gcc"
+test -z "$CFLAGS" && CFLAGS=" -Wall -W -O2 -fomit-frame-pointer"
+test -z "$LDFLAGS" && LDFLAGS=" -Wall -W -s"
+LOADLIBES=""
+
+AC_ARG_WITH(debug,
+	[  --with-debug           Build with debugging info],
+	[if test $withval = yes ; then
+	   CFLAGS=" -Wall -W -ggdb"
+	   LDFLAGS=" -Wall -W -ggdb"
+	 fi])
+
+cflags=$CFLAGS
+oshwcflags=$CFLAGS
+ldflags=$LDFLAGS
+loadlibes=$LOADLIBES
+
+OSHWDIR="sdl"
+AC_ARG_WITH(sdl,
+	[  --with-sdl             Build SDL version (default)],
+	[if test $withval = yes ; then
+	   OSHWDIR="sdl"
+	 fi])
+
+if test -d "oshw-$OSHWDIR" ; then
+  echo using $OSHWDIR for OS/hardware layer ...
+  rm -f oshw
+  ln -s oshw-$OSHWDIR oshw
+else
+  AC_MSG_ERROR([OS/hardware layer "$OSHWDIR" not available])
+fi
+
+if test "$OSHWDIR" = "sdl" ; then
+  AC_CHECK_PROG(sdlpresent, sdl-config, yes, no)
+  if test -z "$sdlpresent" ; then
+    AC_MSG_ERROR([SDL installation not found.])
+  fi
+  oshwcflags=$CFLAGS' $(shell sdl-config --cflags)'
+  loadlibes=$LOADLIBES' $(shell sdl-config --libs)'
+fi
+
+
+AC_SUBST(CC)
+AC_SUBST(cflags)
+AC_SUBST(oshwcflags)
+AC_SUBST(ldflags)
+AC_SUBST(loadlibes)
+
+AC_OUTPUT(Makefile oshw/Makefile)

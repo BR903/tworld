@@ -8,7 +8,6 @@
 #define	_state_h_
 
 #include	"defs.h"
-#include	"random.h"
 
 /*
  * The objects and entities of the game.

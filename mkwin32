@@ -10,12 +10,15 @@ ln -s oshw-sdl oshw
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
 
-sh ./cross-make.sh tworld.exe mklynxcc.exe
+sed -e 's/^#win32://' Makefile > Makefile.win32
+sh ./cross-make.sh -f Makefile.win32 all
+mv tworld tworld.exe
+mv mklynxcc mklynxcc.exe 
 
-~/p/html2txt < ../../README.html > README.txt
-~/p/html2txt < ../INSTALL-win32.html > INSTALL.txt
-~/p/html2txt < ../../BUGS.html > BUGS.txt
-~/p/html2txt < ../../Changelog.html > Changelog.txt
+/home/breadbox/p/html2txt < ../../README.html > README.txt
+/home/breadbox/p/html2txt < ../INSTALL.html > INSTALL.txt
+/home/breadbox/p/html2txt < ../../BUGS.html > BUGS.txt
+/home/breadbox/p/html2txt < ../../Changelog.html > Changelog.txt
 mv COPYING COPYING.txt
 mkdir data
 
