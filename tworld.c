@@ -174,9 +174,11 @@ static int keyinputcallback(void)
  */
 static int selectlevelbypassword(gamespec *gs)
 {
-    char	passwd[5];
+    char	passwd[5] = "";
     int		n;
 
+    if (gs->currentgame)
+	memcpy(passwd, gs->series.games[gs->currentgame].passwd, 4);
     setgameplaymode(BeginInput);
     n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
     setgameplaymode(EndInput);
