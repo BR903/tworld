@@ -668,7 +668,7 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 
     gs->enddisplay = FALSE;
     gs->playback = FALSE;
-    gs->usepasswds = usepasswds && gs->series.usepasswds;
+    gs->usepasswds = usepasswds && !(gs->series.gsflags & GSF_IGNOREPASSWDS);
     gs->currentgame = -1;
 
     if (defaultlevel) {

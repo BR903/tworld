@@ -195,15 +195,26 @@ typedef	struct gameseries {
     int			count;		/* actual size of array */
     int			final;		/* number of the ending level */
     int			ruleset;	/* the ruleset for the game file */
+    int			gsflags;	/* flags (see below) */
+#if 0
     int			usepasswds;	/* FALSE if passwords are ignored */
+#endif
     gamesetup	       *games;		/* the list of levels */
     fileinfo		mapfile;	/* the file containing the levels */
     char	       *mapfilename;	/* the name of said file */
     fileinfo		solutionfile;	/* the file of the user's solutions */
     int			solutionflags;	/* settings for the saved solutions */
+#if 0
     int			allmapsread;	/* TRUE if levels are at EOF */
+#endif
     char		filebase[256];	/* the root of the main filename */
     char		name[256];	/* the name of the series */
 } gameseries;
+
+/* Flags associated with a series.
+ */
+#define	GSF_ALLMAPSREAD		0x0001	/* finished reading the data file */
+#define	GSF_IGNOREPASSWDS	0x0002	/* dispense with needing passwords */
+#define	GSF_LYNXFIXES		0x0004	/* undo MS changes to dat file */
 
 #endif

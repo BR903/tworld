@@ -221,6 +221,32 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
     return TRUE;
 }
 
+/* Assuming that the series passed in is in fact the original
+ * chips.dat file, this function undoes the changes that MS introduced
+ * to the original Lynx levels. A rather "ad hack" way to accomplish
+ * this, but it permits this fixup to occur without requiring the
+ * user to make a modified copy of the data file.
+ */
+static int undomschanges(gameseries *series)
+{
+    if (series->total != 149)
+	return FALSE;
+    series->games[5].passwd[3] = 'P';
+    series->games[9].passwd[0] = 'V';
+    series->games[9].passwd[1] = 'U';
+    series->games[27].passwd[3] = 'D';
+    series->games[87].map1[318] = 0x09;
+    series->games[95].passwd[0] = 'W';
+    series->games[95].passwd[1] = 'V';
+    series->games[95].passwd[2] = 'H';
+    series->games[95].passwd[3] = 'Y';
+    memmove(series->games + 144, series->games + 145,
+	    4 * sizeof *series->games);
+    --series->total;
+    --series->count;
+    return TRUE;
+}
+
 /*
  * Functions to read the data files.
  */
@@ -239,7 +265,7 @@ static int readlevelinseries(gameseries *series, int level)
     if (series->count > level)
 	return TRUE;
 
-    if (!series->allmapsread) {
+    if (!(series->gsflags & GSF_ALLMAPSREAD)) {
 	if (!series->mapfile.fp) {
 	    if (!openfileindir(&series->mapfile, seriesdir,
 			       series->mapfilename, "rb", "unknown error"))
@@ -248,7 +274,7 @@ static int readlevelinseries(gameseries *series, int level)
 	    if (!readseriesheader(series))
 		return FALSE;
 	}
-	while (!series->allmapsread && series->count <= level) {
+	while (!(series->gsflags & GSF_ALLMAPSREAD) && series->count <= level) {
 	    while (series->count >= series->allocated) {
 		n = series->allocated ? series->allocated * 2 : 16;
 		xalloc(series->games, n * sizeof *series->games);
@@ -261,7 +287,7 @@ static int readlevelinseries(gameseries *series, int level)
 		++series->count;
 	    if (filetestend(&series->mapfile)) {
 		fileclose(&series->mapfile, NULL);
-		series->allmapsread = TRUE;
+		series->gsflags |= GSF_ALLMAPSREAD;
 	    }
 	}
     }
@@ -273,7 +299,7 @@ static int readlevelinseries(gameseries *series, int level)
  */
 int readseriesfile(gameseries *series)
 {
-    if (series->allmapsread)
+    if (series->gsflags & GSF_ALLMAPSREAD)
 	return TRUE;
     xalloc(series->games, series->total * sizeof *series->games);
     memset(series->games + series->allocated, 0,
@@ -281,6 +307,8 @@ int readseriesfile(gameseries *series)
     series->allocated = series->total;
     if (!readlevelinseries(series, series->total - 1))
 	return FALSE;
+    if (series->gsflags & GSF_LYNXFIXES)
+	undomschanges(series);
     readsolutions(series);
     return TRUE;
 }
@@ -298,8 +326,8 @@ void freeseriesdata(gameseries *series)
     clearfileinfo(&series->mapfile);
     free(series->mapfilename);
     series->mapfilename = NULL;
+    series->gsflags = 0;
     series->solutionflags = 0;
-    series->allmapsread = FALSE;
 
     for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
 	free(game->map1);
@@ -313,7 +341,7 @@ void freeseriesdata(gameseries *series)
     series->total = 0;
 
     series->ruleset = Ruleset_None;
-    series->usepasswds = TRUE;
+    series->gsflags = 0;
     *series->filebase = '\0';
     *series->name = '\0';
 }
@@ -362,8 +390,6 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 		return NULL;
 	    }
 	    series->final = n;
-	} else if (!strcmp(name, "usepasswords")) {
-	    series->usepasswds = !(tolower(*value) == 'n' || *value == '0');
 	} else if (!strcmp(name, "ruleset")) {
 	    for (p = value ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	    if (strcmp(value, "ms") && strcmp(value, "lynx")) {
@@ -371,6 +397,16 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 		return NULL;
 	    }
 	    series->ruleset = *value == 'm' ? Ruleset_MS : Ruleset_Lynx;
+	} else if (!strcmp(name, "usepasswords")) {
+	    if (tolower(*value) == 'n')
+		series->gsflags |= GSF_IGNOREPASSWDS;
+	    else
+		series->gsflags &= ~GSF_IGNOREPASSWDS;
+	} else if (!strcmp(name, "fixlynx")) {
+	    if (tolower(*value) == 'n')
+		series->gsflags &= ~GSF_LYNXFIXES;
+	    else
+		series->gsflags |= GSF_LYNXFIXES;
 	} else {
 	    warn("line %d: directive \"%s\" unknown", lineno, name);
 	    fileerr(file, "unrecognized setting in configuration file");
@@ -424,14 +460,13 @@ static int getseriesfile(char *filename, void *data)
     series = sdata->list + sdata->count;
     series->mapfilename = NULL;
     clearfileinfo(&series->solutionfile);
+    series->gsflags = 0;
     series->solutionflags = 0;
-    series->allmapsread = FALSE;
     series->allocated = 0;
     series->count = 0;
     series->final = 0;
     series->ruleset = Ruleset_None;
     series->games = NULL;
-    series->usepasswds = TRUE;
     strncpy(series->filebase, filename, sizeof series->filebase - 1);
     series->filebase[sizeof series->filebase - 1] = '\0';
     strcpy(series->name, series->filebase);
