@@ -240,11 +240,15 @@ extern void playsoundeffects(unsigned long sfx);
  */
 extern void clearsoundeffects(void);
 
-/* Change the current volume level. Volume ranges from 0 (silence) to
- * 10 (the default). Setting the sound to zero causes sound effects to
- * be displayed as textual onomatopoeia. If display is TRUE, the new
+/* Set the current volume level. Volume ranges from 0 (silence) to 10
+ * (the default). Setting the sound to zero causes sound effects to be
+ * displayed as textual onomatopoeia. If display is TRUE, the new
  * volume level will be displayed to the user. FALSE is returned if
  * the sound system is not currently active.
+ */
+extern int setvolume(int volume, int display);
+
+/* Alters the current volume level by delta.
  */
 extern int changevolume(int delta, int display);
 

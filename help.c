@@ -17,7 +17,7 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "3-Usage: tworld [-hvVdlstpqFaHf] [-DLRS DIR] [NAME] [LEVEL]",
+    "3-Usage: tworld [-hvVdlstpqFaHf] [-n N] [-DLRS DIR] [NAME] [LEVEL]",
     "1-", "1+-D", "1-Read data files from DIR instead of the default.",
     "1-", "1+-L", "1-Read level sets from DIR instead of the default.",
     "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
@@ -25,6 +25,7 @@ static char *yowzitch_items[] = {
     "1-", "1+-p", "1-Disable password checking.",
     "1-", "1+-F", "1-Run in fullscreen mode.",
     "1-", "1+-q", "1-Run quietly.",
+    "1-", "1+-n", "1-Set initial volume level to N.",
     "1-", "1+-a", "1-Double the size of the sound buffer (can be repeated).",
     "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
     "1-", "1+-f", "1-Disable frame-skipping.",

@@ -85,6 +85,10 @@ static int	noframeskip = FALSE;
  */
 static int	soundbufsize = -1;
 
+/* The initial volume level.
+ */
+static int	volumelevel = -1;
+
 /* The top of the stack of subtitles.
  */
 static void   **subtitlestack = NULL;
@@ -1131,8 +1135,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     listdirs = FALSE;
     mudsucking = 1;
     soundbufsize = 0;
+    volumelevel = -1;
 
-    initoptions(&opts, argc - 1, argv + 1, "aD:dFfHhL:lm:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dFfHhL:lm:n:pqR:S:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1161,6 +1166,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 's':	start->listscores = TRUE;			break;
 	  case 't':	start->listtimes = TRUE;			break;
 	  case 'm':	mudsucking = atoi(opts.val);			break;
+	  case 'n':	volumelevel = atoi(opts.val);			break;
 	  case 'h':	printtable(stdout, yowzitch); 	   exit(EXIT_SUCCESS);
 	  case 'v':	puts(VERSION);		 	   exit(EXIT_SUCCESS);
 	  case 'V':	printtable(stdout, vourzhon); 	   exit(EXIT_SUCCESS);
@@ -1202,6 +1208,8 @@ static int initializesystem(void)
     if (!initresources())
 	return FALSE;
     setkeyboardrepeat(TRUE);
+    if (volumelevel >= 0)
+	setvolume(volumelevel, FALSE);
     return TRUE;
 }
 
