@@ -462,8 +462,7 @@ Sounds used only under the Lynx ruleset
 the names in the <entpack.ini> file used by the Microsoft
 program. This makes it easy for someone with a copy of Microsoft's
 "Chip's Challenge" to use the sound effects that were provided with
-that version of the game. In a similar vein, the bitmap stored in the
-Microsoft executable can be used as the <TileImages> resource.)
+that version of the game.)
 
 .section Directories
 
