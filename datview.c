@@ -577,18 +577,18 @@ int main(int argc, char *argv[])
 		    fputs(objects[level.map[y][x].object], stdout);
 		}
 		if (y < level.trapcount)
-		    printf("%02d %02d -> %02d %02d",
+		    printf(" %02d %02d -> %02d %02d",
 			   level.traps[y].from.x, level.traps[y].from.y,
 			   level.traps[y].to.x, level.traps[y].to.y);
 		else if (y < level.trapcount + level.clonercount)
-		    printf("%02d %02d => %02d %02d",
+		    printf(" %02d %02d => %02d %02d",
 			   level.cloners[y - level.trapcount].from.x,
 			   level.cloners[y - level.trapcount].from.y,
 			   level.cloners[y - level.trapcount].to.x,
 			   level.cloners[y - level.trapcount].to.y);
 		else if (y == level.trapcount + level.clonercount
 						&& level.creaturecount)
-		    printf("%d creatures", level.creaturecount);
+		    printf(" %d creatures", level.creaturecount);
 		printf("\n");
 	    }
 	}
