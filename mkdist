@@ -12,15 +12,19 @@ html2txt < ./Changelog.html > ./Changelog
 (cd docs && ./mkdocs tworld.doc)
 
 #
-# Tar everything up in a fresh versioned directory.
+# Tar everything up inside of a fresh versioned directory.
 #
 
 VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
 mkdir tworld-$VER
 tar -cf - `cat MANIFEST` | tar -C tworld-$VER -xf -
 rm -f tworld-$VER.tar.gz
-tar -cvf tworld-$VER.tar tworld-$VER
+tar -cf tworld-$VER.tar tworld-$VER
 gzip -9 tworld-$VER.tar
+rm tworld-$VER/res/*tiles*.bmp
+rm -f tworld-$VER-noimgs.tar.gz
+tar -cf tworld-$VER-noimgs.tar tworld-$VER
+gzip -9 tworld-$VER-noimgs.tar
 rm -rf tworld-$VER
 
 #
