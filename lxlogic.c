@@ -986,7 +986,8 @@ static int activatecloner(int pos)
 	return FALSE;
     clone = newcreature();
     if (!clone)
-	return FALSE;
+	return advancecreature(cr, TRUE);
+
     *clone = *cr;
     if (!advancecreature(cr, TRUE)) {
 	clone->hidden = TRUE;
