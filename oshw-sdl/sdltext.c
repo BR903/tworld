@@ -342,6 +342,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	    } else {
 		drawtext(&area, text + index, n - index,
 				 flags | PT_UPDATERECT);
+		index = n;
 		w = sdlg.font.w[text[n]];
 	    }
 	    brkw = 0;
