@@ -12,7 +12,6 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 #include	"../state.h"
-#include	"sdlres.h"
 
 /* An automatically-generated file.
  */
