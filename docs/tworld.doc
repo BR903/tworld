@@ -363,10 +363,9 @@ difficulty.)
 
 Tile World loads various resources at runtime from its resource
 directory (cf #Directories#). These resources include the program's
-font, graphic images, and sound effects. The actual files that it
-loads is determined by the contents of a file named <rc> (short for
-"resource configuration", not "runtime commands") in the same
-directory.
+font, graphic images, and sound effects. The actual file names are
+determined by the contents of a file named <rc> (short for "resource
+configuration", not "runtime commands") in the same directory.
 
 The <rc> file is a plain text file, and contains lines of the
 form
@@ -386,8 +385,8 @@ in effect (where %ruleset% is either <MS> or <Lynx>). Resources that
 are defined before any such line apply to both rulesets, and are also
 used as fallbacks if a ruleset-specific resource could not be
 loaded. (The font and the text-color resources also need to have
-ruleset-independent values, as these are used when the program is
-displaying the initial file list.)
+ruleset-independent values, as these are needed when displaying the
+initial file list, before a ruleset has been chosen.)
 
 A line of the form
 
