@@ -143,7 +143,7 @@ static objhelptext const gameplay_monsters[] = {
 /* About this program.
  */
 static char const *about[] = {
-    "\267\tTile World: version 0.8.0 (alpha)",
+    "\267\tTile World: version 0.8.2 (alpha)",
     "\tCopyright \251 2001 by Brian Raiter",
     "\tcompiled " __DATE__ " " __TIME__ " PST",
     "\267\tThis program is free software; you can redistribute it"
@@ -174,11 +174,11 @@ static inline int helpscreen(int type, char const *title,
  */
 int gameplayhelp(void)
 {
-    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), -1)
-	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), -1)
-	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), -1)
-	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), -1)
-	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), -1)
-	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), -1)
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), +1);
+    return helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), +1)
+	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), +1)
+	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), +1)
+	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), +1)
+	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), +1)
+	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), +1)
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0);
 }

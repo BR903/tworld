@@ -68,7 +68,7 @@ static gamestate *state;
 
 #define	chipsneeded()		(state->chipsneeded)
 
-#define	addsoundeffect(sfx)	(state->soundeffects |= (sfx))
+#define	addsoundeffect(sfx)	(state->soundeffects |= 1 << (sfx))
 
 #define	floorat(pos)		(state->map[pos].top.id)
 

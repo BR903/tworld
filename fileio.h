@@ -64,7 +64,7 @@ extern int filewriteint32(fileinfo *file, unsigned long val32,
 extern void *filereadbuf(fileinfo *file, unsigned long size, char const *msg);
 
 /* Read one full line from fp and store the first len characters,
- * minus the trailing newline. len receives the length of the line
+ * including any trailing newline. len receives the length of the line
  * stored in buf upon return.
  */
 extern int filegetline(fileinfo *file, char *buf, int *len, char const *msg);

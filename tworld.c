@@ -54,7 +54,7 @@ static char const *yowzitch =
 /* Online version data.
  */
 static char const *vourzhon =
-	"TileWorld, version 0.8.0.\n\n"
+	"TileWorld, version 0.8.2.\n\n"
 	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
 	"General Public License; either version 2 of the License, or at\n"
 	"your option any later version.\n"
@@ -125,7 +125,7 @@ static void replaceablesolution(gamespec *gs)
  */
 static void endinput(gamespec *gs, int status)
 {
-    displayendmessage(status > 0);
+    displayendmessage(status);
 
     for (;;) {
 	switch (input(TRUE)) {
@@ -223,8 +223,12 @@ static void playgame(gamespec *gs)
 	}
     }
     setgameplaymode(EndPlay);
-    if (n > 0 && replacesolution())
-	savesolutions(&gs->series);
+    if (n > 0) {
+	if (replacesolution())
+	    savesolutions(&gs->series);
+	if (gs->currentgame >= gs->series.count)
+	    n = 0;
+    }
     endinput(gs, n);
     return;
 
@@ -292,6 +296,8 @@ static void playbackgame(gamespec *gs)
     }
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
+    if (n > 0 && gs->currentgame >= gs->series.count)
+	n = 0;
     endinput(gs, n);
     return;
 
