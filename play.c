@@ -266,5 +266,6 @@ int checksolution(void)
 	return TRUE;
     }
     warn("reason for difference unknown.");
+    state.game->besttime = currenttime;
     return FALSE;
 }

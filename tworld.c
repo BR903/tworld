@@ -806,7 +806,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     listdirs = FALSE;
     mudsucking = 1;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:L:HR:S:Vdhlm:pqstv");
+    initoptions(&opts, argc - 1, argv + 1, "D:dHhL:lm:pqR:S:stv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
