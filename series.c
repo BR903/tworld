@@ -283,6 +283,37 @@ int readseriesfile(gameseries *series)
     return TRUE;
 }
 
+/* Release all resources associated with a gameseries structure.
+ */
+void freeseriesdata(gameseries *series)
+{
+    gamesetup  *game;
+    int		n;
+
+    fileclose(&series->solutionfile, NULL);
+    fileclose(&series->mapfile, NULL);
+    clearfileinfo(&series->solutionfile);
+    clearfileinfo(&series->mapfile);
+    series->solutionflags = 0;
+    series->allmapsread = FALSE;
+
+    for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
+	free(game->map1);
+	free(game->map2);
+	destroymovelist(&game->savedsolution);
+    }
+    free(series->games);
+    series->games = NULL;
+    series->allocated = 0;
+    series->count = 0;
+    series->total = 0;
+
+    series->ruleset = Ruleset_None;
+    series->usepasswds = TRUE;
+    *series->filebase = '\0';
+    *series->name = '\0';
+}
+
 /*
  *
  */

@@ -106,6 +106,12 @@ extern void freetileset(void);
  */
 extern int creategamedisplay(void);
 
+/* Create a generic display surface, appropriate to when the
+ * requirements of the game are not yet known. This function is
+ * automatically invoked during oshwinitialize().
+ */
+extern int createinitialdisplay(void);
+
 /* Fill the display with the background color.
  */
 extern void cleardisplay(void);
@@ -153,6 +159,18 @@ enum {
     SCROLL_ALLTHEWAY_DN		= -9
 };
 
+/* Display an input prompt to the user. prompt supplies the prompt to
+ * display, and input is the buffer to store the user's input. maxlen
+ * puts a maximum length on the input. The supplied callback function
+ * is called repeatedly to obtain input. If the callback function
+ * returns a printing ASCII character, the function will automatically
+ * append it to the string in input. If '\b' is returned, the function
+ * will erase the last character in input, if any. If '\f' is returend
+ * the function will erase all of input. If '\n' or a negative value
+ * is returned, then displayinputprompt() returns to the caller.  All
+ * other return values are ignored. The return value will be TRUE if
+ * the callback's last return value was '\n', and FALSE otherwise.
+ */
 extern int displayinputprompt(char const *prompt, char *input, int maxlen,
 			      int (*inputcallback)(void));
 

@@ -102,12 +102,15 @@ int fileopen(fileinfo *file, char const *name, char const *mode,
 void fileclose(fileinfo *file, char const *msg)
 {
     errno = 0;
-    if (!fclose(file->fp))
-	fileerr(file, msg);
-    file->fp = NULL;
+    if (file->fp) {
+	if (!fclose(file->fp))
+	    fileerr(file, msg);
+	file->fp = NULL;
+    }
     if (file->alloc) {
 	free(file->name);
 	file->name = NULL;
+	file->alloc = FALSE;
     }
 }
 
