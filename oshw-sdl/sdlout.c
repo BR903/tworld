@@ -15,23 +15,18 @@
 
 /* Space to leave between graphic objects.
  */
-#define	CXMARGIN	8
-#define	CYMARGIN	8
+#define	MARGINW		8
+#define	MARGINH		8
 
 /* Size of the end-message icons.
  */
-#define	CXENDICON	16
-#define	CYENDICON	10
+#define	ENDICONW	16
+#define	ENDICONH	10
 
 /* The dimensions of the visible area of the map (in tiles).
  */
 #define	NXTILES		9
 #define	NYTILES		9
-
-/* Macros for locating a specific tile's pixels.
- */
-#define	floortile(id)		(id)
-#define	entitydirtile(id, dir)	((id) + ((0x30210 >> ((dir) * 2)) & 3))
 
 /* ccfont: A nice font.
  * (This file is generated automatically.)
@@ -52,16 +47,9 @@ static Uint32		clr_black, clr_white, clr_gray, clr_red, clr_yellow;
 
 /* Coordinates specifying the layout of the screen elements.
  */
-static int		xdisplay, ydisplay, cxdisplay, cydisplay;
-static int		xtitle, ytitle, cxtitle, cytitle;
-static int		xinfo, yinfo, cxinfo, cyinfo;
-static int		xinventory, yinventory, cxinventory, cyinventory;
-static int		xonomatopoeia, yonomatopoeia,
-			cxonomatopoeia, cyonomatopoeia;
-static int		xhint, yhint, cxhint, cyhint;
-static int		xendmsg, yendmsg, cxendmsg, cyendmsg;
-static int		xlist, ylist, cxlist, cylist;
-static int		cxscreen, cyscreen;
+static SDL_Rect		titleloc, infoloc, hintloc, invloc;
+static SDL_Rect		onomatopoeialoc, endmsgloc, listloc, displayloc;
+static int		screenw, screenh;
 
 /* Create some simple icons used to prompt the user.
  */
@@ -103,8 +91,8 @@ static int createendmsgicons(void)
 
     if (!endmsgicons) {
 	endmsgicons = SDL_CreateRGBSurfaceFrom(iconpixels,
-					       CXENDICON, 3 * CYENDICON,
-					       8, CXENDICON, 0, 0, 0, 0);
+					       ENDICONW, 3 * ENDICONH,
+					       8, ENDICONW, 0, 0, 0, 0);
 	if (!endmsgicons) {
 	    warn("couldn't create SDL surface: %s", SDL_GetError());
 	    return FALSE;
@@ -125,65 +113,65 @@ static int createendmsgicons(void)
 
 static void layoutlistarea(void)
 {
-    xlist = CXMARGIN;
-    ylist = CYMARGIN;
-    cxlist = (cxscreen - CXMARGIN) - xlist;
-    cylist = (cyscreen - CYMARGIN - ccfont.h) - ylist;
+    listloc.x = MARGINW;
+    listloc.y = MARGINH;
+    listloc.w = (screenw - MARGINW) - listloc.x;
+    listloc.h = (screenh - MARGINH - ccfont.h) - listloc.y;
 }
 
 /* Calculate the positions of all the elements of the game display.
  */
 static int layoutscreen(void)
 {
-    int	cx;
+    int	w;
 
     if (sdlg.wtile <= 0 || sdlg.htile <= 0)
 	return FALSE;
 
-    xdisplay = CXMARGIN;
-    ydisplay = CYMARGIN;
-    cxdisplay = NXTILES * sdlg.wtile;
-    cydisplay = NYTILES * sdlg.htile;
+    displayloc.x = MARGINW;
+    displayloc.y = MARGINH;
+    displayloc.w = NXTILES * sdlg.wtile;
+    displayloc.h = NYTILES * sdlg.htile;
 
-    xtitle = xdisplay;
-    ytitle = ydisplay + cydisplay + CYMARGIN;
-    cxtitle = cxdisplay;
-    cytitle = ccfont.h;
+    titleloc.x = displayloc.x;
+    titleloc.y = displayloc.y + displayloc.h + MARGINH;
+    titleloc.w = displayloc.w;
+    titleloc.h = ccfont.h;
 
-    cx = 4 * sdlg.wtile;
-    if (cx < 18 * ccfont.w)
-	cx = 18 * ccfont.w;
+    w = 4 * sdlg.wtile;
+    if (w < 18 * ccfont.w)
+	w = 18 * ccfont.w;
 
-    xinfo = xdisplay + cxdisplay + CXMARGIN;
-    yinfo = CYMARGIN;
-    cxinfo = cx;
-    cyinfo = 6 * ccfont.h;
+    infoloc.x = displayloc.x + displayloc.w + MARGINW;
+    infoloc.y = MARGINH;
+    infoloc.w = w;
+    infoloc.h = 6 * ccfont.h;
 
-    xinventory = xinfo;
-    yinventory = yinfo + cyinfo + CYMARGIN;
-    cxinventory = cx;
-    cyinventory = 2 * sdlg.htile;
+    invloc.x = infoloc.x;
+    invloc.y = infoloc.y + infoloc.h + MARGINH;
+    invloc.w = w;
+    invloc.h = 2 * sdlg.htile;
 
-    cxendmsg = CXENDICON;
-    cyendmsg = CYENDICON;
-    xendmsg = xinfo + cxinfo - cxendmsg;
-    yendmsg = ytitle + cytitle - cyendmsg;
+    endmsgloc.x = infoloc.x + infoloc.w - ENDICONW;
+    endmsgloc.y = titleloc.y + titleloc.h - ENDICONH;
+    endmsgloc.w = ENDICONW;
+    endmsgloc.h = ENDICONH;
 
-    xonomatopoeia = xinfo;
-    yonomatopoeia = ydisplay + cydisplay - ccfont.h;
-    cxonomatopoeia = 6 * ccfont.w;
-    cyonomatopoeia = ccfont.h;
+    onomatopoeialoc.x = infoloc.x;
+    onomatopoeialoc.y = displayloc.y + displayloc.h - ccfont.h;
+    onomatopoeialoc.w = infoloc.w;
+    onomatopoeialoc.h = ccfont.h;
 
-    xhint = xinfo;
-    yhint = yinventory + cyinventory + CYMARGIN;
-    cxhint = cx;
-    cyhint = yendmsg - CYMARGIN - yhint;
+    hintloc.x = infoloc.x;
+    hintloc.y = invloc.y + invloc.h + MARGINH;
+    hintloc.w = w;
+    hintloc.h = endmsgloc.y - MARGINH - hintloc.y;
 
-    cxscreen = xinfo + cxinfo + CXMARGIN;
-    cyscreen = ytitle + cytitle + CYMARGIN;
-    cx = 48 * ccfont.w + 2 * CXMARGIN;
-    if (cxscreen < cx)
-	cxscreen = cx;
+    screenw = infoloc.x + infoloc.w + MARGINW;
+    screenh = titleloc.y + titleloc.h + MARGINH;
+    w = 48 * ccfont.w + 2 * MARGINW;
+    if (screenw < w)
+	screenw = w;
 
      return TRUE;
 }
@@ -196,15 +184,17 @@ static int setdisplaysize(void)
 	SDL_FreeSurface(screen);
 	screen = NULL;
     }
-    if (!(screen = SDL_SetVideoMode(cxscreen, cyscreen, 32, SDL_HWSURFACE)))
+    if (!(screen = SDL_SetVideoMode(screenw, screenh, 32, SDL_HWSURFACE)))
 	die("Cannot open %dx%d display: %s\n",
-	    cxscreen, cyscreen, SDL_GetError());
-    if (screen->w != cxscreen || screen->h != cyscreen)
+	    screenw, screenh, SDL_GetError());
+    if (screen->w != screenw || screen->h != screenh)
 	die("Requested a %dx%d display, got %dx%d instead!",
 	    screen->w, screen->h);
     if (screen->format->BitsPerPixel != 32)
 	die("Requested a display with 32-bit depth, got %d-bit instead!",
 	    screen->format->BitsPerPixel);
+    SDL_FillRect(screen, NULL, clr_black);
+
     sdlg.screen = screen;
     layoutlistarea();
 
@@ -238,39 +228,44 @@ static char const *getonomatopoeia(unsigned long sfx)
 
 static void drawopaquetile(int xpos, int ypos, Uint32 const *src)
 {
-    Uint32     *dest;
-    void const *endsrc;
+    void const	       *endsrc;
+    unsigned char      *dest;
 
-    dest = (Uint32*)screen->pixels + ypos * cxscreen + xpos;
     endsrc = src + sdlg.cptile;
-    for ( ; src != endsrc ; src += sdlg.wtile, dest += cxscreen)
-	memcpy(dest, src, sdlg.wtile * sizeof *dest);
+    dest = (unsigned char*)screen->pixels + ypos * screen->pitch;
+    dest = (unsigned char*)((Uint32*)dest + xpos);
+    for ( ; src != endsrc ; src += sdlg.wtile, dest += screen->pitch)
+	memcpy(dest, src, sdlg.wtile * sizeof *src);
 }
 
 #if 0
 static void drawtransptile(int xpos, int ypos, Uint32 const *src)
 {
-    Uint32     *dest;
-    void const *endsrc;
-    int		x;
+    unsigned char      *line;
+    Uint32	       *dest;
+    void const	       *endsrc;
+    int			x;
 
-    dest = (Uint32*)screen->pixels + ypos * cxscreen + xpos;
     endsrc = src + sdlg.cptile;
-    for ( ; src != endsrc ; src += sdlg.wtile, dest += cxscreen)
+    line = (unsigned char*)screen->pixels + ypos * screen->pitch;
+    line = (unsigned char*)((Uint32*)dest + xpos);
+    for ( ; src != endsrc ; src += sdlg.wtile, line += screen->pitch) {
+	dest = (Uint32*)line;
 	for (x = 0 ; x < sdlg.wtile ; ++x)
 	    if (src[x] != sdlg.transpixel)
 		dest[x] = src[x];
+    }
 }
 #endif
 
 static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
 {
-    Uint32     *dest;
-    int		lclip = xdisplay;
-    int		tclip = ydisplay;
-    int		rclip = xdisplay + cxdisplay;
-    int		bclip = ydisplay + cydisplay;
-    int		y;
+    unsigned char      *dest;
+    int			lclip = displayloc.x;
+    int			tclip = displayloc.y;
+    int			rclip = displayloc.x + displayloc.w;
+    int			bclip = displayloc.y + displayloc.h;
+    int			y;
 
     if (xpos > lclip)			lclip = xpos;
     if (ypos > tclip)			tclip = ypos;
@@ -278,20 +273,22 @@ static void drawopaquetileclipped(int xpos, int ypos, Uint32 const *src)
     if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
     if (lclip >= rclip || tclip >= bclip)
 	return;
-    dest = (Uint32*)screen->pixels + tclip * cxscreen + lclip;
     src += (tclip - ypos) * sdlg.wtile + lclip - xpos;
-    for (y = bclip - tclip ; y ; --y, dest += cxscreen, src += sdlg.wtile)
-	memcpy(dest, src, (rclip - lclip) * sizeof *dest);
+    dest = (unsigned char*)screen->pixels + tclip * screen->pitch;
+    dest = (unsigned char*)((Uint32*)dest + lclip);
+    for (y = bclip - tclip ; y ; --y, dest += screen->pitch, src += sdlg.wtile)
+	memcpy(dest, src, (rclip - lclip) * sizeof *src);
 }
 
 static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
 {
-    Uint32     *dest;
-    int		lclip = xdisplay;
-    int		tclip = ydisplay;
-    int		rclip = xdisplay + cxdisplay;
-    int		bclip = ydisplay + cydisplay;
-    int		x, y;
+    unsigned char      *line;
+    Uint32	       *dest;
+    int			lclip = displayloc.x;
+    int			tclip = displayloc.y;
+    int			rclip = displayloc.x + displayloc.w;
+    int			bclip = displayloc.y + displayloc.h;
+    int			x, y;
 
     if (xpos > lclip)			lclip = xpos;
     if (ypos > tclip)			tclip = ypos;
@@ -299,10 +296,10 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
     if (ypos + sdlg.htile < bclip)	bclip = ypos + sdlg.htile;
     if (lclip >= rclip || tclip >= bclip)
 	return;
-    dest = (Uint32*)screen->pixels + tclip * cxscreen;
     src += (tclip - ypos) * sdlg.wtile - xpos;
-    for (y = bclip - tclip ; y ; --y, dest += cxscreen, src += sdlg.wtile)
-	for (x = lclip ; x < rclip ; ++x)
+    line = (unsigned char*)screen->pixels + tclip * screen->pitch;
+    for (y = bclip - tclip ; y ; --y, line += screen->pitch, src += sdlg.wtile)
+	for (x = lclip, dest = (Uint32*)line ; x < rclip ; ++x)
 	    if (src[x] != sdlg.transpixel)
 		dest[x] = src[x];
 }
@@ -310,6 +307,13 @@ static void drawtransptileclipped(int xpos, int ypos, Uint32 const *src)
 /*
  * Game display functions.
  */
+
+/* Wipe the display.
+ */
+void cleardisplay(void)
+{
+    SDL_FillRect(sdlg.screen, NULL, ccfont.bkgnd);
+}
 
 /* Render the view of the visible area of the map to the output
  * buffer, including all visible creatures, with Chip centered on the
@@ -344,10 +348,10 @@ static void displaymapview(gamestate const *state)
 	    if (x < 0 || x >= CXGRID)
 		continue;
 	    pos = y * CXGRID + x;
-	    drawopaquetileclipped(xdisplay + (x * sdlg.wtile)
-					   - (xdisppos * sdlg.wtile / 4),
-				  ydisplay + (y * sdlg.htile)
-					   - (ydisppos * sdlg.htile / 4),
+	    drawopaquetileclipped(displayloc.x + (x * sdlg.wtile)
+					       - (xdisppos * sdlg.wtile / 4),
+				  displayloc.y + (y * sdlg.htile)
+					       - (ydisppos * sdlg.htile / 4),
 				  sdlg.getcellimage(state->map[pos].top.id,
 						    state->map[pos].bot.id));
 	}
@@ -372,10 +376,10 @@ static void displaymapview(gamestate const *state)
 	}
 	if (x < lmap || x >= rmap || y < tmap || y >= bmap)
 	    continue;
-	drawtransptileclipped(xdisplay + (x * sdlg.wtile / 4)
-				       - (xdisppos * sdlg.wtile / 4),
-			      ydisplay + (y * sdlg.htile / 4)
-				       - (ydisppos * sdlg.htile / 4),
+	drawtransptileclipped(displayloc.x + (x * sdlg.wtile / 4)
+					   - (xdisppos * sdlg.wtile / 4),
+			      displayloc.y + (y * sdlg.htile / 4)
+					   - (ydisppos * sdlg.htile / 4),
 			      sdlg.getcreatureimage(cr->id, cr->dir, 0));
     }
 }
@@ -390,28 +394,23 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     int		color;
     int		n;
 
-    if (state->game->name && *state->game->name) {
-	rect.x = xtitle;
-	rect.y = ytitle;
-	rect.w = cxtitle;
-	rect.h = cytitle;
-	sdlg.puttext(&rect, state->game->name, PT_CENTER);
-    }
+    if (state->game->name)
+	sdlg.puttext(&titleloc, state->game->name, PT_CENTER);
+    else
+	sdlg.putblank(&titleloc);
 
-    rect.x = xinfo;
-    rect.y = yinfo;
-    rect.w = cxinfo;
-    rect.h = cyinfo;
+    rect = infoloc;
 
     sprintf(buf, "Level %d", state->game->number);
     sdlg.puttext(&rect, buf, PT_UPDATERECT);
 
     if (state->game->passwd && *state->game->passwd) {
 	sprintf(buf, "Password: %s", state->game->passwd);
-	sdlg.puttext(&rect, buf, 0);
-    }
-    rect.y += 2 * ccfont.h;
-    rect.h -= 2 * ccfont.h;
+	sdlg.puttext(&rect, buf, PT_UPDATERECT);
+    } else
+	sdlg.puttext(&rect, "", PT_UPDATERECT);
+
+    sdlg.puttext(&rect, "", PT_UPDATERECT);
 
     sprintf(buf, "Chips %3d", state->chipsneeded);
     sdlg.puttext(&rect, buf, PT_UPDATERECT);
@@ -430,35 +429,36 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 	color = ccfont.color;
 	if (state->game->replacebest)
 	    ccfont.color = clr_gray;
-	sdlg.puttext(&rect, buf, 0);
+	sdlg.puttext(&rect, buf, PT_UPDATERECT);
 	ccfont.color = color;
     }
+    sdlg.putblank(&rect);
 
     for (n = 0 ; n < 4 ; ++n) {
-	drawopaquetile(xinventory + n * sdlg.wtile, yinventory,
+	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y,
 		sdlg.gettileimage(state->keys[n] ? Key_Red + n : Empty,
 				  FALSE));
-	drawopaquetile(xinventory + n * sdlg.wtile, yinventory + sdlg.htile,
+	drawopaquetile(invloc.x + n * sdlg.wtile, invloc.y + sdlg.htile,
 		sdlg.gettileimage(state->boots[n] ? Boots_Ice + n : Empty,
 				  FALSE));
     }
 
-    rect.x = xhint;
-    rect.y = yhint;
-    rect.w = cxhint;
-    rect.h = cyhint;
     if (state->statusflags & SF_INVALID)
-	sdlg.putmltext(&rect, "This level cannot be played.", 0);
+	sdlg.putmltext(&hintloc, "This level cannot be played.", 0);
     else if (state->statusflags & SF_SHOWHINT)
-	sdlg.putmltext(&rect, state->game->hinttext, 0);
+	sdlg.putmltext(&hintloc, state->game->hinttext, 0);
+    else
+	sdlg.putblank(&hintloc);
 
-    if ((state->statusflags & SF_ONOMATOPOEIA) && state->soundeffects) {
-	rect.x = xonomatopoeia;
-	rect.y = yonomatopoeia;
-	rect.w = cxonomatopoeia;
-	rect.h = cyonomatopoeia;
-	sdlg.puttext(&rect, getonomatopoeia(state->soundeffects), 0);
+    if (state->statusflags & SF_ONOMATOPOEIA) {
+	if (state->soundeffects)
+	    sdlg.puttext(&onomatopoeialoc,
+			 getonomatopoeia(state->soundeffects), 0);
+	else
+	    sdlg.putblank(&onomatopoeialoc);
     }
+
+    sdlg.putblank(&endmsgloc);
 }
 
 /*
@@ -471,7 +471,6 @@ int displaygame(void const *_state, int timeleft, int besttime)
 {
     gamestate const    *state = _state;
 
-    SDL_FillRect(screen, NULL, clr_black);
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
     displaymapview(state);
@@ -495,14 +494,13 @@ int displaylist(char const *title, char const *header,
     scrollinfo	scroll;
     int		n;
 
-    SDL_FillRect(screen, NULL, ccfont.bkgnd);
-    rect.x = xlist;
-    rect.y = ylist + cylist;
-    rect.w = cxlist;
+    cleardisplay();
+
+    rect = listloc;
+    rect.y += listloc.h;
     rect.h = ccfont.h;
     sdlg.puttext(&rect, title, 0);
-    rect.y = ylist;
-    rect.h = cylist;
+    rect = listloc;
     if (header)
 	sdlg.puttext(&rect, header, PT_UPDATERECT);
 
@@ -520,6 +518,8 @@ int displaylist(char const *title, char const *header,
     }
     if (n)
 	*index = sdlg.scrollindex(&scroll);
+
+    cleardisplay();
     return n;
 }
 
@@ -527,20 +527,16 @@ int displaylist(char const *title, char const *header,
  */
 int displayendmessage(int completed)
 {
-    SDL_Rect	src, dest;
+    SDL_Rect	src;
 
     if (!endmsgicons)
 	return FALSE;
     src.x = 0;
-    src.y = (completed + 1) * CYENDICON;
-    src.w = CXENDICON;
-    src.h = CYENDICON;
-    dest.x = xendmsg;
-    dest.y = yendmsg;
-    dest.w = cxendmsg;
-    dest.h = cyendmsg;
-    SDL_BlitSurface(endmsgicons, &src, screen, &dest);
-    SDL_UpdateRect(screen, dest.x, dest.y, dest.w, dest.h);
+    src.y = (completed + 1) * ENDICONH;
+    src.w = ENDICONW;
+    src.h = ENDICONH;
+    SDL_BlitSurface(endmsgicons, &src, screen, &endmsgloc);
+    SDL_UpdateRect(screen, endmsgloc.x, endmsgloc.y, endmsgloc.w, endmsgloc.h);
     return TRUE;
 }
 
@@ -556,17 +552,15 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
     int			col, id;
     int			i, n, y;
 
-    SDL_FillRect(screen, NULL, clr_black);
+    cleardisplay();
     if (SDL_MUSTLOCK(screen))
 	SDL_LockSurface(screen);
 
-    rect.x = xlist;
-    rect.y = ylist + cylist;
-    rect.w = cxlist;
+    rect = listloc;
+    rect.y += listloc.h;
     rect.h = ccfont.h;
     sdlg.puttext(&rect, title, 0);
-    rect.y = ylist;
-    rect.h = cylist;
+    rect = listloc;
 
     if (type == HELP_TABTEXT) {
 	tabbedtext = text;
@@ -584,8 +578,8 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	    rect.x += col;
 	    rect.w -= col;
 	    sdlg.putmltext(&rect, tabbedtext[i] + n + 1, PT_UPDATERECT);
-	    rect.x -= col;
-	    rect.w += col;
+	    rect.x = listloc.x;
+	    rect.w = listloc.w;
 	}
     } else if (type == HELP_OBJECTS) {
 	rect.x += sdlg.wtile * 2 + ccfont.w;
@@ -593,17 +587,18 @@ int displayhelp(int type, char const *title, void const *text, int textcount,
 	objtext = text;
 	for (n = 0 ; n < textcount ; ++n) {
 	    if (objtext[n].isfloor)
-		id = floortile(objtext[n].item1);
+		id = objtext[n].item1;
 	    else
-		id = entitydirtile(objtext[n].item1, EAST);
-	    drawopaquetile(xlist + sdlg.wtile, rect.y,
+		id = crtile(objtext[n].item1, EAST);
+	    drawopaquetile(listloc.x + sdlg.wtile, rect.y,
 			   sdlg.gettileimage(id, FALSE));
 	    if (objtext[n].item2) {
 		if (objtext[n].isfloor)
-		    id = floortile(objtext[n].item2);
+		    id = objtext[n].item2;
 		else
-		    id = entitydirtile(objtext[n].item2, EAST);
-		drawopaquetile(xlist, rect.y, sdlg.gettileimage(id, FALSE));
+		    id = crtile(objtext[n].item2, EAST);
+		drawopaquetile(listloc.x, rect.y,
+			       sdlg.gettileimage(id, FALSE));
 	    }
 	    y = rect.y;
 	    sdlg.putmltext(&rect, objtext[n].desc, 0);
@@ -642,9 +637,9 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(void)
 {
-    if (cxscreen <= 0 || cyscreen <= 0) {
-	cxscreen = 640;
-	cyscreen = 480;
+    if (screenw <= 0 || screenh <= 0) {
+	screenw = 640;
+	screenh = 480;
     }
     if (!setdisplaysize())
 	return FALSE;

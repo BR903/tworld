@@ -41,9 +41,9 @@ typedef	struct scrollinfo {
 
 /* Flags to the various puttext functions.
  */
-#define	PT_CENTER	0x0001
-#define	PT_RIGHT	0x0002
-#define	PT_UPDATERECT	0x0004
+#define	PT_CENTER	0x0001		/* center the text horizontally */
+#define	PT_RIGHT	0x0002		/* right-align the text */
+#define	PT_UPDATERECT	0x0004		/* return the unused area in rect */
 
 /* Values global to this module. All the globals are placed in here,
  * in order to minimize the namespace pollution of the calling module.
@@ -76,6 +76,10 @@ typedef	struct oshwglobals
      * key was pressed or FALSE if it was released.
      */
     void (*keyeventcallback)(int scancode, int down);
+
+    /* Fill in the given rectangle with the font background color.
+     */
+    void (*putblank)(SDL_Rect const *area);
 
     /* Display a line of text, len characters long.
      */

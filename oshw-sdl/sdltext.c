@@ -15,12 +15,18 @@ static void *fillscanline(void *scanline, int bpp, int count, Uint32 color)
 {
     Uint8      *p = scanline;
 
+    if (!color) {
+	memset(p, 0, bpp * count);
+	return p + bpp * count;
+    }
+
+    p = scanline;
     while (count--) {
 	switch (bpp) {
-	case 1:	*p = (Uint8)color;		break;
-	case 2:	*(Uint16*)p = (Uint16)color;	break;
-	case 4:	*(Uint32*)p = color;		break;
-	case 3:
+	  case 1:	*p = (Uint8)color;		break;
+	  case 2:	*(Uint16*)p = (Uint16)color;	break;
+	  case 4:	*(Uint32*)p = color;		break;
+	  case 3:
 	    if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
 		p[0] = (Uint8)(color >> 16);
 		p[1] = (Uint8)(color >> 8);
@@ -37,7 +43,21 @@ static void *fillscanline(void *scanline, int bpp, int count, Uint32 color)
     return p;
 }
 
-/* Draw a line of text.
+/* Fill a rectangular area with the background color.
+ */
+static void fillrect(SDL_Rect const *rect)
+{
+    unsigned char      *scanline;
+    int			bpp, y;
+
+    bpp = sdlg.screen->format->BytesPerPixel;
+    scanline = sdlg.screen->pixels;
+    scanline += rect->y * sdlg.screen->pitch + rect->x * bpp;
+    for (y = rect->h ; y ; --y, scanline += sdlg.screen->pitch)
+	fillscanline(scanline, bpp, rect->w, sdlg.font->bkgnd);
+}
+
+/* Render a line of text to the screen.
  */
 static void drawtext(SDL_Rect *rect, char const *text, int len, int flags)
 {
@@ -127,17 +147,18 @@ static void puttext(SDL_Rect *rect, char const *text, int flags)
 /* Draw multiple lines of text, looking for whitespace characters to
  * break lines at and subtracting each line from area as it gets used.
  */
-static void putmltext(SDL_Rect *area, char const *text, int flags)
+static void putmltext(SDL_Rect *rect, char const *text, int flags)
 {
-    fontinfo const     *font = sdlg.font;
-    int			index, width, n;
+    SDL_Rect	area;
+    int		index, width, n;
 
     if (SDL_MUSTLOCK(sdlg.screen))
 	SDL_LockSurface(sdlg.screen);
 
-    width = area->w / font->w;
+    area = *rect;
+    width = area.w / sdlg.font->w;
     index = 0;
-    while (area->h >= font->h) {
+    while (area.h >= sdlg.font->h) {
 	while (isspace(text[index]))
 	    ++index;
 	if (!text[index])
@@ -150,9 +171,11 @@ static void putmltext(SDL_Rect *area, char const *text, int flags)
 	    if (n < 0)
 		n = width;
 	}
-	drawtext(area, text + index, n, flags | PT_UPDATERECT);
+	drawtext(&area, text + index, n, flags | PT_UPDATERECT);
 	index += n;
     }
+    if (flags & PT_UPDATERECT)
+	*rect = area;
 
     if (SDL_MUSTLOCK(sdlg.screen))
 	SDL_UnlockSurface(sdlg.screen);
@@ -187,7 +210,7 @@ static void scrollredraw(scrollinfo *scroll)
 	    sdlg.font->color = fontcolor;
     }
     if (area.h)
-	drawtext(&area, "", 0, 0);
+	fillrect(&area);
 
     if (SDL_MUSTLOCK(sdlg.screen))
 	SDL_UnlockSurface(sdlg.screen);
@@ -280,6 +303,7 @@ int _sdltextinitialize(void)
     sdlg.puttext = puttext;
     sdlg.putntext = putntext;
     sdlg.putmltext = putmltext;
+    sdlg.putblank = fillrect;
     sdlg.createscroll = createscroll;
     sdlg.scrollredraw = scrollredraw;
     sdlg.scrollindex = scrollindex;
