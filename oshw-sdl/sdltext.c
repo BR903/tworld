@@ -12,7 +12,8 @@
 #include	"sdlgen.h"
 #include	"../err.h"
 
-/*
+/* Accept a bitmap (as an 8-bit SDL surface) and from it extract the
+ * glyphs of a font.
  */
 static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
 {
@@ -92,7 +93,9 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
  *
  */
 
-/*
+/* Given a text and a maximum horizontal space to occupy, return
+ * the amount of vertial space needed to render the entire text with
+ * word-wrapping.
  */
 static int measuremltext(unsigned char const *text, int len, int maxwidth)
 {
@@ -123,7 +126,7 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
 }
 
 /*
- *
+ * The internal font-drawing functions, one per surface type.
  */
 
 static void drawtextscanline8(Uint8 *scanline, int w, int y, Uint32 *clr,
@@ -215,7 +218,12 @@ static void *drawtextscanline32(Uint32 *scanline, int w, int y, Uint32 *clr,
     return scanline;
 }
 
-/* The routine to draw a line of text to the screen.
+/*
+ * The font-rendering functions.
+ */
+
+/* Draw a single line of text to the screen at the position given by
+ * the given rectangle and modified according to the given flags.
  */
 static void drawtext(SDL_Rect *rect, unsigned char const *text,
 		     int len, int flags)
@@ -280,7 +288,9 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
     }
 }
 
-/*
+/* Draw one or more lines of text to the screen at the position given
+ * by the given rectangle and modified according to the given flags,
+ * breaking the text between words (when possible).
  */
 static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 			      int len, int flags)
@@ -329,7 +339,11 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
     }
 }
 
-/* Draw a line of text.
+/*
+ * The exported functions.
+ */
+
+/* Render a string of text.
  */
 static void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
 {
@@ -351,7 +365,7 @@ static void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
 	SDL_UnlockSurface(sdlg.screen);
 }
 
-/*
+/* Calculate the widths of each column in the given table.
  */
 static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
 {
@@ -415,7 +429,7 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
     return cols;
 }
 
-/*
+/* Render a single row of a table.
  */
 static int _drawtablerow(tablespec const *table, SDL_Rect *cols,
 			 int *row, int flags)
@@ -466,11 +480,7 @@ static int _drawtablerow(tablespec const *table, SDL_Rect *cols,
     return TRUE;
 }
 
-/*
- * Exported text-drawing function.
- */
-
-/* Free a font's memory.
+/* Free the resources associated with a font.
  */
 void freefont(void)
 {
@@ -481,7 +491,7 @@ void freefont(void)
     }
 }
 
-/* Load a proportional font.
+/* Load a proportional font from the given bitmap file.
  */
 int loadfontfromfile(char const *filename)
 {
@@ -499,6 +509,8 @@ int loadfontfromfile(char const *filename)
     return TRUE;
 }
 
+/* Initialize the module.
+ */
 int _sdltextinitialize(void)
 {
     sdlg.font.h = 0;
@@ -507,7 +519,3 @@ int _sdltextinitialize(void)
     sdlg.drawtablerowfunc = _drawtablerow;
     return TRUE;
 }
-
-/*
- *
- */

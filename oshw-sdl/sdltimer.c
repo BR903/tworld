@@ -71,7 +71,8 @@ void waitfortick(void)
 
     ms = nexttickat - SDL_GetTicks();
     if (showhistogram)
-	++hist[ms >= 0 ? ms + 1 : 0];
+	if (ms < (int)(sizeof hist / sizeof *hist))
+	    ++hist[ms >= 0 ? ms + 1 : 0];
     while (ms < 0)
 	ms += mspertick;
     if (ms > 0)
@@ -86,6 +87,7 @@ static void shutdown(void)
     int			i;
 
     settimer(-1);
+
     if (showhistogram) {
 	n = 0;
 	for (i = 0 ; i < (int)(sizeof hist / sizeof *hist) ; ++i)
