@@ -57,7 +57,7 @@ typedef	struct cclevel {
     uchar	map2[32][32];
     uchar	name[32];
     uchar	pass[8];
-    uchar	hint[128];
+    uchar	hint[256];
     int		creaturecount;
     int		trapcount;
     int		clonercount;
