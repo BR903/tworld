@@ -170,7 +170,6 @@ typedef struct creature {
     unsigned char	frame;		/* explicit animation index */
     unsigned char	hidden;		/* TRUE if creature is invisible */
     unsigned char	state;		/* internal state value */
-    unsigned char	fdir;		/* internal state value */
     unsigned char	tdir;		/* internal state value */
 } creature;
 #endif

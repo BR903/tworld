@@ -37,8 +37,8 @@ struct msstate {
     unsigned char	chipstatus;	/* Chip's status (one of CHIP_*) */
     unsigned char	controllerdir;	/* current controller direction */
     unsigned char	deferbuttons;	/* button actions are being deferred */
-    unsigned char	xviewoffset;	/* offset of map view center */
-    unsigned char	yviewoffset;	/*   position from position of Chip */
+    signed char		xviewoffset;	/* offset of map view center */
+    signed char		yviewoffset;	/*   position from position of Chip */
     unsigned char	completed;	/* level completed successfully */
 };
 
@@ -208,7 +208,6 @@ static creature *allocatecreature(void)
     cr->id = Nothing;
     cr->pos = -1;
     cr->dir = NIL;
-    cr->fdir = NIL;
     cr->tdir = NIL;
     cr->state = 0;
     cr->frame = 0;
@@ -332,7 +331,7 @@ static void removefromsliplist(creature *cr)
 
 #define	FS_BUTTONDOWN		0x01
 #define	FS_CLONING		0x02
-#define	FS_BROKEN		0x08
+#define	FS_BROKEN		0x04
 
 /* Translate a slide floor into the direction it points in. In the
  * case of a random slide floor, a new direction is selected.
@@ -957,12 +956,6 @@ static void choosecreaturemove(creature *cr)
     pdir = dir = cr->dir;
 
     if (floor == CloneMachine || floor == Beartrap) {
-/*
-	if (floor == Beartrap && !(cr->state & CS_RELEASED))
-	    return;
-	if (floor == CloneMachine && (cr->state & CS_CLONING))
-	    return;
-*/
 	switch (cr->id) {
 	  case Tank:
 	  case Ball:
