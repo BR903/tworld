@@ -12,8 +12,6 @@
 
 #include	"windows.h"
 
-static FILE    *errlog = NULL;
-
 /* Ring the bell already.
  */
 void ding(void)
@@ -48,11 +46,9 @@ void usermessage(int action, char const *prefix,
 	MessageBox(NULL, errbuf, "Tile World", MB_ICONEXCLAMATION | MB_OK);
 	break;
       case NOTIFY_LOG:
-	if (!errlog && !(errlog = fopen("err.log", "w")))
-	    break;
-	fputs(errbuf, errlog);
-	fputc('\n', errlog);
-	fflush(errlog);
+	fputs(errbuf, stderr);
+	fputc('\n', stderr);
+	fflush(stderr);
 	break;
     }
 }

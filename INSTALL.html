@@ -24,13 +24,13 @@ Installing Tile World involves the usual three-step invocation:
 </h3>
 <p>
 By default, the program is set up so that it will keep its shared
-files in a directory, called <tt>tworld</tt>, under
-<tt>/usr/local/share</tt>. If you would prefer the shared directory to
-be somewhere else, use the <tt>--datadir</tt> option to change it when
-you run <tt>./configure</tt>. (You can also specify a different
-directory at runtime, either on the command line or via the
-<tt>TWORLDDIR</tt> environment variable; however, setting an
-appropriate default value is easier in the long run.)
+files in <tt>/usr/local/share/tworld</tt>. If you would prefer the
+<tt>tworld</tt> directory to be somewhere besides
+<tt>/usr/local/share</tt>, use the <tt>--datadir</tt> option to change
+it when you run <tt>./configure</tt>. Alternately, you can use the
+<tt>--with-sharedir=DIR</tt> option to explicitly specify a completely
+different path. (This value can also be changed at runtime, either via
+the <tt>TWORLDDIR</tt> environment variable or via the command line.)
 <p>
 <h3>
 make

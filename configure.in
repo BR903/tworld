@@ -1,27 +1,59 @@
+dnl
 dnl	configure.in script for Tile World
+dnl
 
 AC_INIT(tworld.c)
 
 test -z "$CC" && CC="gcc"
 test -z "$CFLAGS" && CFLAGS=" -Wall -W -O2 -fomit-frame-pointer"
 test -z "$LDFLAGS" && LDFLAGS=" -Wall -W -s"
-LOADLIBES=""
+
+dnl
+dnl	--with-debug turns on debugging options
+dnl
 
 AC_ARG_WITH(debug,
-	    [  --with-debug           Build with debugging info],
+	    [  --with-debug            Build with debugging info],
 	    [if test $withval = yes ; then
 	       CFLAGS=" -Wall -W -ggdb"
 	       LDFLAGS=" -Wall -W -ggdb"
 	     fi])
 
-cflags=$CFLAGS
-oshwcflags=$CFLAGS
-ldflags=$LDFLAGS
-loadlibes=$LOADLIBES
+LOADLIBES=""
+OSHWCFLAGS=$CFLAGS
+sharedir="$datadir/tworld"
+otherobjs=""
+
+dnl
+dnl	--with-win32 puts some Windows-specific lines in the Makefile
+dnl
+
+AC_ARG_WITH(win32,
+	    [  --with-win32            Set defaults for a windows build],
+	    [if test $withval = yes ; then
+	       sharedir="."
+	       otherobjs=" tworldres.o"
+	     fi])
+
+dnl
+dnl	--with-sharedir=DIR overrides default value of $datadir/tworld
+dnl	for the shared data directory.
+dnl
+
+AC_ARG_WITH(sharedir,
+	    [  --with-sharedir=DIR     Explicitly set the shared data directory],
+	    [sharedir=$withval],
+	    [sharedir="$datadir/tworld"])
+
+dnl
+dnl	--with-sdl selects SDL as the OS/hardware layer.
+dnl	(Currently this is the only OS/hardware layer option.)
+dnl
 
 OSHWDIR="sdl"
+
 AC_ARG_WITH(sdl,
-	    [  --with-sdl             Build SDL version (default)],
+	    [  --with-sdl              Build SDL version (default)],
 	    [if test $withval = yes ; then
 	       OSHWDIR="sdl"
 	     fi])
@@ -39,27 +71,21 @@ if test "$OSHWDIR" = "sdl" ; then
   if test -z "$sdlpresent" ; then
     AC_MSG_ERROR([SDL installation not found.])
   fi
-  oshwcflags=$CFLAGS' $(shell sdl-config --cflags)'
-  loadlibes=$LOADLIBES' $(shell sdl-config --libs)'
+  CFLAGS=$CFLAGS' $(shell sdl-config --cflags)'
+  OSHWCFLAGS=$OSHWCFLAGS' $(shell sdl-config --cflags)'
+  LOADLIBES=$LOADLIBES' $(shell sdl-config --libs)'
 fi
 
-sharedir="$datadir/tworld"
-otherobjs=""
-
-AC_ARG_WITH(win32,
-	    [  --with-win32           Set defaults for a windows build],
-	    [if test $withval = yes ; then
-	       sharedir="."
-	       otherobjs=" tworldres.o"
-	     fi])
+dnl
+dnl	Done with processing.
+dnl
 
 AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(OSHWCFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LOADLIBES)
 AC_SUBST(sharedir)
-AC_SUBST(cflags)
-AC_SUBST(oshwcflags)
-AC_SUBST(ldflags)
-AC_SUBST(loadlibes)
 AC_SUBST(otherobjs)
-AC_SUBST(othercomp)
 
 AC_OUTPUT(Makefile oshw/Makefile)

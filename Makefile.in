@@ -1,12 +1,11 @@
 #
-# Useful standard ./configure options with respect to this Makefile:
+# Useful ./configure options with respect to this Makefile:
+#
 # --prefix=PREFIX
 # --exec_prefix=EXEC_PREFIX
 # --bindir=BINDIR
 # --datadir=DATADIR
 # --with-sharedir=SHAREDIR
-# --with-win32
-# --with-debug
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -15,9 +14,9 @@ sharedir = @sharedir@
 
 CC = @CC@
 
-CFLAGS =@cflags@ '-DROOTDIR="$(sharedir)"'
-LDFLAGS =@ldflags@
-LOADLIBES =@loadlibes@
+CFLAGS =@CFLAGS@ '-DROOTDIR="$(sharedir)"'
+LDFLAGS =@LDFLAGS@
+LOADLIBES =@LOADLIBES@
 
 #
 # End of configure section

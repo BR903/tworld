@@ -1,7 +1,6 @@
 
 CC = @CC@
-
-CFLAGS =@oshwcflags@
+CFLAGS =@OSHWCFLAGS@
 
 OBJS = sdloshw.o sdltimer.o sdlerr.o sdlin.o sdlout.o sdlres.o sdltext.o \
        sdltile.o sdlerr.o

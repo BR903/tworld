@@ -41,8 +41,9 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlsqH] [-DS DIR] [NAME] [LEVEL]\n"
-	"   -D  Read shared data from DIR instead of the default\n"
+	"Usage: tworld [-hvlsqH] [-DRS DIR] [NAME] [LEVEL]\n"
+	"   -D  Read data files from DIR instead of the default\n"
+	"   -R  Read shared resources from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
 	"   -q  Run quietly\n"
 	"   -H  Produce histogram of idle time upon exit\n"
@@ -320,9 +321,10 @@ static void playbackgame(gamespec *gs)
 
 /* Assign values to the different directories that the program uses.
  */
-static void initdirs(char const *root, char const *save)
+static void initdirs(char const *res, char const *series, char const *save)
 {
     unsigned int	maxpath = getpathbufferlen() - 1;
+    char const	       *root = NULL;
     char const	       *dir;
 
     if (!save && (dir = getenv("TWORLDSAVEDIR")) && *dir) {
@@ -332,7 +334,7 @@ static void initdirs(char const *root, char const *save)
 	    warn("Value of environment variable TWORLDSAVEDIR is too long");
     }
 
-    if (!root) {
+    if (!res || !series) {
 	if ((dir = getenv("TWORLDDIR")) && *dir) {
 	    if (strlen(dir) < maxpath - 8)
 		root = dir;
@@ -349,10 +351,16 @@ static void initdirs(char const *root, char const *save)
     }
 
     resdir = getpathbuffer();
-    strcpy(resdir, root);
+    if (res)
+	strcpy(resdir, res);
+    else
+	strcpy(resdir, root);
 
     seriesdir = getpathbuffer();
-    combinepath(seriesdir, root, "data");
+    if (series)
+	strcpy(seriesdir, series);
+    else
+	combinepath(seriesdir, root, "data");
 
     savedir = getpathbuffer();
     if (!save) {
@@ -376,7 +384,8 @@ static void initdirs(char const *root, char const *save)
 static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 {
     cmdlineinfo	opts;
-    char const *optrootdir = NULL;
+    char const *optresdir = NULL;
+    char const *optseriesdir = NULL;
     char const *optsavedir = NULL;
     int		ch, n;
 
@@ -386,7 +395,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listseries = FALSE;
     start->listscores = FALSE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:HS:hlqsv");
+    initoptions(&opts, argc - 1, argv + 1, "D:HR:S:hlqsv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -400,7 +409,8 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    else
 		strncpy(start->filename, opts.val, getpathbufferlen() - 1);
 	    break;
-	  case 'D':	optrootdir = opts.val;				break;
+	  case 'D':	optseriesdir = opts.val;			break;
+	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = TRUE;				break;
 	  case 'q':	silence = TRUE;					break;
@@ -426,7 +436,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	strcpy(start->filename, "chips.dat");
     start->filename[getpathbufferlen() - 1] = '\0';
 
-    initdirs(optrootdir, optsavedir);
+    initdirs(optresdir, optseriesdir, optsavedir);
 
     return TRUE;
 }
