@@ -1237,7 +1237,7 @@ static int choosegameatstartup(gamespec *gs, startupdata const *start)
 	}
 	if (start->listtimes) {
 	    if (!createtimelist(series.list,
-				series.list->ruleset == Ruleset_Lynx,
+				series.list->ruleset == Ruleset_Lynx ? 2 : 1,
 				NULL, NULL, &table))
 		return -1;
 	    freeserieslist(series.list, series.count, &series.table);

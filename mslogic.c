@@ -883,9 +883,13 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    return FALSE;
 	}
 	if (floor == Block_Static) {
-	    if (pushblock(to, dir, !(flags & CMM_NOCOLLAPSEBLOCKS)))
+	    if (pushblock(to, dir, !(flags & CMM_NOCOLLAPSEBLOCKS))) {
+		if (flags & CMM_NOCOLLAPSEBLOCKS) {
+		    if (floorat(to) == Block_Static)
+			return TRUE;
+		}
 		return canmakemove(cr, dir, flags);
-	    else
+	    } else
 		return FALSE;
 	}
     } else if (cr->id == Block) {

@@ -1055,7 +1055,7 @@ static int startmovement(creature *cr, int releasing)
 	_assert(cr->id == Chip);
 	if (cr->dir & dir) {
 	    f1 = canmakemove(cr, cr->dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
-	    f2 = canmakemove(cr, dir ^ cr->dir,
+	    f2 = canmakemove(cr, cr->dir ^ dir,
 			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
 	} else {

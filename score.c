@@ -245,12 +245,28 @@ int createtimelist(gameseries const *series, int showfractions,
 	    ptrs[n++] = untimed;
 	}
 	ptrs[n++] = textheap + used;
-	if (showfractions)
-	    used += 1 + sprintf(textheap + used, "1+%.2f",
-					(double)leveltime / TICKS_PER_SECOND);
-	else
+	switch (showfractions) {
+	  case 0:
 	    used += 1 + sprintf(textheap + used, "1+%ld",
-						leveltime / TICKS_PER_SECOND);
+				leveltime / TICKS_PER_SECOND);
+	    break;
+	  case 1:
+	    if (leveltime < TICKS_PER_SECOND - 1) {
+		leveltime = TICKS_PER_SECOND - leveltime;
+		used += 1 + sprintf(textheap + used, "1+-%ld - .%01ld",
+			      leveltime / TICKS_PER_SECOND,
+			      ((10 * leveltime) / TICKS_PER_SECOND) % 10);
+	    } else {
+		used += 1 + sprintf(textheap + used, "1+%ld - .%01ld",
+			      leveltime / TICKS_PER_SECOND,
+			      9 - ((10 * leveltime) / TICKS_PER_SECOND) % 10);
+	    }
+	    break;
+	  default:
+	    used += 1 + sprintf(textheap + used, "1+%.*f", showfractions,
+				(double)leveltime / TICKS_PER_SECOND);
+	    break;
+	}
 	if (plevellist)
 	    levellist[count] = j;
 	++count;
