@@ -1,41 +1,51 @@
+2001 Oct 05: version 0.6.0
+
+* Rewrote several fundamentals of the MS game logic, in order to bring it
+  more in line with MS's layered map, as well as its treatment of blocks as
+  non-creatures.
+* Made some general changes to the game internals in order to accommodate
+  the above changes.
+* Many tweaks and improvements to the MS game logic.
+* Added the Ctrl-X feature to permit replacement of saved games --
+  something I should have added a long time ago.
+
 2001 Aug 27: version 0.5.1
 
-* Made some changes in the game-saving code to avoid infinite loop
-  that was sometimes happening under Windows.
-* Fixed two bugs in MS game logic identified by Anders Kaesorg. (1.
-  Chip can only attempt to move once per tick -- a failed move still
-  counts. 2. Creatures moving onto the slide list make their first
-  slide move in the same tick.)
-* Made keys and boots transparent under MS logic.
+* Made some changes in the game-saving code to avoid an infinite loop that
+  was sometimes happening under Windows.
+* Fixed two bugs in MS game logic identified by Anders Kaesorg. (1. Chip
+  can only attempt to move once per tick -- a failed move still counts. 2.
+  Creatures moving onto the slide list make their first slide move in the
+  same tick.)
 
 2001 Aug 19: version 0.5
 
 * First alpha version.
-* The SVGAlib layer has been replaced with a much more complete layer
-  for SDL. The program can now be compiled for either X or MS
-  Windows. (All hail SDL and gcc's cross-compiling capabilities!) SDL
-  also works under SVGAlib, but it looks terrible on my hardware.
-* A version of the game logic implementing the MS ruleset (with lots
-  of bugs) has been added. The program can now switch between the two
+* The SVGAlib layer has been replaced with a much more complete layer for
+  SDL. The program can now be compiled for either X or MS Windows. (All
+  hail SDL and gcc's cross-compiling capabilities!) SDL also works under
+  SVGAlib, but it looks terrible on my hardware.
+* A version of the game logic implementing the MS ruleset (with lots of
+  bugs) has been added. The program can now switch between the two
   rulesets.
 * I ripped the entire code base apart and put it back together again
-  (except for the parts that were thrown out). The code is somewhat
-  better organized now.
-* Code was added to select data files, display scores, and lots of
-  little things all over the place.
-* Comments! They're still pretty skeletal, but they're better than
-  what was there before.
+  (except for the parts that were thrown out). The code is somewhat better
+  organized now.
+* Code was added to select data files, display scores, and lots of little
+  things all over the place.
+* Comments! They're still pretty skeletal, but they're better than what was
+  there before.
 
 2001 Jul 15: version 0.1
 
 * The previous game logic has been replaced with a complete game logic
   module for the Lynx ruleset.
-* The SVGAlib layer has been heavily rewritten to do raw keyboard
-  polling and smooth-scrolling.
+* The SVGAlib layer has been heavily rewritten to do raw keyboard polling
+  and smooth-scrolling.
 * Lots of other changes and bug fixes.
 
 2001 May 19: version 0.0
 
 * First limited public release.
-* Most of the basic infrastructure is in place, including a working
-  draft of a game logic module.
+* Most of the basic infrastructure is in place, including a working draft
+  of a game logic module.

@@ -1,8 +1,9 @@
 CC = gcc
-#CFLAGS = -Wall -W -O2
-CFLAGS = -Wall -W -ggdb
+CFLAGS = -Wall -W -O2
+#CFLAGS = -Wall -W -ggdb
 LDLFAGS = -Wall -W
-LOADLIBES = -lefence
+LOADLIBES =
+#LOADLIBES = -lefence
 
 CFLAGS += '-DDATADIR="/usr/local/share/tworld"'
 
