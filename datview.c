@@ -332,7 +332,7 @@ static void makelevelmap(ccmapcell map[32][32],
 
     for (y = 0 ; y < 32 ; ++y) {
 	for (x = 0 ; x < 32 ; ++x) {
-	    if (map2[x][y] && map2[x][y] != map1[x][y]) {
+	    if (map2[x][y]) {
 /*
 		if (!isobject(map1[x][y]) || isobject(map2[x][y]))
 		    printf("!!!! %02d %02d: %02X on %02X\n",
