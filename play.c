@@ -135,12 +135,28 @@ int secondsplayed(void)
 void setgameplaymode(int mode)
 {
     switch (mode) {
-      case BeginPlay:	setkeyboardrepeat(FALSE);	settimer(+1);	break;
-      case SuspendPlay:	setkeyboardrepeat(TRUE);	settimer(0);	break;
-      case ResumePlay:	setkeyboardrepeat(FALSE);	settimer(+1);	break;
-      case EndPlay:	setkeyboardrepeat(TRUE);	settimer(-1);	break;
-      case BeginInput:	setkeyboardinputmode(TRUE);			break;
-      case EndInput:	setkeyboardinputmode(FALSE);			break;
+      case BeginInput:
+	setkeyboardinputmode(TRUE);
+	break;
+      case EndInput:
+	setkeyboardinputmode(FALSE);
+	break;
+      case BeginPlay:
+	setkeyboardrepeat(FALSE);
+	settimer(+1);
+	break;
+      case EndPlay:
+	setkeyboardrepeat(TRUE);
+	settimer(-1);
+	break;
+      case SuspendPlay:
+	setkeyboardrepeat(TRUE);
+	settimer(0);
+	break;
+      case ResumePlay:
+	setkeyboardrepeat(FALSE);
+	settimer(+1);
+	break;
     }
 }
 

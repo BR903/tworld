@@ -716,6 +716,7 @@ static int playgame(gamespec *gs, int firstcmd)
 		break;
 	      case CmdPauseGame:
 		setgameplaymode(SuspendPlay);
+		setdisplaymsg("(paused)", 1, 1);
 		while (input(TRUE) != CmdPauseGame) ;
 		setgameplaymode(ResumePlay);
 		cmd = CmdNone;
@@ -788,6 +789,7 @@ static int playbackgame(gamespec *gs)
 	    break;
 	  case CmdPauseGame:
 	    setgameplaymode(SuspendPlay);
+	    setdisplaymsg("(paused)", 1, 1);
 	    while (input(TRUE) != CmdPauseGame) ;
 	    setgameplaymode(ResumePlay);
 	    break;

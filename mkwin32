@@ -8,6 +8,7 @@ cd build
 mkdir oshw-sdl
 ln -s oshw-sdl oshw
 mkdir resources
+mkdir data
 mkdir sets
 mkdir docs
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
@@ -22,7 +23,6 @@ sh ./cross-make.sh tworld.exe
 /home/breadbox/p/html2txt < ../../Changelog.html > Changelog.txt
 mv COPYING COPYING.txt
 mv -i docs/*.html .
-mkdir data
 mv resources res
 
 VER=`tr -cd 0123456789. < ver.h`

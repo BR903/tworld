@@ -77,9 +77,11 @@ typedef	struct oshwglobals
 
     /* Return a pointer to an image of a cell with the two given
      * tiles. If the top image is transparent, the composite image is
-     * created using the overlay buffer. timerval should hold the time
-     * of the game, for rendering animated cell tiles, or -1 if the
-     * game has not started.
+     * created using the overlay buffer. (Thus the caller should be
+     * done using the image returned before calling this function
+     * again.) timerval should hold the time of the game, for
+     * rendering animated cell tiles, or -1 if the game has not
+     * started.
      */
     Uint32 const* (*getcellimagefunc)(int top, int bot, int timerval);
 
@@ -130,13 +132,6 @@ typedef	struct oshwglobals
     int (*drawtablerowfunc)(tablespec const *table, SDL_Rect *cols,
 			    int *row, int flags);
 
-    /* Display a (very short) message for the given number of
-     * milliseconds. bold indicates the number of milliseconds the
-     * message is with highlighting. After that (if the message is
-     * still visible) it is rendered as normal text.
-     */
-    int (*setdisplaymsgfunc)(char const *msg, int msecs, int bold);
-
 } oshwglobals;
 
 /* oshw's structure of globals.
@@ -154,7 +149,6 @@ extern oshwglobals sdlg;
 #define	scrollmove		(*sdlg.scrollmovefunc)
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
-#define	setdisplaymsg		(*sdlg.setdisplaymsgfunc)
 
 /* The initialization functions for the various modules.
  */

@@ -378,7 +378,7 @@ static void displaymsg(int update)
  * of milliseconds to display the message, and bold specifies the
  * number of milliseconds to display the message highlighted.
  */
-static int _setdisplaymsg(char const *msg, int msecs, int bold)
+int setdisplaymsg(char const *msg, int msecs, int bold)
 {
     if (!msg || !*msg) {
 	*msgdisplay.msg = '\0';
@@ -906,8 +906,6 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(void)
 {
-    sdlg.setdisplaymsgfunc = _setdisplaymsg;
-
     screenw = 640;
     screenh = 480;
     promptloc.x = screenw - MARGINW - PROMPTICONW;

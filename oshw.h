@@ -152,6 +152,13 @@ extern int displaygame(void const *state, int timeleft, int besttime);
 extern int displayendmessage(int basescore, int timescore, int totalscore,
 			     int completed);
 
+/* Display a (very short) message for the given number of
+ * milliseconds. bold indicates the number of milliseconds the
+ * message is with highlighting. After that (if the message is
+ * still visible) it is rendered as normal text.
+ */
+extern int setdisplaymsg(char const *msg, int msecs, int bold);
+
 /* Display a scrollable table. title provides a title to display. The
  * table's first row provides a set of column headers which will not
  * scroll. index points to the index of the item to be initially
