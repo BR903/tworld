@@ -959,10 +959,10 @@ static int runcurrentlevel(gamespec *gs)
 	if (cmd != CmdNone) {
 	    if (valid) {
 		switch (gs->playmode) {
-		case Play_None:		f = FALSE;			break;
-		case Play_Normal:	f = playgame(gs, cmd);		break;
-		case Play_Back:		f = playbackgame(gs);		break;
-		case Play_Verify:	f = verifyplayback(gs);		break;
+		  case Play_Normal:	f = playgame(gs, cmd);		break;
+		  case Play_Back:	f = playbackgame(gs);		break;
+		  case Play_Verify:	f = verifyplayback(gs);		break;
+		  default:		f = FALSE;			break;
 		}
 		if (f)
 		    ret = endinput(gs);
