@@ -17,36 +17,52 @@
  */
 #define	NTILES		128
 
-#define	SIZE_EXTLEFT	0x01
-#define	SIZE_EXTRIGHT	0x02
-#define	SIZE_EXTUP	0x04
-#define	SIZE_EXTDOWN	0x08
-#define	SIZE_EXTALL	0x0F
+/* Flags that indicate the size and shape of an oversized
+ * (transparent) tile image.
+ */
+#define	SIZE_EXTLEFT	0x01	/* image extended leftwards by one tile */
+#define	SIZE_EXTRIGHT	0x02	/* image extended rightwards by one tile */
+#define	SIZE_EXTUP	0x04	/* image extended upwards by one tile */
+#define	SIZE_EXTDOWN	0x08	/* image extended downards by one tile */
+#define	SIZE_EXTALL	0x0F	/* image is 3x3 tiles in size */
 
+/* Structure providing pointers to the various tile images available
+ * for a given id.
+ */
 typedef	struct tilemap {
-    Uint32     *opaque;
-    Uint32     *transp[16];
-    char	celcount;
-    char	transpsize;
+    Uint32     *opaque;		/* ptr to an opaque image */
+    Uint32     *transp[16];	/* ptr to one or more transparent images */
+    char	celcount;	/* count of animated transparent images */
+    char	transpsize;	/* SIZE_* flags for the transparent size */
 } tilemap;
 
-typedef	struct shorttileidmap {
-    short	opaque;
-    short	transp;
-    char	celcount;
-    char	transpsize;
-} shorttileidmap;
-
+/* Structure indicating where to find the various tile images in a
+ * fixed-form tile bitmap.
+ */
 typedef	struct tileidmap {
-    signed char	xopaque;
-    signed char	yopaque;
-    signed char	xtransp;
-    signed char	ytransp;
-    signed char	xceloff;
-    signed char	yceloff;
-    signed char	celcount;
-    char	transpsize;
+    signed char	xopaque;	/* the coordinates of the opaque image */
+    signed char	yopaque;	/*   (expressed in tiles, not pixels) */
+    signed char	xtransp;	/* coordinates of the transparent image */
+    signed char	ytransp;	/*   (or the first image if animated) */
+    signed char	xceloff;	/* offset to the next transparent image */
+    signed char	yceloff;	/*   if image is animated */
+    signed char	celcount;	/* count of animated transparent images */
+    char	transpsize;	/* SIZE_* flags for the transparent size */
 } tileidmap;
+
+/* Information describing the overall layout of a fixed-form tile
+ * bitmap. All coordinates are expressed in tiles.
+ */
+typedef	struct imagelayout {
+    int		wtiles;		/* width of the main image */
+    int		htiles;		/* height of the main image */
+    int		xmask;		/* coordinates of the mask image */
+    int		ymask;
+    int		wmask;		/* width of the mask image */
+    int		hmask;		/* height of the mask image */
+    int		xmaskdest;	/* coordinates of the tiles to be masked */
+    int		ymaskdest;
+} imagelayout;
 
 static tileidmap const small_tileidmap[NTILES] = {
 /* Nothing		*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
@@ -176,7 +192,7 @@ static tileidmap const small_tileidmap[NTILES] = {
 /* Water_Splash		*/ {  3,  3, -1, -1, 0, 0, 0, 0 },
 /* Dirt_Splash		*/ {  3,  7, -1, -1, 0, 0, 0, 0 },
 /* Bomb_Explosion	*/ {  3,  6, -1, -1, 0, 0, 0, 0 },
-/* Animation_Reserved	*/ { -1, -1, -1, -1, 0, 0, 0, 0 }
+/* Animation_Reserved1	*/ { -1, -1, -1, -1, 0, 0, 0, 0 }
 };
 
 static tileidmap const large_tileidmap[NTILES] = {
@@ -234,13 +250,13 @@ static tileidmap const large_tileidmap[NTILES] = {
 /* Boots_Slide		*/ {  3, 11,  3,  9, 0, 0, 1, 0 },
 /* Boots_Fire		*/ {  3,  9,  3, 10, 0, 0, 1, 0 },
 /* Boots_Water		*/ {  3,  8,  3, 11, 0, 0, 1, 0 },
-/* Block_Static		*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
+/* Block_Static		*/ {  8,  2, -1, -1, 0, 0, 0, 0 },
 /* Burned_Chip		*/ {  0,  2, -1, -1, 0, 0, 0, 0 },
 /* Bombed_Chip		*/ {  0,  3, -1, -1, 0, 0, 0, 0 },
 /* Exited_Chip		*/ {  0,  4, -1, -1, 0, 0, 0, 0 },
 /* Exit_Extra_1		*/ {  0,  5, -1, -1, 0, 0, 0, 0 },
 /* Exit_Extra_2		*/ {  0,  6, -1, -1, 0, 0, 0, 0 },
-/* Overlay_Buffer	*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
+/* Overlay_Buffer	*/ {  0,  0, -1, -1, 0, 0, 0, 0 },
 /* Floor_Reserved3	*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
 /* Floor_Reserved2	*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
 /* Floor_Reserved1	*/ { -1, -1, -1, -1, 0, 0, 0, 0 },
@@ -312,11 +328,31 @@ static tileidmap const large_tileidmap[NTILES] = {
 
 static Uint32	       *cctiles = NULL;
 static tilemap		tileptr[NTILES];
-static int		useanimation = FALSE;
 
 /*
  * Functions for obtaining tile images.
  */
+
+static void addtransparenttile(Uint32 *dest, int id)
+{
+    Uint32     *src;
+    int		w, x, y;
+
+    src = tileptr[id].transp[0];
+    w = sdlg.wtile;
+    if (tileptr[id].transpsize & SIZE_EXTRIGHT)
+	w += sdlg.wtile;
+    if (tileptr[id].transpsize & SIZE_EXTLEFT) {
+	src += sdlg.wtile;
+	w += sdlg.wtile;
+    }
+    if (tileptr[id].transpsize & SIZE_EXTUP)
+	src += sdlg.htile * w;
+    for (y = sdlg.htile ; y ; --y, src += w, dest += sdlg.wtile)
+	for (x = 0 ; x < sdlg.wtile ; ++x)
+	    if (src[x] != sdlg.transpixel)
+		dest[x] = src[x];
+}
 
 /* Return a pointer to a specific tile image.
  */
@@ -342,7 +378,7 @@ static Uint32 const *_getcreatureimage(SDL_Rect *rect,
     rect->h = sdlg.htile;
     q = tileptr + id + diridx(dir);
 
-    if (useanimation) {
+    if (q->celcount > 1) {
 	if (moving / 2 >= q->celcount)
 	    die("requested cel #%d from a %d-cel sequence (%d+%d)",
 		moving / 2, q->celcount, id, diridx(dir));
@@ -378,20 +414,27 @@ static Uint32 const *_getcreatureimage(SDL_Rect *rect,
  */
 static Uint32 const *_getcellimage(int top, int bot, int timerval)
 {
-    Uint32     *src;
-    Uint32     *dest;
-    int		n;
+    static Uint32      *opaquetile = NULL;
+    Uint32	       *dest;
 
     (void)timerval;
-    if (bot == Nothing || bot == Empty || !tileptr[top].transp[0])
-	return tileptr[top].opaque;
-    src = tileptr[bot].opaque;
+    if (bot == Nothing || bot == Empty || !tileptr[top].transp[0]) {
+	if (tileptr[top].opaque)
+	    return tileptr[top].opaque;
+	if (!opaquetile)
+	    xalloc(opaquetile, sdlg.cbtile);
+	memcpy(opaquetile, tileptr[Empty].opaque, sdlg.cbtile);
+	addtransparenttile(opaquetile, top);
+	return opaquetile;
+    }
     dest = tileptr[Overlay_Buffer].opaque;
-    memcpy(dest, src, sdlg.cbtile);
-    src = tileptr[top].transp[0];
-    for (n = 0 ; n < sdlg.cptile ; ++n)
-	if (src[n] != (Uint32)sdlg.transpixel)
-	    dest[n] = src[n];
+    if (tileptr[bot].opaque)
+	memcpy(dest, tileptr[bot].opaque, sdlg.cbtile);
+    else {
+	memcpy(dest, tileptr[Empty].opaque, sdlg.cbtile);
+	addtransparenttile(dest, bot);
+    }
+    addtransparenttile(dest, top);
     return dest;
 }
 
@@ -399,7 +442,8 @@ static Uint32 const *_getcellimage(int top, int bot, int timerval)
  *
  */
 
-/*
+/* Translate the given surface to one with the same color layout as
+ * the display surface.
  */
 static SDL_Surface *copytilesto32(SDL_Surface *src, int wset, int hset)
 {
@@ -429,7 +473,7 @@ static SDL_Surface *copytilesto32(SDL_Surface *src, int wset, int hset)
     return dest;
 }
 
-/*
+/* Extract the mask section of the given image to an 8-bit surface.
  */
 static SDL_Surface *extractmask(SDL_Surface *src,
 				int xmask, int ymask, int wmask, int hmask)
@@ -458,57 +502,46 @@ static SDL_Surface *extractmask(SDL_Surface *src,
     return mask;
 }
 
-/* First, the tiles are transferred from the bitmap surface to a
- * 32-bit surface. Then, the mask is applied, setting the transparent
- * pixels.  Finally, the tiles are individually transferred to a
- * one-dimensional array.
+/* Individually transfer the tiles to a one-dimensional array. If mask
+ * is NULL, then magenta pixels in the mask area are made transparent.
  */
-static int initsmalltileset(SDL_Surface *bmp, int wset, int hset,
-			    int xmask, int ymask, int wmask, int hmask,
+static int initsmalltileset(SDL_Surface *tiles, int wset, int hset,
+			    SDL_Surface *maskimage, int wmask, int hmask,
 			    int xmaskdest, int ymaskdest)
 {
-    SDL_Surface	       *temp;
-    SDL_Surface	       *masktemp;
     Uint8	       *mask;
     Uint32	       *src;
     Uint32	       *dest;
     Uint32		magenta;
     int			x, y, n;
 
-    temp = copytilesto32(bmp, wset, hset);
-    if (!temp)
-	die("couldn't create temporary tile surface: %s", SDL_GetError());
-    if (SDL_MUSTLOCK(temp))
-	SDL_LockSurface(temp);
+    if (SDL_MUSTLOCK(tiles))
+	SDL_LockSurface(tiles);
 
-    if (xmask >= 0 && ymask >= 0) {
-	masktemp = extractmask(bmp, xmask, ymask, wmask, hmask);
-	if (!masktemp)
-	    die("couldn't create temporary mask surface: %s", SDL_GetError());
-	if (SDL_MUSTLOCK(masktemp))
-	    SDL_LockSurface(masktemp);
-	mask = (Uint8*)masktemp->pixels;
-	dest = (Uint32*)((char*)temp->pixels + ymaskdest * temp->pitch);
+    if (maskimage) {
+	if (SDL_MUSTLOCK(maskimage))
+	    SDL_LockSurface(maskimage);
+	mask = (Uint8*)maskimage->pixels;
+	dest = (Uint32*)((char*)tiles->pixels + ymaskdest * tiles->pitch);
 	dest += xmaskdest * sdlg.wtile;
 	for (y = 0 ; y < hmask * sdlg.htile ; ++y) {
 	    for (x = 0 ; x < wmask * sdlg.wtile ; ++x)
 		if (!mask[x])
 		    dest[x] = (Uint32)sdlg.transpixel;
-	    mask = (Uint8*)((char*)mask + masktemp->pitch);
-	    dest = (Uint32*)((char*)dest + temp->pitch);
+	    mask = (Uint8*)((char*)mask + maskimage->pitch);
+	    dest = (Uint32*)((char*)dest + tiles->pitch);
 	}
-	if (SDL_MUSTLOCK(masktemp))
-	    SDL_UnlockSurface(masktemp);
-	SDL_FreeSurface(masktemp);
+	if (SDL_MUSTLOCK(maskimage))
+	    SDL_UnlockSurface(maskimage);
     } else {
-	magenta = SDL_MapRGB(temp->format, 255, 0, 255);
-	dest = (Uint32*)((char*)temp->pixels + ymaskdest * temp->pitch);
+	magenta = SDL_MapRGB(tiles->format, 255, 0, 255);
+	dest = (Uint32*)((char*)tiles->pixels + ymaskdest * tiles->pitch);
 	dest += xmaskdest * sdlg.wtile;
 	for (y = 0 ; y < hmask * sdlg.htile ; ++y) {
 	    for (x = 0 ; x < wmask * sdlg.wtile ; ++x)
 		if (dest[x] == magenta)
 		    dest[x] = sdlg.transpixel;
-	    dest = (Uint32*)((char*)dest + temp->pitch);
+	    dest = (Uint32*)((char*)dest + tiles->pitch);
 	}
     }
 
@@ -517,16 +550,15 @@ static int initsmalltileset(SDL_Surface *bmp, int wset, int hset,
     dest = cctiles;
     for (x = 0 ; x < wset * sdlg.wtile ; x += sdlg.wtile) {
 	for (y = 0 ; y < hset * sdlg.htile ; y += sdlg.htile) {
-	    src = (Uint32*)((char*)temp->pixels + y * temp->pitch) + x;
+	    src = (Uint32*)((char*)tiles->pixels + y * tiles->pitch) + x;
 	    for (n = sdlg.htile ; n ; --n, dest += sdlg.wtile) {
 		memcpy(dest, src, sdlg.wtile * sizeof *dest);
-		src = (Uint32*)((char*)src + temp->pitch);
+		src = (Uint32*)((char*)src + tiles->pitch);
 	    }
 	}
     }
-    if (SDL_MUSTLOCK(temp))
-	SDL_UnlockSurface(temp);
-    SDL_FreeSurface(temp);
+    if (SDL_MUSTLOCK(tiles))
+	SDL_UnlockSurface(tiles);
 
     for (n = 0 ; n < NTILES ; ++n) {
 	if (small_tileidmap[n].xopaque >= 0)
@@ -547,7 +579,6 @@ static int initsmalltileset(SDL_Surface *bmp, int wset, int hset,
 	tileptr[n].transpsize = 0;
     }
 
-    useanimation = FALSE;
     return TRUE;
 }
 
@@ -557,21 +588,17 @@ static int initsmalltileset(SDL_Surface *bmp, int wset, int hset,
 
 /*
  */
-static int initlargetileset(SDL_Surface *bmp, int wset, int hset)
+static int initlargetileset(SDL_Surface *tiles)
 {
-    SDL_Surface	       *temp;
     Uint32	       *src;
     Uint32	       *dest;
     Uint32		magenta;
     int			x, y, w, h, z;
     int			i, j, n;
 
-    temp = copytilesto32(bmp, wset, hset);
-    if (!temp)
-	die("couldn't create temporary tile surface: %s", SDL_GetError());
-    magenta = SDL_MapRGB(temp->format, 255, 0, 255);
-    if (SDL_MUSTLOCK(temp))
-	SDL_LockSurface(temp);
+    magenta = SDL_MapRGB(tiles->format, 255, 0, 255);
+    if (SDL_MUSTLOCK(tiles))
+	SDL_LockSurface(tiles);
 
     n = 0;
     for (i = 0 ; i < NTILES ; ++i) {
@@ -600,12 +627,12 @@ static int initlargetileset(SDL_Surface *bmp, int wset, int hset)
 	if (large_tileidmap[n].xopaque >= 0) {
 	    x = large_tileidmap[n].xopaque * sdlg.wtile;
 	    y = large_tileidmap[n].yopaque * sdlg.htile;
-	    src = (Uint32*)((char*)temp->pixels + y * temp->pitch) + x;
+	    src = (Uint32*)((char*)tiles->pixels + y * tiles->pitch) + x;
 	    tileptr[n].opaque = dest;
 	    for (j = 0 ; j < sdlg.htile ; ++j, dest += sdlg.wtile) {
 		for (i = 0 ; i < sdlg.wtile ; ++i)
 		    dest[i] = src[i] == magenta ? sdlg.transpixel : src[i];
-		src = (Uint32*)((char*)src + temp->pitch);
+		src = (Uint32*)((char*)src + tiles->pitch);
 	    }
 	} else {
 	    tileptr[n].opaque = NULL;
@@ -627,11 +654,11 @@ static int initlargetileset(SDL_Surface *bmp, int wset, int hset)
 	    tileptr[n].transpsize = large_tileidmap[n].transpsize;
 	    for (z = large_tileidmap[n].celcount ; z ; --z) {
 		tileptr[n].transp[z - 1] = dest;
-		src = (Uint32*)((char*)temp->pixels + y * temp->pitch) + x;
+		src = (Uint32*)((char*)tiles->pixels + y * tiles->pitch) + x;
 		for (j = 0 ; j < h ; ++j, dest += w) {
 		    for (i = 0 ; i < w ; ++i)
 			dest[i] = src[i] == magenta ? sdlg.transpixel : src[i];
-		    src = (Uint32*)((char*)src + temp->pitch);
+		    src = (Uint32*)((char*)src + tiles->pitch);
 		}
 		x += large_tileidmap[n].xceloff * sdlg.wtile;
 		y += large_tileidmap[n].yceloff * sdlg.htile;
@@ -640,11 +667,9 @@ static int initlargetileset(SDL_Surface *bmp, int wset, int hset)
 	    tileptr[n].celcount = large_tileidmap[n].celcount;
 	}
     }
-    if (SDL_MUSTLOCK(temp))
-	SDL_UnlockSurface(temp);
-    SDL_FreeSurface(temp);
+    if (SDL_MUSTLOCK(tiles))
+	SDL_UnlockSurface(tiles);
 
-    useanimation = TRUE;
     return TRUE;
 }
 
@@ -665,9 +690,11 @@ void freetileset(void)
 
 int loadtileset(char const *filename, int complain)
 {
-    SDL_Surface	       *bmp;
+    SDL_Surface	       *bmp = NULL;
+    SDL_Surface	       *tiles = NULL;
+    SDL_Surface	       *mask = NULL;
+    imagelayout		layout;
     int			large;
-    int			xmask, ymask;
     int			x, y;
 
     bmp = SDL_LoadBMP(filename);
@@ -680,18 +707,38 @@ int loadtileset(char const *filename, int complain)
     if (bmp->w % 37 == 0 && bmp->h % 21 == 0) {
 	x = bmp->w / 37;
 	y = bmp->h / 21;
-	xmask = ymask = -1;
+	layout.wtiles = 37;
+	layout.htiles = 21;
+	layout.xmask = -1;
+	layout.ymask = -1;
+	layout.wmask = 0;
+	layout.hmask = 0;
+	layout.xmaskdest = -1;
+	layout.ymaskdest = -1;
 	large = TRUE;
     } else if (bmp->w % 13 == 0 && bmp->h % 16 == 0) {
 	x = bmp->w / 13;
 	y = bmp->h / 16;
-	xmask = 10;
-	ymask = 0;
+	layout.wtiles = 10;
+	layout.htiles = 16;
+	layout.xmask = 10;
+	layout.ymask = 0;
+	layout.wmask = 3;
+	layout.hmask = 16;
+	layout.xmaskdest = 7;
+	layout.ymaskdest = 0;
 	large = FALSE;
     } else if (bmp->w % 10 == 0 && bmp->h % 16 == 0) {
 	x = bmp->w / 10;
 	y = bmp->h / 16;
-	xmask = ymask = -1;
+	layout.wtiles = 10;
+	layout.htiles = 16;
+	layout.xmask = -1;
+	layout.ymask = -1;
+	layout.wmask = 3;
+	layout.hmask = 16;
+	layout.xmaskdest = 7;
+	layout.ymaskdest = 0;
 	large = FALSE;
     } else {
 	errmsg(filename, "image file has invalid dimensions");
@@ -708,19 +755,47 @@ int loadtileset(char const *filename, int complain)
     sdlg.cptile = x * y;
     sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
 
-    if (large) {
-	if (!initlargetileset(bmp, 37, 21))
+    tiles = copytilesto32(bmp, layout.wtiles, layout.htiles);
+    if (!tiles) {
+	errmsg(filename, "couldn't create temporary tile surface: %s",
+			 SDL_GetError());
+	goto failure;
+    }
+    if (layout.xmask >= 0) {
+	mask = extractmask(bmp, layout.xmask, layout.ymask,
+				layout.wmask, layout.hmask);
+	if (!mask) {
+	    errmsg(filename, "couldn't create temporary mask surface: %s",
+			     SDL_GetError());
 	    goto failure;
-    } else {
-	if (!initsmalltileset(bmp, 10, 16, xmask, ymask, 3, 16, 7, 0))
-	    goto failure;
+	}
     }
 
     SDL_FreeSurface(bmp);
+    bmp = NULL;
+
+    if (large) {
+	if (!initlargetileset(tiles))
+	    goto failure;
+    } else {
+	if (!initsmalltileset(tiles, layout.wtiles, layout.htiles,
+			      mask,  layout.wmask, layout.hmask,
+				     layout.xmaskdest, layout.ymaskdest))
+	    goto failure;
+    }
+
+    SDL_FreeSurface(tiles);
+    if (mask)
+	SDL_FreeSurface(mask);
     return TRUE;
 
   failure:
-    SDL_FreeSurface(bmp);
+    if (bmp)
+	SDL_FreeSurface(bmp);
+    if (tiles)
+	SDL_FreeSurface(tiles);
+    if (mask)
+	SDL_FreeSurface(mask);
     return FALSE;
 }
 
