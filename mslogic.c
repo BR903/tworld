@@ -5,6 +5,7 @@
  */
 
 #include	<stdlib.h>
+#include	<string.h>
 #include	"defs.h"
 #include	"err.h"
 #include	"state.h"
@@ -646,9 +647,6 @@ static void turntanks(creature const *inmidmove)
 
     for (n = 0 ; n < creaturecount ; ++n) {
 	if (creatures[n]->hidden || creatures[n]->id != Tank)
-	    continue;
-	if (cellat(creatures[n]->pos)->bot.id == CloneMachine
-				&& !(creatures[n]->state & CS_CLONING))
 	    continue;
 	creatures[n]->dir = back(creatures[n]->dir);
 	if (!(creatures[n]->state & CS_TURNING))
