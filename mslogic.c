@@ -2038,6 +2038,7 @@ static int initgame(gamelogic *logic)
     dummycrlist.id = 0;
     state->creatures = &dummycrlist;
     state->initrndslidedir = NORTH;
+    state->statusflags |= SF_NOANIMATION;
 
     chipsneeded() = game->chips;
     possession(Key_Red) = possession(Key_Blue)

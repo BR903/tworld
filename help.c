@@ -227,11 +227,13 @@ void onlinehelp(int topic)
 	}
 	switch (topic) {
 	  case Help_KeysDuringGame:
-	    displaytable("KEYS", keyboardhelp(KEYHELP_INGAME), -1);
+	    displaytable("KEYS - DURING THE GAME",
+			 keyboardhelp(KEYHELP_INGAME), -1);
 	    anykey();
 	    break;
 	  case Help_KeysBetweenGames:
-	    displaytable("KEYS", keyboardhelp(KEYHELP_TWIXTGAMES), -1);
+	    displaytable("KEYS - INBETWEEN GAMES",
+			 keyboardhelp(KEYHELP_TWIXTGAMES), -1);
 	    anykey();
 	    break;
 	  case Help_ObjectsOfGame:

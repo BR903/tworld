@@ -52,7 +52,7 @@ vanishes, and the block never does.
 Chip enters a teleport, and at the teleport Chip exits, there is a
 block on top of another block. In the real game, the top block is
 pushed off, leaving the bottom block behind, intact. Chip reappears at
-the new teleport, but then bounces back, being unable to push a row of
+the new teleport, but then bounces back, since he can't push a row of
 two blocks. In TW, the blocks are pushed and preserved correctly, but
 Chip does not make it to the latter teleport (instead he either
 proceeds to a different teleport or bounces back from the original
@@ -70,8 +70,8 @@ the creatures move and once after Chip moves), but just does it once.
 In a few places this has a non-trivial effect on how the game appears,
 most notably when Chip tries to move against a force floor. I do not
 believe that this optimization ever has an real effect on the
-gameplay, however. It is still a bit of an open question in my mind,
-however, which is why it is mentioned here.
+gameplay. It is still a bit of an open question in my mind, however,
+which is why it is mentioned here.
 </ol>
 <p>
 <hr>
@@ -135,6 +135,10 @@ TODO: Missing features
 Animated tiles, for display under the Lynx ruleset, has yet to be
 completed. Ways to organize the images in a single bitmap, and to keep
 them loaded without requiring excessive memory, need to be chosen.
+<li>
+The program needs to have some kind of end-sequence when Chip dies.
+Likewise, some kind of end-sequence is needed when the last level of a
+set is completed.
 </ol>
 </body>
 </html>

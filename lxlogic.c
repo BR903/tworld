@@ -27,7 +27,10 @@
 #define	SF_COULDNTMOVE		0x0002	/* can't-move sound has been played */
 #define	SF_CHIPPUSHING		0x0004	/* Chip is pushing against something */
 
-static int advancecreature(creature *cr, int oob);
+/* Declarations of (indirectly recursive) functions.
+ */
+static int canmakemove(creature const *cr, int dir, int flags);
+static int advancecreature(creature *cr, int releasing);
 
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
@@ -506,25 +509,47 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     { 0, 0, 0 }
 };
 
-static int canpushblock(creature *block, int dir, int noreally);
-
-/* Return TRUE if the given creature is allowed to attempt to move in
- * the given direction. A TRUE value for releasing indicates that the
- * creature in question is being moved out of a beartrap or clone
- * machine, and thus might be able to make a move that would normally
- * be forbidden. noreally defines how accurate a check is needed. A
- * value of zero indicates that the check should not have any side
- * effects. A value of one permits the check to have side effects only
- * if the move cannot be made. A value of two permits any side effects
- * which might be necessary to determine a correct answer. (The
- * possible side effects are exposing a blue/hidden wall, and causing
- * a block to be pushed.)
+/* Including the flag CMM_RELEASING in a call to canmakemove indicates
+ * that the creature in question is being moved out of a beartrap or
+ * clone machine, moves that would normally be forbidden.
+ * CMM_EXPOSEWALLS causes blue and hidden walls to be exposed in the
+ * case of Chip. CMM_PUSHBLOCKS causes blocks to be pushed when in the
+ * way of Chip.
  */
-
 #define	CMM_EXPOSEWALLS		0x0001
 #define	CMM_PUSHBLOCKS		0x0002
 #define	CMM_RELEASING		0x0004
 
+/* Return TRUE if the given block is allowed to be moved in the given
+ * direction. If flags includes CMM_PUSHBLOCKS, then the indicated
+ * movement of the block will be initiated.
+ */
+static int canpushblock(creature *block, int dir, int flags)
+{
+    assert(block && block->id == Block);
+    assert(floorat(block->pos) != CloneMachine);
+    assert(dir != NIL);
+
+    if (!canmakemove(block, dir, flags)) {
+	if (!block->moving && (flags & CMM_PUSHBLOCKS))
+	    block->dir = dir;
+	return FALSE;
+    }
+    if (flags & CMM_PUSHBLOCKS) {
+	block->tdir = dir;
+	if (advancecreature(block, FALSE)) {
+	    setpushing();
+	    addsoundeffect(SND_BLOCK_MOVING);
+	    block->state |= CS_NOISYMOVEMENT;
+	}
+    }
+
+    return TRUE;
+}
+
+/* Return TRUE if the given creature is allowed to attempt to move in
+ * the given direction.
+ */
 static int canmakemove(creature const *cr, int dir, int flags)
 {
     creature   *other;
@@ -592,30 +617,6 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    return FALSE;
 	if (floorto == Fire && cr->id != Fireball)
 	    return FALSE;
-    }
-
-    return TRUE;
-}
-
-/* Return TRUE if the given block is allowed to be moved in the given
- * direction. If noreally is two or more, then the indicated movement
- * of the block will be initiated.
- */
-static int canpushblock(creature *block, int dir, int flags)
-{
-    assert(block && block->id == Block);
-    assert(floorat(block->pos) != CloneMachine);
-    assert(dir != NIL);
-
-    if (!canmakemove(block, dir, flags))
-	return FALSE;
-    if (flags & CMM_PUSHBLOCKS) {
-	block->tdir = dir;
-	if (advancecreature(block, FALSE)) {
-	    setpushing();
-	    addsoundeffect(SND_BLOCK_MOVING);
-	    block->state |= CS_NOISYMOVEMENT;
-	}
     }
 
     return TRUE;
@@ -938,13 +939,12 @@ static int startmovement(creature *cr, int releasing)
     if (cr->id != Chip)
 	removeclaim(cr->pos);
     cr->pos += delta[dir];
+    if (ismarkedanimated(cr->pos))
+	stopanimation(cr->pos);
     if (cr->id != Chip)
 	claimlocation(cr->pos);
 
     cr->moving += 8;
-
-    if (ismarkedanimated(cr->pos))
-	stopanimation(cr->pos);
 
     if (cr->id != Chip && cr->pos == chippos()) {
 	chip = getchip();
@@ -1304,7 +1304,7 @@ static void initialhousekeeping(void)
     verifymap();
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (isanimation(cr->id) && cr->moving <= 0)
+	if (!cr->hidden && isanimation(cr->id) && cr->moving <= 0)
 	    removecreature(cr);
 	if (cr->state & CS_NOISYMOVEMENT) {
 	    if (cr->hidden || cr->moving <= 0) {
