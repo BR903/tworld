@@ -1150,7 +1150,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     soundbufsize = 0;
     volumelevel = -1;
 
-    initoptions(&opts, argc - 1, argv + 1, "aD:dFfHhL:lm:n:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dFfHhL:lm:n:pqR:rS:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1173,6 +1173,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'F':	fullscreen = !fullscreen;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
+	  case 'r':	readonly = !readonly;				break;
 	  case 'a':	++soundbufsize;					break;
 	  case 'd':	listdirs = TRUE;				break;
 	  case 'l':	start->listseries = TRUE;			break;
