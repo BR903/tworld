@@ -5,7 +5,7 @@ dnl
 AC_INIT(tworld.c)
 
 test -z "$CC" && CC="gcc"
-test -z "$CFLAGS" && CFLAGS=" -Wall -W -O2 -fomit-frame-pointer"
+test -z "$CFLAGS" && CFLAGS=" -Wall -W -O2 -fomit-frame-pointer -DNDEBUG"
 test -z "$LDFLAGS" && LDFLAGS=" -Wall -W -s"
 
 dnl
