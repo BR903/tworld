@@ -212,6 +212,8 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 	      default:
 		return fileerr(file, "unrecognized field in data file");
 	    }
+	    free(data);
+	    data = NULL;
 	}
     }
     if (levelsize)
