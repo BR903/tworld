@@ -1,19 +1,21 @@
 #
 # Useful standard ./configure options with respect to this Makefile:
-# --prefix
-# --exec_prefix
-# --bindir
-# --datadir
+# --prefix=PREFIX
+# --exec_prefix=EXEC_PREFIX
+# --bindir=BINDIR
+# --datadir=DATADIR
+# --with-sharedir=SHAREDIR
+# --with-win32
+# --with-debug
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-datadir = @datadir@/tworld
-#win32: datadir = .
+sharedir = @sharedir@
 
 CC = @CC@
 
-CFLAGS =@cflags@ '-DROOTDIR="$(datadir)"'
+CFLAGS =@cflags@ '-DROOTDIR="$(sharedir)"'
 LDFLAGS =@ldflags@
 LOADLIBES =@loadlibes@
 
@@ -23,9 +25,7 @@ LOADLIBES =@loadlibes@
 
 OBJS = \
 tworld.o series.o play.o solution.o res.o lxlogic.o mslogic.o help.o score.o \
-random.o cmdline.o fileio.o err.o liboshw.a
-
-#win32:OBJS += tworldres.o
+random.o cmdline.o fileio.o err.o liboshw.a@otherobjs@
 
 tworld: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
@@ -46,11 +46,11 @@ cmdline.o  : cmdline.c cmdline.h gen.h
 fileio.o   : fileio.c fileio.h defs.h gen.h err.h
 err.o      : err.c oshw.h err.h
 
-#win32:tworldres.o: tworld.ico
-#win32:	echo 1 ICON $^ | windres -o $@
-
 liboshw.a: oshw.h defs.h gen.h state.h err.h oshw/*.c oshw/*.h
 	(cd oshw && make)
+
+tworldres.o: tworld.ico
+	echo 1 ICON $^ | windres -o $@
 
 mklynxcc: mklynxcc.c
 	$(CC) -Wall -W -o $@ $^
@@ -64,5 +64,5 @@ clean:
 
 install: tworld
 	cp -i ./tworld $(bindir)/.
-	mkdir -p $(datadir)/data
-	cp -i ./rc ./*.bmp $(datadir)/.
+	mkdir -p $(sharedir)/data
+	cp -i ./rc ./*.bmp $(sharedir)/.

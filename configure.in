@@ -8,11 +8,11 @@ test -z "$LDFLAGS" && LDFLAGS=" -Wall -W -s"
 LOADLIBES=""
 
 AC_ARG_WITH(debug,
-	[  --with-debug           Build with debugging info],
-	[if test $withval = yes ; then
-	   CFLAGS=" -Wall -W -ggdb"
-	   LDFLAGS=" -Wall -W -ggdb"
-	 fi])
+	    [  --with-debug           Build with debugging info],
+	    [if test $withval = yes ; then
+	       CFLAGS=" -Wall -W -ggdb"
+	       LDFLAGS=" -Wall -W -ggdb"
+	     fi])
 
 cflags=$CFLAGS
 oshwcflags=$CFLAGS
@@ -21,10 +21,10 @@ loadlibes=$LOADLIBES
 
 OSHWDIR="sdl"
 AC_ARG_WITH(sdl,
-	[  --with-sdl             Build SDL version (default)],
-	[if test $withval = yes ; then
-	   OSHWDIR="sdl"
-	 fi])
+	    [  --with-sdl             Build SDL version (default)],
+	    [if test $withval = yes ; then
+	       OSHWDIR="sdl"
+	     fi])
 
 if test -d "oshw-$OSHWDIR" ; then
   echo using $OSHWDIR for OS/hardware layer ...
@@ -43,11 +43,23 @@ if test "$OSHWDIR" = "sdl" ; then
   loadlibes=$LOADLIBES' $(shell sdl-config --libs)'
 fi
 
+sharedir="$datadir/tworld"
+otherobjs=""
+
+AC_ARG_WITH(win32,
+	    [  --with-win32           Set defaults for a windows build],
+	    [if test $withval = yes ; then
+	       sharedir="."
+	       otherobjs=" tworldres.o"
+	     fi])
 
 AC_SUBST(CC)
+AC_SUBST(sharedir)
 AC_SUBST(cflags)
 AC_SUBST(oshwcflags)
 AC_SUBST(ldflags)
 AC_SUBST(loadlibes)
+AC_SUBST(otherobjs)
+AC_SUBST(othercomp)
 
 AC_OUTPUT(Makefile oshw/Makefile)

@@ -10,8 +10,7 @@ ln -s oshw-sdl oshw
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
 
-sed -e 's/^#win32://' ../../Makefile > Makefile
-sed -e 's/^#win32://' ../../oshw-sdl/Makefile > oshw-sdl/Makefile
+sh ./cross-configure.sh --with-win32
 sh ./cross-make.sh -f Makefile all
 mv tworld tworld.exe
 mv mklynxcc mklynxcc.exe 
