@@ -45,7 +45,7 @@ extern int gettickcount(void);
 
 /* Put the program to sleep until the next timer tick.
  */
-extern void waitfortick(void);
+extern int waitfortick(void);
 
 /*
  * Keyboard input functions.
@@ -122,6 +122,10 @@ extern void freetileset(void);
 /*
  * Video output functions.
  */
+
+/* A magic number used to indicate an undefined time value.
+ */
+#define	TIME_NIL	0x7FFFFFFF
 
 /* Create a display surface appropriate to the requirements of the
  * game (e.g., sized according to the tiles and the font). FALSE is

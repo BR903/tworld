@@ -681,7 +681,7 @@ static int finalinput(gamespec *gs)
  */
 static int playgame(gamespec *gs, int firstcmd)
 {
-    int	cmd, n;
+    int	cmd, f, n;
 
     cmd = firstcmd;
     if (cmd == CmdProceed)
@@ -689,12 +689,13 @@ static int playgame(gamespec *gs, int firstcmd)
 
     gs->status = 0;
     setgameplaymode(BeginPlay);
+    f = TRUE;
     for (;;) {
 	n = doturn(cmd);
 	drawscreen();
 	if (n)
 	    break;
-	waitfortick();
+	f = waitfortick();
 	cmd = input(FALSE);
 	if (cmd == CmdQuitLevel) {
 	    quitgamestate();
@@ -766,18 +767,19 @@ static int playgame(gamespec *gs, int firstcmd)
  */
 static int playbackgame(gamespec *gs)
 {
-    int	n;
+    int	f, n;
 
     drawscreen();
 
     gs->status = 0;
     setgameplaymode(BeginPlay);
+    f = TRUE;
     for (;;) {
 	n = doturn(CmdNone);
 	drawscreen();
 	if (n)
 	    break;
-	waitfortick();
+	f = waitfortick();
 	switch (input(FALSE)) {
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;

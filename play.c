@@ -211,18 +211,16 @@ int drawscreen(void)
     int timeleft, besttime;
 
     currenttime = state.currenttime + state.timeoffset;
-    if (hassolution(state.game)) {
+    if (hassolution(state.game))
 	besttime = (state.game->time ? state.game->time : 999)
 				- state.game->besttime / TICKS_PER_SECOND;
-	if (besttime == 0)
-	     besttime = -1;
-    } else
-	besttime = 0;
+    else
+	besttime = TIME_NIL;
 
     if (state.game->time)
 	timeleft = state.game->time - currenttime / TICKS_PER_SECOND;
     else
-	timeleft = -1;
+	timeleft = TIME_NIL;
 
     playsoundeffects(state.soundeffects);
     return displaygame(&state, timeleft, besttime);

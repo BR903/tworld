@@ -506,14 +506,14 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     puttext(&rect, "Time", 4, PT_UPDATERECT);
     sprintf(buf, "%d", state->chipsneeded);
     puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
-    if (timeleft < 0)
+    if (timeleft == TIME_NIL)
 	strcpy(buf, "---");
     else
 	sprintf(buf, "%d", timeleft);
     puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
 
-    if (besttime) {
-	if (timeleft < 0)
+    if (besttime != TIME_NIL) {
+	if (timeleft == TIME_NIL)
 	    sprintf(buf, "(Best time: %d)", besttime);
 	else
 	    sprintf(buf, "Best time: %d", besttime);

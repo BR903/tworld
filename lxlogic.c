@@ -1467,11 +1467,11 @@ static void initialhousekeeping(void)
 	chip->id = Chip;
 
     if (!inendgame()) {
-	if (timelimit() && currenttime() >= timelimit())
-	    removechip(CHIP_OUTOFTIME, NULL);
 	if (completed()) {
 	    startendgametimer();
 	    timeoffset() = 1;
+	} else if (timelimit() && currenttime() >= timelimit()) {
+	    removechip(CHIP_OUTOFTIME, NULL);
 	}
     }
 

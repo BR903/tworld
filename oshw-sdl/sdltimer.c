@@ -67,7 +67,7 @@ int gettickcount(void)
 /* Put the program to sleep until the next timer tick. If we've
  * already missed a timer tick, then wait for the next one.
  */
-void waitfortick(void)
+int waitfortick(void)
 {
     int	ms;
 
@@ -75,6 +75,12 @@ void waitfortick(void)
     if (showhistogram)
 	if (ms < (int)(sizeof hist / sizeof *hist))
 	    ++hist[ms >= 0 ? ms + 1 : 0];
+
+    if (ms <= 0) {
+	nexttickat += mspertick;
+	return FALSE;
+    }
+
     while (ms < 0)
 	ms += mspertick;
 
@@ -82,6 +88,7 @@ void waitfortick(void)
 
     ++utick;
     nexttickat += mspertick;
+    return TRUE;
 }
 
 /* At shutdown time, display the histogram data on stdout.
