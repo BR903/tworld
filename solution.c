@@ -6,6 +6,7 @@
 
 #include	<stdio.h>
 #include	<stdlib.h>
+#include	<ctype.h>
 #include	"defs.h"
 #include	"err.h"
 #include	"fileio.h"
@@ -15,20 +16,23 @@
  *
  * HEADER
  *  0-3   signature bytes
- *  4     ruleset (1=Lynx, 2=MS)
+ *   4    ruleset (1=Lynx, 2=MS)
  *  5-7   other options (currently always zero)
  *
  * After the header are level solutions, in order:
  *
  * PER LEVEL
  *  0-3   offset to next solution (from the end of this field)
- *  4-8   time of solution in ticks
- *  9-12  initial random number generator value
- *  13    initial random slide direction
- * 14-??  solution bytes
+ *  4-5   level number
+ *   6    initial random slide direction (only used in Lynx ruleset)
+ *   7    unused, always zero
+ *  8-11  initial random number generator value
+ * 12-15  time of solution in ticks
+ * 16-??  solution bytes
  *
- * If there is no solution for a level, the first field (offset to
- * next solution) is zero and none of the other fields are present.
+ * If the offset field is zero, then none of the other fields are
+ * present. (This permits the file to contain padding.) Otherwise, the
+ * offset should never be less than 12.
  *
  * The solution bytes consist of a stream of 1-, 2-, and/or 4-byte
  * values. The three different possibilities take the following forms:
@@ -49,8 +53,7 @@
  * that would require T to include a negative value.)
  *
  * Numbers are always stored in little-endian order, consistent with
- * the data file.
- */
+ * the data file.  */
 
 /* The signature bytes of the solution files.
  */
@@ -129,7 +132,7 @@ void destroymovelist(actlist *list)
 /* Read the header bytes of the given solution file. flags receives
  * the option bytes (bytes 4-7).
  */
-int readsolutionheader(fileinfo *file, int *flags)
+static int readsolutionheader(fileinfo *file, int *flags)
 {
     unsigned long	sig, f;
 
@@ -248,10 +251,11 @@ static int writemovelist(fileinfo *file, actlist const *moves,
 /* Read the data of a solution from the given file into the
  * appropriate fields of game.
  */
-int readsolution(fileinfo *file, gamesetup *game)
+static int readsolution(fileinfo *file, gamesetup *game)
 {
-    unsigned long	size, val;
-    unsigned char	byte;
+    unsigned long	size, val32;
+    unsigned short	val16;
+    unsigned char	val8;
 
     initmovelist(&game->savedsolution);
     if (!file->fp)
@@ -262,16 +266,21 @@ int readsolution(fileinfo *file, gamesetup *game)
     if (!size)
 	return TRUE;
 
-    if (!filereadint32(file, &val, "unexpected EOF"))
+    if (!filereadint16(file, &val16, "unexpected EOF"))
 	return FALSE;
-    game->besttime = val;
-    if (!filereadint32(file, &val, "unexpected EOF"))
+    game->number = val16;
+    if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
-    game->savedrndseed = val;
-    if (!filereadint8(file, &byte, "unexpected EOF"))
+    game->savedrndslidedir = idxdir(val8);
+    if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
-    game->savedrndslidedir = idxdir(byte);
-    return readmovelist(file, &game->savedsolution, size - 9);
+    if (!filereadint32(file, &val32, "unexpected EOF"))
+	return FALSE;
+    game->savedrndseed = val32;
+    if (!filereadint32(file, &val32, "unexpected EOF"))
+	return FALSE;
+    game->besttime = val32;
+    return readmovelist(file, &game->savedsolution, size - 12);
 }
 
 /* Write the data of a solution from the appropriate fields of game to
@@ -289,28 +298,104 @@ static int writesolution(fileinfo *file, gamesetup const *game)
     if (!game->savedsolution.count)
 	return TRUE;
 
-    if (!filewriteint32(file, game->besttime, "write error")
-		|| !filewriteint32(file, game->savedrndseed, "write error")
+    if (!filewriteint16(file, game->number, "write error")
 		|| !filewriteint8(file, diridx((int)game->savedrndslidedir),
 					"write error")
+		|| !filewriteint8(file, 0, "write error")
+		|| !filewriteint32(file, game->savedrndseed, "write error")
+		|| !filewriteint32(file, game->besttime, "write error")
 		|| !writemovelist(file, &game->savedsolution, &size))
 	return FALSE;
 
     if (!filegetpos(file, &end, "seek error")
 		|| !filesetpos(file, &start, "seek error")
-		|| !filewriteint32(file, size + 9, "write error")
+		|| !filewriteint32(file, size + 12, "write error")
 		|| !filesetpos(file, &end, "seek error"))
 	return FALSE;
 
     return TRUE;
 }
 
-/* Write out all the solutions for series. Since each file contains
- * solutions for all the puzzles in one series, saving a new solution
- * requires that the function create the entire file's contents
- * afresh. In the case where only part of the original file has been
- * parsed so far, the unexamined contents are copied verbatim into a
- * temporary memory buffer, and then appended back onto the new file.
+/*
+ * File I/O for solution files.
+ */
+
+static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
+{
+    char       *buf = NULL;
+    char const *filename;
+    int		n;
+
+    if (file->name) {
+	filename = file->name;
+    } else {
+	n = strlen(datname);
+	if (datname[n - 4] == '.' && tolower(datname[n - 3]) == 'd'
+				  && tolower(datname[n - 2]) == 'a'
+				  && tolower(datname[n - 1]) == 't')
+	    n -= 4;
+	buf = malloc(n + 5);
+	if (!buf)
+	    memerrexit();
+	memcpy(buf, datname, n);
+	memcpy(buf + n, ".tws", 5);
+	filename = buf;
+    }
+    n = openfileindir(file, savedir, filename,
+		      readonly ? "rb" : "wb",
+		      readonly ? NULL : "can't access file");
+    if (buf)
+	free(buf);
+    return n;
+}
+
+/* Read all the solutions for the given series.
+ */
+int readsolutions(gameseries *series)
+{
+    gamesetup	gametmp;
+    int		i, j;
+
+    if (!savedir || !*savedir
+		 || !opensolutionfile(&series->solutionfile,
+				      series->mapfile.name, TRUE)) {
+	series->solutionflags = series->ruleset;
+	return TRUE;
+    }
+
+    if (!readsolutionheader(&series->solutionfile,
+			    &series->solutionflags))
+	return FALSE;
+    if (series->solutionflags != series->ruleset)
+	return fileerr(&series->solutionfile,
+		       "saved-game file is for a different"
+		       " ruleset than the data file");
+    savedirchecked = TRUE;
+
+    j = 0;
+    for (;;) {
+	if (!readsolution(&series->solutionfile, &gametmp))
+	    break;
+	for (i = j ; i < series->count ; ++i)
+	    if (series->games[i].number == gametmp.number)
+		break;
+	if (i == series->count) {
+	    fileerr(&series->solutionfile, "invalid level in solution file");
+	    break;
+	}
+	series->games[i].savedrndslidedir = gametmp.savedrndslidedir;
+	series->games[i].savedrndseed = gametmp.savedrndseed;
+	series->games[i].besttime = gametmp.besttime;
+	copymovelist(&series->games[i].savedsolution, &gametmp.savedsolution);
+	if (i == j)
+	    ++j;
+    }
+    destroymovelist(&gametmp.savedsolution);
+    fileclose(&series->solutionfile, NULL);
+    return TRUE;
+}
+
+/* Write out all the solutions for series.
  */
 int savesolutions(gameseries *series)
 {
@@ -320,38 +405,30 @@ int savesolutions(gameseries *series)
     if (!*savedir)
 	return TRUE;
 
-    if (series->solutionfile.fp && !series->allsolutionsread) {
-	warn("Cannot save solution; save file incompletely parsed!");
+    if (!savedirchecked) {
+	savedirchecked = TRUE;
+	if (!finddir(savedir))
+	    return fileerr(&series->solutionfile, "can't access directory");
+    }
+    if (series->solutionfile.fp)
+	fileclose(&series->solutionfile, NULL);
+    if (!opensolutionfile(&series->solutionfile,
+			  series->mapfile.name, FALSE)) {
+	*savedir = '\0';
 	return FALSE;
     }
 
-    if (!series->solutionfile.fp || series->solutionsreadonly) {
-	if (!savedirchecked) {
-	    savedirchecked = TRUE;
-	    if (!finddir(savedir))
-		return fileerr(&series->solutionfile,
-			       "can't access directory");
-	}
-	if (series->solutionfile.fp)
-	    fileclose(&series->solutionfile, NULL);
-	else
-	    series->allsolutionsread = TRUE;
-	if (!openfileindir(&series->solutionfile, savedir,
-			   series->mapfile.name, "w+b", "can't access file")) {
-	    *savedir = '\0';
-	    return FALSE;
-	}
-    }
-
-    if (!filerewind(&series->solutionfile, "seek error"))
-	return fileerr(&series->solutionfile, "cannot save solution");
     if (!writesolutionheader(&series->solutionfile, series->solutionflags))
 	return fileerr(&series->solutionfile,
-		       "saved-game file may have been corrupted!");
-    for (i = 0, game = series->games ; i < series->count ; ++i, ++game)
+		       "saved-game file has become corrupted!");
+    for (i = 0, game = series->games ; i < series->count ; ++i, ++game) {
+	if (!game->savedsolution.count)
+	    continue;
 	if (!writesolution(&series->solutionfile, game))
 	    return fileerr(&series->solutionfile,
 			   "saved-game file has become corrupted!");
+    }
 
+    fileclose(&series->solutionfile, NULL);
     return TRUE;
 }

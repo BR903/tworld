@@ -34,4 +34,8 @@ extern void _sdlkeyeventcallback(int scancode, int down);
  */
 extern int _sdloutputinitialize(void);
 
+/* From sdlres.c: Initialize the external resources.
+ */
+extern int _sdlresourceinitialize(void);
+
 #endif

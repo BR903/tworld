@@ -54,7 +54,7 @@ static char const *yowzitch =
 /* Online version data.
  */
 static char const *vourzhon =
-	"TileWorld, version 0.7.2.\n\n"
+	"TileWorld, version 0.8.0.\n\n"
 	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
 	"General Public License; either version 2 of the License, or at\n"
 	"your option any later version.\n"

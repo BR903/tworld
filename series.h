@@ -13,12 +13,6 @@
  */
 extern char    *seriesdir;
 
-/* Read the given level from the given data file if it has not already
- * been loaded. (Any and all preceding levels are loaded into memory
- * as well.) FALSE is returned if the level could not be found.
- */
-extern int readlevelinseries(gameseries *series, int level);
-
 /* Load all levels of the given series.
  */
 extern int readseriesfile(gameseries *series);

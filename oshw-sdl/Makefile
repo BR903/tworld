@@ -12,7 +12,7 @@ liboshw.a: $(OBJS)
 	cp liboshw.a ..
 
 clean:
-	rm -f $(OBJS) liboshw.a ../liboshw.a ../linkline
+	rm -f $(OBJS) liboshw.a ../liboshw.a
 
 sdlerr.o  : sdlerr.c sdlgen.h ../defs.h ../gen.h ../oshw.h
 sdlin.o   : sdlin.c sdlgen.h ../defs.h ../gen.h ../oshw.h
@@ -20,4 +20,4 @@ sdloshw.o : sdloshw.c sdlgen.h ../defs.h ../gen.h ../oshw.h
 sdlout.o  : sdlout.c sdlgen.h sdltext.h ../defs.h ../gen.h ../oshw.h ../state.h
 sdltext.o : sdltext.c sdltext.h sdlgen.h ../defs.h ../gen.h ../oshw.h
 sdltimer.o: sdltimer.c sdlgen.h ../defs.h ../gen.h ../oshw.h
-sdlres.o  : sdlres.c sdlres.h sdlgen.h ../defs.h ../gen.h ../oshw.h
+sdlres.o  : sdlres.c sdlres.h sdlgen.h ../defs.h ../gen.h ../oshw.h ccicon.c

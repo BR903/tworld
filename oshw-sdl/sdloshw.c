@@ -65,7 +65,8 @@ int oshwinitialize(void)
 
     setsubtitle(NULL);
 
-    return _sdloutputinitialize()
+    return _sdlresourceinitialize()
+	&& _sdloutputinitialize()
 	&& _sdlinputinitialize()
 	&& _sdltimerinitialize();
 }

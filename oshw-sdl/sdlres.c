@@ -14,6 +14,10 @@
 #include	"../state.h"
 #include	"sdlres.h"
 
+/* An automatically-generated file.
+ */
+#include	"ccicon.c"
+
 typedef	struct tilesetspec {
     int		id;
     int		xpos;
@@ -150,48 +154,6 @@ int				cytile = 0;
  */
 char				transparency[NTILES];
 
-#if 0
-static void onerousblit(SDL_Surface *srcs, SDL_Rect *srcr,
-			SDL_Surface *dests, SDL_Rect *destr)
-{
-    unsigned char      *src, *dest;
-    Uint32		pixel;
-    Uint8		r, g, b;
-    int			x, y;
-
-    if (SDL_MUSTLOCK(srcs))
-	SDL_LockSurface(srcs);
-    if (SDL_MUSTLOCK(dests))
-	SDL_LockSurface(dests);
-    for (y = 0 ; y < srcr->h ; ++y) {
-	for (x = 0 ; x < srcr->w ; ++x) {
-	    src = srcs->pixels + (srcr->y + y) * srcs->pitch
-		+ (srcr->x + x) * srcs->format->BytesPerPixel;
-	    dest = dests->pixels + (destr->y + y) * dests->pitch
-		+ (destr->x + x) * dests->format->BytesPerPixel;
-	    switch (srcs->format->BytesPerPixel) {
-	    case 1:	pixel = *(Uint8*)src;	break;
-	    case 2:	pixel = *(Uint16*)src;	break;
-	    case 4:	pixel = *(Uint32*)src;	break;
-	    default:	die("src bpp = %d", srcs->format->BytesPerPixel);
-	    }
-	    SDL_GetRGB(pixel, srcs->format, &r, &g, &b);
-	    pixel = SDL_MapRGB(dests->format, r, g, b);
-	    switch (dests->format->BytesPerPixel) {
-	    case 1:	*(Uint8*)dest = (Uint8)pixel;	break;
-	    case 2:	*(Uint16*)dest = (Uint16)pixel;	break;
-	    case 4:	*(Uint32*)dest = (Uint32)pixel;	break;
-	    default:	die("dest bpp = %d", dests->format->BytesPerPixel);
-	    }
-	}
-    }
-    if (SDL_MUSTLOCK(srcs))
-	SDL_UnlockSurface(srcs);
-    if (SDL_MUSTLOCK(dests))
-	SDL_UnlockSurface(dests);
-}
-#endif
-
 static int extracttiles(SDL_Surface *tilesrc,
 			tilesetspec const *spec, int count)
 {
@@ -305,10 +267,6 @@ static int loadtileset(char const *filename, int nxtiles, int nytiles,
     return TRUE;
 }
 
-/*
- *
- */
-
 void _sdlsettransparentcolor(Uint32 color) { transparentpixel = color; }
 void _sdlsettileformat(SDL_PixelFormat const *fmt) { destfmt = fmt; }
 
@@ -339,4 +297,25 @@ void freetileset(void)
     cctiles = NULL;
     cxtile = 0;
     cytile = 0;
+}
+
+/*
+ *
+ */
+
+int _sdlresourceinitialize(void)
+{
+    SDL_Surface	       *icon;
+
+    icon = SDL_CreateRGBSurfaceFrom(cciconimage, CXCCICON, CYCCICON,
+				    32, 4 * CXCCICON,
+				    0x0000FF, 0x00FF00, 0xFF0000, 0);
+    if (!icon)
+	warn("%s", SDL_GetError());
+    if (icon) {
+	SDL_WM_SetIcon(icon, cciconmask);
+	SDL_FreeSurface(icon);
+    }
+
+    return TRUE;
 }

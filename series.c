@@ -208,13 +208,12 @@ int readlevelmap(fileinfo *file, gamesetup *game)
  * Functions to read the data files.
  */
 
-/* Read the game file corresponding to series, and the corresponding
- * solutions in the solution file, until at least level maps have been
- * successfully parsed, or the end of the data file is reached. The
- * files are opened if they have not been already. Nothing is done if
- * the requested level is already in memory.
+/* Read the game file corresponding to series, until at least level
+ * maps have been successfully parsed, or the end of the data file is
+ * reached. The files are opened if they have not been already.
+ * Nothing is done if the requested level is already in memory.
  */
-int readlevelinseries(gameseries *series, int level)
+static int readlevelinseries(gameseries *series, int level)
 {
     int	n;
 
@@ -231,24 +230,6 @@ int readlevelinseries(gameseries *series, int level)
 
 	    if (!readseriesheader(series))
 		return FALSE;
-	    if (*savedir) {
-		if (openfileindir(&series->solutionfile, savedir,
-				  series->mapfile.name, "rb", NULL)) {
-		    if (!readsolutionheader(&series->solutionfile,
-					    &series->solutionflags))
-			return FALSE;
-		    if (series->solutionflags != series->ruleset)
-			return fileerr(&series->solutionfile,
-				       "saved-game file is for a different"
-				       " ruleset than the data file");
-		    savedirchecked = TRUE;
-		    series->solutionsreadonly = TRUE;
-		} else {
-		    series->solutionflags = series->ruleset;
-		}
-	    } else {
-		clearfileinfo(&series->solutionfile);
-	    }
 	}
 	while (!series->allmapsread && series->count <= level) {
 	    while (series->count >= series->allocated) {
@@ -261,24 +242,19 @@ int readlevelinseries(gameseries *series, int level)
 		series->allocated = n;
 	    }
 	    if (readlevelmap(&series->mapfile,
-			     series->games + series->count)) {
-		if (!series->allsolutionsread)
-		    readsolution(&series->solutionfile,
-				 series->games + series->count);
+			     series->games + series->count))
 		++series->count;
-	    }
 	    if (filetestend(&series->mapfile)) {
 		fileclose(&series->mapfile, NULL);
 		series->allmapsread = TRUE;
 	    }
-	    if (series->solutionfile.fp && filetestend(&series->solutionfile))
-		series->allsolutionsread = TRUE;
 	}
     }
     return series->count > level;
 }
 
-/* A wrapper around readlevelinseries() that reads the entire file.
+/* Read all the levels from the given data file, and all of the user's
+ * solutions.
  */
 int readseriesfile(gameseries *series)
 {
@@ -290,7 +266,10 @@ int readseriesfile(gameseries *series)
     memset(series->games + series->allocated, 0,
 	   (series->total - series->allocated) * sizeof *series->games);
     series->allocated = series->total;
-    return readlevelinseries(series, series->total - 1);
+    if (!readlevelinseries(series, series->total - 1))
+	return FALSE;
+    readsolutions(series);
+    return TRUE;
 }
 
 /*
@@ -318,7 +297,6 @@ static int getseriesfile(char *filename, void *data)
     series->mapfile.name = filename;
     series->solutionflags = 0;
     series->allmapsread = FALSE;
-    series->allsolutionsread = FALSE;
     series->allocated = 0;
     series->count = 0;
     series->games = NULL;

@@ -42,13 +42,9 @@ extern void destroymovelist(actlist *list);
  * Functions manipulating solution files.
  */
 
-/* Read the solution header data for the given file.
- */
-extern int readsolutionheader(fileinfo *file, int *flags);
-
 /* Read the solution for game, if any, from the current file position.
  */
-extern int readsolution(fileinfo *file, gamesetup *game);
+extern int readsolutions(gameseries *series);
 
 /* Write out all the solutions for series.
  */

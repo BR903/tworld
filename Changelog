@@ -1,3 +1,9 @@
+2001 Oct 29: version 0.8.1
+
+* Fixed bug introduced in 0.7.2, correctly this time.
+* Fixed intermittent memory corruption caused by an uninitialized stack
+  variable.
+
 2001 Oct 28: version 0.8.0
 
 * Fixed bug introduced in 0.7.2 which caused Chip to "come to rest" when he
