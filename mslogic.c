@@ -1613,7 +1613,7 @@ static void floormovements(void)
 			cr->state &= ~CS_HASMOVED;
 		}
 	    }
-	    if (cr->id != Chip || (cr->state & (CS_SLIP | CS_SLIDE))) {
+	    if (cr->state & (CS_SLIP | CS_SLIDE)) {
 		endfloormovement(cr);
 		startfloormovement(cr, cellat(cr->pos)->bot.id);
 	    }
@@ -1750,7 +1750,7 @@ static void initialhousekeeping(void)
 	exit(0);
     } else if (currentinput() == CmdDebugCmd1) {
 	static int mark = 0;
-	warn("Mark %d.", ++mark);
+	warn("Mark %d (%d).", ++mark, currenttime());
 	currentinput() = NIL;
     }
     verifymap();
