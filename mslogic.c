@@ -2054,18 +2054,6 @@ static int initgame(gamelogic *logic)
     return TRUE;
 }
 
-/* Free resources associated with the current game state.
- */
-static int endgame(gamelogic *logic)
-{
-    (void)logic;
-    resetcreaturepool();
-    resetcreaturelist();
-    resetblocklist();
-    resetsliplist();
-    return TRUE;
-}
-
 /* Advance the game state by one tick.
  */
 static int advancegame(gamelogic *logic)
@@ -2121,6 +2109,18 @@ static int advancegame(gamelogic *logic)
     finalhousekeeping();
     preparedisplay();
     return r;
+}
+
+/* Free resources associated with the current game state.
+ */
+static int endgame(gamelogic *logic)
+{
+    (void)logic;
+    resetcreaturepool();
+    resetcreaturelist();
+    resetblocklist();
+    resetsliplist();
+    return TRUE;
 }
 
 static void shutdown(gamelogic *logic)

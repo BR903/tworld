@@ -823,6 +823,8 @@ static int getforcedmove(creature *cr)
 	cr->fdir = dir;
 	return TRUE;
     } else if (isslide(floor)) {
+	if (cr->id == Chip && currenttime() == 0)
+	    return FALSE;
 	if (cr->id == Chip && possession(Boots_Slide))
 	    return FALSE;
 	cr->fdir = getslidedir(floor, TRUE);
@@ -967,8 +969,7 @@ static int startmovement(creature *cr, int releasing)
 	if (!(cr->dir & dir)) {
 	    dir &= CmdEast | CmdWest;
 	} else {
-	    f1 = canmakemove(cr, cr->dir,
-			      CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
+	    f1 = canmakemove(cr, cr->dir, CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    f2 = canmakemove(cr, dir ^ cr->dir,
 			     CMM_EXPOSEWALLS | CMM_PUSHBLOCKS);
 	    dir = !f1 && f2 ? dir ^ cr->dir : cr->dir;
@@ -1642,7 +1643,8 @@ static int initgame(gamelogic *logic)
 		if (n >= 0)
 		    die("Multiple Chips on the map!");
 		n = cr - creaturelist();
-		cr->state = CS_SLIDETOKEN;
+		cr->state = 0;
+		/*cr->state = CS_SLIDETOKEN;*/
 	    } else {
 		cr->state = 0;
 		claimlocation(pos);

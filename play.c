@@ -188,6 +188,12 @@ int drawscreen(void)
     return displaygame(&state, timeleft, besttime);
 }
 
+int quitgamestate(void)
+{
+    clearsoundeffects();
+    return TRUE;
+}
+
 int endgamestate(void)
 {
     clearsoundeffects();

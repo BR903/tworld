@@ -436,6 +436,7 @@ static int playgame(gamespec *gs, int firstcmd)
 	waitfortick();
 	cmd = input(FALSE);
 	if (cmd == CmdQuitLevel) {
+	    quitgamestate();
 	    n = -1;
 	    break;
 	}
@@ -493,6 +494,7 @@ static int playgame(gamespec *gs, int firstcmd)
     return TRUE;
 
   quitloop:
+    quitgamestate();
     setgameplaymode(EndPlay);
     if (n)
 	changecurrentgame(gs, n);
@@ -554,6 +556,7 @@ static int playbackgame(gamespec *gs)
     return TRUE;
 
   quitloop:
+    quitgamestate();
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
     return FALSE;

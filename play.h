@@ -39,6 +39,10 @@ extern int doturn(int cmd);
  */
 extern int drawscreen(void);
 
+/* Quit the game early.
+ */
+extern int quitgamestate(void);
+
 /* Free any resources associates with the current game state.
  */
 extern int endgamestate(void);

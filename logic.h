@@ -17,7 +17,7 @@ struct gamelogic {
     gamestate  *state;			  /* ptr to the current game state */
     int	      (*initgame)(gamelogic*);	  /* prepare to play a game */
     int	      (*advancegame)(gamelogic*); /* advance the game one tick */
-    int	      (*endgame)(gamelogic*);	  /* clean up after the game is over */
+    int	      (*endgame)(gamelogic*);	  /* clean up after the game is done */
     void      (*shutdown)(gamelogic*);	  /* turn off the logic engine */
 };
 
