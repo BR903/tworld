@@ -51,7 +51,10 @@ clean:
 	(cd oshw && make clean)
 
 
+all: tworld mklynxcc
+
 install: tworld
 	cp -i ./tworld /usr/local/games/.
 	mkdir -p $(ROOTDIR)/data
+	cp -i ./rc $(ROOTDIR)/.
 	cp -i ./*.bmp $(ROOTDIR)/.
