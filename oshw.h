@@ -48,6 +48,10 @@ extern int gettickcount(void);
  */
 extern int waitfortick(void);
 
+/* Force the timer to advance to the next tick.
+ */
+extern int advancetick(void);
+
 /*
  * Keyboard input functions.
  */
@@ -236,9 +240,13 @@ extern int loadsfxfromfile(int index, char const *filename);
  */
 extern void playsoundeffects(unsigned long sfx);
 
-/* Immediately silence all sounds effects in progress.
+/* Control sound-effect production depending on the value of action.
+ * A negative value turns off all sound effects that are playing. A
+ * zero value temporarily suspends the playing of sound effects. A
+ * positive value continues the sound effects at the point at which
+ * they were suspended.
  */
-extern void clearsoundeffects(void);
+extern void setsoundeffects(int action);
 
 /* Set the current volume level. Volume ranges from 0 (silence) to 10
  * (the default). Setting the sound to zero causes sound effects to be

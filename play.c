@@ -101,7 +101,7 @@ int initgamestate(gamesetup *game, int ruleset)
     state.currentinput = NIL;
     state.lastmove = NIL;
     state.initrndslidedir = NIL;
-    state.stepping = 0;
+    state.stepping = -1;
     state.statusflags = 0;
     state.soundeffects = 0;
     state.timelimit = game->time * TICKS_PER_SECOND;
@@ -152,15 +152,65 @@ void setgameplaymode(int mode)
 	setkeyboardrepeat(TRUE);
 	settimer(-1);
 	break;
+      case BeginVerify:
+	settimer(+1);
+	break;
+      case EndVerify:
+	settimer(-1);
+	break;
       case SuspendPlay:
 	setkeyboardrepeat(TRUE);
 	settimer(0);
+	setsoundeffects(0);
 	break;
       case ResumePlay:
 	setkeyboardrepeat(FALSE);
 	settimer(+1);
+	setsoundeffects(+1);
 	break;
     }
+}
+
+/* Alter the stepping.
+ */
+int changestepping(int delta, int display)
+{
+    char	msg[32], *p;
+
+    if (state.stepping < 0)
+	state.stepping = 0;
+    switch (state.ruleset) {
+    case Ruleset_Lynx:
+	if (delta == 4) {
+	    state.stepping &= 4;
+	    state.stepping ^= 4;
+	} else if (delta == 1) {
+	    if ((state.stepping & 3) == 3)
+		state.stepping &= 4;
+	    else
+		++state.stepping;
+	} else {
+	    return FALSE;
+	}
+	break;
+    case Ruleset_MS:
+	if (delta == 4)
+	    state.stepping ^= 4;
+	else
+	    return FALSE;
+	break;
+    default:
+	return FALSE;
+    }
+
+    if (display) {
+	p = msg;
+	p += sprintf(p, "%s-step", state.stepping & 4 ? "odd" : "even");
+	if (state.stepping & 3)
+	    p += sprintf(p, " +%d", state.stepping & 3);
+	setdisplaymsg(msg, 500, 500);
+    }
+    return TRUE;
 }
 
 /* Advance the game one tick and update the game state. cmd is the
@@ -247,7 +297,7 @@ int drawscreen(int showframe)
 int quitgamestate(void)
 {
     state.soundeffects = 0;
-    clearsoundeffects();
+    setsoundeffects(-1);
     return TRUE;
 }
 
@@ -255,7 +305,7 @@ int quitgamestate(void)
  */
 int endgamestate(void)
 {
-    clearsoundeffects();
+    setsoundeffects(-1);
     return (*logic->endgame)(logic);
 }
 

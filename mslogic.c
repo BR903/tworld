@@ -46,10 +46,14 @@ struct msstate {
  */
 static int advancecreature(creature *cr, int dir);
 
+/* The most recently used stepping phase value.
+ */
+static int		laststepping = 0;
+
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
  */
-static gamestate	       *state;
+static gamestate       *state;
 
 /*
  * Accessor macros for various fields in the game state. Many of the
@@ -1880,6 +1884,9 @@ static void initialhousekeeping(void)
     }
 #endif
 
+    if (currenttime() == 0)
+	laststepping = stepping();
+
     if (!(currenttime() & 3)) {
 	for (n = 1 ; n < creaturecount ; ++n) {
 	    if (creatures[n]->state & CS_TURNING) {
@@ -2190,6 +2197,7 @@ static int initgame(gamelogic *logic)
     completed() = FALSE;
     chipstatus() = CHIP_OKAY;
     controllerdir() = NIL;
+    stepping() = laststepping;
     xviewoffset() = 0;
     yviewoffset() = 0;
 

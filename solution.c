@@ -366,7 +366,6 @@ static int readsolution(fileinfo *file, gamesetup *game)
 	return FALSE;
     game->savedrndslidedir = idxdir8[val8 & 7];
     game->savedstepping = (val8 >> 3) & 7;
-    game->savedstepping = 0;
     if (!filereadint32(file, &val32, "unexpected EOF"))
 	return FALSE;
     game->savedrndseed = val32;
@@ -402,12 +401,10 @@ static int writesolution(fileinfo *file, gamesetup const *game)
 
     val8 = diridx8[(int)game->savedrndslidedir];
     val8 |= game->savedstepping << 3;
-    val8 &= 7;
     if (!filewriteint16(file, game->number, "write error")
 		|| !filewrite(file, game->passwd, 4, "write error")
 		|| !filewriteint8(file, 0, "write error")
-		|| !filewriteint8(file, diridx8[(int)game->savedrndslidedir],
-					"write error")
+		|| !filewriteint8(file, val8, "write error")
 		|| !filewriteint32(file, game->savedrndseed, "write error")
 		|| !filewriteint32(file, game->besttime, "write error")
 		|| !writemovelist(file, &game->savedsolution, &size))
@@ -501,6 +498,7 @@ int readsolutions(gameseries *series)
 	series->games[i].besttime = gametmp.besttime;
 	series->games[i].sgflags = gametmp.sgflags;
 	series->games[i].savedrndslidedir = gametmp.savedrndslidedir;
+	series->games[i].savedstepping = gametmp.savedstepping;
 	series->games[i].savedrndseed = gametmp.savedrndseed;
 	copymovelist(&series->games[i].savedsolution, &gametmp.savedsolution);
 	if (i == j)

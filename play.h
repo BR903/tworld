@@ -11,7 +11,8 @@
 
 /* The different modes of the program with respect to gameplay.
  */
-enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay, BeginInput, EndInput };
+enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay, BeginVerify, EndVerify,
+       BeginInput, EndInput };
 
 /* Change the current gameplay mode. This affects the running of the
  * timer and the handling of the keyboard.
@@ -27,6 +28,8 @@ extern int initgamestate(gamesetup *game, int ruleset);
  * FALSE is returned if no solution is available for playback.
  */
 extern int prepareplayback(void);
+
+extern int changestepping(int delta, int display);
 
 /* Return the amount of time passed in the current game, in seconds.
  */
