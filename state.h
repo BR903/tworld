@@ -211,7 +211,6 @@ typedef struct gamestate {
 #define	SF_NOSAVING		0x20000000	/* solution won't be saved */
 #define	SF_INVALID		0x10000000	/* level is not playable */
 #define	SF_SHOWHINT		0x08000000	/* display the hint text */
-#define	SF_ONOMATOPOEIA		0x04000000	/* use textual sound effects */
 
 /* gamestate accessor macros.
  */

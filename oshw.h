@@ -130,6 +130,16 @@ extern int displaylist(char const *title, char const *header,
 #define	SCROLL_ALLTHEWAY_DN	(-9)
 
 /*
+ * Sound functions.
+ */
+
+extern int setaudiosystem(int active);
+extern void selectsoundset(int ruleset);
+extern int loadsfxfromfile(int index, char const *filename);
+extern void freesfx(int index);
+extern void playsoundeffects(unsigned long sfx);
+
+/*
  * Miscellaneous functions.
  */
 

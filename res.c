@@ -13,38 +13,40 @@
 #include	"oshw.h"
 #include	"res.h"
 
-#define	RES_SND_CHIP_LOSES	SND_CHIP_LOSES
-#define	RES_SND_CHIP_WINS	SND_CHIP_WINS
-#define	RES_SND_TIME_OUT	SND_TIME_OUT
-#define	RES_SND_TIME_LOW	SND_TIME_LOW
-#define	RES_SND_CANT_MOVE	SND_CANT_MOVE
-#define	RES_SND_IC_COLLECTED	SND_IC_COLLECTED
-#define	RES_SND_ITEM_COLLECTED	SND_ITEM_COLLECTED
-#define	RES_SND_BOOTS_STOLEN	SND_BOOTS_STOLEN
-#define	RES_SND_TELEPORTING	SND_TELEPORTING
-#define	RES_SND_DOOR_OPENED	SND_DOOR_OPENED
-#define	RES_SND_SOCKET_OPENED	SND_SOCKET_OPENED
-#define	RES_SND_BUTTON_PUSHED	SND_BUTTON_PUSHED
-#define	RES_SND_TILE_EMPTIED	SND_TILE_EMPTIED
-#define	RES_SND_WALL_CREATED	SND_WALL_CREATED
-#define	RES_SND_TRAP_SPRUNG	SND_TRAP_SPRUNG
-#define	RES_SND_BLOCK_MOVING	SND_BLOCK_MOVING
-#define	RES_SND_BOMB_EXPLODES	SND_BOMB_EXPLODES
-#define	RES_SND_WATER_SPLASH	SND_WATER_SPLASH
-#define	RES_SND_SLIDEWALKING	SND_SLIDEWALKING
-#define	RES_SND_ICEWALKING	SND_ICEWALKING
-#define	RES_SND_WATERWALKING	SND_WATERWALKING
-#define	RES_SND_FIREWALKING	SND_FIREWALKING
-#define	RES_SND_SKATING_FORWARD	SND_SKATING_FORWARD
-#define	RES_SND_SKATING_TURN	SND_SKATING_TURN
-#define	RES_SND_SLIDING		SND_SLIDING
-#define	RES_LASTSOUND		SND_SLIDING
+#define	RES_IMG_TILES		0
+#define	RES_IMG_USEANIM		1
+#define	RES_IMG_FONT		2
+#define	RES_IMG_LAST		RES_IMG_FONT
 
-#define	RES_TILEIMAGES		(RES_LASTSOUND + 1)
-#define	RES_USEANIM		(RES_LASTSOUND + 2)
-#define	RES_FONTFILE		(RES_LASTSOUND + 3)
+#define	RES_SND_BASE		(RES_IMG_LAST + 1)
+#define	RES_SND_CHIP_LOSES	(RES_SND_BASE + SND_CHIP_LOSES)
+#define	RES_SND_CHIP_WINS	(RES_SND_BASE + SND_CHIP_WINS)
+#define	RES_SND_TIME_OUT	(RES_SND_BASE + SND_TIME_OUT)
+#define	RES_SND_TIME_LOW	(RES_SND_BASE + SND_TIME_LOW)
+#define	RES_SND_CANT_MOVE	(RES_SND_BASE + SND_CANT_MOVE)
+#define	RES_SND_IC_COLLECTED	(RES_SND_BASE + SND_IC_COLLECTED)
+#define	RES_SND_ITEM_COLLECTED	(RES_SND_BASE + SND_ITEM_COLLECTED)
+#define	RES_SND_BOOTS_STOLEN	(RES_SND_BASE + SND_BOOTS_STOLEN)
+#define	RES_SND_TELEPORTING	(RES_SND_BASE + SND_TELEPORTING)
+#define	RES_SND_DOOR_OPENED	(RES_SND_BASE + SND_DOOR_OPENED)
+#define	RES_SND_SOCKET_OPENED	(RES_SND_BASE + SND_SOCKET_OPENED)
+#define	RES_SND_BUTTON_PUSHED	(RES_SND_BASE + SND_BUTTON_PUSHED)
+#define	RES_SND_TILE_EMPTIED	(RES_SND_BASE + SND_TILE_EMPTIED)
+#define	RES_SND_WALL_CREATED	(RES_SND_BASE + SND_WALL_CREATED)
+#define	RES_SND_TRAP_ENTERED	(RES_SND_BASE + SND_TRAP_ENTERED)
+#define	RES_SND_BOMB_EXPLODES	(RES_SND_BASE + SND_BOMB_EXPLODES)
+#define	RES_SND_WATER_SPLASH	(RES_SND_BASE + SND_WATER_SPLASH)
+#define	RES_SND_SKATING_TURN	(RES_SND_BASE + SND_SKATING_TURN)
+#define	RES_SND_BLOCK_MOVING	(RES_SND_BASE + SND_BLOCK_MOVING)
+#define	RES_SND_SKATING_FORWARD	(RES_SND_BASE + SND_SKATING_FORWARD)
+#define	RES_SND_SLIDING		(RES_SND_BASE + SND_SLIDING)
+#define	RES_SND_SLIDEWALKING	(RES_SND_BASE + SND_SLIDEWALKING)
+#define	RES_SND_ICEWALKING	(RES_SND_BASE + SND_ICEWALKING)
+#define	RES_SND_WATERWALKING	(RES_SND_BASE + SND_WATERWALKING)
+#define	RES_SND_FIREWALKING	(RES_SND_BASE + SND_FIREWALKING)
+#define	RES_SND_LAST		RES_SND_FIREWALKING
 
-#define	RES_COUNT		(RES_LASTSOUND + 4)
+#define	RES_COUNT		(RES_SND_LAST + 1)
 
 typedef	struct rcitem {
     char const *name;
@@ -57,6 +59,9 @@ typedef union resourceitem {
 } resourceitem;
 
 static rcitem rclist[] = {
+    { "tileimages",		FALSE },
+    { "useanimation",		TRUE },
+    { "font",			FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
@@ -71,29 +76,26 @@ static rcitem rclist[] = {
     { "switchsound",		FALSE },
     { "tileemptiedsound",	FALSE },
     { "wallcreatedsound",	FALSE },
-    { "trapsprungsound",	FALSE },
-    { "blockmovingsound",	FALSE },
+    { "trapenteredsound",	FALSE },
     { "bombsound",		FALSE },
     { "splashsound",		FALSE },
+    { "skatingturnsound",	FALSE },
+    { "blockmovingsound",	FALSE },
+    { "skatingforwardsound",	FALSE },
+    { "slidingsound",		FALSE },
     { "slidewalkingsound",	FALSE },
     { "icewalkingsound",	FALSE },
     { "waterwalkingsound",	FALSE },
-    { "firewalkingsound",	FALSE },
-    { "skatingforwardsound",	FALSE },
-    { "skatingturnsound",	FALSE },
-    { "slidingsound",		FALSE },
-    { "tileimages",		FALSE },
-    { "useanimation",		TRUE },
-    { "font",			FALSE }
+    { "firewalkingsound",	FALSE }
 };
 
-static resourceitem	globalresources[RES_COUNT];
-static resourceitem	ms_resources[RES_COUNT];
-static resourceitem	lynx_resources[RES_COUNT];
+static resourceitem	allresources[Ruleset_Count][RES_COUNT];
+static resourceitem    *globalresources = allresources[Ruleset_None];
+static resourceitem    *resources = NULL;
 
 /* The active ruleset.
  */
-static int	currentruleset = Ruleset_None;
+static int		currentruleset = Ruleset_None;
 
 /* The directory containing all the resource files.
  */
@@ -105,26 +107,30 @@ char	       *resdir = NULL;
 
 static void initresourcedefaults(void)
 {
-    strcpy(globalresources[RES_SND_CHIP_LOSES].str,	"bummer.wav");
-    strcpy(globalresources[RES_SND_CHIP_WINS].str,	"ditty1.wav");
-    strcpy(globalresources[RES_SND_TIME_OUT].str,	"bell.wav");
-    strcpy(globalresources[RES_SND_TIME_LOW].str,	"click1.wav");
-    strcpy(globalresources[RES_SND_CANT_MOVE].str,	"oof3.wav");
-    strcpy(globalresources[RES_SND_IC_COLLECTED].str,	"click3.wav");
-    strcpy(globalresources[RES_SND_ITEM_COLLECTED].str,	"blip2.wav");
-    strcpy(globalresources[RES_SND_BOOTS_STOLEN].str,	"strike.wav");
-    strcpy(globalresources[RES_SND_TELEPORTING].str,	"teleport.wav");
-    strcpy(globalresources[RES_SND_DOOR_OPENED].str,	"door.wav");
-    strcpy(globalresources[RES_SND_SOCKET_OPENED].str,	"chimes.wav");
-    strcpy(globalresources[RES_SND_BUTTON_PUSHED].str,	"pop2.wav");
-    strcpy(globalresources[RES_SND_BOMB_EXPLODES].str,	"hit3.wav");
-    strcpy(globalresources[RES_SND_WATER_SPLASH].str,	"water2.wav");
-    strcpy(globalresources[RES_TILEIMAGES].str,		"tiles.bmp");
-    strcpy(globalresources[RES_FONTFILE].str,		"font.psf");
-    globalresources[RES_USEANIM].num = FALSE;
+#if 0
+    strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
+    strcpy(globalresources[RES_SND_CHIP_WINS].str, "ditty1.wav");
+    strcpy(globalresources[RES_SND_TIME_OUT].str, "bell.wav");
+    strcpy(globalresources[RES_SND_TIME_LOW].str, "click1.wav");
+    strcpy(globalresources[RES_SND_CANT_MOVE].str, "oof3.wav");
+    strcpy(globalresources[RES_SND_IC_COLLECTED].str, "click3.wav");
+    strcpy(globalresources[RES_SND_ITEM_COLLECTED].str, "blip2.wav");
+    strcpy(globalresources[RES_SND_BOOTS_STOLEN].str, "strike.wav");
+    strcpy(globalresources[RES_SND_TELEPORTING].str, "teleport.wav");
+    strcpy(globalresources[RES_SND_DOOR_OPENED].str, "door.wav");
+    strcpy(globalresources[RES_SND_SOCKET_OPENED].str, "chimes.wav");
+    strcpy(globalresources[RES_SND_BUTTON_PUSHED].str, "pop2.wav");
+    strcpy(globalresources[RES_SND_BOMB_EXPLODES].str, "hit3.wav");
+    strcpy(globalresources[RES_SND_WATER_SPLASH].str, "water2.wav");
+    strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
+    strcpy(globalresources[RES_IMG_FONT].str, "font.psf");
+    globalresources[RES_IMG_USEANIM].num = FALSE;
 
-    memcpy(ms_resources, globalresources, sizeof ms_resources);
-    memcpy(lynx_resources, globalresources, sizeof lynx_resources);
+    memcpy(&allresources[Ruleset_MS], &globalresources,
+	   sizeof globalresources);
+    memcpy(&allresources[Ruleset_Lynx], &globalresources,
+	   sizeof globalresources);
+#endif
 }
 
 static void lower(char *str)
@@ -142,7 +148,7 @@ static int readrcfile(void)
     char		buf[256];
     char		name[256];
     int			ruleset;
-    int			lineno, i;
+    int			lineno, i, j;
 
     memset(&file, 0, sizeof file);
     if (!openfileindir(&file, resdir, "rc", "r", NULL))
@@ -183,19 +189,10 @@ static int readrcfile(void)
 	    i = atoi(item.str);
 	    item.num = i;
 	}
-	switch (ruleset) {
-	  case Ruleset_MS:
-	    ms_resources[i] = item;
-	    break;
-	  case Ruleset_Lynx:
-	    lynx_resources[i] = item;
-	    break;
-	  case Ruleset_None:
-	    globalresources[i] = item;
-	    ms_resources[i] = item;
-	    lynx_resources[i] = item;
-	    break;
-	}
+	allresources[ruleset][i] = item;
+	if (ruleset == Ruleset_None)
+	    for (j = Ruleset_None ; j < Ruleset_Count ; ++j)
+		allresources[j][i] = item;
     }
 
     fileclose(&file, NULL);
@@ -211,43 +208,21 @@ static int loadimages(void)
     char       *path;
     int		f;
 
+    f = FALSE;
     path = getpathbuffer();
-
-    switch (currentruleset) {
-      case Ruleset_MS:
-	f = FALSE;
-	if (*ms_resources[RES_TILEIMAGES].str) {
-	    combinepath(path, resdir, ms_resources[RES_TILEIMAGES].str);
-	    f = loadsmalltileset(path, FALSE);
-	}
-	break;
-      case Ruleset_Lynx:
-	f = FALSE;
-	if (*lynx_resources[RES_TILEIMAGES].str) {
-	    combinepath(path, resdir, lynx_resources[RES_TILEIMAGES].str);
-	    if (lynx_resources[RES_USEANIM].num)
-		f = loadlargetileset(path, FALSE);
-	    else
-		f = loadsmalltileset(path, FALSE);
-	}
-	break;
-      default:
-	f = FALSE;
-	break;
+    if (*resources[RES_IMG_TILES].str) {
+	combinepath(path, resdir, resources[RES_IMG_TILES].str);
+	f = resources[RES_IMG_USEANIM].num ? loadlargetileset(path, TRUE)
+					   : loadsmalltileset(path, TRUE);
     }
-    if (f) {
-	free(path);
-	return TRUE;
-    }
-
-    if (*globalresources[RES_TILEIMAGES].str) {
-	combinepath(path, resdir, globalresources[RES_TILEIMAGES].str);
+    if (!f && *globalresources[RES_IMG_TILES].str) {
+	combinepath(path, resdir, globalresources[RES_IMG_TILES].str);
 	f = loadsmalltileset(path, TRUE);
     }
-
     free(path);
+
     if (!f)
-	errmsg(resdir, "no tilesets found");
+	errmsg(resdir, "no valid tilesets found");
     return f;
 }
 
@@ -258,25 +233,18 @@ static int loadimages(void)
 static int loadfont(void)
 {
     char       *path;
-    char const *filename;
     int		f;
 
-    switch (currentruleset) {
-      case Ruleset_Lynx:filename = lynx_resources[RES_FONTFILE].str;	break;
-      case Ruleset_MS:	filename = ms_resources[RES_FONTFILE].str;	break;
-      case Ruleset_None:filename = NULL;				break;
-      default:		filename = NULL;				break;
-    }
-    if (!filename)
-	filename = globalresources[RES_FONTFILE].str;
-    if (!filename) {
-	errmsg(resdir, "no font defined");
-	return FALSE;
-    }
-
+    f = FALSE;
     path = getpathbuffer();
-    combinepath(path, resdir, filename);
-    f = loadfontfromfile(path);
+    if (*resources[RES_IMG_FONT].str) {
+	combinepath(path, resdir, resources[RES_IMG_FONT].str);
+	f = loadfontfromfile(path);
+    }
+    if (!f && *globalresources[RES_IMG_FONT].str) {
+	combinepath(path, resdir, globalresources[RES_IMG_FONT].str);
+	f = loadfontfromfile(path);
+    }
     free(path);
     return f;
 }
@@ -287,7 +255,28 @@ static int loadfont(void)
 
 static int loadsounds(void)
 {
-    return FALSE;
+    char       *path;
+    int		count;
+    int		n, f;
+
+    path = getpathbuffer();
+    count = 0;
+    for (n = 0 ; n < SND_COUNT ; ++n) {
+	f = FALSE;
+	if (*resources[RES_SND_BASE + n].str) {
+	    combinepath(path, resdir, resources[RES_SND_BASE + n].str);
+	    f = loadsfxfromfile(n, path);
+	}
+	if (!f && *globalresources[RES_SND_BASE + n].str) {
+	    combinepath(path, resdir, globalresources[RES_SND_BASE + n].str);
+	    f = loadsfxfromfile(n, path);
+	}
+	if (f)
+	    ++count;
+    }
+    free(path);
+    selectsoundset(currentruleset);
+    return count;
 }
 
 /*
@@ -305,9 +294,10 @@ int loadgameresources(int ruleset)
     }
 
     currentruleset = ruleset;
+    resources = allresources[ruleset];
+    loadfont();
     if (!loadimages())
 	return FALSE;
-    loadfont();
     loadsounds();
     return TRUE;
 }

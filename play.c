@@ -76,7 +76,6 @@ int initgamestate(gameseries *series, int level, int replay)
     state.game = &series->games[level];
     state.ruleset = series->ruleset;
     state.lastmove = NIL;
-    state.statusflags |= SF_ONOMATOPOEIA;
     state.soundeffects = 0;
     state.timelimit = state.game->time * TICKS_PER_SECOND;
 
@@ -119,7 +118,7 @@ int doturn(int cmd)
     action	act;
     int		n;
 
-    state.soundeffects = 0;
+    state.soundeffects &= ~((1 << SND_ONESHOT_COUNT) - 1);
     state.currenttime = gettickcount();
     if (state.replay < 0) {
 	if (cmd != CmdPreserve)
@@ -170,6 +169,7 @@ int drawscreen(void)
     else
 	currtime = -1;
 
+    playsoundeffects(state.soundeffects);
     return displaygame(&state, currtime, besttime);
 }
 
