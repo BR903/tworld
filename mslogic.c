@@ -1658,11 +1658,19 @@ static int advancecreature(creature *cr, int dir)
 	return FALSE;
     }
 
+#if 0
     endmovement(cr, dir);
     if (cr->id == Chip) {
 	deferbuttons() = FALSE;
 	handlebuttons();
     }
+#else
+    if (cr->id == Chip)
+	deferbuttons() = FALSE;
+    endmovement(cr, dir);
+    if (cr->id == Chip)
+	handlebuttons();
+#endif
 
     return TRUE;
 }
