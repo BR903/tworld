@@ -106,19 +106,21 @@ static int createprompticons(void)
 	    warn("couldn't create SDL surface: %s", SDL_GetError());
 	    return FALSE;
 	}
-	SDL_GetRGB(bkgndcolor(sdlg.dimtextclr), sdlg.screen->format,
-		   &prompticons->format->palette->colors[0].r,
-		   &prompticons->format->palette->colors[0].g,
-		   &prompticons->format->palette->colors[0].b);
-	SDL_GetRGB(halfcolor(sdlg.dimtextclr), sdlg.screen->format,
-		   &prompticons->format->palette->colors[1].r,
-		   &prompticons->format->palette->colors[1].g,
-		   &prompticons->format->palette->colors[1].b);
-	SDL_GetRGB(textcolor(sdlg.dimtextclr), sdlg.screen->format,
-		   &prompticons->format->palette->colors[2].r,
-		   &prompticons->format->palette->colors[2].g,
-		   &prompticons->format->palette->colors[2].b);
     }
+
+    SDL_GetRGB(bkgndcolor(sdlg.dimtextclr), sdlg.screen->format,
+	       &prompticons->format->palette->colors[0].r,
+	       &prompticons->format->palette->colors[0].g,
+	       &prompticons->format->palette->colors[0].b);
+    SDL_GetRGB(halfcolor(sdlg.dimtextclr), sdlg.screen->format,
+	       &prompticons->format->palette->colors[1].r,
+	       &prompticons->format->palette->colors[1].g,
+	       &prompticons->format->palette->colors[1].b);
+    SDL_GetRGB(textcolor(sdlg.dimtextclr), sdlg.screen->format,
+	       &prompticons->format->palette->colors[2].r,
+	       &prompticons->format->palette->colors[2].g,
+	       &prompticons->format->palette->colors[2].b);
+
     return TRUE;
 }
 
@@ -518,6 +520,39 @@ static int displayprompticon(int completed)
 /*
  * The exported functions.
  */
+
+void setcolors(long bkgnd, long text, long bold, long dim)
+{
+    int	bkgndr, bkgndg, bkgndb;
+
+    if (bkgnd < 0)
+	bkgnd = 0x000000;
+    if (text < 0)
+	text = 0xFFFFFF;
+    if (bold < 0)
+	bold = 0xFFFF00;
+    if (dim < 0)
+	dim = 0xC0C0C0;
+
+    if (bkgnd == text || bkgnd == bold || bkgnd == dim) {
+	errmsg(NULL, "one or more text colors matches the background color; "
+		     "color scheme unchanged.");
+	return;
+    }
+
+    bkgndr = (bkgnd >> 16) & 255;
+    bkgndg = (bkgnd >> 8) & 255;
+    bkgndb = bkgnd & 255;
+
+    sdlg.textclr = makefontcolors(bkgndr, bkgndg, bkgndb,
+			(text >> 16) & 255, (text >> 8) & 255, text & 255);
+    sdlg.dimtextclr = makefontcolors(bkgndr, bkgndg, bkgndb,
+			(dim >> 16) & 255, (dim >> 8) & 255, dim & 255);
+    sdlg.hilightclr = makefontcolors(bkgndr, bkgndg, bkgndb,
+			(bold >> 16) & 255, (bold >> 8) & 255, bold & 255);
+
+    createprompticons();
+}
 
 /* Display the current state of the game.
  */

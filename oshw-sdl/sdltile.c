@@ -792,6 +792,10 @@ static int initfreeformtileset(SDL_Surface *tiles)
 	    continue;
 	}
 	++y;
+	if (y >= tiles->h) {
+	    warn("one or more incomplete tiles at the bottom edge");
+	    return FALSE;
+	}
 	size += h * rowcount;
 	h = 0;
 	rowcount = 0;

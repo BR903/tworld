@@ -116,6 +116,10 @@ extern void freetileset(void);
  */
 extern int creategamedisplay(void);
 
+/* Select the colors used for drawing text.
+ */
+extern void setcolors(long bkgnd, long text, long bold, long dim);
+
 /* Fill the display with the background color.
  */
 extern void cleardisplay(void);

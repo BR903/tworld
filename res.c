@@ -13,11 +13,19 @@
 #include	"oshw.h"
 #include	"res.h"
 
-#define	RES_IMG_TILES		0
-#define	RES_IMG_FONT		1
+#define	RES_IMG_BASE		0
+#define	RES_IMG_TILES		(RES_IMG_BASE + 0)
+#define	RES_IMG_FONT		(RES_IMG_BASE + 1)
 #define	RES_IMG_LAST		RES_IMG_FONT
 
-#define	RES_SND_BASE		(RES_IMG_LAST + 1)
+#define	RES_CLR_BASE		(RES_IMG_LAST + 1)
+#define	RES_CLR_BKGND		(RES_CLR_BASE + 0)
+#define	RES_CLR_TEXT		(RES_CLR_BASE + 1)
+#define	RES_CLR_BOLD		(RES_CLR_BASE + 2)
+#define	RES_CLR_DIM		(RES_CLR_BASE + 3)
+#define	RES_CLR_LAST		RES_CLR_DIM
+
+#define	RES_SND_BASE		(RES_CLR_LAST + 1)
 #define	RES_SND_CHIP_LOSES	(RES_SND_BASE + SND_CHIP_LOSES)
 #define	RES_SND_CHIP_WINS	(RES_SND_BASE + SND_CHIP_WINS)
 #define	RES_SND_TIME_OUT	(RES_SND_BASE + SND_TIME_OUT)
@@ -61,6 +69,10 @@ typedef union resourceitem {
 static rcitem rclist[] = {
     { "tileimages",		FALSE },
     { "font",			FALSE },
+    { "backgroundcolor",	FALSE },
+    { "textcolor",		FALSE },
+    { "boldtextcolor",		FALSE },
+    { "dimtextcolor",		FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
@@ -109,6 +121,10 @@ static void initresourcedefaults(void)
 {
     strcpy(allresources[Ruleset_None][RES_IMG_TILES].str, "tiles.bmp");
     strcpy(allresources[Ruleset_None][RES_IMG_FONT].str, "font.bmp");
+    strcpy(allresources[Ruleset_None][RES_CLR_BKGND].str, "000000");
+    strcpy(allresources[Ruleset_None][RES_CLR_TEXT].str, "FFFFFF");
+    strcpy(allresources[Ruleset_None][RES_CLR_BOLD].str, "FFFF00");
+    strcpy(allresources[Ruleset_None][RES_CLR_DIM].str, "C0C0C0");
 #if 0
     strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
     strcpy(globalresources[RES_IMG_FONT].str, "font.bmp");
@@ -224,6 +240,40 @@ static int loadimages(void)
  *
  */
 
+static int loadcolors(void)
+{
+    long	bkgnd, text, bold, dim;
+    char       *end;
+
+    bkgnd = strtol(resources[RES_CLR_BKGND].str, &end, 16);
+    if (*end || bkgnd < 0 || bkgnd > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for background");
+	bkgnd = -1;
+    }
+    text = strtol(resources[RES_CLR_TEXT].str, &end, 16);
+    if (*end || text < 0 || text > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for text");
+	text = -1;
+    }
+    bold = strtol(resources[RES_CLR_BOLD].str, &end, 16);
+    if (*end || bold < 0 || bold > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for bold text");
+	bold = -1;
+    }
+    dim = strtol(resources[RES_CLR_DIM].str, &end, 16);
+    if (*end || dim < 0 || dim > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for dim text");
+	dim = -1;
+    }
+
+    setcolors(bkgnd, text, bold, dim);
+    return TRUE;
+}
+
+/*
+ *
+ */
+
 static int loadfont(void)
 {
     char       *path;
@@ -282,6 +332,7 @@ int loadgameresources(int ruleset)
 {
     currentruleset = ruleset;
     resources = allresources[ruleset];
+    loadcolors();
     loadfont();
     if (!loadimages())
 	return FALSE;
@@ -293,7 +344,7 @@ int initresources(void)
 {
     initresourcedefaults();
     resources = allresources[Ruleset_None];
-    return readrcfile() && loadfont();
+    return readrcfile() && loadcolors() && loadfont();
 }
 
 void freeallresources(void)
