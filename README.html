@@ -41,25 +41,24 @@ create a new directory -- something like
 <tt><samp>c:\tworld</samp></tt> -- and extract the files there.
 <p>
 If you have a copy of the <tt>chips.dat</tt> data file, copy it to the
-<tt>data</tt> subdirectory. For example:
+<tt>data</tt> subdirectory. This will allow you to play the original
+levels under Tile World (for the MS ruleset and the Lynx ruleset
+both).
+<p>
+If you have other data files that you would like to try out in Tile
+World, copy those to the <tt>sets</tt> directory.
+<p>
+The MSDOS commands to do the above would look something like:
 <p>
 <blockquote>
 <tt>cd <samp>c:\wherever\my\copy\of\chips\challenge\is\at</samp></tt>
 <br>
 <tt>copy chips.dat <samp>c:\tworld</samp>\data</tt>
-</blockquote>
-<p>
-If you have other data files that you would like to try out in the
-clone, copy those to the <tt>sets</tt> directory instead:
-<p>
-<blockquote>
+<br>
 <tt>cd <samp>c:\my\collection\of\dat\files</samp></tt>
 <br>
 <tt>copy *.dat <samp>c:\tworld</samp>\sets</tt>
 </blockquote>
-<p>
-(If you're curious as to why the other <tt>.dat</tt> files go in a
-different directory, see the documentation on configuration files.)
 <p>
 That's all that needs to be done to set it up. Run the program as
 <tt><samp>c:\tworld</samp>\tworld</tt>, or create a shortcut for it.
@@ -116,9 +115,47 @@ The <tt>sets</tt> directory is where you will store the <tt>.dat</tt>
 files that you want to use. However, if you want to make use of a
 configuration file with a particular data file, then you will need to
 store the data file in the <tt>data</tt> directory, and the
-configuration file goes into the <tt>sets</tt> directory instead.
-(See the complete documentation for information on configuration
-files.)
+configuration file goes into the <tt>sets</tt> directory instead. See
+the documentation for more information.
+<p>
+<h2>The Complete Documentation</h2>
+<p>
+The full documentation for Tile World is included with the
+distribution, in the file <tt>tworld.html</tt>. There you will find 
+information on how to play the game, adding new level sets,
+customizing Tile World, and more.
+<p>
+<h2>Creating new level sets for the Lynx ruleset</h2>
+<p>
+At the time of this writing, there do not exist any user-created level
+sets for the Lynx ruleset. The reason for this is very simple; there
+has not been any way to play such levels before. Hopefully, now that
+Tile World exists, that will change in the near future.
+<p>
+If you yourself would like to create new levels for the Lynx ruleset,
+there are a few ways you can do this:
+<p>
+<ul>
+<li>
+ChipEdit has a special feature which allows you to control the
+signature of the data file. This is done by adding a
+<tt>SIGNATURE</tt> entry to the <tt>chipedit.ini</tt> file. The
+default signature value is <tt>0x0002AAAC</tt>, which indicates a data
+file that uses the MS ruleset. If you set the <tt>SIGNATURE</tt> to be
+<tt>0x0102AAAC</tt>, then ChipEdit will create data files marked to
+use the Lynx ruleset instead.
+<li>
+A very simple command-line utility is included with Tile World, called
+<tt>mklynxcc</tt>. This program will change a normal <tt>.dat</tt>
+file to one that will use the Lynx ruleset instead of the MS ruleset.
+Running <tt>mklynxcc <samp>foo.dat</samp></tt> will change
+<tt><samp>foo.dat</samp></tt>'s ruleset from MS to Lynx.
+<li>
+Finally, you can use a configuration file to override the builtin
+ruleset. This method requires creating an extra file, but does allows
+you to avoid making changes to the <tt>.dat</tt> file. See the
+complete documentation for information on how to set up a
+configuration file.
 <p>
 <h2>Resources on the Internet</h2>
 <p>
@@ -127,14 +164,15 @@ on the internet. Much of it is focused on maximizing your score on the
 "original" level set for the MS game, but you will also find lots of
 general help and useful information as well.
 <p>
-Richard Field's web page has links to almost everything else:
-<br>
-<a href="http://www.agt.net/public/nfield/ChipChallenge/chip.htm">http://www.agt.net/public/nfield/ChipChallenge/chip.htm</a>
-<p>
-There is a Yahoo group for "Chip's Challenge", from which you can
-download user-created level sets:
+Most if not all user-created level sets can be found at the
+chips_challenge Yahoo group:
 <br>
 <a href="http://groups.yahoo.com/group/chips_challenge/files/">http://groups.yahoo.com/group/chips_challenge/files/</a>
+<p>
+Richard Field maintains a web page that supplies links to almost
+everything on the net related to "Chip's Challenge":
+<br>
+<a href="http://www.agt.net/public/nfield/ChipChallenge/chip.htm">http://www.agt.net/public/nfield/ChipChallenge/chip.htm</a>
 <p>
 Finally, Tile World's home page is at:
 <br>
@@ -152,19 +190,32 @@ implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE. See the GNU General Public License, included in this
 distribution in the file COPYING, for more details.
 <p>
+<h2>Bugs</h2>
+<p>
+Bug reports are always appreciated, and should be sent to the author
+at &lt;breadbox@muppetlabs.com&gt;. The list of known bugs is at
+<a href="http://www.muppetlabs.com/~breadbox/software/tworld/BUGS.html">http://www.muppetlabs.com/~breadbox/software/tworld/BUGS.html</a>.
+Please check here before sending a bug report, to to make sure the bug
+has not already been documented.
+<p>
 <h2>Credits</h2>
 <p>
 Tile World was written by Brian Raiter.
 <p>
-The tile images included in this distribution were created by Anders
-Kaesorg, with help from POV. Anders Kaesorg retains all rights to
-these images.
-<p>
 The sound effects included in this distribution were created by Brian
-Raiter, with help from sox. They are in the public domain.
+Raiter, with assistance from SoX. They are in the public domain.
 <p>
-"Chip's Challenge" was originally invented by Chuck Sommerville, who
-is also the author of the original Lynx version.
+The tile images included in this distribution were created by Brian
+Raiter, with assistance from The GIMP and pixmap. They are in the
+public domain.
+<p>
+The tile images that are <em>not</em> included in this distribution
+were created by Anders Kaesorg, with assistance from POV. Anders
+Kaseorg retains all rights to these images, unless he has explicitly
+put them in the public domain.
+<p>
+"Chip's Challenge" was designed by Chuck Sommerville, who is also the
+author of the original Lynx program.
 <p>
 "Chip's Challenge" is a registered trademark of Bridgestone
 Multimedia.
@@ -172,27 +223,22 @@ Multimedia.
 Creating this program would have been flatly impossible without the
 help of several fans of "Chip's Challenge". The author would
 particularly like to acknowledge Anders Kaesorg for sharing the fruits
-of his investigations into the MS version of the game and for being an
-effective bug hunter; and Chuck Sommerville for his unfailing support
+of his investigations into the game logic of the MS version and for
+being an effective bug hunter, and Chuck Sommerville for his pointers
+regarding the game logic of the Lynx version and his unfailing support
 of this project.
 <p>
-Many of the regular reads of the annexcafe.chips.challenge newsgroup
-also offered their assistance via bug reports, suggestions, and
-all-around encouragement.
+Many other regulars of the annexcafe.chips.challenge newsgroup
+assisted with bug reports, suggestions, and all-around encouragement.
+Their help is gratefully acknowledged.
 <p>
 The anonymous author of the document describing the <tt>.dat</tt> file
-format, Don Gregory, the "Charter Chipsters", and the many
-contributors to the CC AVI library all deserve mention. This program
-would never have been written without the information all these people
-made freely available. Finally, a tip of the hat to John K. Elion for
-writing ChipEdit.
+format, Don Gregory, the "Charter Chipsters", and the contributors to
+the CC AVI library all deserve mention: this program would never have
+been written without the information they made freely available.
 <p>
-<h2>Bugs</h2>
-<p>
-Bug reports are always appreciated, and should be sent to the author
-at the address below. Check the current <a href="BUGS.html">BUGS</a>
-file before doing so to make sure the bug has not already been
-documented.
+Last but not least, a tip of the hat to John K. Elion for writing
+ChipEdit.
 <p>
 Brian Raiter
 <br>
