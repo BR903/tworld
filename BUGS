@@ -3,11 +3,13 @@ Contents
 * Bugs in the MS game logic emulation
 * Bugs in the Lynx game logic emulation
 * Other bugs and misfeatures
-* General non-bugs
 ___________________________________________________________________________
 
 Bugs in the MS game logic emulation
 
+* The behavior of the paramecia around the teleports in Eric Schmidt's
+  level 29 ("PARAMECIA") does not match the real game. I don't yet know why
+  this is.
 * Some subtleties of timings on "simultaneous" events are incorrect. For
   example, if Chip enters a teleport in such a way as to cause a block to
   press a button, the button's effect is applied after selecting a
@@ -45,19 +47,5 @@ ___________________________________________________________________________
 
 Other bugs and misfeatures
 
-* There ought to be a way to return to the file list, without having to
+* There ought to be a way to return to the file list, instead of having to
   shut down and restart the program. That drives me crazy.
-___________________________________________________________________________
-
-General non-bugs
-
-[I expect that some intentional features of the program will strike other
-people as perhaps being bugs. This section will be used to list these
-non-bugs.]
-
-* "The MS emulation should have an option for doing smooth scrolling."
-  The MS ruleset makes it impossible to have sensible smooth scrolling.
-  Something like boosting is an obvious example of why this can't work.
-  There is no good way to spread Chip's movement out in time when the
-  interval before Chip can make another move can vary all the way down to
-  zero.

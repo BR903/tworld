@@ -5,13 +5,13 @@ Tile World is an emulation of the game "Chip's Challenge" for the
 Atari Lynx, created by Chuck Sommerville, and later ported to MS
 Windows by Microsoft (among other ports).
 
-This is the fourth alpha release of Tile World. There is still a bit
-of work left to be done before beta, but the program is quite usable
-as it currently stands.
+This is an alpha release of Tile World. The program works quite well
+as it now stands, but is missing a couple of features that are needed
+before a beta release.
 
-Note that Tile World requires the SDL library. The Windows
-distribution includes a copy of the SDL library (version 1.2.2). SDL
-can be downloaded from http://www.libsdl.org/download.html.
+Note that Tile World makes use of the SDL library. If you do not
+already have SDL installed, you can download a distribution from
+http://www.libsdl.org/download.html.
 
 See the INSTALL file for further directions on getting the program set
 up and running.
@@ -27,13 +27,11 @@ Bugs
 
 At this time I am unaware of any bugs in the support code (e.g., the
 code that finds and lists the available data files, calculates scores,
-and so on), though I'm sure some are there. Bugs in the game logic, on
-the other hand, definitely do exist. See the BUGS file for details.
+and so on). The bugs in the game logic that are known to me are
+relatively minor. See the BUGS file for details.
 
-Bug reports should either be sent to me at <breadbox@muppetlabs.com>,
-or posted to the newsgroup. (However, try to place such posts under an
-existing thread regarding the clone. And take a moment to verify that
-the bug has not already been described in a previous post.)
+Bug reports are always appreciated, and should be sent to me at
+<breadbox@muppetlabs.com>.
 
 License
 -------

@@ -8,7 +8,7 @@ LOADLIBES += $(shell sdl-config --libs)
 
 OBJS = \
 tworld.o series.o play.o solution.o res.o lxlogic.o mslogic.o help.o score.o \
-random.o cmdline.o fileio.o err.o liboshw.a
+random.o cmdline.o fileio.o err.o liboshw.a tworldres.o
 
 tworld.exe: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
@@ -30,6 +30,9 @@ err.o      : err.c oshw.h err.h
 
 liboshw.a: defs.h gen.h oshw.h oshw/*.c oshw/*.h
 	(cd oshw && make)
+
+tworldres.o: tworld.ico
+	echo 1 ICON $^ | windres -o $@
 
 
 mklynxcc.exe: mklynxcc.c

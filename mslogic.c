@@ -533,6 +533,15 @@ static creature *lookupblock(int pos)
 	die("lookupblock() called for (%d %d) which contains non-block %02X",
 	    pos % CXGRID, pos / CXGRID, id);
 
+    if (cellat(pos)->bot.id == Beartrap) {
+	for (n = 0 ; n < traplistsize() ; ++n) {
+	    if (traplist()[n].to == cr->pos) {
+		cr->state |= CS_RELEASED;
+		break;
+	    }
+	}
+    }
+
     return addtoblocklist(cr);
 }
 
@@ -1156,7 +1165,7 @@ static int getslipmove(creature *cr)
 		    cr->fdir = dir;
 		else
 		    cr->fdir = NIL;
-	    } else
+	    } else if (cr->id != Chip)
 		cr->fdir = NIL;
 	    return FALSE;
 	}
@@ -1298,10 +1307,9 @@ static int startmovement(creature *cr, int dir)
 	return FALSE;
     }
 
-    if (floor == Beartrap) {
+    if (floor == Beartrap)
 	assert(cr->state & CS_RELEASED);
-	cr->state &= ~CS_RELEASED;
-    }
+    cr->state &= ~CS_RELEASED;
 
     if (floor == CloneMachine)
 	cellat(cr->pos)->bot.state &= ~FS_CLONERFULL;
@@ -1322,8 +1330,8 @@ static void endmovement(creature *cr)
 {
     mapcell    *cell;
     maptile    *tile;
-    int		floor;
     int		dead = FALSE;
+    int		floor, i;
 
     cell = cellat(cr->pos);
     tile = &cell->top;
@@ -1453,6 +1461,15 @@ static void endmovement(creature *cr)
     }
     addcreaturetomap(cr);
 
+    if (floor != Beartrap && cellat(cr->pos)->bot.id == Beartrap) {
+	for (i = 0 ; i < traplistsize() ; ++i) {
+	    if (traplist()[i].to == cr->pos) {
+		cr->state |= CS_RELEASED;
+		break;
+	    }
+	}
+    }
+
     if (cr->id == Chip) {
 	if (iscreature(cell->bot.id) && creatureid(cell->bot.id) != Chip) {
 	    setchipstatus(SF_CHIPHIT);
@@ -1489,6 +1506,9 @@ static int advancecreature(creature *cr, int dir)
 
     if (dir == NIL)
 	return TRUE;
+
+    if (cr->id == Chip)
+	resetchipwait();
 
     if (!startmovement(cr, dir)) {
 	if (cr->id == Chip)
@@ -1561,10 +1581,8 @@ static void floormovements(void)
 	if (cr->fdir != NIL) {
 	    if (advancecreature(cr, cr->fdir)) {
 		handlebuttons();
-		if (cr->id == Chip) {
+		if (cr->id == Chip)
 		    cr->state &= ~CS_HASMOVED;
-		    resetchipwait();
-		}
 	    }
 	}
 	if (!f && cr->id != Chip) {
@@ -1958,7 +1976,8 @@ int ms_initgame(gamestate *pstate)
 		 game->number, pos % CXGRID, pos / CXGRID);
 	    continue;
 	}
-	if (fileids[layer1[pos]].id != Block && cellat(pos)->bot.id != CloneMachine) {
+	if (fileids[layer1[pos]].id != Block
+			&& cellat(pos)->bot.id != CloneMachine) {
 	    cr = allocatecreature();
 	    cr->pos = pos;
 	    cr->id = fileids[layer1[pos]].id;
@@ -2065,7 +2084,6 @@ int ms_advancegame(gamestate *pstate)
 		goto done;
 	}
 	cr->state |= CS_HASMOVED;
-	resetchipwait();
     }
 
   done:
