@@ -71,7 +71,7 @@ int createscorelist(gameseries const *series,
     gamesetup	       *game;
     char	      **ptrs;
     char	       *textheap;
-    int		       *levellist;
+    int		       *levellist = NULL;
     unsigned int	levelscore, timescore;
     unsigned int	totalscore;
     int			count;
