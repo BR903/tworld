@@ -8,9 +8,10 @@
 #include	"SDL.h"
 #include	"sdlgen.h"
 
-/* A second of game time actually equals 1.1 seconds.
+/* By default, a second of game time lasts for 1000 milliseconds of
+ * real time.
  */
-#define	MS_GAME_SECOND	1100
+static int	mspertick = 1000 / TICKS_PER_SECOND;
 
 /* The tick counter.
  */
@@ -19,6 +20,14 @@ static int	utick = 0;
 /* The time of the next tick.
  */
 static int	nexttickat = 0;
+
+/* Set the length (in real time) of a second of game time. A value of
+ * zero selects the default length of one second.
+ */
+void settimersecond(int ms)
+{
+    mspertick = (ms ? ms : 1000) / TICKS_PER_SECOND;
+}
 
 /* Control the timer depending on the value of action. A negative
  * value turns off the timer if it is running and resets the counter
@@ -34,7 +43,7 @@ void settimer(int action)
 	if (nexttickat < 0)
 	    nexttickat = SDL_GetTicks() - nexttickat;
 	else
-	    nexttickat = SDL_GetTicks() + MS_GAME_SECOND / TICKS_PER_SECOND;
+	    nexttickat = SDL_GetTicks() + mspertick;
     } else {
 	if (nexttickat > 0)
 	    nexttickat = SDL_GetTicks() - nexttickat;
@@ -56,15 +65,16 @@ void waitfortick(void)
 
     ms = nexttickat - SDL_GetTicks();
     while (ms < 0)
-	ms += MS_GAME_SECOND / TICKS_PER_SECOND;
+	ms += mspertick;
     if (ms > 0)
 	SDL_Delay(ms);
     ++utick;
-    nexttickat += MS_GAME_SECOND / TICKS_PER_SECOND;
+    nexttickat += mspertick;
 }
 
 static void shutdown(void)
 {
+    settimer(-1);
 }
 
 /* Initialize and reset the timer.

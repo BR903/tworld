@@ -35,6 +35,7 @@
 typedef	struct gamespec {
     gameseries	series;		/* the complete set of levels */
     int		currentgame;	/* which level is currently selected */
+    int		invalid;	/* TRUE if the current level is invalid */
     int		playback;	/* TRUE if in playback mode */
 } gamespec;
 
@@ -42,6 +43,7 @@ typedef	struct gamespec {
  */
 typedef	struct startupdata {
     char       *filename;	/* which data file to use */
+    int		levelnum;	/* a selected initial level */ 
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
 } startupdata;
@@ -49,7 +51,7 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvls] [-D DIR] [-S DIR] [NAME]\n"
+	"Usage: tworld [-hvls] [-D DIR] [-S DIR] [NAME] [LEVEL]\n"
 	"   -D  Read data files from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
 	"   -l  Display the list of available data files and exit\n"
@@ -57,12 +59,13 @@ static char const *yowzitch =
 	"   -h  Display this help and exit\n"
 	"   -v  Display version information and exit\n"
 	"NAME specifies which setup file to read.\n"
+	"LEVEL specifies which level to begin with.\n"
 	"(Press ? during the game for further help.)\n";
 
 /* Online version data.
  */
 static char const *vourzhon =
-	"TileWorld, version 0.5.1.\n"
+	"TileWorld, version 0.6.0.\n"
 	"Copyright (C) 2001 by Brian Raiter, under the terms of the GNU\n"
 	"General Public License; either version 2 of the License, or at\n"
 	"your option any later version.\n"
@@ -120,6 +123,14 @@ static void showscores(gamespec *gs)
     freescorelist(texts, listsize);
 }
 
+/*
+ */
+static void replaceablesolution(gamespec *gs)
+{
+    gs->series.games[gs->currentgame].replacebest =
+			!gs->series.games[gs->currentgame].replacebest;
+}
+
 /* Get a keystroke from the user at the completion of the current
  * level.
  */
@@ -139,8 +150,9 @@ static void endinput(gamespec *gs, int status)
 	  case CmdNext10:	gs->currentgame += 10;		return;
 	  case CmdProceed:	if (status > 0) ++gs->currentgame; return;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return;
-	  case CmdHelp:		runhelp();			break;
+	  case CmdHelp:		gameplayhelp();			break;
 	  case CmdSeeScores:	showscores(gs);			return;
+	  case CmdKillSolution:	replaceablesolution(gs);	return;
 	  case CmdQuitLevel:					exit(0);
 	  case CmdQuit:						exit(0);
 	}
@@ -157,24 +169,24 @@ static void playgame(gamespec *gs)
     drawscreen();
     cmd = input(TRUE);
     switch (cmd) {
-      case CmdNorth: case CmdWest:			break;
-      case CmdSouth: case CmdEast:			break;
-      case CmdPrev10:		gs->currentgame -= 10;	return;
-      case CmdPrev:		--gs->currentgame;	return;
-      case CmdPrevLevel:	--gs->currentgame;	return;
-      case CmdNextLevel:	++gs->currentgame;	return;
-      case CmdNext:		++gs->currentgame;	return;
-      case CmdNext10:		gs->currentgame += 10;	return;
-      case CmdPlayback:		gs->playback = TRUE;	return;
-      case CmdSeeScores:	showscores(gs);		return;
-      case CmdHelp:		runhelp();		return;
-      case CmdQuitLevel:				exit(0);
-      case CmdQuit:					exit(0);
-      default:			cmd = CmdNone;		break;
+      case CmdNorth: case CmdWest:				break;
+      case CmdSouth: case CmdEast:				break;
+      case CmdPrev10:		gs->currentgame -= 10;		return;
+      case CmdPrev:		--gs->currentgame;		return;
+      case CmdPrevLevel:	--gs->currentgame;		return;
+      case CmdNextLevel:	++gs->currentgame;		return;
+      case CmdNext:		++gs->currentgame;		return;
+      case CmdNext10:		gs->currentgame += 10;		return;
+      case CmdPlayback:		gs->playback = TRUE;		return;
+      case CmdSeeScores:	showscores(gs);			return;
+      case CmdKillSolution:	replaceablesolution(gs);	return;
+      case CmdHelp:		gameplayhelp();			return;
+      case CmdQuitLevel:					exit(0);
+      case CmdQuit:						exit(0);
+      default:			cmd = CmdNone;			break;
     }
 
-    activatekeyboard(TRUE);
-    settimer(+1);
+    setgameplaymode(BeginPlay);
     for (;;) {
 	n = doturn(cmd);
 	drawscreen();
@@ -190,22 +202,30 @@ static void playgame(gamespec *gs)
 	  case CmdNorth: case CmdWest:			break;
 	  case CmdSouth: case CmdEast:			break;
 	  case CmdPreserve:				break;
-	  case CmdDebugCmd1:				break;
-	  case CmdDebugCmd2:				break;
 	  case CmdPrevLevel:		n = -1;		goto quitloop;
 	  case CmdNextLevel:		n = +1;		goto quitloop;
 	  case CmdSameLevel:		n = 0;		goto quitloop;
+	  case CmdDebugCmd1:				break;
+	  case CmdDebugCmd2:				break;
+	  case CmdCheatNorth:     case CmdCheatWest:		break;
+	  case CmdCheatSouth:     case CmdCheatEast:		break;
+	  case CmdCheatHome:					break;
+	  case CmdCheatKeyRed:    case CmdCheatKeyBlue:		break;
+	  case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
+	  case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
+	  case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
+	  case CmdCheatICChip:					break;
 	  case CmdQuit:					exit(0);
 	  case CmdPauseGame:
-	    settimer(0);
+	    setgameplaymode(SuspendPlay);
 	    anykey();
-	    settimer(+1);
+	    setgameplaymode(ResumePlay);
 	    cmd = CmdNone;
 	    break;
 	  case CmdHelp:
-	    settimer(0);
-	    runhelp();
-	    settimer(+1);
+	    setgameplaymode(SuspendPlay);
+	    gameplayhelp();
+	    setgameplaymode(ResumePlay);
 	    cmd = CmdNone;
 	    break;
 	  default:
@@ -213,17 +233,38 @@ static void playgame(gamespec *gs)
 	    break;
 	}
     }
-    settimer(-1);
-    activatekeyboard(FALSE);
+    setgameplaymode(EndPlay);
     if (n > 0 && replacesolution())
 	savesolutions(&gs->series);
     endinput(gs, n);
     return;
 
   quitloop:
-    settimer(-1);
-    activatekeyboard(FALSE);
+    setgameplaymode(EndPlay);
     gs->currentgame += n;
+}
+
+/* A minimal interface for invalid levels that lets the user move
+ * to another level.
+ */
+static void noplaygame(gamespec *gs)
+{
+    for (;;) {
+	drawscreen();
+	switch (input(TRUE)) {
+	  case CmdPrev10:	gs->currentgame -= 10;	return;
+	  case CmdPrev:		--gs->currentgame;	return;
+	  case CmdPrevLevel:	--gs->currentgame;	return;
+	  case CmdNextLevel:	++gs->currentgame;	return;
+	  case CmdNext:		++gs->currentgame;	return;
+	  case CmdNext10:	gs->currentgame += 10;	return;
+	  case CmdSeeScores:	showscores(gs);		return;
+	  case CmdHelp:		gameplayhelp();		return;
+	  case CmdQuitLevel:				exit(0);
+	  case CmdQuit:					exit(0);
+	  default:		ding();			break;
+	}
+    }
 }
 
 /* Play back the user's best solution for the current level.
@@ -234,7 +275,7 @@ static void playbackgame(gamespec *gs)
 
     drawscreen();
 
-    settimer(+1);
+    setgameplaymode(BeginPlay);
     for (;;) {
 	n = doturn(CmdNone);
 	drawscreen();
@@ -249,24 +290,24 @@ static void playbackgame(gamespec *gs)
 	  case CmdQuitLevel:	gs->playback = FALSE;		goto quitloop;
 	  case CmdQuit:						exit(0);
 	  case CmdPauseGame:
-	    settimer(0);
+	    setgameplaymode(SuspendPlay);
 	    anykey();
-	    settimer(+1);
+	    setgameplaymode(ResumePlay);
 	    break;
 	  case CmdHelp:
-	    settimer(0);
-	    runhelp();
-	    settimer(+1);
+	    setgameplaymode(SuspendPlay);
+	    gameplayhelp();
+	    setgameplaymode(ResumePlay);
 	    break;
 	}
     }
-    settimer(-1);
+    setgameplaymode(EndPlay);
     gs->playback = FALSE;
     endinput(gs, n);
     return;
 
   quitloop:
-    settimer(-1);
+    setgameplaymode(EndPlay);
     gs->playback = FALSE;
 }
 
@@ -282,7 +323,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     cmdlineinfo	opts;
     char const *dir;
     unsigned	maxpath;
-    int		ch;
+    int		ch, n;
 
     maxpath = getpathbufferlen();
 
@@ -292,6 +333,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     strcpy(savedir, SAVEDIR);
     start->filename = getpathbuffer();
     *start->filename = '\0';
+    start->levelnum = 0;
     start->listseries = FALSE;
     start->listscores = FALSE;
 
@@ -299,11 +341,15 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
-	    if (*start->filename) {
+	    if (*start->filename && start->levelnum) {
+		fprintf(stderr, "too many arguments: %s\n", opts.val);
 		fputs(yowzitch, stderr);
 		exit(EXIT_FAILURE);
 	    }
-	    strncpy(start->filename, opts.val, maxpath - 1);
+	    if (sscanf(opts.val, "%d", &n) == 1)
+		start->levelnum = n;
+	    else
+		strncpy(start->filename, opts.val, maxpath - 1);
 	    break;
 	  case 'D':	strncpy(datadir, opts.val, maxpath - 1);	break;
 	  case 'S':	strncpy(savedir, opts.val, maxpath - 1);	break;
@@ -353,7 +399,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     }
     savedir[maxpath - 1] = '\0';
 
-    if (start->listscores && !*start->filename)
+    if ((start->listscores || start->levelnum) && !*start->filename)
 	strcpy(start->filename, "chips.dat");
     start->filename[maxpath - 1] = '\0';
 
@@ -364,7 +410,11 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
  */
 static int initializesystem(void)
 {
-    return oshwinitialize();
+    if (!oshwinitialize())
+	return FALSE;
+    setsubtitle(NULL);
+    setkeyboardrepeat(TRUE);
+    return TRUE;
 }
 
 /* Initialize the program. The list of available data files is drawn
@@ -379,21 +429,20 @@ static int initializesystem(void)
  * has no saved solution is found and selected, or the first level if
  * the user has solved every level.
  */
-static int startup(gamespec *gs, char const *preferredfile,
-		   int printseriesandquit, int printscoresandquit)
+static int startup(gamespec *gs, startupdata const *start)
 {
     gameseries *serieslist;
     char      **texts;
     char const *header;
     int		listsize, n;
 
-    if (!createserieslist(preferredfile, &serieslist,
+    if (!createserieslist(start->filename, &serieslist,
 			  &texts, &listsize, &header))
 	return FALSE;
     if (listsize < 1)
 	return FALSE;
 
-    if (printseriesandquit) {
+    if (start->listseries) {
 	puts(header);
 	for (n = 0 ; n < listsize ; ++n)
 	    puts(texts[n]);
@@ -404,7 +453,7 @@ static int startup(gamespec *gs, char const *preferredfile,
 	gs->series = serieslist[0];
 	if (!readseriesfile(&gs->series))
 	    return FALSE;
-	if (printscoresandquit) {
+	if (start->listscores) {
 	    freeserieslist(texts, listsize);
 	    if (!createscorelist(&gs->series, &texts, &listsize, &header))
 		return FALSE;
@@ -419,7 +468,6 @@ static int startup(gamespec *gs, char const *preferredfile,
 	if (!initializesystem())
 	    return FALSE;
 	n = 0;
-	setsubtitle(NULL);
 	if (!displaylist("Welcome to Tile World. Select your destination.",
 			 header, (char const**)texts, listsize, &n,
 			 scrollinputcallback))
@@ -434,11 +482,15 @@ static int startup(gamespec *gs, char const *preferredfile,
     freeserieslist(texts, listsize);
     free(serieslist);
 
-    gs->currentgame = 0;
-    for (n = 0 ; n < gs->series.total ; ++n) {
-	if (!hassolution(gs->series.games + n)) {
-	    gs->currentgame = n;
-	    break;
+    if (start->levelnum > 0 && start->levelnum <= gs->series.total) {
+	gs->currentgame = start->levelnum - 1;
+    } else {
+	gs->currentgame = 0;
+	for (n = 0 ; n < gs->series.total ; ++n) {
+	    if (!hassolution(gs->series.games + n)) {
+		gs->currentgame = n;
+		break;
+	    }
 	}
     }
     gs->playback = FALSE;
@@ -460,10 +512,8 @@ int main(int argc, char *argv[])
     if (!initoptionswithcmdline(argc, argv, &start))
 	return EXIT_FAILURE;
 
-    if (!startup(&spec, start.filename, start.listseries, start.listscores))
+    if (!startup(&spec, &start))
 	return EXIT_FAILURE;
-
-    activatekeyboard(FALSE);
 
     for (;;) {
 	if (spec.currentgame < 0) {
@@ -480,16 +530,16 @@ int main(int argc, char *argv[])
 	    ding();
 	}
 
-	if (!initgamestate(&spec.series, spec.currentgame, spec.playback)) {
-	    ding();
-	    break;
-	}
+	spec.invalid = !initgamestate(&spec.series, spec.currentgame,
+						    spec.playback);
 	setsubtitle(spec.series.games[spec.currentgame].name);
-
-	if (spec.playback)
+	if (spec.invalid)
+	    noplaygame(&spec);
+	else if (spec.playback)
 	    playbackgame(&spec);
 	else
 	    playgame(&spec);
+	endgamestate();
     }
 
     return EXIT_FAILURE;

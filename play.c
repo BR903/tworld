@@ -16,29 +16,60 @@
 #include	"solution.h"
 #include	"play.h"
 
-/* The restarting-PRNG seed value. It doesn't matter what it is, as long
- * as it's always the same.
+/* The restarting-PRNG seed value. Don't change this; it needs to
+ * remain forever constant.
  */
 #define	RESTART_PRNG_SEED	105977040UL
 
 /* The functions used to apply the selected ruleset.
  */
-static int (*initgame[])(gamestate*) = {
-    NULL, lynx_initgame, ms_initgame
-};
-static int (*advancegame[])(gamestate*) = {
-    NULL, lynx_advancegame, ms_advancegame
-};
+static int	      (*initgame)(gamestate*) = NULL;
+static int	      (*advancegame)(gamestate*) = NULL;
+static int	      (*endgame)(gamestate*) = NULL;
 
 /* The current state of the current game.
  */
 static gamestate	state;
+
+/* Configure the game logic, and some of the OS/hardware layer, to the
+ * behavior expected for the given ruleset.
+ */
+static int setrulesetbehavior(int ruleset)
+{
+    static int	lastruleset = Ruleset_None;
+
+    if (ruleset == lastruleset)
+	return TRUE;
+
+    switch (ruleset) {
+      case Ruleset_Lynx:
+	initgame = lynx_initgame;
+	advancegame = lynx_advancegame;
+	endgame = lynx_endgame;
+	setkeyboardarrowsrepeat(TRUE);
+	settimersecond(1000);
+	break;
+      case Ruleset_MS:
+	initgame = ms_initgame;
+	advancegame = ms_advancegame;
+	endgame = ms_endgame;
+	setkeyboardarrowsrepeat(FALSE);
+	settimersecond(1100);
+	break;
+      default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
 
 /* Initialize the current state to the starting position of the
  * current level.
  */
 int initgamestate(gameseries *series, int level, int replay)
 {
+    setrulesetbehavior(series->ruleset);
+
     memset(&state, 0, sizeof state);
     state.game = &series->games[level];
     state.ruleset = series->ruleset;
@@ -60,7 +91,19 @@ int initgamestate(gameseries *series, int level, int replay)
     }
     restartprng(&state.restartprng, RESTART_PRNG_SEED);
 
-    return (*initgame[state.ruleset])(&state);
+    return (*initgame)(&state);
+}
+
+/* Put the program into game-play mode.
+ */
+void setgameplaymode(int mode)
+{
+    switch (mode) {
+      case BeginPlay:	settimer(+1);	setkeyboardrepeat(FALSE);	break;
+      case SuspendPlay:	settimer(0);	setkeyboardrepeat(TRUE);	break;
+      case ResumePlay:	settimer(+1);	setkeyboardrepeat(FALSE);	break;
+      case EndPlay:	settimer(-1);	setkeyboardrepeat(TRUE);	break;
+    }
 }
 
 /* Advance the game one tick. cmd is the current keyboard command
@@ -90,7 +133,7 @@ int doturn(int cmd)
 	}
     }
 
-    n = (*advancegame[state.ruleset])(&state);
+    n = (*advancegame)(&state);
 
     if (state.replay < 0 && state.lastmove) {
 	act.when = state.currenttime;
@@ -106,13 +149,6 @@ int doturn(int cmd)
 	    return -1;
 
     return 0;
-}
-
-/* Move the keyboard in and out of its game-play mode.
- */
-int activatekeyboard(int active)
-{
-    return setkeyboardbehavior(state.ruleset, active);
 }
 
 /* Update the display of the current game state.
@@ -137,6 +173,11 @@ int drawscreen(void)
     return displaygame(&state, currtime, besttime);
 }
 
+int endgamestate(void)
+{
+    return (*endgame)(&state);
+}
+
 /* Return TRUE if a solution exists for the given level.
  */
 int hassolution(gamesetup const *game)
@@ -150,10 +191,14 @@ int hassolution(gamesetup const *game)
  */
 int replacesolution(void)
 {
-    if (hassolution(state.game) && state.currenttime >= state.game->besttime)
+    if (state.statusflags & SF_NOSAVING)
+	return FALSE;
+    if (hassolution(state.game) && !state.game->replacebest
+				&& state.currenttime >= state.game->besttime)
 	return FALSE;
 
     state.game->besttime = state.currenttime;
+    state.game->replacebest = FALSE;
     state.game->savedrndslidedir = state.initrndslidedir;
     state.game->savedrndseed = getinitialseed(&state.mainprng);
     copymovelist(&state.game->savedsolution, &state.moves);

@@ -19,6 +19,8 @@ static int advancecreature(creature *cr, int oob);
  */
 static int lastrndslidedir = NORTH;
 
+static int xviewoffset = 0, yviewoffset = 0;
+
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
  */
@@ -44,9 +46,12 @@ static gamestate *state;
 #define	currentinput()		(state->currentinput)
 #define	lastmove()		(state->lastmove)
 #define	displayflags()		(state->displayflags)
+#define	xviewpos()		(state->xviewpos)
+#define	yviewpos()		(state->yviewpos)
 
 #define	iscompleted()		(state->statusflags & SF_COMPLETED)
 #define	setcompleted()		(state->statusflags |= SF_COMPLETED)
+#define	setnosaving()		(state->statusflags |= SF_NOSAVING)
 #define	isgreentoggleset()	(state->statusflags & 0x0010)
 #define	togglegreen()		(state->statusflags ^= 0x0010)
 #define	resetgreentoggle()	(state->statusflags &= ~0x0010)
@@ -55,18 +60,18 @@ static gamestate *state;
 
 #define	addsoundeffect(str)	(state->soundeffect = (str))
 
-#define	floorat(pos)		(state->map[pos].floor)
+#define	floorat(pos)		(state->map[pos].top.id)
 
-#define	claimlocation(pos)	(state->map[pos].state |= 0x40)
-#define	removeclaim(pos)	(state->map[pos].state &= ~0x40)
-#define	issomeoneat(pos)	(state->map[pos].state & 0x40)
+#define	claimlocation(pos)	(state->map[pos].top.state |= 0x40)
+#define	removeclaim(pos)	(state->map[pos].top.state &= ~0x40)
+#define	issomeoneat(pos)	(state->map[pos].top.state & 0x40)
 #define	isoccupied(pos)		(chippos() == pos || issomeoneat(pos))
-#define	countervalue(pos)	(state->map[pos].state & 0x1F)
-#define	incrcounter(pos)	(++state->map[pos].state & 0x1F)
-#define	decrcounter(pos)	(--state->map[pos].state & 0x1F)
-#define	resetcounter(pos)	(state->map[pos].state &= ~0x1F)
+#define	countervalue(pos)	(state->map[pos].top.state & 0x1F)
+#define	incrcounter(pos)	(++state->map[pos].top.state & 0x1F)
+#define	decrcounter(pos)	(--state->map[pos].top.state & 0x1F)
+#define	resetcounter(pos)	(state->map[pos].top.state &= ~0x1F)
 #define	setcounter(pos, n)	\
-    (state->map[pos].state = (state->map[pos].state & ~0x1F) | ((n) & 0x1F))
+    (state->map[pos].top.state = (state->map[pos].top.state & ~0x1F) | ((n) & 0x1F))
 
 #define	possession(obj)	(*_possession(obj))
 static short *_possession(int obj)
@@ -119,8 +124,8 @@ static int getslidedir(int floor, int advance)
       case Slide_East:		return EAST;
       case Slide_Random:
 	if (advance)
-	    lastrndslidedir = state->rndslidedir = right(state->rndslidedir);
-	return lastrndslidedir;
+	    state->rndslidedir = right(state->rndslidedir);
+	return state->rndslidedir;
     }
     warn("Invalid floor %d handed to getslidedir()\n", floor);
     assert(!"getslidedir() called with an invalid object");
@@ -233,7 +238,7 @@ static creature *addclone(creature *old)
     *new = *old;
 
     new[1].pos = -1;
-    new[1].id = Nobody;
+    new[1].id = Nothing;
     new[1].dir = NIL;
 
     return new;
@@ -289,6 +294,8 @@ static void turntanks(void)
 #define	ALL_IN_OUT	(ALL_IN | ALL_OUT)
 
 static struct { unsigned char chip, block, creature; } const movelaws[] = {
+    /* Nothing */
+    { 0, 0, 0 },
     /* Empty */
     { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
     /* Slide_North */
@@ -1063,8 +1070,8 @@ static void dumpmap(void)
 
     for (y = 0 ; y < CXGRID * CYGRID ; y += CXGRID) {
 	for (x = 0 ; x < CXGRID ; ++x)
-	    fprintf(stderr, "%02X%c", state->map[y + x].floor,
-		    (state->map[y + x].state ? state->map[y + x].state & 0x40 ? '*' : '.' : ' '));
+	    fprintf(stderr, "%02X%c", state->map[y + x].top.id,
+		    (state->map[y + x].top.state ? state->map[y + x].top.state & 0x40 ? '*' : '.' : ' '));
 	fputc('\n', stderr);
     }
     fputc('\n', stderr);
@@ -1086,23 +1093,21 @@ static void verifymap(void)
     int		pos;
 
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	if (state->map[pos].floor >= Count_Floors)
+	if (state->map[pos].top.id >= 0x40)
 	    die("%d: Undefined floor %d at (%d %d)",
-		currenttime(), state->map[pos].floor,
+		currenttime(), state->map[pos].top.id,
 		pos % CXGRID, pos / CXGRID);
-	if (state->map[pos].state & 0x80)
+	if (state->map[pos].top.state & 0x80)
 	    die("%d: Undefined floor state %02X at (%d %d)",
-		currenttime(), state->map[pos].state,
+		currenttime(), state->map[pos].top.id,
 		pos % CXGRID, pos / CXGRID);
-	if (isdecaying(state->map[pos].floor)
-				&& (state->map[pos].state & 0x1F) > 12)
+	if (isdecaying(state->map[pos].top.id) && countervalue(pos) > 12)
 	    die("%d: Excessive floor decay %02X at (%d %d)",
-		currenttime(), state->map[pos].state,
-		pos % CXGRID, pos / CXGRID);
+		currenttime(), countervalue(pos), pos % CXGRID, pos / CXGRID);
     }
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
-	if (cr->id >= Count_Entities)
+	if (cr->id < 0x40 || cr->id >= 0x80)
 	    die("%d: Undefined creature %d:%d at (%d %d)",
 		currenttime(), cr - creaturelist(), cr->id,
 		cr->pos % CXGRID, cr->pos / CXGRID);
@@ -1147,6 +1152,27 @@ static void initialhousekeeping(void)
 	warn("Mark %d.", ++mark);
 	currentinput() = NIL;
     }
+    if (currentinput() >= CmdCheatNorth && currentinput() <= CmdCheatICChip) {
+	switch (currentinput()) {
+	  case CmdCheatNorth:		--yviewoffset;			break;
+	  case CmdCheatWest:		--xviewoffset;			break;
+	  case CmdCheatSouth:		++yviewoffset;			break;
+	  case CmdCheatEast:		++xviewoffset;			break;
+	  case CmdCheatHome:		xviewoffset = yviewoffset = 0;	break;
+	  case CmdCheatKeyRed:		++possession(Key_Red);		break;
+	  case CmdCheatKeyBlue:		++possession(Key_Blue);		break;
+	  case CmdCheatKeyYellow:	++possession(Key_Yellow);	break;
+	  case CmdCheatKeyGreen:	++possession(Key_Green);	break;
+	  case CmdCheatBootsIce:	++possession(Boots_Ice);	break;
+	  case CmdCheatBootsSlide:	++possession(Boots_Slide);	break;
+	  case CmdCheatBootsFire:	++possession(Boots_Fire);	break;
+	  case CmdCheatBootsWater:	++possession(Boots_Water);	break;
+	  case CmdCheatICChip:	if (chipsneeded()) --chipsneeded();	break;
+	}
+	currentinput() = NIL;
+	setnosaving();
+    }
+
     verifymap();
 }
 
@@ -1177,11 +1203,6 @@ static void finalhousekeeping(void)
 	    }
 	}
     }
-
-    if (floorat(chippos()) == HintButton && getchip()->moving <= 0)
-	displayflags() |= DF_SHOWHINT;
-    else
-	displayflags() &= ~DF_SHOWHINT;
 }
 
 /* Return TRUE if gameplay is over.
@@ -1195,6 +1216,29 @@ static int checkforending(void)
     if (iscompleted())
 	return +1;
     return 0;
+}
+
+/* Set the state fields specifically used to produce the output.
+ */
+static void preparedisplay(void)
+{
+    creature   *cr;
+
+    cr = getchip();
+    xviewpos() = (cr->pos % CXGRID) * 8 + xviewoffset * 8;
+    yviewpos() = (cr->pos / CXGRID) * 8 + yviewoffset * 8;
+    if (cr->moving) {
+	switch (cr->dir) {
+	  case NORTH:	yviewpos() += cr->moving;	break;
+	  case WEST:	xviewpos() += cr->moving;	break;
+	  case SOUTH:	yviewpos() -= cr->moving;	break;
+	  case EAST:	xviewpos() -= cr->moving;	break;
+	}
+    }
+    if (floorat(cr->pos) == HintButton && cr->moving <= 0)
+	displayflags() |= DF_SHOWHINT;
+    else
+	displayflags() &= ~DF_SHOWHINT;
 }
 
 /*
@@ -1359,6 +1403,7 @@ int lynx_initgame(gamestate *pstate)
 
     n = -1;
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
+	/*state->map[pos].bot.id = Empty;*/
 	if (layer2[pos])
 	    floorat(pos) = fileids[layer2[pos]].id;
 	else if (fileids[layer1[pos]].isfloor)
@@ -1385,7 +1430,7 @@ int lynx_initgame(gamestate *pstate)
     if (n < 0)
 	die("Chip isn't on the map!");
     cr->pos = -1;
-    cr->id = Nobody;
+    cr->id = Nothing;
     cr->dir = NIL;
 
     if (n) {
@@ -1422,7 +1467,15 @@ int lynx_initgame(gamestate *pstate)
 	}
     }
 
+    preparedisplay();
     return TRUE;
+}
+
+int lynx_endgame(gamestate *pstate)
+{
+    lastrndslidedir = state->rndslidedir;
+    xviewoffset = yviewoffset = 0;
+    return pstate != NULL;
 }
 
 /* Advance the game state by one tick.
@@ -1458,5 +1511,6 @@ int lynx_advancegame(gamestate *pstate)
 
     finalhousekeeping();
 
+    preparedisplay();
     return checkforending();
 }

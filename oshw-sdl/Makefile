@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -W -O2
+#CFLAGS = -Wall -W -O2 -fomit-frame-pointer
+CFLAGS = -Wall -W -ggdb
 CFLAGS += $(shell sdl-config --cflags)
 
 OBJS = sdloshw.o sdltimer.o sdlerr.o sdlin.o sdlout.o sdltext.o sdlerr.o

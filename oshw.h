@@ -25,6 +25,11 @@ extern int oshwinitialize(void);
  */
 extern void settimer(int action);
 
+/* Set the length (in real time) of a second of game time. A value of
+ * zero selects the default of 1000 milliseconds.
+ */
+extern void settimersecond(int ms);
+
 /* Return the number of ticks since the timer was last reset.
  */
 extern int gettickcount(void);
@@ -37,14 +42,17 @@ extern void waitfortick(void);
  * Keyboard input functions.
  */
 
-/* Alter the keyboard behavior. The Lynx ruleset causes the direction
- * keys to constantly repeat without lingering. The MS ruleset has the
- * direction keys repeat after a small initial delay, and linger for
- * half that time. All other keys in both behaviors are non-repeating
- * if polling is TRUE. If polling is FALSE, all keys exhibit the
- * keyboard's original repeat rate.
+/* Alter the keyboard behavior. If enable is TRUE, the keys other than
+ * the direction keys will repeat at the standard rate.
  */
-extern int setkeyboardbehavior(int ruleset, int polling);
+extern int setkeyboardrepeat(int enable);
+
+/* Alter the behavior of the keys used to indicate movement in the
+ * game. If enable is TRUE, the direction keys repeat every time the
+ * keyboard is polled. Otherwise, the direction keys repeat after
+ * being polled three times.
+ */
+extern int setkeyboardarrowsrepeat(int enable);
 
 /* Return the latest/current keystroke. If wait is TRUE and no
  * keystrokes are pending, the function blocks until a keystroke

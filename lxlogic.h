@@ -21,4 +21,8 @@ extern int lynx_initgame(gamestate *pstate);
  */
 extern int lynx_advancegame(gamestate *pstate);
 
+/* Free any resources associated with the game state.
+ */
+extern int lynx_endgame(gamestate *pstate);
+
 #endif

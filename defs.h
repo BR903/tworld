@@ -112,11 +112,26 @@ enum {
     CmdHelp,
     CmdPlayback,
     CmdSeeScores,
+    CmdKillSolution,
     CmdProceed,
     CmdDebugCmd1,
     CmdDebugCmd2,
     CmdQuit,
     CmdPreserve,
+    CmdCheatNorth,
+    CmdCheatWest,
+    CmdCheatSouth,
+    CmdCheatEast,
+    CmdCheatHome,
+    CmdCheatKeyRed,
+    CmdCheatKeyBlue,
+    CmdCheatKeyYellow,
+    CmdCheatKeyGreen,
+    CmdCheatBootsIce,
+    CmdCheatBootsSlide,
+    CmdCheatBootsFire,
+    CmdCheatBootsWater,
+    CmdCheatICChip,
     CmdCount
 };
 
@@ -133,6 +148,7 @@ typedef	struct gamesetup {
     int			besttime;	/* time (in ticks) of best solution */
     unsigned long	savedrndseed;	/* PRNG seed of best solution */
     unsigned char	savedrndslidedir; /* rnd-slide dir of best solution */
+    int			replacebest;	/* TRUE if solution is replaceable */
     int			map1size;	/* compressed size of layer 1 */
     int			map2size;	/* compressed size of layer 2 */
     unsigned char      *map1;		/* layer 1 (top) of the map */
