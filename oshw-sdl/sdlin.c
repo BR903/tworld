@@ -59,7 +59,7 @@ static keycmdmap const gamekeycmds[] = {
     { 'p',                        0, +1,  0,   CmdPrevLevel,  FALSE },
     { 'r',                        0, +1,  0,   CmdSameLevel,  FALSE },
     { 'n',                        0, +1,  0,   CmdNextLevel,  FALSE },
-    { 'g',                        0, +1,  0,   CmdGotoLevel,  FALSE },
+    { 'g',                        0, -1,  0,   CmdGotoLevel,  FALSE },
     { 'q',                       +1,  0,  0,   CmdQuit,       FALSE },
     { SDLK_PAGEUP,                0,  0,  0,   CmdPrev10,     FALSE },
     { 'p',                        0,  0,  0,   CmdPrev,       FALSE },
