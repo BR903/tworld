@@ -115,22 +115,22 @@ extern int displayendmessage(int basescore, int timescore, int totalscore,
  * displaylist() ends, returning the value that was stored via the
  * pointer argument.
  */
-extern int displaylist(char const *title,
-		       char const **items, int itemcount, int *index,
-		       int columncount, int const *flags,
+extern int displaylist(char const *title, void const *table, int *index,
 		       int (*inputcallback)(int*));
 
 /* Symbolic values for moving the selection of a scrolling list.
  */
-#define	SCROLL_NOP		(-1)
-#define	SCROLL_UP		(-2)
-#define	SCROLL_DN		(-3)
-#define	SCROLL_PAGE_UP		(-4)
-#define	SCROLL_PAGE_DN		(-5)
-#define	SCROLL_HALFPAGE_UP	(-6)
-#define	SCROLL_HALFPAGE_DN	(-7)
-#define	SCROLL_ALLTHEWAY_UP	(-8)
-#define	SCROLL_ALLTHEWAY_DN	(-9)
+enum {
+    SCROLL_NOP			= -1,
+    SCROLL_UP			= -2,
+    SCROLL_DN			= -3,
+    SCROLL_PAGE_UP		= -4,
+    SCROLL_PAGE_DN		= -5,
+    SCROLL_HALFPAGE_UP		= -6,
+    SCROLL_HALFPAGE_DN		= -7,
+    SCROLL_ALLTHEWAY_UP		= -8,
+    SCROLL_ALLTHEWAY_DN		= -9
+};
 
 /*
  * Sound functions.

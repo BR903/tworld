@@ -362,75 +362,74 @@ static int getseriesfiles(char const *filename, gameseries **list, int *count)
     return TRUE;
 }
 
-/* Produce an array of strings that describe the available data files.
+/* Produce a table that describes the available data files.
  */
 int createserieslist(char const *preferredfile, gameseries **pserieslist,
-		     char ***pptrs, int *pcount, int const **align)
+		     int *pcount, tablespec *table)
 {
-    static int const	alignment[] = { -1, +1, 0 };
     static char const  *rulesetname[Ruleset_Count];
-    static char		header[80];
     gameseries	       *serieslist;
     char	      **ptrs;
     char	       *textheap;
     int			listsize;
-    int			used, col, n;
+    int			used, col, n, y;
 
     if (!getseriesfiles(preferredfile, &serieslist, &listsize))
 	return FALSE;
-    if (!pptrs) {
+    if (!table) {
 	*pserieslist = serieslist;
 	*pcount = listsize;
 	return TRUE;
     }
 
-    col = 21;
+    col = 8;
     for (n = 0 ; n < listsize ; ++n)
 	if (col < (int)strlen(serieslist[n].name))
 	    col = strlen(serieslist[n].name);
-    if (col > 56)
-	col = 56;
+    if (col > 48)
+	col = 48;
 
     rulesetname[Ruleset_Lynx] = "Lynx";
     rulesetname[Ruleset_MS] = "MS";
-    ptrs = malloc((listsize + 1) * sizeof *ptrs);
-    textheap = malloc((listsize + 1) * sizeof header);
-    if (align)
-	strcpy(textheap, "Filename\tNumber of levels\tRuleset");
-    else
-	sprintf(textheap, "%-*.*s  Number of levels  Ruleset",
-			  col - 13, col - 13, "Filename");
-    ptrs[0] = textheap;
-    used = strlen(textheap) + 1;
+    ptrs = malloc((listsize + 1) * 3 * sizeof *ptrs);
+    textheap = malloc((listsize + 1) * (col + 32));
+    if (!ptrs || !textheap)
+	memerrexit();
 
-    for (n = 0 ; n < listsize ; ++n) {
-	ptrs[n + 1] = textheap + used;
-	if (align)
-	    used += sprintf(ptrs[n + 1], "%s\t%d\t%s",
-					 serieslist[n].name,
-					 serieslist[n].total,
-					 rulesetname[serieslist[n].ruleset]);
-	else
-	    used += sprintf(ptrs[n + 1], "%-*.*s  %3d  %-4s",
-					 col, col, serieslist[n].name,
-					 serieslist[n].total,
-					 rulesetname[serieslist[n].ruleset]);
-	++used;
+    n = 0;
+    used = 0;
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1-Filename");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+No. of levels");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1.Ruleset");
+    for (y = 0 ; y < listsize ; ++y) {
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used,
+			    "1-%-*s", col, serieslist[y].name);
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used,
+			    "1+%d", serieslist[y].total);
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used,
+			    "1.%s", rulesetname[serieslist[y].ruleset]);
     }
 
     *pserieslist = serieslist;
-    *pptrs = ptrs;
-    *pcount = n + 1;
-    if (align)
-	*align = alignment;
+    *pcount = listsize;
+    table->rows = listsize + 1;
+    table->cols = 3;
+    table->sep = 1;
+    table->collapse = 0;
+    table->items = ptrs;
     return TRUE;
 }
 
 /* Free all memory allocated by createserieslist().
  */
-void freeserieslist(char **ptrs, int count)
+void freeserieslist(tablespec *table)
 {
-    (void)count;
-    free(ptrs[0]);
-    free(ptrs);
+    free((void*)table->items[0]);
+    free(table->items);
 }

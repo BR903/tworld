@@ -12,27 +12,25 @@
 #include	"play.h"
 #include	"score.h"
 
-/* Translate number into an ASCII string, complete with commas. The
- * string produced is always at least len bytes long, padded on the
- * left with spaces if necessary.
+/* Translate a number into an ASCII string, complete with commas.
  */
-static int commify(char *dest, int number, int len)
+static char const *commify(int number)
 {
-    int	n = 0;
+    static char	buf[32];
+    char       *dest = buf + sizeof buf;
+    int		n = 0;
 
-    dest[len] = '\0';
+    *--dest = '\0';
     do {
 	++n;
 	if (n % 4 == 0) {
-	    dest[len - n] = ',';
+	    *--dest = ',';
 	    ++n;
 	}
-	dest[len - n] = '0' + number % 10;
+	*--dest = '0' + number % 10;
 	number /= 10;
     } while (number);
-    if (n < len)
-	memset(dest, ' ', len - n);
-    return len;
+    return dest;
 }
 
 int getscoresforlevel(gameseries const *series, int level,
@@ -65,91 +63,88 @@ int getscoresforlevel(gameseries const *series, int level,
     return TRUE;
 }
 
-/* Produce an array of strings that break down the player's current
- * score into a pretty little list.
+/* Produce a table that breaks down the player's current score.
  */
-int createscorelist(gameseries const *series,
-		    char ***pptrs, int *pcount, int const **align)
+int createscorelist(gameseries const *series, int *pcount, tablespec *table)
 {
-    static int const	alignments[] = { +1, -1, +1, +1, +1 };
     gamesetup	       *game;
     char	      **ptrs;
     char	       *textheap;
-    char	       *p;
     int			levelscore, timescore;
     unsigned int	totalscore;
-    int			used, n;
+    int			used, j, n;
 
-    ptrs = malloc((series->count + 2) * sizeof *ptrs);
-    textheap = malloc((series->count + 1) * 80);
+    ptrs = malloc((series->count + 2) * 5 * sizeof *ptrs);
+    textheap = malloc((series->count + 2) * 96);
     if (!ptrs || !textheap)
 	memerrexit();
     totalscore = 0;
 
-    if (align)
-	strcpy(textheap, "Level\tName\tBase\tBonus\tScore");
-    else
-	strcpy(textheap, "Lvl  Name                                        "
-			 "Base  Bonus   Score");
-    ptrs[0] = textheap;
-    used = strlen(textheap) + 1;
-    for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
-	if (n >= series->allocated)
+    n = 0;
+    used = 0;
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Level");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1-Name");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Base");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Bonus");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "1+Score");
+
+    for (j = 0, game = series->games ; j < series->count ; ++j, ++game) {
+	if (j >= series->allocated)
 	    break;
-	p = ptrs[n + 1] = textheap + used;
-	if (!hassolution(game)) {
-	    p += sprintf(p, (align ? "%d\t%.50s\t\t\t" : "%3d  %-50s"),
-			    game->number, game->name);
-	} else {
-	    p += sprintf(p, (align ? "%d\t%.50s\t" : "%3d  %-50.50s "),
-			    game->number, game->name);
-	    levelscore = game->number * 500;
-	    p += commify(p, levelscore, 7);
-	    if (align)
-		*p++ = '\t';
-	    else
-		p += sprintf(p, "  ");
+	ptrs[n++] = textheap + used;
+	used += 1 + sprintf(textheap + used, "1+%d", game->number);
+	if (hassolution(game)) {
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "1-%s", game->name);
+	    ptrs[n++] = textheap + used;
+	    levelscore = 500 * game->number;
+	    used += 1 + sprintf(textheap + used, "1+%s", commify(levelscore));
+	    ptrs[n++] = textheap + used;
 	    if (game->time) {
 		timescore = 10 * (game->time
 					- game->besttime / TICKS_PER_SECOND);
-		p += commify(p, timescore, 5);
+		used += 1 + sprintf(textheap + used, "1+%s",
+				    commify(timescore));
 	    } else {
 		timescore = 0;
-		p += sprintf(p, (align ? "---" : "  ---"));
+		strcpy(textheap + used, "1+---");
+		used += 6;
 	    }
-	    if (align)
-		*p++ = '\t';
-	    else
-		p += sprintf(p, "  ");
-	    p += commify(p, levelscore + timescore, 7);
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "1+%s",
+				commify(levelscore + timescore));
 	    totalscore += levelscore + timescore;
+	} else {
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "4-%s", game->name);
 	}
-	used += p - ptrs[n + 1] + 1;
     }
-    if (n) {
-	p = ptrs[n + 1] = textheap + used;
-	if (align)
-	    p += sprintf(p, "\tTotal Score\t\t\t");
-	else
-	    p += sprintf(p, "%3s  %-61.61s", "", "Total Score");
-	commify(p, totalscore, 13);
-    } else {
-	ptrs[0] = textheap;
-	strcpy(ptrs[0], "(No levels)");
-    }
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "2-Total Score");
+    ptrs[n++] = textheap + used;
+    used += 1 + sprintf(textheap + used, "3+%s", commify(totalscore));
 
-    *pptrs = ptrs;
-    *pcount = n + 2;
-    if (align)
-	*align = alignments;
+    table->rows = series->count + 2;
+    table->cols = 5;
+    table->sep = 2;
+    table->collapse = 1;
+    table->items = ptrs;
+
+    if (pcount)
+	*pcount = series->count;
+
     return TRUE;
 }
 
 /* Free the memory allocated by createscorelist().
  */
-void freescorelist(char **ptrs, int count)
+void freescorelist(tablespec *table)
 {
-    (void)count;
-    free(ptrs[0]);
-    free(ptrs);
+    free(table->items[0]);
+    free(table->items);
 }

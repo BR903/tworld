@@ -16,8 +16,7 @@
 #define	RES_IMG_TILES		0
 #define	RES_IMG_USEANIM		1
 #define	RES_IMG_FONT		2
-#define	RES_IMG_PFONT		3
-#define	RES_IMG_LAST		RES_IMG_PFONT
+#define	RES_IMG_LAST		RES_IMG_FONT
 
 #define	RES_SND_BASE		(RES_IMG_LAST + 1)
 #define	RES_SND_CHIP_LOSES	(RES_SND_BASE + SND_CHIP_LOSES)
@@ -63,7 +62,6 @@ static rcitem rclist[] = {
     { "tileimages",		FALSE },
     { "useanimation",		TRUE },
     { "font",			FALSE },
-    { "pfont",			FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
@@ -81,9 +79,9 @@ static rcitem rclist[] = {
     { "trapenteredsound",	FALSE },
     { "bombsound",		FALSE },
     { "splashsound",		FALSE },
-    { "skatingturnsound",	FALSE },
     { "blockmovingsound",	FALSE },
     { "skatingforwardsound",	FALSE },
+    { "skatingturnsound",	FALSE },
     { "slidingsound",		FALSE },
     { "slidewalkingsound",	FALSE },
     { "icewalkingsound",	FALSE },
@@ -110,8 +108,7 @@ char		       *resdir = NULL;
 static void initresourcedefaults(void)
 {
     strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
-    strcpy(globalresources[RES_IMG_FONT].str, "font.psf");
-    strcpy(globalresources[RES_IMG_PFONT].str, "pfont.bmp");
+    strcpy(globalresources[RES_IMG_FONT].str, "font.bmp");
     globalresources[RES_IMG_USEANIM].num = FALSE;
 #if 0
     strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
@@ -240,13 +237,13 @@ static int loadfont(void)
 
     f = FALSE;
     path = getpathbuffer();
-    if (*resources[RES_IMG_PFONT].str) {
-	combinepath(path, resdir, resources[RES_IMG_PFONT].str);
+    if (*resources[RES_IMG_FONT].str) {
+	combinepath(path, resdir, resources[RES_IMG_FONT].str);
 	f = loadfontfromfile(path);
     }
     if (!f && resources != globalresources
-	   && *globalresources[RES_IMG_PFONT].str) {
-	combinepath(path, resdir, globalresources[RES_IMG_PFONT].str);
+	   && *globalresources[RES_IMG_FONT].str) {
+	combinepath(path, resdir, globalresources[RES_IMG_FONT].str);
 	f = loadfontfromfile(path);
     }
     free(path);
@@ -290,15 +287,6 @@ static int loadsounds(void)
 
 int loadgameresources(int ruleset)
 {
-#if 0
-    static int	initialized = FALSE;
-
-    if (!initialized) {
-	initialized = TRUE;
-	initresourcedefaults();
-	readrcfile();
-    }
-#endif
     currentruleset = ruleset;
     resources = allresources[ruleset];
     loadfont();

@@ -86,6 +86,65 @@ static int	showhistogram = FALSE;
  * The top-level user interface functions.
  */
 
+/* Render a table to standard output.
+ */
+void printtable(tablespec const *table)
+{
+    int	       *colsizes;
+    int		len;
+    int		c, n, x, y;
+
+    colsizes = malloc(table->cols * sizeof *colsizes);
+    for (x = 0 ; x < table->cols ; ++x)
+	colsizes[x] = 0;
+    n = 0;
+    for (y = 0 ; y < table->rows ; ++y) {
+	for (x = 0 ; x < table->cols ; ++n) {
+	    c = table->items[n][0] - '0';
+	    if (c == 1) {
+		len = strlen(table->items[n] + 2);
+		if (len > colsizes[x])
+		    colsizes[x] = len;
+	    }
+	    x += c;
+	}
+    }
+
+    n = -table->sep;
+    for (x = 0 ; x < table->cols ; ++x)
+	n += colsizes[x] + table->sep;
+    if (n > 79) {
+	n = n - 79;
+	if (table->collapse < 0)
+	    return;
+	if (colsizes[table->collapse] <= n)
+	    return;
+	colsizes[table->collapse] -= n;
+    }
+
+    n = 0;
+    for (y = 0 ; y < table->rows ; ++y) {
+	for (x = 0 ; x < table->cols ; ++n) {
+	    if (x)
+		printf("%*s", table->sep, "");
+	    c = table->items[n][0] - '0';
+	    len = -table->sep;
+	    while (c--)
+		len += colsizes[x++] + table->sep;
+	    if (table->items[n][1] == '-')
+		printf("%-*.*s", len, len, table->items[n] + 2);
+	    else if (table->items[n][1] == '+')
+		printf("%*.*s", len, len, table->items[n] + 2);
+	    else {
+		len -= (len - strlen(table->items[n] + 3)) / 2;
+		printf("%*.*s", len, len, table->items[n] + 2);
+	    }
+	}
+	putchar('\n');
+    }
+    free(colsizes);
+}
+
 /* A callback function for handling the keyboard while displaying a
  * scrolling list.
  */
@@ -111,21 +170,19 @@ static int scrollinputcallback(int *move)
  */
 static void showscores(gamespec *gs)
 {
-    char      **texts;
-    int const  *justify;
-    int		listsize, n;
+    tablespec	table;
+    int		n;
 
-    if (!createscorelist(&gs->series, &texts, &listsize, &justify)) {
+    if (!createscorelist(&gs->series, &n, &table)) {
 	bell();
 	return;
     }
-    n = gs->currentgame;
     setsubtitle(NULL);
-    if (displaylist(gs->series.name, (char const**)texts, listsize, &n,
-		    5, justify, scrollinputcallback))
+    n = gs->currentgame;
+    if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
 	if (n >= 0 && n < gs->series.total)
 	    gs->currentgame = n;
-    freescorelist(texts, listsize);
+    freescorelist(&table);
 }
 
 /* Mark the current level's solution as replaceable.
@@ -482,37 +539,32 @@ static int initializesystem(void)
 static int startup(gamespec *gs, startupdata const *start)
 {
     gameseries *serieslist;
-    char      **texts;
-    int const  *justify;
+    tablespec	table;
     int		listsize, n;
 
     if (start->listseries) {
-	if (!createserieslist(start->filename, &serieslist,
-			      &texts, &listsize, NULL))
+	if (!createserieslist(start->filename, &serieslist, &listsize, &table))
 	    die("Unable to create list of available files.");
-	for (n = 0 ; n < listsize ; ++n)
-	    puts(texts[n]);
-	if (listsize <= 1)
+	printtable(&table);
+	if (!listsize)
 	    puts("(no files)");
 	exit(EXIT_SUCCESS);
     }
 
-    if (!createserieslist(start->filename, &serieslist,
-			  &texts, &listsize, &justify))
+    if (!createserieslist(start->filename, &serieslist, &listsize, &table))
 	return FALSE;
-    if (listsize <= 1)
+    if (!listsize)
 	return FALSE;
 
-    if (listsize == 2) {
+    if (listsize == 1) {
 	gs->series = serieslist[0];
 	if (!readseriesfile(&gs->series))
 	    return FALSE;
 	if (start->listscores) {
-	    freeserieslist(texts, listsize);
-	    if (!createscorelist(&gs->series, &texts, &listsize, NULL))
+	    freeserieslist(&table);
+	    if (!createscorelist(&gs->series, &listsize, &table))
 		return FALSE;
-	    for (n = 0 ; n < listsize ; ++n)
-		puts(texts[n]);
+	    printtable(&table);
 	    exit(EXIT_SUCCESS);
 	}
 	if (!initializesystem())
@@ -522,17 +574,16 @@ static int startup(gamespec *gs, startupdata const *start)
 	    return FALSE;
 	n = 0;
 	if (!displaylist("    Welcome to Tile World. Select your destination.",
-			 (char const**)texts, listsize, &n,
-			 3, justify, scrollinputcallback))
+			 &table, &n, scrollinputcallback))
 	    exit(EXIT_SUCCESS);
-	if (n < 0 || n >= listsize - 1)
+	if (n < 0 || n >= listsize)
 	    return FALSE;
 	gs->series = serieslist[n];
 	if (!readseriesfile(&gs->series))
 	    return FALSE;
     }
 
-    freeserieslist(texts, listsize);
+    freeserieslist(&table);
     free(serieslist);
 
     if (start->levelnum > 0 && start->levelnum <= gs->series.total) {

@@ -224,6 +224,17 @@ static void togglewalls(void)
 	    floorat(pos) = SwitchWall_Open;
 }
 
+static void resetfloorsounds(void)
+{
+    stopsoundeffect(SND_SKATING_FORWARD);
+    stopsoundeffect(SND_SKATING_TURN);
+    stopsoundeffect(SND_FIREWALKING);
+    stopsoundeffect(SND_WATERWALKING);
+    stopsoundeffect(SND_ICEWALKING);
+    stopsoundeffect(SND_SLIDEWALKING);
+    stopsoundeffect(SND_SLIDING);
+}
+
 /*
  * Functions that manage the list of entities.
  */
@@ -285,6 +296,8 @@ static creature *addclone(creature *old)
 static void removecreature(creature *cr)
 {
     cr->hidden = TRUE;
+    if (cr->state & CS_NOISYMOVEMENT)
+	stopsoundeffect(SND_BLOCK_MOVING);
     if (cr->id != Chip)
 	removeclaim(cr->pos);
 }
@@ -744,6 +757,8 @@ static int choosemove(creature *cr)
 {
     if (cr->id == Chip) {
 	choosechipmove(cr, getforcedmove(cr));
+	if (cr->tdir == NIL && cr->fdir == NIL)
+	    resetfloorsounds();
     } else {
 	if (getforcedmove(cr))
 	    cr->tdir = NIL;
@@ -902,8 +917,6 @@ static int startmovement(creature *cr, int releasing)
     if (cr->id != Chip && cr->pos == chippos()) {
 	chip = getchip();
 	removecreature(chip);
-	addsoundeffect(SND_CHIP_LOSES);
-
 /*
 	if (cr->id != Block)
 	    removecreature(cr);
@@ -957,7 +970,8 @@ static int endmovement(creature *cr)
 
     floor = floorat(cr->pos);
 
-    applyicewallturn(cr);
+    if (cr->id != Chip || !possession(Boots_Ice))
+	applyicewallturn(cr);
 
     if (cr->id == Chip) {
 	switch (floor) {
@@ -971,10 +985,8 @@ static int endmovement(creature *cr)
 	    }
 	    break;
 	  case Fire:
-	    if (!possession(Boots_Fire)) {
+	    if (!possession(Boots_Fire))
 		removecreature(cr);
-		addsoundeffect(SND_CHIP_LOSES);
-	    }
 	    break;
 	  case Dirt:
 	  case BlueWall_Fake:
@@ -1027,14 +1039,9 @@ static int endmovement(creature *cr)
 	    break;
 	  case Exit:
 	    setcompleted();
-	    addsoundeffect(SND_CHIP_WINS);
 	    break;
 	}
     } else if (cr->id == Block) {
-	if (cr->state & CS_NOISYMOVEMENT) {
-	    stopsoundeffect(SND_BLOCK_MOVING);
-	    cr->state &= ~CS_NOISYMOVEMENT;
-	}
 	switch (floor) {
 	  case Water:
 	  case Water_Splash:
@@ -1212,6 +1219,7 @@ static void verifymap(void)
 static void initialhousekeeping(void)
 {
     creature   *chip;
+    creature   *cr;
 
     chip = getchip();
     if (chip->id == Pushing_Chip)
@@ -1252,6 +1260,15 @@ static void initialhousekeeping(void)
     }
 
     verifymap();
+
+    for (cr = creaturelist() ; cr->id ; ++cr) {
+	if (cr->state & CS_NOISYMOVEMENT) {
+	    if (cr->hidden || cr->moving == 0) {
+		stopsoundeffect(SND_BLOCK_MOVING);
+		cr->state &= ~CS_NOISYMOVEMENT;
+	    }
+	}
+    }
 }
 
 /* Actions and checks that occur at the end of every tick.
@@ -1287,14 +1304,21 @@ static void finalhousekeeping(void)
  */
 static int checkforending(void)
 {
+    int	ret;
+
     if (getchip()->hidden) {
 	getchip()->hidden = FALSE;
-	return -1;
-    }
-    if (iscompleted())
-	return +1;
+	ret = -1;
+	addsoundeffect(SND_CHIP_LOSES);
+    } else if (iscompleted()) {
+	ret = +1;
+	addsoundeffect(SND_CHIP_WINS);
+    } else
+	return 0;
 
-    return 0;
+    resetfloorsounds();
+    stopsoundeffect(SND_BLOCK_MOVING);
+    return ret;
 }
 
 /* Set the state fields specifically used to produce the output.
@@ -1325,13 +1349,8 @@ static void preparedisplay(void)
     if (ispushing())
 	chip->id = Pushing_Chip;
 
-    stopsoundeffect(SND_FIREWALKING);
-    stopsoundeffect(SND_WATERWALKING);
-    stopsoundeffect(SND_ICEWALKING);
-    stopsoundeffect(SND_SLIDEWALKING);
-    stopsoundeffect(SND_SKATING_FORWARD);
-    stopsoundeffect(SND_SLIDING);
     if (chip->moving) {
+	resetfloorsounds();
 	floor = floorat(chip->pos);
 	if (floor == Fire && possession(Boots_Fire))
 	    addsoundeffect(SND_FIREWALKING);

@@ -14,10 +14,6 @@
  * Miscellaneous definitions.
  */
 
-/* The frequency of the internal timer during game play.
- */
-#define	TICKS_PER_SECOND	20
-
 /* The various rulesets the program can emulate.
  */
 enum {
@@ -47,29 +43,11 @@ typedef	struct prng {
  * Definitions used in game play.
  */
 
-/* The size of each level.
- */
-#define	CXGRID	32
-#define	CYGRID	32
-
-/* The four directions, plus NIL (the absence of direction).
- */
-#define	NIL	0
-#define	NORTH	1
-#define	WEST	2
-#define	SOUTH	4
-#define	EAST	8
-
 /* Turning macros.
  */
 #define	left(dir)	((((dir) << 1) | ((dir) >> 3)) & 15)
 #define	back(dir)	((((dir) << 2) | ((dir) >> 2)) & 15)
 #define	right(dir)	((((dir) << 3) | ((dir) >> 1)) & 15)
-
-/* Translating directions to and from a two-bit representation.
- */
-#define	diridx(dir)	((0x30210 >> ((dir) * 2)) & 3)
-#define	idxdir(idx)	(1 << ((idx) & 3))
 
 /* A move is specified by its direction and when it takes place.
  */
@@ -154,12 +132,12 @@ enum {
 #define	SND_TRAP_ENTERED	14
 #define	SND_BOMB_EXPLODES	15
 #define	SND_WATER_SPLASH	16
-#define	SND_SKATING_TURN	17
 
-#define	SND_ONESHOT_COUNT	18
+#define	SND_ONESHOT_COUNT	17
 
-#define	SND_BLOCK_MOVING	18
-#define	SND_SKATING_FORWARD	19
+#define	SND_BLOCK_MOVING	17
+#define	SND_SKATING_FORWARD	18
+#define	SND_SKATING_TURN	19
 #define	SND_SLIDING		20
 #define	SND_SLIDEWALKING	21
 #define	SND_ICEWALKING		22

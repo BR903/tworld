@@ -15,25 +15,26 @@
 
 /* A list of the available keyboard commands.
  */
-static char const *gameplay_keys[] = {
-    "    During the Game\t ",
-    "arrows\tmove Chip",
-    "2 4 6 8 (keypad)\talso move Chip",
-    "q\tquit the current game",
-    "Q\texit the program",
-    "Ctrl-H (Bkspc)\tpause the game",
-    "Ctrl-R\trestart the current level",
-    "Ctrl-P\tjump to the previous level",
-    "Ctrl-N\tjump to the next level",
-    " \t ",
-    "    Inbetween Games\t ",
-    "q\texit the program",
-    "p\tjump to the previous level",
-    "n\tjump to the next level",
-    "s\tsee the current score",
-    "Ctrl-I (Tab)\tplayback saved solution",
-    "Ctrl-X\treplace existing solution"
+static char *gamekeys_items[] = {
+    "2.During the Game",
+    "1-arrows", "1-move Chip",
+    "1-2 4 6 8 (keypad)", "1-also move Chip",
+    "1-q", "1-quit the current game",
+    "1-Q", "1-exit the program",
+    "1-Ctrl-H (Bkspc)", "1-pause the game",
+    "1-Ctrl-R", "1-restart the current level",
+    "1-Ctrl-P", "1-jump to the previous level",
+    "1-Ctrl-N", "1-jump to the next level",
+    "2- ",
+    "2.Inbetween Games",
+    "1-q", "1-exit the program",
+    "1-p", "1-jump to the previous level",
+    "1-n", "1-jump to the next level",
+    "1-s", "1-see the current score",
+    "1-Ctrl-I (Tab)", "1-playback saved solution",
+    "1-Ctrl-X", "1-replace existing solution"
 };
+static tablespec const gameplay_keys = { 17, 2, 4, 1, gamekeys_items };
 
 /* Descriptions of the different surfaces of the levels.
  */
@@ -143,22 +144,23 @@ static objhelptext const gameplay_monsters[] = {
 
 /* About this program.
  */
-static char const *about[] = {
-    "*\tTile World: version " VERSION,
-    "\tCopyright 2001 by Brian Raiter",
-    "\tcompiled " __DATE__ " " __TIME__ " PST",
-    "*\tThis program is free software; you can redistribute it"
-    " and/or modify it under the terms of the GNU General Public"
-    " License as published by the Free Software Foundation; either"
-    " version 2 of the License, or (at your option) any later version.",
-    "*\tThis program is distributed in the hope that it will be"
-    " useful, but WITHOUT ANY WARRANTY; without even the implied"
-    " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
-    " See the GNU General Public License for more details.",
-    "*\tBug reports are appreciated, and can be sent to"
-    " breadbox@muppetlabs.com, or posted to the"
-    " annexcafe.chips.challenge newsgroup."
+static char *about_items[] = {
+    "1+*", "1-Tile World: version " VERSION,
+    "1+ ", "1-Copyright 2001 by Brian Raiter",
+    "1+ ", "1-compiled " __DATE__ " " __TIME__ " PST",
+    "1+*", "1!This program is free software; you can redistribute it and/or"
+	    " modify it under the terms of the GNU General Public License"
+	    " as published by the Free Software Foundation; either version 2"
+	    " of the License, or (at your option) any later version.",
+    "1+*", "1!This program is distributed in the hope that it will be"
+	    " useful, but WITHOUT ANY WARRANTY; without even the implied"
+	    " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+	    " See the GNU General Public License for more details.",
+    "1+*", "1!Bug reports are appreciated, and can be sent to"
+	    " breadbox@muppetlabs.com, or posted to the"
+	    " annexcafe.chips.challenge newsgroup."
 };
+static tablespec const about = { 6, 2, 1, 1, about_items };
 
 /*
  *
@@ -177,13 +179,13 @@ int gameplayhelp(void)
 {
     int	ret;
 
-    ret =  helpscreen(HELP_TABTEXT, "KEYS", array(gameplay_keys), +1)
+    ret =  helpscreen(HELP_TABTEXT, "KEYS", &gameplay_keys, 0, +1)
 	&& helpscreen(HELP_OBJECTS, "FLOORS", array(gameplay_floors), +1)
 	&& helpscreen(HELP_OBJECTS, "WALLS", array(gameplay_walls), +1)
 	&& helpscreen(HELP_OBJECTS, "OBJECTS", array(gameplay_objects), +1)
 	&& helpscreen(HELP_OBJECTS, "TOOLS", array(gameplay_tools), +1)
 	&& helpscreen(HELP_OBJECTS, "MONSTERS", array(gameplay_monsters), +1)
-	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", array(about), 0);
+	&& helpscreen(HELP_TABTEXT, "ABOUT TILE WORLD", &about, 0, 0);
 
     cleardisplay();
     return ret;

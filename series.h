@@ -31,10 +31,18 @@ extern int readseriesfile(gameseries *series);
  */
 extern int createserieslist(char const *preferredfile,
 			    gameseries **pserieslist,
+#if 0
 			    char ***pptrs, int *pcount, int const **align);
+#else
+			    int *pcount, tablespec *table);
+#endif
 
 /* Free all memory allocated by createserieslist().
  */
+#if 0
 extern void freeserieslist(char **ptrs, int count);
+#else
+extern void freeserieslist(tablespec *table);
+#endif
 
 #endif

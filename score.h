@@ -23,11 +23,20 @@ extern int getscoresforlevel(gameseries const *series, int level,
  * NULL, is filled in with a pointer to a string providing headers for
  * the columns of the other strings.
  */
+#if 0
 extern int createscorelist(gameseries const *series,
 			   char ***pptrs, int *pcount, int const **align);
+#else
+extern int createscorelist(gameseries const *series, int *pcount,
+			   tablespec *table);
+#endif
 
 /* Free the memory allocated by createscorelist().
  */
+#if 0
 extern void freescorelist(char **ptrs, int count);
+#else
+extern void freescorelist(tablespec *table);
+#endif
 
 #endif
