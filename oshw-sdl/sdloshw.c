@@ -15,6 +15,11 @@
  */
 oshwglobals	sdlg;
 
+/* This is an automatically-generated file, which contains a
+ * representation of the program's icon.
+ */
+#include	"ccicon.c"
+
 /* Dispatch all events sitting in the SDL event queue. 
  */
 static void _eventupdate(int wait)
@@ -62,12 +67,22 @@ static void shutdown(void)
  */
 int oshwinitialize(int silence, int showhistogram)
 {
+    SDL_Surface	       *icon;
+
     sdlg.eventupdatefunc = _eventupdate;
 
-    (void)silence;
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	die("Cannot initialize SDL system: %s\n", SDL_GetError());
     atexit(shutdown);
+
+    icon = SDL_CreateRGBSurfaceFrom(cciconimage, CXCCICON, CYCCICON,
+				    32, 4 * CXCCICON,
+				    0x0000FF, 0x00FF00, 0xFF0000, 0);
+    if (icon) {
+	SDL_WM_SetIcon(icon, cciconmask);
+	SDL_FreeSurface(icon);
+    } else
+	warn("couldn't create icon surface: %s", SDL_GetError());
 
     setsubtitle(NULL);
 

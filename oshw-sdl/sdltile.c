@@ -169,7 +169,7 @@ static Uint32 const *_gettileimage(int id, int transp)
 static Uint32 const *_getcreatureimage(int id, int dir, int moving)
 {
     (void)moving;
-    id += (0x30210 >> (dir * 2)) & 3;
+    id += diridx(dir);
     return tileptr[id].transp ? tileptr[id].transp : tileptr[id].opaque;
 }
 
