@@ -1260,6 +1260,11 @@ static void activatecloner(int buttonpos)
     pos = clonerfrombutton(buttonpos);
     if (pos < 0)
 	return;
+    if (pos >= CXGRID * CYGRID) {
+	warn("Off-map cloning attempted: (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return;
+    }
     tileid = cellat(pos)->top.id;
     if (creatureid(tileid) == Block) {
 	cr = lookupblock(pos);
@@ -1296,6 +1301,11 @@ static void springtrap(int buttonpos)
     pos = trapfrombutton(buttonpos);
     if (pos < 0)
 	return;
+    if (pos >= CXGRID * CYGRID) {
+	warn("Off-map trap opening attempted: (%d %d)",
+	     pos % CXGRID, pos / CXGRID);
+	return;
+    }
     id = cellat(pos)->top.id;
     if (id == Block_Static) {
 	cr = lookupblock(pos);
@@ -1813,8 +1823,9 @@ static void verifymap(void)
 		 state->currenttime, cr->id,
 		 cr->pos % CXGRID, cr->pos / CXGRID);
 	if (!cr->hidden && (cr->pos < 0 || cr->pos >= CXGRID * CYGRID))
-	    warn("%d: Creature %02X has left the map: %04X",
-		 state->currenttime, cr->id, cr->pos);
+	    warn("%d: Creature %02X has left the map: (%d %d)",
+		 state->currenttime, cr->id,
+		 cr->pos % CXGRID, cr->pos / CXGRID);
 	if (cr->dir > EAST && (cr->dir != NIL || cr->id != Block))
 	    warn("%d: Creature %d lacks direction (%d)",
 		 state->currenttime, cr->id, cr->dir);
