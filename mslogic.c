@@ -825,9 +825,6 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     /* Boots_Slide */		{ NWSE, NWSE, 0 },
     /* Boots_Fire */		{ NWSE, NWSE, 0 },
     /* Boots_Water */		{ NWSE, NWSE, 0 },
-    /* Water_Splash */		{ 0, 0, 0 },
-    /* Dirt_Splash */		{ 0, 0, 0 },
-    /* Bomb_Explosion */	{ 0, 0, 0 },
     /* Block_Static */		{ NWSE, 0, 0 },
     /* Burned_Chip */		{ 0, 0, 0 },
     /* Bombed_Chip */		{ 0, 0, 0 },
@@ -835,6 +832,9 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     /* Exit_Extra_1 */		{ 0, 0, 0 },
     /* Exit_Extra_2 */		{ 0, 0, 0 },
     /* Overlay_Buffer */	{ 0, 0, 0 },
+    /* Floor_Reserved3 */	{ 0, 0, 0 },
+    /* Floor_Reserved2 */	{ 0, 0, 0 },
+    /* Floor_Reserved1 */	{ 0, 0, 0 },
 };
 
 #define	CMM_NOLEAVECHECK	0x0001
@@ -883,6 +883,8 @@ static int canmakemove(creature const *cr, int dir, int flags)
     }
 
     floor = floorat(to);
+    if (isanimation(floor))
+	return FALSE;
 
     if (cr->id == Chip) {
 	if (!(movelaws[floor].chip & dir))

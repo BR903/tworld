@@ -14,8 +14,7 @@
 #include	"res.h"
 
 #define	RES_IMG_TILES		0
-#define	RES_IMG_USEANIM		1
-#define	RES_IMG_FONT		2
+#define	RES_IMG_FONT		1
 #define	RES_IMG_LAST		RES_IMG_FONT
 
 #define	RES_SND_BASE		(RES_IMG_LAST + 1)
@@ -60,7 +59,6 @@ typedef union resourceitem {
 
 static rcitem rclist[] = {
     { "tileimages",		FALSE },
-    { "useanimation",		TRUE },
     { "font",			FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
@@ -109,7 +107,6 @@ static void initresourcedefaults(void)
 {
     strcpy(globalresources[RES_IMG_TILES].str, "tiles.bmp");
     strcpy(globalresources[RES_IMG_FONT].str, "font.bmp");
-    globalresources[RES_IMG_USEANIM].num = FALSE;
 #if 0
     strcpy(globalresources[RES_SND_CHIP_LOSES].str, "bummer.wav");
     strcpy(globalresources[RES_SND_CHIP_WINS].str, "ditty1.wav");
@@ -204,13 +201,12 @@ static int loadimages(void)
     path = getpathbuffer();
     if (*resources[RES_IMG_TILES].str) {
 	combinepath(path, resdir, resources[RES_IMG_TILES].str);
-	f = resources[RES_IMG_USEANIM].num ? loadlargetileset(path, TRUE)
-					   : loadsmalltileset(path, TRUE);
+	f = loadtileset(path, TRUE);
     }
     if (!f && resources != globalresources
 	   && *globalresources[RES_IMG_TILES].str) {
 	combinepath(path, resdir, globalresources[RES_IMG_TILES].str);
-	f = loadsmalltileset(path, TRUE);
+	f = loadtileset(path, TRUE);
     }
     free(path);
 

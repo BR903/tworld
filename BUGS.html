@@ -22,13 +22,46 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-Several of the weirder obscure bugs aren't reproduced faithfully. (For
-example, the tank-hits-red-button-cloning-block-which-hits-blue-button
-bug correctly produces an extra tank in the emulation, but the first
-tank still gets turned around.) For the most part, I'm not
-particularly motivated to improve the emulation of these, as they are
-pretty obscure. However, their existence may point to areas where the
-emulator could be mirroring the internal logic of the MS game better.
+Some of the weirder obscure bugs aren't reproduced faithfully. I will
+attempt to list them here.
+<ol>
+<li>
+Tank runs over a red button connected to a block cloner, and the
+cloned block lands on a blue button. In the real game, a half-turned
+tank appears where the tank used to be, while the real tank, still on
+the red button, remains completely unturned. The new tank appears to
+be turned 90 degrees, but forcing a repaint shows that it is turned a
+complete 180 degrees. In TW, the original tank still turns around,
+while the new tank remains at 90 degrees.
+<li>
+Chip enters a teleport which a block cloner faces, and at the teleport
+Chip exits, there is a block in the way, next to which is the red
+button for said cloner. Thus, Chip entering the teleport causes the
+block to be pushed onto the red button. In the real game, Chip and the
+cloned block both emerge from the same teleport, which vanishes.
+However, Chip does not exit in the correct direction: he exits in the
+same direction as when he <em>last</em> exited a teleport. If this is
+the first time Chip has entered a teleport on this level, then Chip
+exits in the direction of the block, but facing north regardless. The
+block itself vanishes, and in the place of the teleport is a new Chip,
+also facing north. In this particular case, Chip remains on the slide
+list, pushing against the new Chip tile, until the player makes a
+move. In TW, Chip exits in the expected direction. The teleport always
+vanishes, and the block never does.
+<li>
+Chip enters a teleport, and at the teleport Chip exits, there is a
+block on top of another block. In the real game, the top block is
+pushed off, leaving the bottom block behind, intact. Chip reappears at
+the new teleport, but then bounces back, being unable to push a row of
+two blocks. In TW, the blocks are pushed and preserved correctly, but
+Chip does not make it to the latter teleport (instead he either
+proceeds to a different teleport or bounces back from the original
+teleport).
+</ol>
+For the most part, I'm not particularly motivated to improve the
+emulation of these, as they are all pretty obscure. However, their
+existence may point to areas where the emulator could be mirroring the
+internal logic of the MS game better.
 <li>
 The keyboard is scanned twice per tick, once at the beginning and once
 in the middle. As a result, if Chip makes a move at the beginning of a
@@ -80,6 +113,9 @@ On levels where Chips starts out on a force floor, if he begins the
 level without moving, the force floor doesn't take effect until after
 the first frame. In the emulation, the force floor takes effect from
 the get-go.
+<li>
+Blocks change their direction when Chip pushes on them, even if the
+block can't be moved. The emulator does not do this.
 </ol>
 <p>
 <hr>

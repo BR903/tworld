@@ -101,12 +101,7 @@ extern void freefont(void);
 /* Load the tile images stored in the given file. If complain is FALSE,
  * no error messages will be displayed if the file could not be used.
  */
-extern int loadsmalltileset(char const *filename, int complain);
-
-/* Same as the last function, but reads the full set of tiles,
- * including the animated sequences used in the Lynx emulation.
- */
-extern int loadlargetileset(char const *filename, int complain);
+extern int loadtileset(char const *filename, int complain);
 
 /* Free all memory associated with the current tile images.
  */

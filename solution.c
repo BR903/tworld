@@ -453,13 +453,14 @@ int readsolutions(gameseries *series)
 	    continue;
 	i = findlevelinseries(series, gametmp.number, gametmp.passwd);
 	if (i < 0) {
-	    i = findlevelinseries(series, -1, gametmp.passwd);
+	    i = findlevelinseries(series, 0, gametmp.passwd);
 	    if (i < 0) {
 		fileerr(&series->solutionfile,
 			"unmatched password in solution file");
 		continue;
 	    }
-	    warn("level %d has been moved to level %d", gametmp.number, i);
+	    warn("level %d has been moved to level %d",
+		 gametmp.number, series->games[i].number);
 	}
 	series->games[i].besttime = gametmp.besttime;
 	series->games[i].sgflags = gametmp.sgflags;

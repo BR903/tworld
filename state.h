@@ -79,19 +79,19 @@ enum
     Boots_Fire		= 0x34,
     Boots_Water		= 0x35,
 
-    Water_Splash	= 0x36,
-    Dirt_Splash		= 0x37,
-    Bomb_Explosion	= 0x38,
+    Block_Static	= 0x36,
 
-    Block_Static	= 0x39,
+    Burned_Chip		= 0x37,
+    Bombed_Chip		= 0x38,
+    Exited_Chip		= 0x39,
+    Exit_Extra_1	= 0x3A,
+    Exit_Extra_2	= 0x3B,
 
-    Burned_Chip		= 0x3A,
-    Bombed_Chip		= 0x3B,
-    Exited_Chip		= 0x3C,
-    Exit_Extra_1	= 0x3D,
-    Exit_Extra_2	= 0x3E,
+    Overlay_Buffer	= 0x3C,
 
-    Overlay_Buffer	= 0x3F,
+    Floor_Reserved3	= 0x3D,
+    Floor_Reserved2	= 0x3E,
+    Floor_Reserved1	= 0x3F,
 
     Chip		= 0x40,
 
@@ -110,9 +110,13 @@ enum
     Swimming_Chip	= 0x6C,
     Pushing_Chip	= 0x70,
 
-    Entity_Reserved3	= 0x74,
-    Entity_Reserved2	= 0x78,
-    Entity_Reserved1	= 0x7C,
+    Entity_Reserved2	= 0x74,
+    Entity_Reserved1	= 0x78,
+
+    Water_Splash	= 0x7C,
+    Dirt_Splash		= 0x7D,
+    Bomb_Explosion	= 0x7E,
+    Animation_Reserved1	= 0x7F
 };
 
 /* Macros to assist in identifying types of tiles.
@@ -122,12 +126,17 @@ enum
 #define	isdoor(f)	((f) >= Door_Red && (f) <= Door_Green)
 #define	iskey(f)	((f) >= Key_Red && (f) <= Key_Green)
 #define	isboots(f)	((f) >= Boots_Ice && (f) <= Boots_Water)
-#define	isdecaying(f)	((f) >= Water_Splash && (f) <= Bomb_Explosion)
-#define	iscreature(f)	((f) >= Chip)
+#define	iscreature(f)	((f) >= Chip && (f) < Water_Splash)
+#define	isanimation(f)	((f) >= Water_Splash && (f) <= Animation_Reserved1)
 
 /* Getting a specific creature tile.
  */
 #define	crtile(id, dir)	((id) | diridx(dir))
+
+/* Identifying an animation sequence as a creature tile.
+ */
+#define	animationid(id)		((id) & ~3)
+#define	animationdir(id)	(idxdir((id) & 3))
 
 /*
  * Substructures of the game state
