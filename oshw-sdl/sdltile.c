@@ -64,20 +64,6 @@ typedef	struct tileidinfo {
     int		shape;		/* enum values for the free-form bitmap */
 } tileidinfo;
 
-/* Information describing the overall layout of a fixed-form tile
- * bitmap. All coordinates are expressed in tiles.
- */
-typedef	struct imagelayout {
-    int		wtiles;		/* width of the main image */
-    int		htiles;		/* height of the main image */
-    int		xmask;		/* coordinates of the mask image */
-    int		ymask;
-    int		wmask;		/* width of the mask image */
-    int		hmask;		/* height of the mask image */
-    int		xmaskdest;	/* coordinates of the tiles to be masked */
-    int		ymaskdest;
-} imagelayout;
-
 static tileidinfo const tileidmap[NTILES] = {
     { Empty,		 0,  0, -1, -1, 0, 0, 0, 0, TILEIMG_SINGLEOPAQUE },
     { Slide_North,	 1,  2, -1, -1, 0, 0, 0, 0, TILEIMG_OPAQUECELS },
@@ -195,6 +181,7 @@ static tileidinfo const tileidmap[NTILES] = {
     { Water_Splash,	 3,  3, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
     { Dirt_Splash,	 3,  7, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
     { Bomb_Explosion,	 3,  6, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION },
+    { Entity_Explosion,	 3,  8, -1, -1, 0, 0, 0, 0, TILEIMG_ANIMATION }
 };
 
 static Uint32	       *cctiles = NULL;
@@ -256,15 +243,27 @@ static Uint32 const *_gettileimage(int id, int transp)
  * fields of the given rect.
  */
 static Uint32 const *_getcreatureimage(SDL_Rect *rect,
-				       int id, int dir, int moving)
+				       int id, int dir, int moving, int frame)
 {
     tilemap const      *q;
     int			n;
 
     rect->w = sdlg.wtile;
     rect->h = sdlg.htile;
-    q = tileptr + id + diridx(dir);
+    q = tileptr + id;
+    if (!isanimation(id))
+	q += diridx(dir);
 
+    if (!q->transpsize || isanimation(id)) {
+	if (moving > 0) {
+	    switch (dir) {
+	      case NORTH:	rect->y += moving * rect->h / 8;	break;
+	      case WEST:	rect->x += moving * rect->w / 8;	break;
+	      case SOUTH:	rect->y -= moving * rect->h / 8;	break;
+	      case EAST:	rect->x -= moving * rect->w / 8;	break;
+	    }
+	}
+    }
     if (q->transpsize) {
 	if (q->transpsize & SIZE_EXTLEFT) {
 	    rect->x -= sdlg.wtile;
@@ -278,17 +277,8 @@ static Uint32 const *_getcreatureimage(SDL_Rect *rect,
 	}
 	if (q->transpsize & SIZE_EXTDOWN)
 	    rect->h += sdlg.htile;
-    } else if (!isanimation(id)) {
-	if (moving > 0) {
-	    switch (dir) {
-	      case NORTH:	rect->y += moving * rect->h / 8;	break;
-	      case WEST:	rect->x += moving * rect->w / 8;	break;
-	      case SOUTH:	rect->y -= moving * rect->h / 8;	break;
-	      case EAST:	rect->x -= moving * rect->w / 8;	break;
-	    }
-	}
     }
-    n = q->celcount > 1 ? moving / 2 : 0;
+    n = q->celcount > 1 ? frame : 0;
     if (n >= q->celcount)
 	die("requested cel #%d from a %d-cel sequence (%d+%d)",
 	    n, q->celcount, id, diridx(dir));
@@ -905,17 +895,17 @@ static int initfreeformtileset(SDL_Surface *tiles)
 	    y += 1 + h * sdlg.htile;
 	    h = 0;
 	    do {
+		++h;
 		if (y + h * sdlg.htile >= tiles->h) {
 		    h = 0;
 		    break;
 		}
-		++h;
 		nextrow += sdlg.htile * tiles->pitch;
 	    } while (*(Uint32*)nextrow == transpclr);
 	    if (!h) {
 		warn("incomplete tile set: missing %02X",
 		     tileidmap[n].id);
-		break;
+		goto failure;
 	    }
 	    x = 0;
 	    goto findwidth;

@@ -374,7 +374,7 @@ static void displaymapview(gamestate const *state)
 	    continue;
 	rect.x = xorigin + x * sdlg.wtile;
 	rect.y = yorigin + y * sdlg.htile;
-	p = getcreatureimage(&rect, cr->id, cr->dir, cr->moving);
+	p = getcreatureimage(&rect, cr->id, cr->dir, cr->moving, cr->frame);
 	drawtransptileclipped(&rect, p);
     }
 }
