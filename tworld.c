@@ -716,19 +716,21 @@ static int startup(gamespec *gs, startupdata const *start)
     tablespec	table;
     int		listsize, n;
 
+    if (!createserieslist(start->filename, &serieslist, &listsize, &table)) {
+	die("unable to create list of available level sets");
+	return FALSE;
+    }
+    if (listsize <= 0) {
+	die("no level sets found");
+	return FALSE;
+    }
+
     if (start->listseries) {
-	if (!createserieslist(start->filename, &serieslist, &listsize, &table))
-	    die("Unable to create list of available files.");
 	printtable(&table);
 	if (!listsize)
 	    puts("(no files)");
 	exit(EXIT_SUCCESS);
     }
-
-    if (!createserieslist(start->filename, &serieslist, &listsize, &table))
-	return FALSE;
-    if (!listsize)
-	return FALSE;
 
     if (listsize == 1) {
 	gs->series = serieslist[0];
@@ -744,16 +746,19 @@ static int startup(gamespec *gs, startupdata const *start)
 	}
 	if (start->listtimes) {
 	    freeserieslist(&table);
-	    if (!createtimelist(&gs->series, NULL, NULL, &table))
+	    if (!createtimelist(&gs->series,
+				gs->series.ruleset == Ruleset_Lynx,
+				NULL, NULL, &table))
 		return FALSE;
 	    printtable(&table);
 	    exit(EXIT_SUCCESS);
 	}
-	if (!initializesystem())
-	    return FALSE;
-    } else {
-	if (!initializesystem())
-	    return FALSE;
+    }
+
+    if (!initializesystem())
+	return FALSE;
+
+    if (listsize > 1) {
 	n = 0;
 	if (!displaylist("    Welcome to Tile World. Select your destination.",
 			 &table, &n, scrollinputcallback))

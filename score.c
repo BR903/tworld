@@ -180,7 +180,7 @@ int createscorelist(gameseries const *series, int usepasswds,
 
 /* Produce a table that lists the player's times.
  */
-int createtimelist(gameseries const *series,
+int createtimelist(gameseries const *series, int showfractions,
 		   int **plevellist, int *pcount, tablespec *table)
 {
     gamesetup	       *game;
@@ -232,12 +232,16 @@ int createtimelist(gameseries const *series,
 	    ptrs[n++] = textheap + used;
 	    used += 1 + sprintf(textheap + used, "1+%d", game->time);
 	} else {
-	    leveltime = 1000 * TICKS_PER_SECOND - (game->besttime + 1);
+	    leveltime = 1000 * TICKS_PER_SECOND - game->besttime - 1;
 	    ptrs[n++] = untimed;
 	}
 	ptrs[n++] = textheap + used;
-	used += 1 + sprintf(textheap + used, "1+%.2f",
+	if (showfractions)
+	    used += 1 + sprintf(textheap + used, "1+%.2f",
 					(double)leveltime / TICKS_PER_SECOND);
+	else
+	    used += 1 + sprintf(textheap + used, "1+%ld",
+						leveltime / TICKS_PER_SECOND);
 	if (plevellist)
 	    levellist[count] = j;
 	++count;
