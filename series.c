@@ -146,86 +146,113 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 {
     unsigned char      *data;
     unsigned short	val16;
-    int			levelsize, id, size, i;
+    int			lvlsize, size, id, i;
 
     if (!filereadint16(file, &val16, NULL))
 	return FALSE;
-    levelsize = val16;
-    if (!datfilereadint16(file, &game->number, &levelsize, 1, 65535)
-		|| !datfilereadint16(file, &game->time, &levelsize, 0, 65535)
-		|| !datfilereadint16(file, &game->chips, &levelsize, 0, 65535))
+    lvlsize = val16;
+    if (!datfilereadint16(file, &game->number, &lvlsize, 1, 65535)
+		|| !datfilereadint16(file, &game->time, &lvlsize, 0, 65535)
+		|| !datfilereadint16(file, &game->chips, &lvlsize, 0, 65535))
+	goto badlevel;
+    if (!datfilereadint16(file, &id, &lvlsize, 1, 1)
+		|| !datfilereadint16(file, &game->map1size, &lvlsize, 0, 1024)
+		|| !datfilereadbuf(file, &game->map1, game->map1size, &lvlsize)
+		|| !datfilereadint16(file, &game->map2size, &lvlsize, 0, 1024)
+		|| !datfilereadbuf(file, &game->map2, game->map2size, &lvlsize)
+		|| !datfilereadint16(file, &i, &lvlsize, 0, 65535))
 	goto badlevel;
 
-    while (levelsize) {
-	if (!datfilereadint8(file, &id, &levelsize, 1, 10))
-	    goto badlevel;
-	if (id == 1) {
-	    if (!datfilereadint8(file, &i, &levelsize, 0, 0)
-			|| !datfilereadint16(file, &game->map1size,
-						&levelsize, 0, 1024)
-			|| !datfilereadbuf(file, &game->map1, game->map1size,
-						&levelsize)
-			|| !datfilereadint16(file, &game->map2size,
-						&levelsize, 0, 1024)
-			|| !datfilereadbuf(file, &game->map2, game->map2size,
-						&levelsize)
-			|| !datfilereadint16(file, &i, &levelsize, 0, 65535))
-		goto badlevel;
-	} else {
-	    if (!datfilereadint8(file, &size, &levelsize, 0, 255)
-			|| !datfilereadbuf(file, &data, size, &levelsize))
-		goto badlevel;
-	    switch (id) {
-	      case 3:
-		memcpy(game->name, data, size);
-		game->name[size - 1] = '\0';
-		break;
-	      case 4:
-		game->trapcount = size / 10;
-		for (i = 0 ; i < game->trapcount ; ++i) {
-		    game->traps[i].from = data[i * 10 + 0]
-					+ data[i * 10 + 2] * CXGRID;
-		    game->traps[i].to   = data[i * 10 + 4]
-					+ data[i * 10 + 6] * CXGRID;
-		}
-		break;
-	      case 5:
-		game->clonercount = size / 8;
-		for (i = 0 ; i < game->clonercount ; ++i) {
-		    game->cloners[i].from = data[i * 8 + 0]
-					  + data[i * 8 + 2] * CXGRID;
-		    game->cloners[i].to   = data[i * 8 + 4]
-					  + data[i * 8 + 6] * CXGRID;
-		}
-		break;
-	      case 6:
-		for (i = 0 ; i < size - 1 ; ++i)
-		    game->passwd[i] = data[i] ^ 0x99;
-		game->passwd[i] = '\0';
-		break;
-	      case 7:
-		memcpy(game->hinttext, data, size);
-		game->hinttext[size - 1] = '\0';
-		break;
-	      case 10:
-		game->creaturecount = size / 2;
-		for (i = 0 ; i < game->creaturecount ; ++i)
-		    game->creatures[i] = data[i * 2 + 0]
-				       + data[i * 2 + 1] * CXGRID;
-		break;
-	      default:
-		return fileerr(file, "unrecognized field in data file");
-	    }
-	    free(data);
-	    data = NULL;
-	}
+    if (i != lvlsize) {
+	warn("Level %d: inconsistent size data (%d vs %d); using the latter",
+	     game->number, lvlsize, i);
+	lvlsize = i;
     }
-    if (levelsize)
-	warn("Level %d: %d bytes left over!", game->number, levelsize);
+
+    while (lvlsize) {
+	if (!datfilereadint8(file, &id, &lvlsize, 1, 255)
+			|| !datfilereadint8(file, &size, &lvlsize, 0, 255)
+			|| !datfilereadbuf(file, &data, size, &lvlsize))
+		goto badlevel;
+	switch (id) {
+	  case 1:
+	    if (size >= 2) {
+		game->time = (data[1] << 8) | data[0];
+	    } else {
+		warn("Level %d: ignoring field 1 data of size %d",
+		     game->number, size);
+	    }
+	    break;
+	  case 2:
+	    if (size >= 2) {
+		game->chips = (data[1] << 8) | data[0];
+	    } else {
+		warn("Level %d: ignoring field 2 data of size %d",
+		     game->number, size);
+	    }
+	    break;
+	  case 3:
+	    memcpy(game->name, data, size);
+	    game->name[size - 1] = '\0';
+	    break;
+	  case 4:
+	    game->trapcount = size / 10;
+	    for (i = 0 ; i < game->trapcount ; ++i) {
+		game->traps[i].from = data[i * 10 + 0]
+		    + data[i * 10 + 2] * CXGRID;
+		game->traps[i].to   = data[i * 10 + 4]
+		    + data[i * 10 + 6] * CXGRID;
+	    }
+	    break;
+	  case 5:
+	    game->clonercount = size / 8;
+	    for (i = 0 ; i < game->clonercount ; ++i) {
+		game->cloners[i].from = data[i * 8 + 0]
+		    + data[i * 8 + 2] * CXGRID;
+		game->cloners[i].to   = data[i * 8 + 4]
+		    + data[i * 8 + 6] * CXGRID;
+	    }
+	    break;
+	  case 6:
+	    for (i = 0 ; i < size - 1 ; ++i)
+		game->passwd[i] = data[i] ^ 0x99;
+	    game->passwd[i] = '\0';
+	    break;
+	  case 7:
+	    memcpy(game->hinttext, data, size);
+	    game->hinttext[size - 1] = '\0';
+	    break;
+	  case 8:
+	    if (size == 5) {
+		memcpy(game->passwd, data, size);
+		game->passwd[size - 1] = '\0';
+		warn("Level %d: field 8 data (%d) = \"%s\"",
+		     game->number, size, game->passwd);
+	    } else {
+		warn("Level %d: ignoring field 8 data of size %d",
+		     game->number, size);
+	    }
+	    break;
+	  case 10:
+	    game->creaturecount = size / 2;
+	    for (i = 0 ; i < game->creaturecount ; ++i)
+		game->creatures[i] = data[i * 2 + 0]
+		    + data[i * 2 + 1] * CXGRID;
+	    break;
+	  default:
+	    warn("Level %d: ignoring unrecognized field %d (%d bytes)",
+		 game->number, id, size);
+	    break;
+	}
+	free(data);
+	data = NULL;
+    }
+    if (lvlsize)
+	warn("Level %d: %d bytes left over!", game->number, lvlsize);
     return TRUE;
 
   badlevel:
-    if (datfilereadbuf(file, &data, levelsize, &levelsize))
+    if (datfilereadbuf(file, &data, lvlsize, &lvlsize))
 	free(data);
     return FALSE;
 }
