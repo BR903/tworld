@@ -5,8 +5,6 @@
 /home/breadbox/p/html2txt < ./INSTALL.html > ./INSTALL
 /home/breadbox/p/html2txt < ./Changelog.html > ./Changelog
 
-(cd oshw && make ccfont.c)
-
 VER=`tr -cd 0123456789. < ver.h`
 
 mkdir tworld-$VER

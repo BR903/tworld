@@ -12,7 +12,6 @@ err.c
 err.h
 fileio.c
 fileio.h
-font.psf
 gen.h
 help.c
 help.h
@@ -41,15 +40,13 @@ tiles32.bmp
 tworld.c
 ver.h
 oshw-sdl/Makefile.in
-oshw-sdl/ccfont.c
 oshw-sdl/ccicon.c
-oshw-sdl/mkfont
 oshw-sdl/sdlerr.c
 oshw-sdl/sdlgen.h
 oshw-sdl/sdlin.c
 oshw-sdl/sdloshw.c
 oshw-sdl/sdlout.c
-oshw-sdl/sdlres.c
+oshw-sdl/sdlsfx.c
 oshw-sdl/sdltext.c
 oshw-sdl/sdltile.c
 oshw-sdl/sdltimer.c
