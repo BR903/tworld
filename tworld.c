@@ -29,7 +29,6 @@
 typedef	struct gamespec {
     gameseries	series;		/* the complete set of levels */
     int		currentgame;	/* which level is currently selected */
-    int		invalid;	/* TRUE if the current level is invalid */
     int		playback;	/* TRUE if in playback mode */
     int		usepasswds;	/* FALSE if passwords are to be ignored */
 } gamespec;
@@ -177,8 +176,6 @@ static int selectlevelbypassword(gamespec *gs)
     char	passwd[5] = "";
     int		n;
 
-    if (gs->currentgame)
-	memcpy(passwd, gs->series.games[gs->currentgame].passwd, 4);
     setgameplaymode(BeginInput);
     n = displayinputprompt("Enter Password", passwd, 4, keyinputcallback);
     setgameplaymode(EndInput);
@@ -218,7 +215,7 @@ static int scrollinputcallback(int *move)
 
 /* Display the user's current score.
  */
-static void showscores(gamespec *gs)
+static int showscores(gamespec *gs)
 {
     tablespec	table;
     int	       *levellist;
@@ -227,16 +224,18 @@ static void showscores(gamespec *gs)
     if (!createscorelist(&gs->series, gs->usepasswds,
 			 &levellist, &count, &table)) {
 	bell();
-	return;
+	return FALSE;
     }
     setsubtitle(NULL);
     for (n = 0 ; n < count ; ++n)
 	if (levellist[n] == gs->currentgame)
 	    break;
     if (displaylist(gs->series.name, &table, &n, scrollinputcallback))
-	if (levellist[n] >= 0)
-	    gs->currentgame = levellist[n];
+	n = levellist[n];
     freescorelist(levellist, &table);
+    if (n >= 0)
+	gs->currentgame = n;
+    return n >= 0;
 }
 
 /* Mark the current level's solution as replaceable.
@@ -308,6 +307,59 @@ static int changecurrentgame(gamespec *gs, int offset)
     return TRUE;
 }
 
+/* Get a keystroke from the user at the start of the current level.
+ */
+static int startinput(gamespec *gs)
+{
+    int	cmd;
+
+    drawscreen();
+    passwordseen(gs);
+
+#define	leveldelta(n)	if (!changecurrentgame(gs, (n))) { bell(); continue; }
+
+    for (;;) {
+	cmd = input(TRUE);
+	switch (cmd) {
+	  case CmdNorth:					return cmd;
+	  case CmdWest:						return cmd;
+	  case CmdSouth:					return cmd;
+	  case CmdEast:						return cmd;
+	  case CmdProceed:					return cmd;
+	  case CmdPrev10:	leveldelta(-10);		return CmdNone;
+	  case CmdPrev:		leveldelta(-1);			return CmdNone;
+	  case CmdPrevLevel:	leveldelta(-1);			return CmdNone;
+	  case CmdNextLevel:	leveldelta(+1);			return CmdNone;
+	  case CmdNext:		leveldelta(+1);			return CmdNone;
+	  case CmdNext10:	leveldelta(+10);		return CmdNone;
+	  case CmdHelp:		gameplayhelp();			break;
+	  case CmdKillSolution:	replaceablesolution(gs);	break;
+	  case CmdQuitLevel:					exit(0);
+	  case CmdQuit:						exit(0);
+	  case CmdPlayback:
+	    if (prepareplayback()) {
+		gs->playback = TRUE;
+		return CmdProceed;
+	    }
+	    bell();
+	    break;
+	  case CmdSeeScores:
+	    if (showscores(gs))
+		return CmdNone;
+	    break;
+	  case CmdGotoLevel:
+	    if (selectlevelbypassword(gs))
+		return CmdNone;
+	    break;
+	  default:
+	    continue;
+	}
+
+	drawscreen();
+    }
+
+}
+
 /* Get a keystroke from the user at the completion of the current
  * level.
  */
@@ -349,32 +401,13 @@ static void endinput(gamespec *gs, int status)
 /* Play the current level. Return when the user completes the level or
  * requests something else.
  */
-static void playgame(gamespec *gs)
+static void playgame(gamespec *gs, int firstcmd)
 {
     int	cmd, n;
 
-    drawscreen();
-    passwordseen(gs);
-
-    cmd = input(TRUE);
-    switch (cmd) {
-      case CmdNorth: case CmdWest:				break;
-      case CmdSouth: case CmdEast:				break;
-      case CmdPrev10:		changecurrentgame(gs, -10);	return;
-      case CmdPrev:		changecurrentgame(gs, -1);	return;
-      case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
-      case CmdNextLevel:	changecurrentgame(gs, +1);	return;
-      case CmdNext:		changecurrentgame(gs, +1);	return;
-      case CmdNext10:		changecurrentgame(gs, +10);	return;
-      case CmdGotoLevel:	selectlevelbypassword(gs);	return;
-      case CmdPlayback:		gs->playback = TRUE;		return;
-      case CmdSeeScores:	showscores(gs);			return;
-      case CmdKillSolution:	replaceablesolution(gs);	return;
-      case CmdHelp:		gameplayhelp();			return;
-      case CmdQuitLevel:					exit(0);
-      case CmdQuit:						exit(0);
-      default:			cmd = CmdNone;			break;
-    }
+    cmd = firstcmd;
+    if (cmd == CmdProceed)
+	cmd = CmdNone;
 
     setgameplaymode(BeginPlay);
     for (;;) {
@@ -397,14 +430,6 @@ static void playgame(gamespec *gs)
 	  case CmdSameLevel:		n = 0;		goto quitloop;
 	  case CmdDebugCmd1:				break;
 	  case CmdDebugCmd2:				break;
-	  case CmdCheatNorth:     case CmdCheatWest:		break;
-	  case CmdCheatSouth:     case CmdCheatEast:		break;
-	  case CmdCheatHome:					break;
-	  case CmdCheatKeyRed:    case CmdCheatKeyBlue:		break;
-	  case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
-	  case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
-	  case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
-	  case CmdCheatICChip:					break;
 	  case CmdQuit:					exit(0);
 	  case CmdPauseGame:
 	    setgameplaymode(SuspendPlay);
@@ -418,6 +443,14 @@ static void playgame(gamespec *gs)
 	    setgameplaymode(ResumePlay);
 	    cmd = CmdNone;
 	    break;
+	  case CmdCheatNorth:     case CmdCheatWest:		break;
+	  case CmdCheatSouth:     case CmdCheatEast:		break;
+	  case CmdCheatHome:					break;
+	  case CmdCheatKeyRed:    case CmdCheatKeyBlue:		break;
+	  case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
+	  case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
+	  case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
+	  case CmdCheatICChip:					break;
 	  default:
 	    cmd = CmdNone;
 	    break;
@@ -487,32 +520,6 @@ static void playbackgame(gamespec *gs)
   quitloop:
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
-}
-
-/* A minimal interface for invalid levels that lets the user move
- * to another level.
- */
-static void noplaygame(gamespec *gs)
-{
-    drawscreen();
-    passwordseen(gs);
-
-    for (;;) {
-	switch (input(TRUE)) {
-	  case CmdPrev10:	changecurrentgame(gs, -10);	return;
-	  case CmdPrev:		changecurrentgame(gs, -1);	return;
-	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
-	  case CmdNextLevel:	changecurrentgame(gs, +1);	return;
-	  case CmdNext:		changecurrentgame(gs, +1);	return;
-	  case CmdNext10:	changecurrentgame(gs, +10);	return;
-	  case CmdSeeScores:	showscores(gs);			return;
-	  case CmdHelp:		gameplayhelp();			return;
-	  case CmdQuitLevel:					exit(0);
-	  case CmdQuit:						exit(0);
-	  default:		bell();				break;
-	}
-	drawscreen();
-    }
 }
 
 /*
@@ -776,6 +783,7 @@ int main(int argc, char *argv[])
 {
     startupdata	start;
     gamespec	spec;
+    int		cmd, valid;
 
     if (!initoptionswithcmdline(argc, argv, &start))
 	return EXIT_FAILURE;
@@ -786,21 +794,20 @@ int main(int argc, char *argv[])
     cleardisplay();
 
     for (;;) {
-	spec.invalid = !initgamestate(spec.series.games + spec.currentgame,
-				      spec.series.ruleset);
+	valid = initgamestate(spec.series.games + spec.currentgame,
+			      spec.series.ruleset);
 	setsubtitle(spec.series.games[spec.currentgame].name);
-	if (spec.playback) {
-	    if (!prepareplayback()) {
+
+	cmd = startinput(&spec);
+	if (cmd) {
+	    if (!valid)
 		bell();
-		spec.playback = FALSE;
-	    }
+	    else if (spec.playback)
+		playbackgame(&spec);
+	    else
+		playgame(&spec, cmd);
 	}
-	if (spec.invalid)
-	    noplaygame(&spec);
-	else if (spec.playback)
-	    playbackgame(&spec);
-	else
-	    playgame(&spec);
+
 	endgamestate();
     }
 

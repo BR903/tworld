@@ -2031,6 +2031,8 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Fire)
 			  = possession(Boots_Water) = 0;
 
+    xviewoffset = yviewoffset = 0;
+
     preparedisplay();
     return TRUE;
 }
@@ -2042,7 +2044,6 @@ static int endgame(gamelogic *logic)
     resetcreaturelist();
     resetblocklist();
     resetsliplist();
-    xviewoffset = yviewoffset = 0;
     return TRUE;
 }
 

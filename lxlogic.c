@@ -1605,6 +1605,8 @@ static int initgame(gamelogic *logic)
 	}
     }
 
+    xviewoffset = yviewoffset = 0;
+
     preparedisplay();
     return TRUE;
 }
@@ -1657,7 +1659,6 @@ static int advancegame(gamelogic *logic)
 static int endgame(gamelogic *logic)
 {
     (void)logic;
-    xviewoffset = yviewoffset = 0;
     return TRUE;
 }
 
