@@ -14,6 +14,7 @@ enum {
     Help_KeysDuringGame,
     Help_KeysBetweenGames,
     Help_ObjectsOfGame,
+    Help_CmdlineOptions,
     Help_AboutGame
 };
 

@@ -18,27 +18,27 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "3-Usage: tworld [-hvVdlstpqFaHf] [-n N] [-DLRS DIR] [NAME] [LEVEL]",
-    "1- ", "1+-D", "1!Read data files from DIR instead of the default.",
-    "1- ", "1+-L", "1!Read level sets from DIR instead of the default.",
-    "1- ", "1+-R", "1!Read resource files from DIR instead of the default.",
-    "1- ", "1+-S", "1!Save games in DIR instead of the default.",
-    "1- ", "1+-p", "1!Disable password checking.",
-    "1- ", "1+-F", "1!Run in fullscreen mode.",
-    "1- ", "1+-q", "1!Run quietly.",
-    "1- ", "1+-n", "1!Set initial volume level to N.",
-    "1- ", "1+-a", "1!Double the size of the sound buffer (can be repeated).",
-    "1- ", "1+-H", "1!Produce histogram of idle time upon exit.",
-    "1- ", "1+-f", "1!Disable frame-skipping.",
-    "1- ", "1+-l", "1!Display the list of available data files and exit.",
-    "1- ", "1+-s", "1!Display scores for the selected data file and exit.",
-    "1- ", "1+-t", "1!Display times for the selected data file and exit.",
-    "1- ", "1+-h", "1!Display this help and exit.",
-    "1- ", "1+-d", "1!Display default directories and exit.",
-    "1- ", "1+-v", "1!Display version number and exit.",
-    "1- ", "1+-V", "1!Display version and license information and exit.",
-    "3-NAME specifies which data file to use.",
-    "3-LEVEL specifies which level to start at."
+    "2-Usage:", "1!tworld [-hvVdlstpqFaHf] [-n N] [-DLRS DIR] [NAME] [LEVEL]",
+    "1- ", "1--D ", "1!Read data files from DIR instead of the default.",
+    "1- ", "1--L ", "1!Read level sets from DIR instead of the default.",
+    "1- ", "1--R ", "1!Read resource files from DIR instead of the default.",
+    "1- ", "1--S ", "1!Save games in DIR instead of the default.",
+    "1- ", "1--p ", "1!Disable password checking.",
+    "1- ", "1--F ", "1!Run in fullscreen mode.",
+    "1- ", "1--q ", "1!Run quietly.",
+    "1- ", "1--n ", "1!Set initial volume level to N.",
+    "1- ", "1--a ", "1!Double the size of the sound buffer (can be repeated).",
+    "1- ", "1--H ", "1!Produce histogram of idle time upon exit.",
+    "1- ", "1--f ", "1!Disable frame-skipping.",
+    "1- ", "1--l ", "1!Display the list of available data files and exit.",
+    "1- ", "1--s ", "1!Display scores for the selected data file and exit.",
+    "1- ", "1--t ", "1!Display times for the selected data file and exit.",
+    "1- ", "1--h ", "1!Display this help and exit.",
+    "1- ", "1--d ", "1!Display default directories and exit.",
+    "1- ", "1--v ", "1!Display version number and exit.",
+    "1- ", "1--V ", "1!Display version and license information and exit.",
+    "3!NAME specifies which data file to use.",
+    "3!LEVEL specifies which level to start at."
 };
 static tablespec const yowzitch_table = { 21, 3, 2, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
@@ -223,9 +223,10 @@ void onlinemainhelp(int topic)
 	"1+\267", "1-Key commands during the game",
 	"1+\267", "1-Key commands inbetween games",
 	"1+\267", "1-Objects of the game",
+	"1+\267", "1-Command-line options",
 	"1+\267", "1-About Tile World"
     };
-    static tablespec const table = { 6, 2, 4, 1, items };
+    static tablespec const table = { 7, 2, 4, 1, items };
 
     while (displaylist("HELP", &table, &topic, scrollinputcallback)) {
 	if (!topic)
@@ -247,6 +248,10 @@ void onlinemainhelp(int topic)
 		&& helptilescreen("OBJECTS", array(help_objects), +1)
 		&& helptilescreen("TOOLS", array(help_tools), +1)
 		&& helptilescreen("MONSTERS", array(help_monsters), 0));
+	    break;
+	  case Help_CmdlineOptions:
+	    displaytable("COMMAND-LINE OPTIONS", &yowzitch_table, -1);
+	    anykey();
 	    break;
 	  case Help_AboutGame:
 	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
