@@ -77,5 +77,5 @@ resources/tiles32.bmp
 resources/ting.wav
 resources/traphit.wav
 resources/whisk.wav
-sets/CC-ms.dac
-sets/CC-lynx.dac
+sets/cc-ms.dac
+sets/cc-lynx.dac
