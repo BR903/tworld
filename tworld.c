@@ -46,7 +46,6 @@ typedef	struct startupdata {
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
     int		listtimes;	/* TRUE if the times should be listed */
-    int		finished;	/* TRUE if the program is done */
 } startupdata;
 
 /* Structure used to hold the complete list of available series.
