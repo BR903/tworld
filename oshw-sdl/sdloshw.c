@@ -55,8 +55,7 @@ void setsubtitle(char const *subtitle)
  */
 static void shutdown(void)
 {
-    if (SDL_WasInit(SDL_INIT_VIDEO))
-	SDL_Quit();
+    SDL_Quit();
 }
 
 /* Initialize SDL.
@@ -66,16 +65,17 @@ int oshwinitialize(int silence, int showhistogram)
     sdlg.eventupdatefunc = _eventupdate;
 
     (void)silence;
-    atexit(shutdown);
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	die("Cannot initialize SDL system: %s\n", SDL_GetError());
+    atexit(shutdown);
 
     setsubtitle(NULL);
 
-    return _sdltimerinitialize(showhistogram)
-	&& _sdlresourceinitialize()
+    return _sdlresourceinitialize()
+	&& _sdltimerinitialize(showhistogram)
 	&& _sdltextinitialize()
 	&& _sdltileinitialize()
 	&& _sdlinputinitialize()
-	&& _sdloutputinitialize();
+	&& _sdloutputinitialize()
+	&& _sdlsfxinitialize(silence);
 }

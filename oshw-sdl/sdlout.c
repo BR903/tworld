@@ -7,7 +7,6 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
-#include	<assert.h>
 #include	"SDL.h"
 #include	"sdlgen.h"
 #include	"../err.h"
@@ -160,11 +159,12 @@ static int layoutscreen(void)
     onomatopoeialoc.y = displayloc.y + displayloc.h - sdlg.font.h;
     onomatopoeialoc.w = infoloc.w;
     onomatopoeialoc.h = sdlg.font.h;
+    sdlg.textsfxrect = onomatopoeialoc;
 
     hintloc.x = infoloc.x;
     hintloc.y = invloc.y + invloc.h + MARGINH;
     hintloc.w = w;
-    hintloc.h = endmsgloc.y - MARGINH - hintloc.y;
+    hintloc.h = onomatopoeialoc.y - MARGINH - hintloc.y;
 
     screenw = infoloc.x + infoloc.w + MARGINW;
     screenh = titleloc.y + titleloc.h + MARGINH;
@@ -198,27 +198,6 @@ static int setdisplaysize(void)
     layoutlistarea();
 
     return TRUE;
-}
-
-static char const *getonomatopoeia(unsigned long sfx)
-{
-    static char const  *sounds[] = { "\"Bummer\"",
-	"Tadaa!", "Clang!", "-Tick-", "Mnphf!", "Chack!", "Slurp!",
-	"Flonk!", "Bamff!", "Spang!", "Dring!", "Click!", "Whisk!",
-	"Chunk!", "Shunk!", "Scrrr!", "Booom!", "Plash!",
-	"(slurp slurp)", "(snick snick)", "(plip plip)", "(crackle crackle)",
-	"Whizz ...", "Whing!", "Drrrr ..."
-    };
-    unsigned long	flag;
-    int			i;
-
-    flag = 1;
-    for (i = 0 ; i < (int)(sizeof sounds / sizeof *sounds) ; ++i) {
-	if (sfx & flag)
-	    return sounds[i];
-	flag <<= 1;
-    }
-    return "";
 }
 
 /*
@@ -440,12 +419,9 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     if (state->statusflags & SF_INVALID)
 	puttext(&hintloc, "This level cannot be played.", 0, PT_MULTILINE);
     else if (state->statusflags & SF_SHOWHINT)
-	puttext(&hintloc, state->game->hinttext, 0, PT_MULTILINE | PT_RIGHT);
+	puttext(&hintloc, state->game->hinttext, 0, PT_MULTILINE | PT_CENTER);
     else
 	fillrect(&hintloc);
-
-    if (state->statusflags & SF_ONOMATOPOEIA)
-	puttext(&onomatopoeialoc, getonomatopoeia(state->soundeffects), -1, 0);
 
     fillrect(&endmsgloc);
 }

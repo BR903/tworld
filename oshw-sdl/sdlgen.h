@@ -63,6 +63,7 @@ typedef	struct oshwglobals
     Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
+    SDL_Rect		textsfxrect;	/* where onomatopoeia are displayed */
 
     /* 
      * Shared functions.
@@ -122,6 +123,7 @@ extern oshwglobals sdlg;
 #define	gettileimage		(*sdlg.gettileimagefunc)
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
+#define	getonomatopoeia		(*sdlg.getonomatopoeiafunc)
 
 /* The initialization functions.
  */
@@ -131,5 +133,6 @@ extern int _sdltextinitialize(void);
 extern int _sdltileinitialize(void);
 extern int _sdlinputinitialize(void);
 extern int _sdloutputinitialize(void);
+extern int _sdlsfxinitialize(int silence);
 
 #endif
