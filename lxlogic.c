@@ -1452,7 +1452,7 @@ int lynx_initgame(gamestate *pstate)
 
     n = -1;
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	/*state->map[pos].bot.id = Empty;*/
+	state->map[pos].bot.id = Empty;
 	if (layer2[pos])
 	    floorat(pos) = fileids[layer2[pos]].id;
 	else if (fileids[layer1[pos]].isfloor)
