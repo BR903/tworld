@@ -9,8 +9,10 @@ mkdir oshw-sdl
 ln -s oshw-sdl oshw
 mkdir resources
 mkdir sets
+mkdir docs
 for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
+mv -i docs/*.html .
 
 sh ./cross-configure.sh --with-win32
 sh ./cross-make.sh tworld.exe
@@ -30,6 +32,7 @@ zip -9 -l tworld-$VER-win32.zip COPYING.txt README-SDL.txt
 zip -9    tworld-$VER-win32.zip tworld.exe SDL.dll mklynxcc.com
 zip -9 -l tworld-$VER-win32.zip sets/*.dac data res/rc
 zip -9    tworld-$VER-win32.zip res/*.bmp res/*.wav
+zip -9 -l tworld-$VER-win32.zip tworld.html fontbmp.html tilebmp.html
 
 rm -f ../../tworld-$VER-win32.zip
 mv tworld-$VER-win32.zip ../..
