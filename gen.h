@@ -58,4 +58,17 @@ typedef	struct tablespec {
  */
 #define	TICKS_PER_SECOND	20
 
+/* Memory leak detection functions of desperation.
+ */
+#ifdef DESPERATE_LEAK_DETECTOR
+extern void *debug_malloc(char const *file, long line, size_t n);
+extern void *debug_calloc(char const *file, long line, size_t m, size_t n);
+extern void *debug_realloc(char const *file, long line, void *p, size_t n);
+extern void debug_free(char const *file, long line, void *p);
+#define	malloc(n)	debug_malloc(__FILE__, __LINE__, n)
+#define	calloc(m, n)	debug_calloc(__FILE__, __LINE__, m, n)
+#define	realloc(p, n)	debug_realloc(__FILE__, __LINE__, p, n)
+#define	free(p)		debug_free(__FILE__, __LINE__, p)
+#endif
+
 #endif

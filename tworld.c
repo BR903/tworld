@@ -100,6 +100,72 @@ static int	usepasswds = TRUE;
  */
 static int	showhistogram = FALSE;
 
+#ifdef DESPERATE_LEAK_DETECTOR
+
+/*
+ * Memory leak detection.
+ */
+
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+
+static FILE *memlog = NULL;
+
+static void initmemlog(void)
+{
+     memlog = fopen("./mem.log", "w");
+     if (!memlog)
+	  exit(EXIT_FAILURE);
+}
+
+void *debug_malloc(char const *file, long line, size_t n)
+{
+    void       *p;
+
+    p = malloc(n);
+    if (!p)
+	memerrexit();
+    fprintf(memlog, "%p < malloc(%u) @ %s:%ld\n", p, n, file, line);
+    return p;
+}
+
+void *debug_calloc(char const *file, long line, size_t m, size_t n)
+{
+    void       *p;
+ 
+    p = calloc(m, n);
+    if (!p)
+	memerrexit();
+    fprintf(memlog, "%p < calloc(%u, %u) @ %s:%ld\n", p, m, n, file, line);
+    return p;
+}
+
+void *debug_realloc(char const *file, long line, void *q, size_t n)
+{
+    void       *p;
+ 
+    p = realloc(q, n);
+    if (!p)
+	memerrexit();
+    fprintf(memlog, "%p > realloc @ %s:%ld\n", q, file, line);
+    fprintf(memlog, "%p < realloc(%u) @ %s:%ld\n", p, n, file, line);
+    return p;
+}
+
+void debug_free(char const *file, long line, void *p)
+{
+    fprintf(memlog, "%p > free @ %s:%ld\n", p, file, line);
+    free(p);
+}
+
+#else
+
+#define	initmemlog()
+
+#endif
+
 /*
  * The top-level user interface functions.
  */
@@ -549,15 +615,16 @@ static int playbackgame(gamespec *gs)
 static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 				char const *defaultseries, int defaultlevel)
 {
-    int	n;
+    int	okay, n;
 
     if (series->count < 1) {
-	warn("no level sets found");
+	errmsg(NULL, "no level sets found");
 	return FALSE;
     }
 
+    okay = TRUE;
     if (series->count == 1 && autosel) {
-	gs->series = series->list[0];
+	getseriesfromlist(&gs->series, series->list, 0);
     } else {
 	n = 0;
 	if (defaultseries) {
@@ -568,22 +635,26 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 	}
 	if (!displaylist("    Welcome to Tile World. Select your destination.",
 			 &series->table, &n, scrollinputcallback))
-	    return FALSE;
-	if (n < 0 || n >= series->count)
-	    return FALSE;
-	gs->series = series->list[n];
-	if (!readseriesfile(&gs->series)) {
-	    warn("cannot read data file");
-	    return FALSE;
-	}
-	if (gs->series.total < 1) {
-	    warn("no levels found in data file");
-	    return FALSE;
-	}
+	    okay = FALSE;
+	else if (n < 0 || n >= series->count)
+	    okay = FALSE;
+	else
+	    getseriesfromlist(&gs->series, series->list, n);
     }
+    freeserieslist(series->list, series->count, &series->table);
+    if (!okay)
+	return FALSE;
 
-    freeserieslist(&series->table);
-    free(series->list);
+    if (!readseriesfile(&gs->series)) {
+	errmsg(NULL, "cannot read data file");
+	freeseriesdata(&gs->series);
+	return FALSE;
+    }
+    if (gs->series.total < 1) {
+	errmsg(NULL, "no levels found in data file");
+	freeseriesdata(&gs->series);
+	return FALSE;
+    }
 
     gs->playback = FALSE;
     gs->usepasswds = usepasswds && gs->series.usepasswds;
@@ -792,6 +863,13 @@ static int initializesystem(void)
     return TRUE;
 }
 
+static void shutdownsystem(void)
+{
+     setsubtitle(NULL);
+     shutdowngamestate();
+     freeallresources();
+}
+
 /* Initialize the program. The list of available data files is drawn
  * up; if only one is found, it is selected automatically. Otherwise
  * the list is presented to the user, and their selection determines
@@ -807,11 +885,13 @@ static int initializesystem(void)
 static void choosegameatstartup(gamespec *gs, startupdata const *start)
 {
     seriesdata	series;
+    tablespec	table;
     int		f;
 
     if (!createserieslist(start->filename,
 			  &series.list, &series.count, &series.table))
 	die("unable to create list of available level sets");
+    free(start->filename);
 
     if (series.count <= 0)
 	die("no level sets found");
@@ -827,20 +907,22 @@ static void choosegameatstartup(gamespec *gs, startupdata const *start)
 	if (!readseriesfile(series.list))
 	    die("cannot read level set");
 	if (start->listscores) {
-	    freeserieslist(&series.table);
 	    if (!createscorelist(series.list, start->usepasswds,
-				 NULL, NULL, &series.table))
+				 NULL, NULL, &table))
 		exit(EXIT_FAILURE);
-	    printtable(&series.table);
+	    freeserieslist(series.list, series.count, &series.table);
+	    printtable(&table);
+	    freescorelist(NULL, &table);
 	    exit(EXIT_SUCCESS);
 	}
 	if (start->listtimes) {
-	    freeserieslist(&series.table);
 	    if (!createtimelist(series.list,
 				series.list->ruleset == Ruleset_Lynx,
-				NULL, NULL, &series.table))
+				NULL, NULL, &table))
 		exit(EXIT_FAILURE);
-	    printtable(&series.table);
+	    freeserieslist(series.list, series.count, &series.table);
+	    printtable(&table);
+	    freetimelist(NULL, &table);
 	    exit(EXIT_SUCCESS);
 	}
     }
@@ -899,6 +981,8 @@ int main(int argc, char *argv[])
     char	lastseries[sizeof spec.series.filebase];
     int		f;
 
+    initmemlog();
+
     if (!initoptionswithcmdline(argc, argv, &start))
 	return EXIT_FAILURE;
 
@@ -914,6 +998,12 @@ int main(int argc, char *argv[])
 	if (f <= 0)
 	    break;
     }
+
+    shutdownsystem();
+    free(resdir);
+    free(seriesdir);
+    free(seriesdatdir);
+    free(savedir);
 
     return f == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

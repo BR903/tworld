@@ -94,8 +94,7 @@ void initmovelist(actlist *list)
 {
     if (!list->allocated || !list->list) {
 	list->allocated = 16;
-	if (!(list->list = malloc(list->allocated * sizeof *list->list)))
-	    memerrexit();
+	xalloc(list->list, list->allocated * sizeof *list->list);
     }
     list->count = 0;
 }
@@ -115,8 +114,6 @@ void addtomovelist(actlist *list, action move)
  */
 void copymovelist(actlist *to, actlist const *from)
 {
-    to->list = NULL;
-    initmovelist(to);
     if (!to->allocated || !to->list)
 	to->allocated = 16;
     while (to->allocated < from->count)
@@ -170,50 +167,6 @@ static int writesolutionheader(fileinfo *file, int flags)
  * File I/O for move lists.
  */
 
-#if 0
-/* Read a move list from the given file into the given move list.
- * FALSE is returned if the move list in the file was less than size
- * bytes long, or is otherwise invalid.
- */
-static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
-{
-    action		act;
-    unsigned char	byte;
-    unsigned short	word;
-    int			n;
-
-    initmovelist(moves);
-    act.when = -1;
-    n = size;
-    while (n > 0) {
-	if (!filereadint8(file, &byte, "unexpected EOF"))
-	    return FALSE;
-	act.dir = idxdir(byte & 3);
-	act.when += byte >> 3;
-	--n;
-	if (byte & 4) {
-	    if (!filereadint8(file, &byte, "unexpected EOF"))
-		return FALSE;
-	    act.when += (byte & ~1) << 4;
-	    --n;
-	    if (byte & 1) {
-		if (!filereadint16(file, &word, "unexpected EOF"))
-		    return FALSE;
-		act.when += (unsigned long)word << 12;
-		n -= 2;
-	    }
-	}
-	++act.when;
-	addtomovelist(moves, act);
-    }
-    if (n) {
-	initmovelist(moves);
-	return fileerr(file, "invalid data in solutions file");
-    }
-
-    return TRUE;
-}
-#else
 /* Read a move list from the given file into the given move list.
  * FALSE is returned if the move list in the file was less than size
  * bytes long, or is otherwise invalid.
@@ -283,42 +236,10 @@ static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
 
     return TRUE;
 }
-#endif
 
 /* Writes the given move list to the given file. psize receives the
  * number of bytes written.
  */
-#if 0
-static int writesolution(fileinfo *file, gamesetup const *game)
-{
-    unsigned long	size;
-    fpos_t		start, end;
-
-    filegetpos(file, &start, "seek error");
-
-    if (!filewriteint32(file, 0, "write error"))
-	return FALSE;
-    if (!game->savedsolution.count)
-	return TRUE;
-
-    if (!filewriteint16(file, game->number, "write error")
-		|| !filewriteint8(file, diridx((int)game->savedrndslidedir),
-					"write error")
-		|| !filewriteint8(file, 0, "write error")
-		|| !filewriteint32(file, game->savedrndseed, "write error")
-		|| !filewriteint32(file, game->besttime, "write error")
-		|| !writemovelist(file, &game->savedsolution, &size))
-	return FALSE;
-
-    if (!filegetpos(file, &end, "seek error")
-		|| !filesetpos(file, &start, "seek error")
-		|| !filewriteint32(file, size + 12, "write error")
-		|| !filesetpos(file, &end, "seek error"))
-	return FALSE;
-
-    return TRUE;
-}
-#else
 static int writemovelist(fileinfo *file, actlist const *moves,
 			 unsigned long *psize)
 {
@@ -372,7 +293,6 @@ static int writemovelist(fileinfo *file, actlist const *moves,
     *psize = size;
     return TRUE;
 }
-#endif
 
 /*
  * File I/O for level solutions.

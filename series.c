@@ -242,7 +242,7 @@ static int readlevelinseries(gameseries *series, int level)
     if (!series->allmapsread) {
 	if (!series->mapfile.fp) {
 	    if (!openfileindir(&series->mapfile, seriesdir,
-			       series->mapfile.name, "rb", "unknown error"))
+			       series->mapfilename, "rb", "unknown error"))
 		return FALSE;
 
 	    if (!readseriesheader(series))
@@ -296,6 +296,8 @@ void freeseriesdata(gameseries *series)
     fileclose(&series->mapfile, NULL);
     clearfileinfo(&series->solutionfile);
     clearfileinfo(&series->mapfile);
+    free(series->mapfilename);
+    series->mapfilename = NULL;
     series->solutionflags = 0;
     series->allmapsread = FALSE;
 
@@ -392,8 +394,7 @@ static int getseriesfile(char *filename, void *data)
     seriesdata	       *sdata = (seriesdata*)data;
     gameseries	       *series;
     char	       *datfilename;
-    int			config;
-    int			f;
+    int			config, f;
 
     clearfileinfo(&file);
     if (!openfileindir(&file, seriesdir, filename, "rb", "unknown error"))
@@ -420,6 +421,7 @@ static int getseriesfile(char *filename, void *data)
 	xalloc(sdata->list, sdata->allocated * sizeof *sdata->list);
     }
     series = sdata->list + sdata->count;
+    series->mapfilename = NULL;
     clearfileinfo(&series->solutionfile);
     series->solutionflags = 0;
     series->allmapsread = FALSE;
@@ -439,6 +441,8 @@ static int getseriesfile(char *filename, void *data)
 	if (!openfileindir(&file, seriesdir, filename, "r", "unknown error"))
 	    return 0;
 	clearfileinfo(&series->mapfile);
+	free(series->mapfilename);
+	series->mapfilename = NULL;
 	datfilename = readconfigfile(&file, series);
 	fileclose(&file, NULL);
 	if (datfilename) {
@@ -447,19 +451,21 @@ static int getseriesfile(char *filename, void *data)
 		f = readseriesheader(series);
 	    fileclose(&series->mapfile, NULL);
 	    clearfileinfo(&series->mapfile);
-	    series->mapfile.name = getpathforfileindir(seriesdatdir,
-						       datfilename);
+	    if (f)
+		series->mapfilename = getpathforfileindir(seriesdatdir,
+							  datfilename);
 	}
     } else {
 	series->mapfile = file;
 	f = readseriesheader(series);
 	fileclose(&series->mapfile, NULL);
 	clearfileinfo(&series->mapfile);
-	series->mapfile.name = filename;
+	if (f)
+	    series->mapfilename = getpathforfileindir(seriesdir, filename);
     }
     if (f)
 	++sdata->count;
-    return f ? 1 : 0;
+    return 0;
 }
 
 /*
@@ -573,12 +579,32 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     return TRUE;
 }
 
-/* Free all memory allocated by createserieslist().
- */
-void freeserieslist(tablespec *table)
+void getseriesfromlist(gameseries *dest, gameseries const *list, int index)
 {
-    free((void*)table->items[0]);
-    free(table->items);
+    int	n;
+
+    *dest = list[index];
+    n = strlen(list[index].mapfilename) + 1;
+    if (!(dest->mapfilename = malloc(n)))
+	memerrexit();
+    memcpy(dest->mapfilename, list[index].mapfilename, n);
+}
+
+/* Free all memory allocated by the createserieslist() table.
+ */
+void freeserieslist(gameseries *list, int count, tablespec *table)
+{
+    int	n;
+
+    if (list) {
+	for (n = 0 ; n < count ; ++n)
+	    free(list[n].mapfilename);
+	free(list);
+    }
+    if (table) {
+	free((void*)table->items[0]);
+	free(table->items);
+    }
 }
 
 /* A function for looking up a specific level in a series by number

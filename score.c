@@ -266,6 +266,8 @@ int createtimelist(gameseries const *series, int showfractions,
 void freescorelist(int *levellist, tablespec *table)
 {
     free(levellist);
-    free(table->items[0]);
-    free(table->items);
+    if (table) {
+	free(table->items[0]);
+	free(table->items);
+    }
 }

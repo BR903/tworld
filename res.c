@@ -294,3 +294,13 @@ int initresources(void)
     resources = allresources[Ruleset_None];
     return readrcfile() && loadfont();
 }
+
+void freeallresources(void)
+{
+    int	n;
+
+    freefont();
+    freetileset();
+    for (n = 0 ; n < SND_COUNT ; ++n)
+	 freesfx(n);
+}

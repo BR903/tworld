@@ -35,6 +35,8 @@ static int setrulesetbehavior(int ruleset)
 	(*logic->shutdown)(logic);
 	logic = NULL;
     }
+    if (ruleset == Ruleset_None)
+	return TRUE;
 
     switch (ruleset) {
       case Ruleset_Lynx:
@@ -71,15 +73,20 @@ int initgamestate(gamesetup *game, int ruleset)
     if (!setrulesetbehavior(ruleset))
 	return FALSE;
 
-    memset(&state, 0, sizeof state);
+    memset(state.map, 0, sizeof state.map);
+    memset(state.keys, 0, sizeof state.keys);
+    memset(state.boots, 0, sizeof state.boots);
     state.game = game;
     state.ruleset = ruleset;
+    state.replay = -1;
+    state.currenttime = -1;
+    state.currentinput = NIL;
     state.lastmove = NIL;
+    state.initrndslidedir = NIL;
+    state.statusflags = 0;
     state.soundeffects = 0;
     state.timelimit = game->time * TICKS_PER_SECOND;
-    state.replay = -1;
     initmovelist(&state.moves);
-    state.initrndslidedir = NIL;
     resetprng(&state.mainprng);
 
     return (*logic->initgame)(logic);
@@ -182,6 +189,12 @@ int endgamestate(void)
 {
     clearsoundeffects();
     return (*logic->endgame)(logic);
+}
+
+void shutdowngamestate(void)
+{
+    setrulesetbehavior(Ruleset_None);
+    destroymovelist(&state.moves);
 }
 
 /* Return TRUE if a solution exists for the given level.

@@ -299,7 +299,7 @@ void freesfx(int index)
 {
     if (sounds[index].wave) {
 	SDL_LockAudio();
-	SDL_FreeWAV(sounds[index].wave);
+	free(sounds[index].wave);
 	sounds[index].wave = NULL;
 	sounds[index].pos = 0;
 	sounds[index].playing = FALSE;

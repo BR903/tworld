@@ -33,4 +33,6 @@ extern int createtimelist(gameseries const *series, int usefractions,
  */
 extern void freescorelist(int *plevellist, tablespec *table);
 
+#define freetimelist(list, table)	(freescorelist(list, table))
+
 #endif

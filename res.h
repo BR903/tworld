@@ -15,4 +15,6 @@ extern int loadgameresources(int ruleset);
 
 extern int initresources(void);
 
+extern void freeallresources(void);
+
 #endif

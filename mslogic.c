@@ -163,6 +163,20 @@ static void resetcreaturepool(void)
     creaturepool = (creature*)creaturepoolend - creaturepoolchunk + 1;
 }
 
+static void freecreaturepool(void)
+{
+    if (!creaturepoolend)
+	return;
+    for (;;) {
+	creaturepoolend = ((creature**)creaturepoolend)[1];
+	free(creaturepool);
+	creaturepool = creaturepoolend;
+	if (!creaturepool)
+	    break;
+	creaturepoolend = creaturepool + creaturepoolchunk - 1;
+    }
+}
+
 static creature *allocatecreature(void)
 {
     creature   *cr;
@@ -2124,7 +2138,7 @@ static void shutdown(gamelogic *logic)
     slipsallocated = 0;
 
     resetcreaturepool();
-    free(creaturepool);
+    freecreaturepool();
     creaturepool = NULL;
     creaturepoolend = NULL;
 }

@@ -43,6 +43,10 @@ extern int drawscreen(void);
  */
 extern int endgamestate(void);
 
+/* Free all persistent resources in the module.
+ */
+extern void shutdowngamestate(void);
+
 /* Return TRUE if a solution exists for the given level.
  */
 extern int hassolution(gamesetup const *game);
