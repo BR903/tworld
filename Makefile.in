@@ -11,6 +11,7 @@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
+datadir = @datadir@
 sharedir = @sharedir@
 mandir = @mandir@
 
@@ -89,11 +90,12 @@ tworldres.o: tworld.ico
 #
 
 install: tworld
-	cp -i ./tworld $(bindir)/.
+	mkdir -p $(bindir)
 	mkdir -p $(sharedir)/sets
 	mkdir -p $(sharedir)/data
 	mkdir -p $(sharedir)/res
 	mkdir -p $(mandir)/man6
+	cp -i ./tworld $(bindir)/.
 	cp -i sets/*.dac $(sharedir)/sets/.
 	cp -i data/*.dat $(sharedir)/data/.
 	cp -i resources/rc $(sharedir)/res/.
@@ -110,4 +112,4 @@ spotless:
 	rm -f $(OBJS) tworld mklynxcc comptime.h config.* configure
 	rm -f tworldres.o tworld.exe mklynxcc.exe
 	(cd oshw && make spotless)
-#	rm -f Makefile
+	rm -f Makefile

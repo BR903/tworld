@@ -7,7 +7,7 @@
 
 (cd docs && ./mkdocs tworld.doc)
 
-VER=`tr -cd 0123456789. < ver.h`
+VER=`sed -e 's/^.*"\(.*\)".*$/\1/' < ver.h`
 
 mkdir tworld-$VER
 tar -cf - `cat MANIFEST` | tar -C tworld-$VER -xf -

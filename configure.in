@@ -21,7 +21,7 @@ AC_ARG_WITH(debug,
 
 LOADLIBES=""
 OSHWCFLAGS=$CFLAGS
-sharedir="$datadir/tworld"
+sharedir="${datadir}/tworld"
 otherobjs=""
 
 dnl
