@@ -16,9 +16,10 @@ enum { KS_OFF = 0,		/* key is not currently pressed */
        KS_DOWN,			/* key is down */
        KS_STRUCK,		/* key was pressed and released in one cycle */
        KS_PRESSED,		/* key was pressed in this cycle */
-       KS_REPRESSED,		/* key is down and repeating */
-       KS_DOWNBUTOFF1 = -1,	/* key was pressed in the previous cycle */
-       KS_DOWNBUTOFF2 = -2	/* key was pressed two cycles ago */
+       KS_DOWNBUTOFF1,		/* key was pressed in the previous cycle */
+       KS_DOWNBUTOFF2,		/* key was pressed two cycles ago */
+       KS_REPRESSED,		/* key is down and is now repeating */
+       KS_count
 };
 
 /* The array of key states.
@@ -59,13 +60,16 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { 'i',                        0, +1,  0,   CmdPlayback,   FALSE },
     { 's',                        0,  0,  0,   CmdSeeScores,  FALSE },
     { 'x',                       -1, +1,  0,   CmdKillSolution, FALSE },
-    { '\n',                      -1, -1,  0,   CmdProceed,    FALSE },
-    { '\r',                      -1, -1,  0,   CmdProceed,    FALSE },
+    { SDLK_RETURN,               -1, -1,  0,   CmdProceed,    FALSE },
     { SDLK_KP_ENTER,             -1, -1,  0,   CmdProceed,    FALSE },
     { ' ',                       -1, -1,  0,   CmdProceed,    FALSE },
     { '.',                        0, -1,  0,   CmdProceed,    FALSE },
+    { SDLK_KP_PERIOD,             0, -1,  0,   CmdProceed,    FALSE },
     { 'd',                        0,  0,  0,   CmdDebugCmd1,  FALSE },
     { 'd',                       +1,  0,  0,   CmdDebugCmd2,  FALSE },
+    { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
+    { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
+    { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE },
     { SDLK_UP,                   +1,  0,  0,   CmdCheatNorth,         TRUE },
     { SDLK_LEFT,                 +1,  0,  0,   CmdCheatWest,          TRUE },
     { SDLK_DOWN,                 +1,  0,  0,   CmdCheatSouth,         TRUE },
@@ -80,9 +84,10 @@ static struct { int scancode, shift, ctl, alt, cmd, hold; } const keycmds[] = {
     { SDLK_F8,                    0,  0,  0,   CmdCheatBootsSlide,    FALSE },
     { SDLK_F9,                    0,  0,  0,   CmdCheatBootsFire,     FALSE },
     { SDLK_F10,                   0,  0,  0,   CmdCheatBootsWater,    FALSE },
-    { 'c',                        0, +1,  0,   CmdQuit,       FALSE },
-    { SDLK_BACKSLASH,             0, +1,  0,   CmdQuit,       FALSE },
-    { SDLK_F4,                    0,  0, +1,   CmdQuit,       FALSE }
+#if 0
+    { '\t',                       0, -1,  0,   CmdNextUndone, FALSE },
+    { '\t',                      +1, -1,  0,   CmdPrevUndone, FALSE },
+#endif
 };
 
 /*
@@ -111,6 +116,15 @@ static void _keyeventcallback(int scancode, int down)
 	keystates[scancode] = down ? KS_ON : KS_OFF;
 	break;
       default:
+#if 0
+	if (down) {
+	    keystates[scancode] = keystates[scancode] == KS_OFF ? KS_PRESSED
+								: KS_REPRESSED;
+	} else {
+	    keystates[scancode] = keystates[scancode] == KS_PRESSED ? KS_STRUCK
+								    : KS_OFF;
+	}
+#else
 	if (down) {
 	    if (keystates[scancode] == KS_OFF)
 		keystates[scancode] = KS_PRESSED;
@@ -122,6 +136,7 @@ static void _keyeventcallback(int scancode, int down)
 	    else
 		keystates[scancode] = KS_OFF;
 	}
+#endif
 	break;
     }
 }
@@ -146,6 +161,39 @@ static void restartkeystates(void)
  */
 static void resetkeystates(void)
 {
+#if 0
+    /* The transition table for resetkeystates() in joystick behavior mode.
+     */
+    static char const joystick_trans[KS_count] = {
+	/* KS_OFF		=> */	KS_OFF,
+	/* KS_ON		=> */	KS_ON,
+	/* KS_DOWN		=> */	KS_DOWN,
+	/* KS_STRUCK		=> */	KS_OFF,
+	/* KS_PRESSED		=> */	KS_DOWN,
+	/* KS_DOWNBUTOFF1	=> */	KS_DOWN,
+	/* KS_DOWNBUTOFF2	=> */	KS_DOWN,
+	/* KS_REPRESSED		=> */	KS_DOWN
+    };
+    /* The transition table for resetkeystates() in keyboard behavior mode.
+     */
+    static char const keyboard_trans[KS_count] = {
+	/* KS_OFF		=> */	KS_OFF,
+	/* KS_ON		=> */	KS_ON,
+	/* KS_DOWN		=> */	KS_DOWN,
+	/* KS_STRUCK		=> */	KS_OFF,
+	/* KS_PRESSED		=> */	KS_DOWNBUTOFF1,
+	/* KS_DOWNBUTOFF1	=> */	KS_DOWNBUTOFF2,
+	/* KS_DOWNBUTOFF2	=> */	KS_DOWN,
+	/* KS_REPRESSED		=> */	KS_DOWN
+    };
+
+    char       *newstate;
+    int		n;
+
+    newstate = joystickstyle ? joystick_trans : keyboard_trans;
+    for (n = 0 ; n < SDLK_LAST ; ++n)
+	keystates[n] = newstate[(int)keystates[n]];
+#else
     int	n;
 
     if (joystickstyle) {
@@ -169,6 +217,7 @@ static void resetkeystates(void)
 	    }
 	}
     }
+#endif
 }
 
 /*
@@ -256,22 +305,6 @@ int setkeyboardarrowsrepeat(int enable)
     restartkeystates();
     return TRUE;
 }
-
-#if 0
-/* Set the keyboard's auto-repeat behavior depending on if the
- * keyboard will be polled and whether or not a game is in progress.
- */
-int setkeyboardrepeat(int holdrepeat, int polling)
-{
-    if (polling)
-	SDL_EnableKeyRepeat(0, 0);
-    else
-	SDL_EnableKeyRepeat(500, 75);
-    joystickstyle = holdrepeat;
-    restartkeystates();
-    return TRUE;
-}
-#endif
 
 /* Initialization.
  */

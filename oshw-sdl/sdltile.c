@@ -204,7 +204,7 @@ static Uint32 const *_getcellimage(int top, int bot)
  * is applied, to set the transparent pixels. Finally, the tiles are
  * transferred to a one-dimensional surface for easy copying.
  */
-static int initializetileset(SDL_Surface *bmp, int wset, int hset,
+static int inittileswithmask(SDL_Surface *bmp, int wset, int hset,
 			     int xmask, int ymask, int wmask, int hmask,
 			     int xmaskdest, int ymaskdest)
 {
@@ -220,7 +220,7 @@ static int initializetileset(SDL_Surface *bmp, int wset, int hset,
     int			x, y, z, n;
 
     if (!sdlg.screen) {
-	warn("initializetileset() called before creating 32-bit screen");
+	warn("inittileswithmask() called before creating 32-bit screen");
 	fmt = SDL_GetVideoInfo()->vfmt;
     } else
 	fmt = sdlg.screen->format;
@@ -344,7 +344,7 @@ int loadsmalltileset(char const *filename, int complain)
     sdlg.htile = y;
     sdlg.cptile = x * y;
     sdlg.cbtile = sdlg.cptile * sizeof(Uint32);
-    initializetileset(bmp, 10, 16, 10, 0, 3, 16, 7, 0);
+    inittileswithmask(bmp, 10, 16, 10, 0, 3, 16, 7, 0);
 
     SDL_FreeSurface(bmp);
     return cctiles != NULL;
