@@ -70,11 +70,6 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
  */
 static int		lastrndslidedir = NORTH;
 
-/* The current stepping value, giving the subsecond offset of the
- * timer. This affects when teeth move.
- */
-static int		stepping = 2;
-
 /* The memory used to hold the list of creatures.
  */
 static creature	       *creaturearray = NULL;
@@ -100,6 +95,7 @@ static gamestate       *state;
 
 #define	timelimit()		(state->timelimit)
 #define	timeoffset()		(state->timeoffset)
+#define	stepping()		(state->stepping)
 #define	currenttime()		(state->currenttime)
 #define	currentinput()		(state->currentinput)
 #define	lastmove()		(state->lastmove)
@@ -387,7 +383,7 @@ static void removecreature(creature *cr, int animationid)
     if (cr->state & CS_PUSHED)
 	stopsoundeffect(SND_BLOCK_MOVING);
     cr->id = animationid;
-    cr->frame = ((currenttime() + stepping) & 1) ? 12 : 11;
+    cr->frame = ((currenttime() + stepping()) & 1) ? 12 : 11;
     --cr->frame;
     cr->hidden = FALSE;
     cr->state = 0;
@@ -832,7 +828,7 @@ static void choosecreaturemove(creature *cr)
 	choices[0] = BLOB_TURN;
 	break;
       case Teeth:
-	if ((currenttime() + stepping) & 4)
+	if ((currenttime() + stepping()) & 4)
 	    return;
 	if (getchip()->hidden)
 	    return;
@@ -1939,6 +1935,7 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Water) = 0;
 
     resetendgametimer();
+    stepping() += 2;
     couldntmove() = FALSE;
     chippushing() = FALSE;
     chipstuck() = FALSE;

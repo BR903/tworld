@@ -51,11 +51,6 @@ static int advancecreature(creature *cr, int dir);
  */
 static gamestate	       *state;
 
-/* The current stepping value, giving the subsecond offset of the
- * timer. This affects when teeth and blobs move.
- */
-static int			stepping = 0;
-
 /*
  * Accessor macros for various fields in the game state. Many of the
  * macros can be used as an lvalue.
@@ -76,6 +71,7 @@ static int			stepping = 0;
 
 #define	timelimit()		(state->timelimit)
 #define	timeoffset()		(state->timeoffset)
+#define	stepping()		(state->stepping)
 #define	currenttime()		(state->currenttime)
 #define	currentinput()		(state->currentinput)
 #define	xviewpos()		(state->xviewpos)
@@ -814,7 +810,7 @@ static int pushblock(int pos, int dir, int collapse)
     r = advancecreature(cr, dir);
     cr->state &= ~CS_DEFERPUSH;
     if (!r)
-	endfloormovement(cr);
+	cr->state &= ~(CS_SLIP | CS_SLIDE);
     return r;
 }
 
@@ -1043,7 +1039,7 @@ static void choosecreaturemove(creature *cr)
     if (currenttime() & 2)
 	return;
     if (cr->id == Teeth || cr->id == Blob) {
-	if ((currenttime() + stepping) & 4)
+	if ((currenttime() + stepping()) & 4)
 	    return;
     }
     if (cr->state & CS_TURNING) {

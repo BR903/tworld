@@ -101,6 +101,7 @@ int initgamestate(gamesetup *game, int ruleset)
     state.currentinput = NIL;
     state.lastmove = NIL;
     state.initrndslidedir = NIL;
+    state.stepping = 0;
     state.statusflags = 0;
     state.soundeffects = 0;
     state.timelimit = game->time * TICKS_PER_SECOND;
@@ -120,6 +121,7 @@ int prepareplayback(void)
     state.replay = 0;
     copymovelist(&state.moves, &state.game->savedsolution);
     state.initrndslidedir = state.game->savedrndslidedir;
+    /*state.stepping = state.game->savedstepping;*/
     restartprng(&state.mainprng, state.game->savedrndseed);
     return TRUE;
 }

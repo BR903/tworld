@@ -158,7 +158,6 @@ typedef	struct creature {
     signed int		hidden: 1;	/* TRUE if creature is invisible */
     signed int		moving: 5;	/* positional offset of creature */
     signed int		frame : 5;	/* explicit animation index */
-    signed int		fdir  : 5;	/* internal state value */
     signed int		tdir  : 5;	/* internal state value */
 } creature;
 #else
@@ -198,6 +197,7 @@ typedef struct gamestate {
     short		statusflags;		/* flags (see below) */
     unsigned char	lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
+    signed char		stepping;		/* initial timer offset 0-7 */
     unsigned long	soundeffects;		/* the latest sound effects */
     actlist		moves;			/* the list of moves */
     prng		mainprng;		/* the main PRNG */

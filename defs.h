@@ -96,6 +96,8 @@ enum {
     CmdKillSolution,
     CmdVolumeUp,
     CmdVolumeDown,
+    CmdSteppingUp,
+    CmdSteppingDown,
     CmdProceed,
     CmdDebugCmd1,
     CmdDebugCmd2,

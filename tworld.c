@@ -539,6 +539,13 @@ static int selectlevelbypassword(gamespec *gs)
     return setcurrentgame(gs, n);
 }
 
+static void changestepping(int delta, int display)
+{
+    (void)delta;
+    if (display)
+	setdisplaymsg("stepping changed", 1000, 1000);
+}
+
 /*
  * The game-playing functions.
  */
@@ -566,6 +573,8 @@ static int startinput(gamespec *gs)
 	  case CmdNext:		leveldelta(+1);			return CmdNone;
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
 	  case CmdKillSolution:	replaceablesolution(gs, -1);	break;
+	  case CmdSteppingUp:	changestepping(+1, TRUE);	break;
+	  case CmdSteppingDown:	changestepping(-1, TRUE);	break;
 	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
 	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdHelp:		dohelp(Help_KeysBetweenGames); break;
