@@ -337,11 +337,9 @@ static int startinput(gamespec *gs)
 
     for (;;) {
 	cmd = input(TRUE);
+	if (cmd >= CmdMoveFirst && cmd <= CmdMoveLast)
+	    return cmd;
 	switch (cmd) {
-	  case CmdNorth:					return cmd;
-	  case CmdWest:						return cmd;
-	  case CmdSouth:					return cmd;
-	  case CmdEast:						return cmd;
 	  case CmdProceed:					return cmd;
 	  case CmdQuitLevel:					return cmd;
 	  case CmdPrev10:	leveldelta(-10);		return CmdNone;
@@ -439,39 +437,39 @@ static int playgame(gamespec *gs, int firstcmd)
 	    n = -1;
 	    break;
 	}
-	switch (cmd) {
-	  case CmdNorth: case CmdWest:			break;
-	  case CmdSouth: case CmdEast:			break;
-	  case CmdPreserve:				break;
-	  case CmdPrevLevel:		n = -1;		goto quitloop;
-	  case CmdNextLevel:		n = +1;		goto quitloop;
-	  case CmdSameLevel:		n = 0;		goto quitloop;
-	  case CmdDebugCmd1:				break;
-	  case CmdDebugCmd2:				break;
-	  case CmdQuit:					exit(0);
-	  case CmdPauseGame:
-	    setgameplaymode(SuspendPlay);
-	    anykey();
-	    setgameplaymode(ResumePlay);
-	    cmd = CmdNone;
-	    break;
-	  case CmdHelp:
-	    setgameplaymode(SuspendPlay);
-	    onlinehelp(Help_KeysDuringGame);
-	    setgameplaymode(ResumePlay);
-	    cmd = CmdNone;
-	    break;
-	  case CmdCheatNorth:     case CmdCheatWest:		break;
-	  case CmdCheatSouth:     case CmdCheatEast:		break;
-	  case CmdCheatHome:					break;
-	  case CmdCheatKeyRed:    case CmdCheatKeyBlue:		break;
-	  case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
-	  case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
-	  case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
-	  case CmdCheatICChip:					break;
-	  default:
-	    cmd = CmdNone;
-	    break;
+	if (!(cmd >= CmdMoveFirst && cmd <= CmdMoveLast)) {
+	    switch (cmd) {
+	      case CmdPreserve:					break;
+	      case CmdPrevLevel:		n = -1;		goto quitloop;
+	      case CmdNextLevel:		n = +1;		goto quitloop;
+	      case CmdSameLevel:		n = 0;		goto quitloop;
+	      case CmdDebugCmd1:				break;
+	      case CmdDebugCmd2:				break;
+	      case CmdQuit:					exit(0);
+	      case CmdPauseGame:
+		setgameplaymode(SuspendPlay);
+		anykey();
+		setgameplaymode(ResumePlay);
+		cmd = CmdNone;
+		break;
+	      case CmdHelp:
+		setgameplaymode(SuspendPlay);
+		onlinehelp(Help_KeysDuringGame);
+		setgameplaymode(ResumePlay);
+		cmd = CmdNone;
+		break;
+	      case CmdCheatNorth:     case CmdCheatWest:	break;
+	      case CmdCheatSouth:     case CmdCheatEast:	break;
+	      case CmdCheatHome:				break;
+	      case CmdCheatKeyRed:    case CmdCheatKeyBlue:	break;
+	      case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
+	      case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
+	      case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
+	      case CmdCheatICChip:				break;
+	      default:
+		cmd = CmdNone;
+		break;
+	    }
 	}
     }
     setgameplaymode(EndPlay);

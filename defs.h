@@ -73,10 +73,12 @@ typedef	struct xyconn {
  */
 enum {
     CmdNone = NIL,
+    CmdMoveFirst,
     CmdNorth = NORTH,
     CmdWest = WEST,
     CmdSouth = SOUTH,
     CmdEast = EAST,
+    CmdMoveLast = NORTH | WEST | SOUTH | EAST,
     CmdPrevLevel,
     CmdNextLevel,
     CmdSameLevel,
