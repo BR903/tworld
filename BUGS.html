@@ -22,14 +22,6 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-Situation: Tank runs over a red button connected to a block cloner,
-and the cloned block lands on a blue button. In the real game, a
-half-turned tank appears where the tank used to be, while the real
-tank, still on the red button, remains completely unturned. The new
-tank appears to be turned 90 degrees, but forcing a repaint shows that
-it is turned a complete 180 degrees. In TW, the original tank still
-turns around, and the new tank remains at 90 degrees.
-<li>
 Situation: Chip enters a teleport which a block cloner faces, and at
 the teleport Chip exits, there is a block in the way, next to which is
 the red button for said cloner. Thus, Chip entering the teleport
@@ -116,6 +108,14 @@ circumstances, for Chip to push a block away from him as it's heading
 towards him. That is, a block starts moving into the square that Chip
 occupies, but in the same frame, Chip starts pushing the block in the
 opposite direction. This is impossible to do in TW.
+<li>
+Teleports are handled incorrectly when a creature enters a teleport
+and no exit is available, including at the teleport just entered. In
+Tile World the creature becomes trapped on that teleport, unable to
+move unless and until an exit becomes available. In the real Lynx
+game, Chip becomes trapped permanently, even if an exit opens up on
+the next frame. For other creatures, a teleport with no exits behaves
+just like a normal floor.
 </ol>
 <p>
 <hr>

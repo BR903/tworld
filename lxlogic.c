@@ -66,6 +66,8 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
  */
 static int		lastrndslidedir = NORTH;
 
+static int		stepping = 2;
+
 /* The memory used to hold the list of creatures.
  */
 static creature	       *creaturearray = NULL;
@@ -405,7 +407,7 @@ static int stopanimationat(int pos)
  */
 static void removecreature(creature *cr, int animationid)
 {
-#if 1
+#if 0
     addanimation(cr, animationid);
     killcreature(cr);
 #else
@@ -825,7 +827,7 @@ static void choosecreaturemove(creature *cr)
 	choices[0] = 1 << random4(mainprng());
 	break;
       case Teeth:
-	if ((currenttime() >> 2) & 1)
+	if ((currenttime() + stepping) & 4)
 	    return;
 	if (getchip()->hidden)
 	    return;

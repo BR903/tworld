@@ -51,6 +51,8 @@ static int advancecreature(creature *cr, int dir);
  */
 static gamestate	       *state;
 
+static int			stepping = 0;
+
 /*
  * Accessor macros for various fields in the game state. Many of the
  * macros can be used as an lvalue.
@@ -651,8 +653,18 @@ static void turntanks(creature const *inmidmove)
 	creatures[n]->dir = back(creatures[n]->dir);
 	if (!(creatures[n]->state & CS_TURNING))
 	    creatures[n]->state |= CS_TURNING | CS_HASMOVED;
-	if (creatures[n] != inmidmove)
-	    updatecreature(creatures[n]);
+	if (creatures[n] != inmidmove) {
+	    if (creatureid(cellat(creatures[n]->pos)->top.id) == Tank) {
+		updatecreature(creatures[n]);
+	    } else {
+		if (creatures[n]->state & CS_TURNING) {
+		    creatures[n]->state &= ~CS_TURNING;
+		    updatecreature(creatures[n]);
+		    creatures[n]->state |= CS_TURNING;
+		}
+		creatures[n]->dir = back(creatures[n]->dir);
+	    }
+	}
     }
 }
 
@@ -941,9 +953,12 @@ static void choosecreaturemove(creature *cr)
 	return;
     if (cr->id == Block)
 	return;
-    if (currenttime() & (cr->id == Teeth || cr->id == Blob ? 6 : 2))
+    if (currenttime() & 2)
 	return;
-
+    if (cr->id == Teeth || cr->id == Blob) {
+	if ((currenttime() + stepping) & 4)
+	    return;
+    }
     if (cr->state & CS_TURNING) {
 	cr->state &= ~(CS_TURNING | CS_HASMOVED);
 	updatecreature(cr);

@@ -752,6 +752,8 @@ static int playgame(gamespec *gs, int firstcmd)
 	    }
 	}
     }
+    if (!lastrendered)
+	drawscreen(TRUE);
     setgameplaymode(EndPlay);
     if (n > 0)
 	if (replacesolution())
@@ -793,8 +795,8 @@ static int playbackgame(gamespec *gs)
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
 	  case CmdSameLevel:					goto quitloop;
-	  case CmdPlayback:	gs->playback = FALSE;		goto quitloop;
-	  case CmdQuitLevel:	gs->playback = FALSE;		goto quitloop;
+	  case CmdPlayback:					goto quitloop;
+	  case CmdQuitLevel:					goto quitloop;
 	  case CmdQuit:						exit(0);
 	  case CmdVolumeUp:
 	    changevolume(+2, TRUE);
@@ -815,6 +817,8 @@ static int playbackgame(gamespec *gs)
 	    break;
 	}
     }
+    if (!lastrendered)
+	drawscreen(TRUE);
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
     if (n < 0)
