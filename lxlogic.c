@@ -1442,9 +1442,6 @@ static void verifymap(void)
 	if (cr->dir == NIL && cr->id != Block)
 	    warn("%d: Creature %d:%d lacks direction",
 		 currenttime(), cr - creaturelist(), cr->id);
-	if (cr->state & 0x80)
-	    warn("%d: Creature %d:%d in an illegal state %X",
-		 currenttime(), cr - creaturelist(), cr->id, cr->state);
 	if (cr->moving > 8)
 	    warn("%d: Creature %d:%d has a moving time of %d",
 		 currenttime(), cr - creaturelist(), cr->id, cr->moving);

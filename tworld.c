@@ -1109,7 +1109,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     mudsucking = 1;
     soundbufsize = 0;
 
-    initoptions(&opts, argc - 1, argv + 1, "aD:dFHhL:lm:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dfHhL:lm:pqR:S:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1128,7 +1128,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = !showhistogram;			break;
-	  case 'F':	fullscreen = !fullscreen;			break;
+	  case 'f':	fullscreen = !fullscreen;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
 	  case 'a':	++soundbufsize;					break;

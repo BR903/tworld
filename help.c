@@ -23,6 +23,7 @@ static char *yowzitch_items[] = {
     "1-", "1+-R", "1-Read resource files from DIR instead of the default.",
     "1-", "1+-S", "1-Save games in DIR instead of the default.",
     "1-", "1+-p", "1-Disable password checking.",
+    "1-", "1+-f", "1-Run in fullscreen mode.",
     "1-", "1+-q", "1-Run quietly.",
     "1-", "1+-a", "1-Double the size of the sound buffer (can be repeated).",
     "1-", "1+-H", "1-Produce histogram of idle time upon exit.",
