@@ -43,7 +43,7 @@ enum {
 /* Status information specific to the Lynx game logic.
  */
 struct lxstate {
-    unsigned char	greentoggle;	/* green button has been toggled */
+    unsigned char	endgametimer;	/* end-game countdown timer */
     unsigned char	couldntmove;	/* can't-move sound has been played */
     unsigned char	pushing;	/* Chip is pushing against something */
     unsigned char	completed;	/* level completed successfully */
@@ -53,7 +53,6 @@ struct lxstate {
     unsigned char	prng2;		/*   pseudorandom number sequence */
     signed char		xviewoffset;	/* offset of map view center */
     signed char		yviewoffset;	/*   position from position of Chip */
-    unsigned char	endgametimer;	/* end-game countdown timer */
 };
 
 /* Declarations of (indirectly recursive) functions.
@@ -119,7 +118,6 @@ static gamestate       *state;
 #define	getlxstate()		((struct lxstate*)state->localstateinfo)
 
 #define	completed()		(getlxstate()->completed)
-#define	greentoggle()		(getlxstate()->greentoggle)
 #define	couldntmove()		(getlxstate()->couldntmove)
 #define	chippushing()		(getlxstate()->pushing)
 #define	chiptopos()		(getlxstate()->chiptopos)
@@ -1333,11 +1331,7 @@ static int endmovement(creature *cr)
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Green:
-#if 0
-	greentoggle() = !greentoggle();
-#else
 	togglewalls();
-#endif
 	addsoundeffect(SND_BUTTON_PUSHED);
 	break;
       case Button_Red:
@@ -1510,10 +1504,6 @@ static void initialhousekeeping(void)
 	    removechip(CHIP_OUTOFTIME, NULL);
 	}
     }
-
-    if (greentoggle())
-	togglewalls();
-    greentoggle() = FALSE;
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
 	if (cr->hidden)
@@ -1899,7 +1889,6 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Water) = 0;
 
     resetendgametimer();
-    greentoggle() = FALSE;
     couldntmove() = FALSE;
     chippushing() = FALSE;
     completed() = FALSE;
