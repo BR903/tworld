@@ -93,6 +93,7 @@ static int		xviewoffset, yviewoffset;
 #define	mainprng()		(&state->mainprng)
 
 #define	timelimit()		(state->timelimit)
+#define	timeoffset()		(state->timeoffset)
 #define	currenttime()		(state->currenttime)
 #define	currentinput()		(state->currentinput)
 #define	lastmove()		(state->lastmove)
@@ -430,7 +431,7 @@ static void removechip(int reason, creature *also)
     removecreature(chip);
     resetfloorsounds(FALSE);
     startendgametimer();
-    state->timeoffset = 1;
+    timeoffset() = 1;
 }
 
 /*
@@ -1433,7 +1434,7 @@ static void initialhousekeeping(void)
 	    removechip(RMC_OUTOFTIME, NULL);
 	if (iscompleted()) {
 	    startendgametimer();
-	    state->timeoffset = 1;
+	    timeoffset() = 1;
 	}
     }
 
@@ -1884,7 +1885,7 @@ static int advancegame(gamelogic *logic)
     preparedisplay();
 
     if (inendgame()) {
-	--state->timeoffset;
+	--timeoffset();
 	if (!decrendgametimer()) {
 	    resetfloorsounds(TRUE);
 	    return iscompleted() ? +1 : -1;

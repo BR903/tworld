@@ -62,6 +62,7 @@ static int		xviewoffset, yviewoffset;
 #define	traplistsize()		(state->game->trapcount)
 
 #define	timelimit()		(state->timelimit)
+#define	timeoffset()		(state->timeoffset)
 #define	currenttime()		(state->currenttime)
 #define	currentinput()		(state->currentinput)
 #define	xviewpos()		(state->xviewpos)
@@ -2082,15 +2083,7 @@ static int advancegame(gamelogic *logic)
 
     setstate(logic);
 
-    if (timelimit()) {
-	if (currenttime() >= timelimit()) {
-	    addsoundeffect(SND_TIME_OUT);
-	    return -1;
-	} else if (timelimit() - currenttime() <= 15 * TICKS_PER_SECOND
-				&& currenttime() % TICKS_PER_SECOND == 0)
-	    addsoundeffect(SND_TIME_LOW);
-    }
-
+    timeoffset() = -1;
     initialhousekeeping();
 
     if (currenttime() && !(currenttime() & 1)) {
@@ -2110,6 +2103,16 @@ static int advancegame(gamelogic *logic)
 	floormovements();
 	if ((r = checkforending()))
 	    goto done;
+    }
+
+    timeoffset() = 0;
+    if (timelimit()) {
+	if (currenttime() >= timelimit()) {
+	    addsoundeffect(SND_TIME_OUT);
+	    return -1;
+	} else if (timelimit() - currenttime() <= 15 * TICKS_PER_SECOND
+				&& currenttime() % TICKS_PER_SECOND == 0)
+	    addsoundeffect(SND_TIME_LOW);
     }
 
     cr = getchip();
