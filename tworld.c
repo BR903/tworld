@@ -285,9 +285,10 @@ static int showscores(gamespec *gs)
 	if (f == CmdProceed) {
 	    n = levellist[n];
 	    break;
-	} else if (f == CmdQuitLevel)
+	} else if (f == CmdQuitLevel) {
+	    n = -1;
 	    break;
-	else if (f == CmdHelp)
+	} else if (f == CmdHelp)
 	    onlinehelp(Help_None);
     }
     freescorelist(levellist, &table);
