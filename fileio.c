@@ -14,8 +14,7 @@
 #include	"err.h"
 #include	"fileio.h"
 
-/* Windows has some minor differences from Unix when it comes to
- * directories.
+/* Determine the proper directory delimiter and mkdir() arguments.
  */
 #ifdef WIN32
 #define	DIRSEP_CHAR	'\\'
@@ -73,7 +72,8 @@ void clearfileinfo(fileinfo *file)
 }
 
 /* Open a file. If the fileinfo structure does not already have a
- * filename assigned to it, make an independent copy of name.
+ * filename assigned to it, use name (after making an independent
+ * copy).
  */
 int fileopen(fileinfo *file, char const *name, char const *mode,
 	     char const *msg)
@@ -97,7 +97,8 @@ int fileopen(fileinfo *file, char const *name, char const *mode,
     return fileerr(file, msg);
 }
 
-/* Close the file, clear the file pointer, and free the name buffer.
+/* Close the file, clear the file pointer, and free the name buffer if
+ * necessary.
  */
 void fileclose(fileinfo *file, char const *msg)
 {
@@ -342,7 +343,7 @@ int haspathname(char const *name)
 }
 
 /* Append the path and/or file contained in path to dir. If path is
- * an absolute path, the original contents of dir are discarded.
+ * an absolute path, the contents of dir are ignored.
  */
 int combinepath(char *dest, char const *dir, char const *path)
 {

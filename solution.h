@@ -14,14 +14,6 @@
  */
 extern char    *savedir;
 
-/* FALSE if savedir's existence is unverified.
- */
-extern int	savedirchecked;
-
-/*
- * Functions manipulating move lists.
- */
-
 /* Initialize or reinitialize list as empty.
  */
 extern void initmovelist(actlist *list);
@@ -38,11 +30,7 @@ extern void copymovelist(actlist *to, actlist const *from);
  */
 extern void destroymovelist(actlist *list);
 
-/*
- * Functions manipulating solution files.
- */
-
-/* Read the solution for game, if any, from the current file position.
+/* Read any and all saved solutions for the given series.
  */
 extern int readsolutions(gameseries *series);
 

@@ -9,14 +9,11 @@
  * random-number generator. (In fact, this module uses the linear
  * congruential generator, which is hardly impressive. But this isn't
  * strong cryptography; it's a game.) It is here simply because it is
- * necessary for the game to always use the SAME generator. In order
+ * necessary for the game to use the same generator FOREVER. In order
  * for playback of solutions to work correctly, the game must use the
- * same sequence of random numbers (for blobs, walkers, and random
- * slide floors) as when it was recorded. Therefore the random-number
- * seed that was originally used is stored in the saved-game file for
- * each level. But this could still fail if the playback occurred on a
- * version compiled with a different C library's generator. Thus, this
- * module.
+ * same sequence of random numbers as when it was recorded. This would
+ * fail if the playback occurred on a version compiled with a
+ * different C library's generator. Thus, this module.
  */
 
 #include	<stdlib.h>
@@ -24,12 +21,12 @@
 #include	"gen.h"
 #include	"random.h"
 
-/* The latest random number is stashed here, so that it can provide the
- * initial seed of the next PRNG.
+/* The most recently generated random number is stashed here, so that
+ * it can provide the initial seed of the next PRNG.
  */
 static unsigned long	lastvalue = 0x80000000UL;
 
-/* The linear congruential random-number generator needs no
+/* The standard linear congruential random-number generator needs no
  * introduction.
  */
 static unsigned long nextvalue(unsigned long value)
@@ -37,6 +34,8 @@ static unsigned long nextvalue(unsigned long value)
     return ((value * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
 }
 
+/* Move to the next pseudorandom number in the generator's series.
+ */
 static void nextrandom(prng *gen)
 {
     if (gen->shared)
@@ -46,7 +45,7 @@ static void nextrandom(prng *gen)
 }
 
 /* We start off a fresh series by taking the current time. A few
- * numbers are generated and discarded to work out the biases of the
+ * numbers are generated and discarded to work out any biases in the
  * seed value.
  */
 prng createprng(void)

@@ -41,9 +41,9 @@ extern void fileclose(fileinfo *file, char const *msg);
  */
 extern int filetestend(fileinfo *file);
 
-/* The following functions read an unsigned integer from the current
- * position in the given file. For the multi-byte values, the value
- * is always assumed to be stored in little-endian.
+/* The following functions read and write an unsigned integer value
+ * from the current position in the given file. For the multi-byte
+ * values, the value is assumed to be stored in little-endian.
  */
 extern int filereadint8(fileinfo *file, unsigned char *val8,
 			char const *msg);
@@ -70,8 +70,8 @@ extern void *filereadbuf(fileinfo *file, unsigned long size, char const *msg);
 extern int filegetline(fileinfo *file, char *buf, int *len, char const *msg);
 
 /* Read a config-style line from a file, looking for the pattern
- * "name=value". FALSE is returned when the end of the file is
- * reached.
+ * "name=value". FALSE is returned if the end of the file is found
+ * first.
  */
 extern int filegetconfigline(fileinfo *file, char **name, char **value,
 			     char const *msg);
@@ -80,7 +80,7 @@ extern int filegetconfigline(fileinfo *file, char **name, char **value,
  */
 extern int getpathbufferlen(void);
 
-/* Return a buffer big enough to hold any legal pathname.
+/* Return an allocated buffer big enough to hold any legal pathname.
  */
 extern char *getpathbuffer(void);
 
@@ -89,12 +89,14 @@ extern char *getpathbuffer(void);
 extern int haspathname(char const *name);
 
 /* Append the path and/or file contained in path to dir, storing the
- * result in dest. dest and dir can point to the same buffer.
+ * result in dest. dest and dir can point to the same buffer. FALSE is
+ * returned if the resulting path is too long.
  */
 extern int combinepath(char *dest, char const *dir, char const *path);
 
-/* Return the pathname for a directory and/or filename, using the
- * same algorithm to construct the path as openfileindir().
+/* Return the pathname for a directory and/or filename, using the same
+ * algorithm to construct the path as openfileindir(). The caller must
+ * free the returned buffer.
  */
 extern char *getpathforfileindir(char const *dir, char const *filename);
 
@@ -103,26 +105,29 @@ extern char *getpathforfileindir(char const *dir, char const *filename);
 extern int finddir(char const *dir);
 
 /* Open a file, using dir as the directory if filename is not already
- * a complete pathname.
+ * a complete pathname. FALSE is returned if the directory could not
+ * be created.
  */
 extern int openfileindir(fileinfo *file, char const *dir, char const *filename,
 			 char const *mode, char const *msg);
 
-/* Call filecallback once for every file in dir; the first argument to
+/* Call filecallback once for every file in dir. The first argument to
  * the callback function is an allocated buffer containing the
- * filename. If the callback's return value is zero, the buffer is
- * deallocated normally; if the return value is positive, the callback
- * function inherits the buffer and the responsibility of freeing it.
- * If the return value is negative, the function stops scanning the
- * directory and returns to the original caller.
+ * filename. data is passed as the second argument to the callback. If
+ * the callback's return value is zero, the buffer is deallocated
+ * normally; if the return value is positive, the callback function
+ * inherits the buffer and the responsibility of freeing it. If the
+ * return value is negative, findfiles() stops scanning the directory
+ * and returns. FALSE is returned if the directory could not be
+ * examined.
  */
 extern int findfiles(char const *dir, void *data,
 		     int (*filecallback)(char*, void*));
 
 /* Display a simple error message prefixed by the name of the given
  * file. If errno is set, a message appropriate to the value is used;
- * otherwise the text pointed to by msg is used. If msg is NULL, no
- * error message is display. The return value is always FALSE.
+ * otherwise the text pointed to by msg is used. If msg is NULL, the
+ * function does nothing. The return value is always FALSE.
  */
 extern int _fileerr(char const *cfile, unsigned long lineno,
 		    fileinfo *file, char const *msg);

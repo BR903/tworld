@@ -9,30 +9,37 @@
 
 #include	"defs.h"
 
-/* Return the various scores for a given level.
+/* Return the user's scores for a given level. The last three arguments
+ * receive the base score for the level, the time bonus for the level,
+ * and the total score for the series.
  */
 extern int getscoresforlevel(gameseries const *series, int level,
 			     int *base, int *bonus, int *total);
 
-/* Produce a list of the player's scores for the given series,
+/* Produce a table showing the player's scores for the given series,
  * formatted in columns. Each level in the series is listed in a
- * separate string, with an extra string at the end giving a grand
- * total. pptrs points to an array pointer that is filled in with the
- * location of an array of these strings. pcount points to a value
- * that is filled in with the size of the array. pheader, if it is not
- * NULL, is filled in with a pointer to a string providing headers for
- * the columns of the other strings.
+ * separate row, with a header row and an extra row at the end giving
+ * a grand total. The pointer pointed to by plevellist receives an
+ * array of level indexes to match the rows of the table (less one for
+ * the header row), or -1 if no level is displayed in that row. If
+ * usepasswds is TRUE, levels for which the user has not learned the
+ * password will either not be included or will show no title. FALSE
+ * is returned if an error occurs.
  */
 extern int createscorelist(gameseries const *series, int usepasswds,
 			   int **plevellist, int *pcount, tablespec *table);
 
+/* Produce a table showing the player's times for the given series.
+ * If usefractions is FALSE, the times will be rounded to second
+ * values; otherwise, the function will attempt to provide two decimal
+ * digits' worth of fractional seconds.
+ */
 extern int createtimelist(gameseries const *series, int usefractions,
 			  int **plevellist, int *pcount, tablespec *table);
 
-/* Free the memory allocated by createscorelist().
+/* Free all memory allocated by the above functions.
  */
 extern void freescorelist(int *plevellist, tablespec *table);
-
-#define freetimelist(list, table)	(freescorelist(list, table))
+#define freetimelist freescorelist
 
 #endif

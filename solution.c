@@ -75,16 +75,17 @@
  */
 #define	CSSIG		0x999B3335UL
 
-/*
- * 0 = NORTH		0001 = 1
- * 1 = WEST		0010 = 2
- * 2 = SOUTH		0100 = 4
- * 3 = EAST		1000 = 8
- * 4 = NORTHWEST	0011 = 3
- * 5 = SOUTHWEST	0110 = 6
- * 6 = NORTHEAST	1001 = 9
- * 7 = SOUTHEAST	1100 = C
- */
+/* Translate move directions between three-bit and four-bit
+ * representations.
+ *
+ * 0 = NORTH	    = 0001 = 1
+ * 1 = WEST	    = 0010 = 2
+ * 2 = SOUTH	    = 0100 = 4
+ * 3 = EAST	    = 1000 = 8
+ * 4 = NORTH | WEST = 0011 = 3
+ * 5 = SOUTH | WEST = 0110 = 6
+ * 6 = NORTH | EAST = 1001 = 9
+ * 7 = SOUTH | EAST = 1100 = 12 */
 static int const diridx8[16] = {
     -1,  0,  1,  4,  2, -1,  5, -1,  3,  6, -1, -1,  7, -1, -1, -1
 };
@@ -185,8 +186,9 @@ static int writesolutionheader(fileinfo *file, int flags)
  */
 
 /* Read a move list from the given file into the given move list.
- * FALSE is returned if the move list in the file was less than size
- * bytes long, or is otherwise invalid.
+ * size tells the function the length of the list as stored in the
+ * file. FALSE is returned if the move list in the file was less than
+ * size bytes long, or is otherwise invalid.
  */
 static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
 {
@@ -254,8 +256,8 @@ static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
     return TRUE;
 }
 
-/* Writes the given move list to the given file. psize receives the
- * number of bytes written.
+/* Write the given move list to the given file. psize receives the
+ * number of bytes written. FALSE is returned if an error occurs.
  */
 static int writemovelist(fileinfo *file, actlist const *moves,
 			 unsigned long *psize)
@@ -318,8 +320,8 @@ static int writemovelist(fileinfo *file, actlist const *moves,
  * File I/O for level solutions.
  */
 
-/* Read the data of a solution from the given file into the
- * appropriate fields of game.
+/* Read the data of a one complete solution from the given file into
+ * the appropriate fields of game.
  */
 static int readsolution(fileinfo *file, gamesetup *game)
 {
@@ -366,8 +368,8 @@ static int readsolution(fileinfo *file, gamesetup *game)
     return readmovelist(file, &game->savedsolution, size - 16);
 }
 
-/* Write the data of a solution from the appropriate fields of game to
- * the given file.
+/* Write the data of one complete solution from the appropriate fields
+ * of game to the given file.
  */
 static int writesolution(fileinfo *file, gamesetup const *game)
 {
@@ -441,7 +443,9 @@ static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
     return n;
 }
 
-/* Read all the solutions for the given series.
+/* Read all the solutions for the given series. FALSE is returned if
+ * an error occurs. Note that it is not an error for the solution file
+ * to not exist.
  */
 int readsolutions(gameseries *series)
 {
@@ -495,7 +499,11 @@ int readsolutions(gameseries *series)
     return TRUE;
 }
 
-/* Write out all the solutions for series.
+/* Write out all the solutions for series. The solution file is
+ * created if it does not currently exist. The solution file's
+ * directory is also created if it does not currently exist. (Nothing
+ * is done if no directory has been set, however.) FALSE is returned
+ * if an error occurs.
  */
 int savesolutions(gameseries *series)
 {

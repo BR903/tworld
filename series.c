@@ -16,19 +16,20 @@
 
 /* The signature bytes of the data files.
  */
-#define	CCSIG			0x0002AAACUL
-#define	CCSIG_RULESET_MS	0x00
-#define	CCSIG_RULESET_LYNX	0x01
-
 #define	SIG_DATFILE_0		0xAC
 #define	SIG_DATFILE_1		0xAA
 #define	SIG_DATFILE_2		0x02
 
+#define	CCSIG_RULESET_MS	0x00
+#define	CCSIG_RULESET_LYNX	0x01
+
+/* The "signature bytes" of the configuration files.
+ */
 #define	SIG_CFGFILE_0		0x66
 #define	SIG_CFGFILE_1		0x69
 #define	SIG_CFGFILE_2		0x6C
 
-/* Mini-structure for our findfiles() callback.
+/* Mini-structure for passing data in and out of findfiles().
  */
 typedef	struct seriesdata {
     gameseries *list;		/* the gameseries list */
@@ -37,13 +38,14 @@ typedef	struct seriesdata {
     int		usedatdir;	/* TRUE if the file is in seriesdatdir. */
 } seriesdata;
 
-/* The directory containing the data files.
+/* The directory containing the series files (data files and
+ * configuration files).
  */
-char   *seriesdir = NULL;
+char	       *seriesdir = NULL;
 
 /* The directory containing the configured data files.
  */
-char   *seriesdatdir = NULL;
+char	       *seriesdatdir = NULL;
 
 /*
  * File I/O functions, with error-handling specific to the data files.
@@ -99,11 +101,11 @@ static int datfilereadbuf(fileinfo *file, unsigned char **buf, int bufsize,
 }
 
 /*
- * The parts of the data file.
+ * Reading the data file.
  */
 
-/* Examine the top of the game file. FALSE is returned if the header
- * bytes appear to be invalid.
+/* Examine the top of a data file and identify its type. FALSE is
+ * returned if any header bytes appear to be invalid.
  */
 static int readseriesheader(gameseries *series)
 {
@@ -136,7 +138,9 @@ static int readseriesheader(gameseries *series)
     return TRUE;
 }
 
-/* Read a single level out of the data file.
+/* Read a single level out of the given data file. The lists are turned
+ * into arrays and the password is translated. The maps are left in their
+ * compressed format.
  */
 static int readlevelmap(fileinfo *file, gamesetup *game)
 {
@@ -224,8 +228,9 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 /* Assuming that the series passed in is in fact the original
  * chips.dat file, this function undoes the changes that MS introduced
  * to the original Lynx levels. A rather "ad hack" way to accomplish
- * this, but it permits this fixup to occur without requiring anything
- * from the user.
+ * this, but it permits this fixup to occur without requiring the user
+ * to perform a special one-time task. Four passwords are repaired, a
+ * (possibly) missing wall is restored, and level 145 is removed.
  */
 static int undomschanges(gameseries *series)
 {
@@ -252,9 +257,10 @@ static int undomschanges(gameseries *series)
  */
 
 /* Read the game file corresponding to series, until at least level
- * maps have been successfully parsed, or the end of the data file is
- * reached. The files are opened if they have not been already.
- * Nothing is done if the requested level is already in memory.
+ * maps have been successfully loaded into memory or the end of the
+ * data file is reached. The files are opened if they have not been
+ * already.  Nothing is done if all requested levels are already
+ * loaded. FALSE is returned if an error occurs.
  */
 static int readlevelinseries(gameseries *series, int level)
 {
@@ -274,7 +280,8 @@ static int readlevelinseries(gameseries *series, int level)
 	    if (!readseriesheader(series))
 		return FALSE;
 	}
-	while (!(series->gsflags & GSF_ALLMAPSREAD) && series->count <= level) {
+	while (!(series->gsflags & GSF_ALLMAPSREAD)
+						&& series->count <= level) {
 	    while (series->count >= series->allocated) {
 		n = series->allocated ? series->allocated * 2 : 16;
 		xalloc(series->games, n * sizeof *series->games);
@@ -294,8 +301,8 @@ static int readlevelinseries(gameseries *series, int level)
     return series->count > level;
 }
 
-/* Read all the levels from the given data file, and all of the user's
- * solutions.
+/* Load all levels from the given data file, and all of the user's
+ * saved solutions.
  */
 int readseriesfile(gameseries *series)
 {
@@ -313,7 +320,7 @@ int readseriesfile(gameseries *series)
     return TRUE;
 }
 
-/* Release all resources associated with a gameseries structure.
+/* Free all memory allocated for the given gameseries.
  */
 void freeseriesdata(gameseries *series)
 {
@@ -347,10 +354,12 @@ void freeseriesdata(gameseries *series)
 }
 
 /*
- *
+ * Reading the configuration file.
  */
 
-/*
+/* Parse the lines of the given configuration file. The return value
+ * is the name of the corresponding data file, or NULL if the
+ * configuration file could not be read or contained a syntax error.
  */
 static char *readconfigfile(fileinfo *file, gameseries *series)
 {
@@ -365,7 +374,6 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
     if (!filegetline(file, buf, &n, "invalid configuration file"))
 	return NULL;
     if (sscanf(buf, "file = %s", datfilename) != 1) {
-	warn("bad filename in configuration file");
 	fileerr(file, "bad filename in configuration file");
 	return NULL;
     }
@@ -418,11 +426,14 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 }
 
 /*
- * Functions to find the data files.
+ * Functions to locate the series files.
  */
 
-/* A callback function that initializes a gameseries structure for
- * filename and adds it to the list stored under the second argument.
+/* Open the given file and read the information in the file header (or
+ * the entire file if it is a configuration file), then allocate and
+ * initialize a gameseries structure for the file and add it to the
+ * list stored under the second argument. This function is used as a
+ * findfiles() callback.
  */
 static int getseriesfile(char *filename, void *data)
 {
@@ -504,10 +515,6 @@ static int getseriesfile(char *filename, void *data)
     return 0;
 }
 
-/*
- *
- */
-
 /* A callback function to compare two gameseries structures by
  * comparing their filenames.
  */
@@ -516,8 +523,13 @@ static int gameseriescmp(void const *a, void const *b)
     return strcmp(((gameseries*)a)->name, ((gameseries*)b)->name);
 }
 
-/* Search the game file directory and generate an array of gameseries
- * structures corresponding to the data files found there.
+/* Search the series directory and generate an array of gameseries
+ * structures corresponding to the data files found there. The array
+ * is returned through list, and the size of the array is returned
+ * through count. If preferred is not NULL, then the array returned
+ * will only contain the series with that string as its filename
+ * (presuming it can be found). The program will be aborted if a
+ * serious error occurs or if no series can be found.
  */
 static int getseriesfiles(char const *preferred, gameseries **list, int *count)
 {
@@ -558,7 +570,11 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
     return TRUE;
 }
 
-/* Produce a table that describes the available data files.
+/* Produce a list of the series that are available for play. An array
+ * of gameseries structures is returned through pserieslist, the size
+ * of the array is returned through pcount, and a table of the the
+ * filenames is returned through table. preferredfile, if not NULL,
+ * limits the results to just the series with that filename.
  */
 int createserieslist(char const *preferredfile, gameseries **pserieslist,
 		     int *pcount, tablespec *table)
@@ -617,6 +633,8 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     return TRUE;
 }
 
+/* Make an independent copy of a single gameseries structure from list.
+ */
 void getseriesfromlist(gameseries *dest, gameseries const *list, int index)
 {
     int	n;
@@ -644,6 +662,10 @@ void freeserieslist(gameseries *list, int count, tablespec *table)
 	free(table->items);
     }
 }
+
+/*
+ * Miscellaneous functions
+ */
 
 /* A function for looking up a specific level in a series by number
  * and/or password.
@@ -677,11 +699,7 @@ int findlevelinseries(gameseries const *series, int number, char const *passwd)
     return n;
 }
 
-/*
- *
- */
-
-/* A small level, for display at the very end.
+/* Construct a small level for displaying at the very end of a series.
  */
 gamesetup *enddisplaylevel(void)
 {

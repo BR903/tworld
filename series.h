@@ -1,4 +1,4 @@
-/* series.h: Functions for finding and reading the data files.
+/* series.h: Functions for finding and reading the series files.
  *
  * Copyright (C) 2001,2002 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -30,10 +30,12 @@ extern void freeseriesdata(gameseries *series);
  * successfully found. pcount points to a value that is filled in with
  * the number of the data files. table, if it is not NULL, is filled
  * in with a tabular representation of the list of data files, showing
- * the names of the files, how many levels each contains, and which
- * ruleset each uses. preferredfile optionally provides the filename
- * or pathname of a single data file. If the preferred data file is
- * found, it will be the only one returned.
+ * the names of the files and which ruleset each uses, with the first
+ * row of the table containing column headres. preferredfile
+ * optionally provides the filename or pathname of a single data file.
+ * If the preferred data file is found, it will be the only one
+ * returned. FALSE is returned if no series files are found. An
+ * unrecoverable error will cause the function to abort the program.
  */
 extern int createserieslist(char const *preferredfile,
 			    gameseries **pserieslist,
@@ -61,7 +63,8 @@ extern void freeserieslist(gameseries *serieslist, int count,
 extern int findlevelinseries(gameseries const *series,
 			     int number, char const *passwd);
 
-/* A small level, for display at the very end.
+/* A small level created at runtime, used for the display at the
+ * completion of a series.
  */
 extern gamesetup *enddisplaylevel(void);
 

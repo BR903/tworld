@@ -13,6 +13,10 @@
 #include	"oshw.h"
 #include	"res.h"
 
+/*
+ * The resource ID numbers
+ */
+
 #define	RES_IMG_BASE		0
 #define	RES_IMG_TILES		(RES_IMG_BASE + 0)
 #define	RES_IMG_FONT		(RES_IMG_BASE + 1)
@@ -56,16 +60,22 @@
 
 #define	RES_COUNT		(RES_SND_LAST + 1)
 
+/* Structure for enumerating the resource names.
+ */
 typedef	struct rcitem {
     char const *name;
     int		numeric;
 } rcitem;
 
+/* Union for storing the resource values.
+ */
 typedef union resourceitem {
     int		num;
     char	str[256];
 } resourceitem;
 
+/* The complete list of resource names.
+ */
 static rcitem rclist[] = {
     { "tileimages",		FALSE },
     { "font",			FALSE },
@@ -101,9 +111,17 @@ static rcitem rclist[] = {
     { "firewalkingsound",	FALSE }
 };
 
+/* The complete collection of resource values.
+ */
 static resourceitem	allresources[Ruleset_Count][RES_COUNT];
-static resourceitem    *globalresources = allresources[Ruleset_None];
+
+/* The resource values for the current ruleset.
+ */
 static resourceitem    *resources = NULL;
+
+/* The ruleset-independent resource values.
+ */
+static resourceitem    *globalresources = allresources[Ruleset_None];
 
 /* The active ruleset.
  */
@@ -113,10 +131,8 @@ static int		currentruleset = Ruleset_None;
  */
 char		       *resdir = NULL;
 
-/*
- *
+/* A few resources have non-empty default values.
  */
-
 static void initresourcedefaults(void)
 {
     strcpy(allresources[Ruleset_None][RES_IMG_TILES].str, "tiles.bmp");
@@ -143,12 +159,20 @@ static void initresourcedefaults(void)
     strcpy(globalresources[RES_SND_BOMB_EXPLODES].str, "hit3.wav");
     strcpy(globalresources[RES_SND_WATER_SPLASH].str, "water2.wav");
 #endif
-    memcpy(&allresources[Ruleset_MS], &allresources[Ruleset_None],
-				sizeof allresources[Ruleset_None]);
-    memcpy(&allresources[Ruleset_Lynx], &allresources[Ruleset_None],
-				sizeof allresources[Ruleset_None]);
+    memcpy(&allresources[Ruleset_MS], globalresources,
+				sizeof allresources[Ruleset_MS]);
+    memcpy(&allresources[Ruleset_Lynx], globalresources,
+				sizeof allresources[Ruleset_Lynx]);
 }
 
+/* Iterate through the lines of the rc file, storing the values in the
+ * allresources array. Lines consisting only of whitespace, or with an
+ * octothorpe as the first non-whitespace character, are skipped over.
+ * Lines containing a ruleset in brackets introduce ruleset-specific
+ * resource values. Ruleset-independent values are copied into each of
+ * the ruleset-specific entries. FALSE is returned if the rc file
+ * could not be opened.
+ */
 static int readrcfile(void)
 {
     resourceitem	item;
@@ -210,9 +234,43 @@ static int readrcfile(void)
 }
 
 /*
- *
+ * Resource-loading functions
  */
 
+/* Parse the color-definition resource values.
+ */
+static int loadcolors(void)
+{
+    long	bkgnd, text, bold, dim;
+    char       *end;
+
+    bkgnd = strtol(resources[RES_CLR_BKGND].str, &end, 16);
+    if (*end || bkgnd < 0 || bkgnd > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for background: %06X", bkgnd);
+	bkgnd = -1;
+    }
+    text = strtol(resources[RES_CLR_TEXT].str, &end, 16);
+    if (*end || text < 0 || text > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for text: %06X", text);
+	text = -1;
+    }
+    bold = strtol(resources[RES_CLR_BOLD].str, &end, 16);
+    if (*end || bold < 0 || bold > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for bold text: %06X", bold);
+	bold = -1;
+    }
+    dim = strtol(resources[RES_CLR_DIM].str, &end, 16);
+    if (*end || dim < 0 || dim > 0xFFFFFF) {
+	errmsg(NULL, "invalid color ID for dim text: %06X", dim);
+	dim = -1;
+    }
+
+    setcolors(bkgnd, text, bold, dim);
+    return TRUE;
+}
+
+/* Attempt to load the tile images.
+ */
 static int loadimages(void)
 {
     char       *path;
@@ -236,44 +294,8 @@ static int loadimages(void)
     return f;
 }
 
-/*
- *
+/* Load the font resource.
  */
-
-static int loadcolors(void)
-{
-    long	bkgnd, text, bold, dim;
-    char       *end;
-
-    bkgnd = strtol(resources[RES_CLR_BKGND].str, &end, 16);
-    if (*end || bkgnd < 0 || bkgnd > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for background");
-	bkgnd = -1;
-    }
-    text = strtol(resources[RES_CLR_TEXT].str, &end, 16);
-    if (*end || text < 0 || text > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for text");
-	text = -1;
-    }
-    bold = strtol(resources[RES_CLR_BOLD].str, &end, 16);
-    if (*end || bold < 0 || bold > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for bold text");
-	bold = -1;
-    }
-    dim = strtol(resources[RES_CLR_DIM].str, &end, 16);
-    if (*end || dim < 0 || dim > 0xFFFFFF) {
-	errmsg(NULL, "invalid color ID for dim text");
-	dim = -1;
-    }
-
-    setcolors(bkgnd, text, bold, dim);
-    return TRUE;
-}
-
-/*
- *
- */
-
 static int loadfont(void)
 {
     char       *path;
@@ -294,10 +316,8 @@ static int loadfont(void)
     return f;
 }
 
-/*
- *
+/* Load all of the sound resources.
  */
-
 static int loadsounds(void)
 {
     char       *path;
@@ -324,10 +344,11 @@ static int loadsounds(void)
     return count;
 }
 
-/*
- *
+/* Load all resources that are available. FALSE is returned if the
+ * tile images could not be loaded. (Sounds are not required in order
+ * to run, and by this point we should already have a valid font and
+ * color scheme set.)
  */
-
 int loadgameresources(int ruleset)
 {
     currentruleset = ruleset;
@@ -340,6 +361,9 @@ int loadgameresources(int ruleset)
     return TRUE;
 }
 
+/* Parse the rc file and load the font and color scheme. FALSE is returned
+ * if an error occurs.
+ */
 int initresources(void)
 {
     initresourcedefaults();
@@ -347,6 +371,8 @@ int initresources(void)
     return readrcfile() && loadcolors() && loadfont();
 }
 
+/* Free all resources.
+ */
 void freeallresources(void)
 {
     int	n;

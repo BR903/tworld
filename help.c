@@ -161,10 +161,9 @@ static tiletablerow const help_monsters[] = {
       "Finally, Teeth home in on you; like Blobs, they can be outrun." }
 };
 
-/*
- *
+/* Wrapper function for displaying illustrated help and then waiting
+ * for a key command.
  */
-
 static int helptilescreen(char const *title, tiletablerow const *table,
 			  int count, int completed)
 {
@@ -172,7 +171,7 @@ static int helptilescreen(char const *title, tiletablerow const *table,
     return anykey();
 }
 
-/* Display the online help screens for the game.
+/* Display the illustrated help sequence for the game.
  */
 int gameplayhelp(void)
 {
@@ -188,17 +187,19 @@ int gameplayhelp(void)
     return ret;
 }
 
+/* An input callback used while displaying the list of help topics.
+ */
 static int scrollinputcallback(int *move)
 {
     switch (input(TRUE)) {
-      case CmdPrev10:		*move = SCROLL_UP;		break;
+      case CmdPrev10:		*move = SCROLL_ALLTHEWAY_UP;	break;
       case CmdNorth:		*move = SCROLL_UP;		break;
       case CmdPrev:		*move = SCROLL_UP;		break;
       case CmdPrevLevel:	*move = SCROLL_UP;		break;
       case CmdSouth:		*move = SCROLL_DN;		break;
       case CmdNext:		*move = SCROLL_DN;		break;
       case CmdNextLevel:	*move = SCROLL_DN;		break;
-      case CmdNext10:		*move = SCROLL_DN;		break;
+      case CmdNext10:		*move = SCROLL_ALLTHEWAY_DN;	break;
       case CmdProceed:		*move = TRUE;			return FALSE;
       case CmdQuitLevel:	*move = FALSE;			return FALSE;
       case CmdQuit:						exit(0);
@@ -206,6 +207,9 @@ static int scrollinputcallback(int *move)
     return TRUE;
 }
 
+/* Display the list of help topics and allow the user to select which
+ * ones to view.
+ */
 void onlinehelp(int topic)
 {
     static char *items[] = {

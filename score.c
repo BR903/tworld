@@ -33,6 +33,8 @@ static char const *commify(int number)
     return dest;
 }
 
+/* Return the user's scores for a given level.
+ */
 int getscoresforlevel(gameseries const *series, int level,
 		      int *base, int *bonus, int *total)
 {
@@ -63,7 +65,12 @@ int getscoresforlevel(gameseries const *series, int level,
     return TRUE;
 }
 
-/* Produce a table that breaks down the player's current score.
+/* Produce a table that displays the user's score, broken down by
+ * levels with a grand total at the end. If usepasswds is FALSE, all
+ * levels are displayed. Otherwise, levels after the last level for
+ * which the user knows the password are left out. Other levels for
+ * which the user doesn't know the password are in the table, but
+ * without any information besides the level's number.
  */
 int createscorelist(gameseries const *series, int usepasswds,
 		    int **plevellist, int *pcount, tablespec *table)
@@ -178,7 +185,9 @@ int createscorelist(gameseries const *series, int usepasswds,
     return TRUE;
 }
 
-/* Produce a table that lists the player's times.
+/* Produce a table that displays the user's best times for each level
+ * that has a solution. If showfractions is FALSE, times are rounded
+ * down to second precision.
  */
 int createtimelist(gameseries const *series, int showfractions,
 		   int **plevellist, int *pcount, tablespec *table)
@@ -261,7 +270,7 @@ int createtimelist(gameseries const *series, int showfractions,
     return TRUE;
 }
 
-/* Free the memory allocated by createscorelist().
+/* Free the memory allocated by createscorelist() or createtimelist().
  */
 void freescorelist(int *levellist, tablespec *table)
 {

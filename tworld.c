@@ -921,12 +921,12 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 	return 0;
 
     if (!readseriesfile(&gs->series)) {
-	errmsg(NULL, "cannot read data file");
+	errmsg(gs->series.mapfilename, "cannot read data file");
 	freeseriesdata(&gs->series);
 	return -1;
     }
     if (gs->series.total < 1) {
-	errmsg(NULL, "no levels found in data file");
+	errmsg(gs->series.mapfilename, "no levels found in data file");
 	freeseriesdata(&gs->series);
 	return -1;
     }
@@ -991,7 +991,7 @@ static void initdirs(char const *series, char const *seriesdat,
     char const	       *root = NULL;
     char const	       *dir;
 
-    maxpath = getpathbufferlen() - 1;
+    maxpath = getpathbufferlen();
     if (series && strlen(series) >= maxpath) {
 	errmsg(NULL, "Data (-D) directory name is too long;"
 		     " using default value instead");
@@ -1103,7 +1103,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    if (sscanf(opts.val, "%d", &n) == 1)
 		start->levelnum = n;
 	    else
-		strncpy(start->filename, opts.val, getpathbufferlen() - 1);
+		strncpy(start->filename, opts.val, getpathbufferlen());
 	    break;
 	  case 'D':	optseriesdatdir = opts.val;			break;
 	  case 'L':	optseriesdir = opts.val;			break;
@@ -1137,7 +1137,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     if (start->listscores || start->listtimes || start->levelnum)
 	if (!*start->filename)
 	    strcpy(start->filename, "chips.dat");
-    start->filename[getpathbufferlen() - 1] = '\0';
+    start->filename[getpathbufferlen()] = '\0';
 
     initdirs(optseriesdir, optseriesdatdir, optresdir, optsavedir);
     if (listdirs) {

@@ -21,44 +21,25 @@ extern void resetprng(prng *gen);
  */
 extern void restartprng(prng *gen, unsigned long initial);
 
-/* Retrieve the original seed value.
+/* Retrieve the original seed value of the current sequence.
  */
 #define	getinitialseed(gen)	((gen)->initial)
 
+/* Return a random integer between zero and three, inclusive.
+ */
 extern int random4(prng *gen);
+
+/* Randomly select one of the three integer arguments as the return
+ * value.
+ */
 extern int randomof3(prng *gen, int a, int b, int c);
+
+/* Randomly permute an array of three integers.
+ */
 extern void randomp3(prng *gen, int *array);
+
+/* Randomly permute an array of four integers.
+ */
 extern void randomp4(prng *gen, int *array);
 
-#if 0
-
-/* The generator's seed value, and macros for accessing same.
- */
-extern long randomval;
-
-#define	getrandomseed()		(randomval)
-#define	setrandomseed(seed)	(randomval = (seed) & 0x7FFFFFFFL)
-
-/* Either this function or setrandomseed() must be called before
- * any random numbers can be generated.
- */
-extern int randominitialize(void);
-
-/* Return a random number between 0 and 3 inclusive.
- */
-extern int random4(void);
-
-/* Randomly select an element from a list of three values.
- */
-extern int randomof3(int a, int b, int c);
-
-/* Randomly permute an array of three elements.
- */
-extern void randomp3(int *array);
-
-/* Randomly permute an array of four elements.
- */
-extern void randomp4(int *array);
-
-#endif
 #endif

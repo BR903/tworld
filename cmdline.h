@@ -33,8 +33,8 @@
  * call to readoption would return EOF, indicating the end of the
  * cmdline.
  *
- * First written by Brian Raiter, 1997, with minor modifications
- * 1997-2001. This code is in the public domain.
+ * Written by Brian Raiter, 1997, with minor modifications 1997-2001.
+ * This code is in the public domain.
  */
 
 /* Possible values for the type field, indicating the various kinds of
