@@ -1,0 +1,274 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+package toman;
+
+sub mklist($)
+{
+    local $_ = shift;
+    s/\n\.\s+/\n\eTP\n\*\n/g;
+    s/\A\n\eTP//;
+    return $_;
+}
+
+sub mktable($)
+{
+    local $_ = shift;
+    s/\A\n?\. //;
+    my @cell = split /\n\. /;
+    $_ = "";
+    for (my $n = 0 ; $n < $#cell ; $n += 2) {
+	if ($cell[$n] =~ /^%([^%]+)%$/) {
+	    $cell[$n] = "\eI $1";
+	} elsif ($cell[$n] =~ /^([^%]+)%([^%]+)%$/) {
+	    $cell[$n] = "\eBI \"$1\" $2";
+	} else {
+	    $cell[$n] = "\eB $cell[$n]";
+	}
+	$_ .= "\eTP\n$cell[$n]\n$cell[$n + 1]\n";
+    }
+    s/\A\n\eTP//;
+    s/\n*\Z/\n\n/;
+    return $_;
+}
+
+sub mkgrid($$)
+{
+    my @cols;
+    local $_ = shift;
+    my $prev = s/^(\s+)// ? length $1 : 0;
+    while (s/^(\S)(\s*)//) {
+	my $n = length($2) || 72;
+	++$n;
+	push @cols, [ $prev, $n, $1 ];
+	$prev += $n;
+    }
+
+    $_ = shift;
+    my $tbl = "";
+    while (s/^([^\n]+)\n//) {
+	my $line = $1;
+	foreach my $col (@cols) {
+	    my $entry = substr $line, $col->[0], $col->[1];
+	    $entry =~ s/^\s+//;
+	    $entry =~ s/\s+$//;
+	    my $n = $col->[1] - length $entry;
+	    if ($n < 0) {
+		substr($entry, $n) = "";
+		$n = 0;
+	    }
+	    $entry =~ s/ /\\ /g;
+	    if ($col->[2] eq "l") {
+		$tbl .= $entry . ("\\ " x $n);
+	    } elsif ($col->[2] eq "r") {
+		$tbl .= ("\\ " x $n) . $entry;
+	    } elsif ($col->[2] eq "c") {
+		my $m = $col / 2;
+		$tbl .= ("\\ " x $m) . $entry . ("\\ " x ($n - $m));
+	    } else {
+		$tbl .= $entry;
+	    }
+	}
+	$tbl =~ s/(\\ )+\Z//;
+	$tbl .= "\n\ebr\n";
+    }
+    $tbl =~ s/\ebr\n\Z//;
+    return $tbl;
+}
+
+sub sfix($) { local $_ = shift; s/\s+/ /; $_ }
+
+sub toman($)
+{
+    my $mantop =
+	".TH \@name\@ 6 \"January 2002\" \"\@title\@\"\n"
+      . ".LO 1\n"
+      . ".SH NAME\n"
+      . "\@name\@ \\- \@desc\@\n";
+
+    local $_ = shift;
+    s/\A\s*(\S[^\n]+\S) *\n//;
+    my $topline = $1;
+
+    s/\n\.indent\n/\n/g;
+    s/\n\.brk\n/\n\ebr\n/g;
+    s/\n\.list((?:\n[^\n]+)+)\n\n/"\n\eTP 2\n\ePD 0".mklist($1)."\n\ePD 1\n\n"/eg;
+    s/\n\.table((?:\n[^\n]+)+)\n\n/"\n".mktable($1)."\n"/eg;
+    s/\n+\.section\s+([^\n]+)\n/"\n\ebr\n\eSH ".uc$1/eg;
+
+    s/<([^>]+)>/$1/g;
+
+    s{\n? *\%([^\%]+)\%(\S*) *\s}
+     {length$2?"\n\eIR \"".sfix($1)."\" $2\n":"\n\eI ".sfix($1)."\n"}eg;
+    s{\n? *\!([^\!]+)\!(\S*) *\s}
+     {length$2?"\n\eBR \"".sfix($1)."\" $2\n":"\n\eB ".sfix($1)."\n"}eg;
+    s{\n? *\#([^\#]+)\#(\S*) *\s}
+     {length$2?"\n\eBR \"".uc(sfix$1)."\" $2\n":"\n\eB ".uc(sfix$1)."\n"}eg;
+    s{\n\.grid\n([^\n]+)\n((?:[^\n]+\n)+)\n}{"\n".mkgrid($1,$2)."\n"}eg;
+
+    s/\A\s+//;
+    s/\s+\Z/\n/;
+    s/\n\n+/\n\eP\n/g;
+
+    s/\n\./\n \./g;
+
+    tr/\e_/. /;
+
+    my ($name, $title, $desc) = split " / ", $topline;
+    $mantop =~ s/\@name\@/$name/g;
+    $mantop =~ s/\@title\@/$title/g;
+    $mantop =~ s/\@desc\@/$desc/g;
+
+    return "$mantop$_";
+}
+
+#
+#
+#
+
+package tohtml;
+
+my (@toc, %toc);
+
+sub item($)
+{
+    local $_ = shift;
+    chomp;
+    s/\s+/ /g;
+    my $fragment = @toc;
+    push @toc, $_;
+    $toc{$_} = $fragment;
+    return "\n\n<a name=\"$fragment\"></a>\n<h3>\n$_\n</h3>\n\n";
+}
+
+sub itemlkup($)
+{
+    local $_ = shift;
+    s/\s+/ /g;
+    warn "unrecognized section reference \"$_\"\n" unless exists $toc{$_};
+    return "<a href=\"\#" . ($toc{$_} || "???") . "\">$_</a>";
+}
+
+sub mklist($)
+{
+    local $_ = shift;
+    s/\n\.\s+/\n<li>/g;
+    return $_;
+}
+
+sub mktable($)
+{
+    local $_ = shift;
+    my ($n, $pos) = 0;
+
+    while (($pos = index $_, "\n. ") >= 0) {
+	if ($n ^= 1) {
+	    substr($_, $pos, 3) = "</td></tr>\n<tr><td>";
+	} else {
+	    substr($_, $pos, 3) = "&nbsp;</td>\n<td>";
+	}
+    }
+    s{\A</td></tr>}{};
+    s{\Z}{</td></tr>};
+
+    return $_;
+}
+
+sub mkgrid($$)
+{
+    my @cols;
+    my %align = qw(l left r right c center);
+    local $_ = shift;
+    my $prev = s/^(\s+)// ? length $1 : 0;
+    while (s/^(\S)(\s*)//) {
+	my $n = length($2) || 99;
+	++$n;
+	push @cols, [ $prev, $n, $1 ];
+	$prev += $n;
+    }
+
+    $_ = shift;
+    my $tbl = "";
+    while (s/^([^\n]+)\n//) {
+	my $line = $1;
+	$tbl .= "<tr>\n<td>&nbsp;</td>\n";
+	foreach my $col (@cols) {
+	    my $entry = substr $line, $col->[0], $col->[1];
+	    1 while $entry =~ s/(\s+)\s$/&nbsp;$1/;
+	    $entry =~ s/\s$//;
+	    1 while $entry =~ s/^\s(\s*)/$1&nbsp;/;
+	    $tbl .= "<td align=$align{$col->[2]}>$entry</td>\n";
+	}
+	$tbl .= "</tr>\n";
+    }
+    return "\n<table>\n$tbl</table>\n<p>\n";
+}
+
+sub tohtml($)
+{
+    my $htmltop =
+	"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 3.0//EN\">\n"
+      . "<html>\n<head>\n<title>\@title\@</title>\n</head>\n"
+      . "<body bgcolor=\"#FFFFFF\" text=\"#000000\">\n"
+      . "<p align=center>\n<center>\n<h1>\@title\@</h1>\n</center>\n<p>\n";
+    my $htmlbot = "</body>\n</html>\n";
+
+    local $_ = shift;
+    s{\A[^/]+/\s+([^/]*\S)\s+/[^\n]+\n+}{\n};
+    my $title = $1;
+
+    s/&/&amp;/;
+    s/_/&nbsp;/g;
+
+    s{<([^>]+)>}{<tt>$1</tt>}g;
+    s{%([^%]+)%}{<i>$1</i>}g;
+    s{!([^!]+)!}{<strong>$1</strong>}g;
+
+    s/\n\.section\s+([^\n]+)\n/item$1/eg;
+    s/\#([^\#]+)\#/itemlkup$1/eg;
+    s{\n\.indent((?:\n[^\n]+)+)\n\n}{\n<blockquote>$1\n</blockquote>\n\n}g;
+
+    s{\n\.list((?:\n[^\n]+)+)\n\n}
+     {"\n<ul>".mklist($1)."\n</ul>\n\n"}eg;
+    s{\n\.table((?:\n[^\n]+)+)\n\n}
+     {"\n<table>".mktable($1)."\n</table>\n\n"}eg;
+    s{\n\.grid\n([^\n]+)\n((?:[^\n]+\n)+)\n}
+     {mkgrid($1,$2)}eg;
+
+    s/\n.brk\n/\n<br>\n/g;
+    s/\n\n+/\n<p>\n/g;
+
+    my $toc = "";
+    if (@toc > 2) {
+	$toc = "<p>\n<h3>Contents</h3>\n<p>\n<ul>\n"
+	     . join("", map { "<li><a href=\"\#$_\">$toc[$_]</a>\n" } 0..$#toc)
+	     . "</ul>\n";
+    }
+
+    $htmltop =~ s/\@title\@/$title/g;
+
+    return "$htmltop$toc$_$htmlbot";
+}
+
+#
+#
+#
+
+package main;
+
+my $filename = shift || "./tworld.doc";
+
+open IN, $filename or die "$filename: $!\n";
+$_ = join "", <IN>;
+close IN;
+
+my $out;
+
+($out = $filename) =~ s/\.doc$/.6/;
+open OUT, ">$out" or die "$out: $!\n";
+print OUT toman::toman $_;
+
+($out = $filename) =~ s/\.doc$/.html/;
+open OUT, ">$out" or die "$out: $!\n";
+print OUT tohtml::tohtml $_;
