@@ -20,6 +20,10 @@
 #include	"cmdline.h"
 #include	"ver.h"
 
+/* Bell-ringing macro.
+ */
+#define	bell()	(silence ? (void)0 : ding())
+
 /* The data needed to identify what is being played.
  */
 typedef	struct gamespec {
@@ -70,10 +74,13 @@ static char const *vourzhon =
 	"   Please direct bug reports to breadbox@muppetlabs.com, or post\n"
 	"them on annexcafe.chips.challenge.\n";
 
+/* A FALSE value suppresses sound and the console bell.
+ */
 static int	silence = FALSE;
-static int	showhistogram = FALSE;
 
-#define	bell()	(silence ? (void)0 : ding())
+/* TRUE if the user requested an idle-time histogram.
+ */
+static int	showhistogram = FALSE;
 
 /*
  * The top-level user interface functions.
@@ -121,7 +128,7 @@ static void showscores(gamespec *gs)
     freescorelist(texts, listsize);
 }
 
-/*
+/* Mark the current level's solution as replaceable.
  */
 static void replaceablesolution(gamespec *gs)
 {
@@ -246,29 +253,6 @@ static void playgame(gamespec *gs)
     gs->currentgame += n;
 }
 
-/* A minimal interface for invalid levels that lets the user move
- * to another level.
- */
-static void noplaygame(gamespec *gs)
-{
-    for (;;) {
-	drawscreen();
-	switch (input(TRUE)) {
-	  case CmdPrev10:	gs->currentgame -= 10;	return;
-	  case CmdPrev:		--gs->currentgame;	return;
-	  case CmdPrevLevel:	--gs->currentgame;	return;
-	  case CmdNextLevel:	++gs->currentgame;	return;
-	  case CmdNext:		++gs->currentgame;	return;
-	  case CmdNext10:	gs->currentgame += 10;	return;
-	  case CmdSeeScores:	showscores(gs);		return;
-	  case CmdHelp:		gameplayhelp();		return;
-	  case CmdQuitLevel:				exit(0);
-	  case CmdQuit:					exit(0);
-	  default:		bell();			break;
-	}
-    }
-}
-
 /* Play back the user's best solution for the current level.
  */
 static void playbackgame(gamespec *gs)
@@ -315,8 +299,31 @@ static void playbackgame(gamespec *gs)
     gs->playback = FALSE;
 }
 
+/* A minimal interface for invalid levels that lets the user move
+ * to another level.
+ */
+static void noplaygame(gamespec *gs)
+{
+    for (;;) {
+	drawscreen();
+	switch (input(TRUE)) {
+	  case CmdPrev10:	gs->currentgame -= 10;	return;
+	  case CmdPrev:		--gs->currentgame;	return;
+	  case CmdPrevLevel:	--gs->currentgame;	return;
+	  case CmdNextLevel:	++gs->currentgame;	return;
+	  case CmdNext:		++gs->currentgame;	return;
+	  case CmdNext10:	gs->currentgame += 10;	return;
+	  case CmdSeeScores:	showscores(gs);		return;
+	  case CmdHelp:		gameplayhelp();		return;
+	  case CmdQuitLevel:				exit(0);
+	  case CmdQuit:					exit(0);
+	  default:		bell();			break;
+	}
+    }
+}
+
 /*
- * Ancillary top-level functions.
+ * Initialization functions.
  */
 
 /* Assign values to the different directories that the program uses.
@@ -536,8 +543,8 @@ static int startup(gamespec *gs, startupdata const *start)
  * main().
  */
 
-/* Initialize the system and enter an infinite loop of displaying a
- * playing the selected level.
+/* Initialize the system and enter an infinite loop of displaying and
+ * playing levels.
  */
 int main(int argc, char *argv[])
 {
