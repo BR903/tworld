@@ -152,7 +152,8 @@ static int readrcfile(void)
 	i = sizeof buf - 1;
 	if (!filegetline(&file, buf, &i, NULL))
 	    break;
-	if (*buf == '\n' || *buf == '#')
+	for (p = buf ; isspace(*p) ; ++p) ;
+	if (!*p || *p == '#')
 	    continue;
 	if (sscanf(buf, "[%[^]]]", name) == 1) {
 	    for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;

@@ -65,7 +65,7 @@ extern void *filereadbuf(fileinfo *file, unsigned long size, char const *msg);
 
 /* Read one full line from fp and store the first len characters,
  * including any trailing newline. len receives the length of the line
- * stored in buf upon return.
+ * stored in buf, minus any trailing newline, upon return.
  */
 extern int filegetline(fileinfo *file, char *buf, int *len, char const *msg);
 

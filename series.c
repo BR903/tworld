@@ -345,7 +345,8 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 	n = sizeof buf - 1;
 	if (!filegetline(file, buf, &n, NULL))
 	    break;
-	if (*buf == '\n' || *buf == '#')
+	for (p = buf ; isspace(*p) ; ++p) ;
+	if (!*p || *p == '#')
 	    continue;
 	if (sscanf(buf, "%[^= \t] = %s", name, value) != 2) {
 	    fileerr(file, "invalid configuration file syntax");
