@@ -102,21 +102,6 @@ static int		xviewoffset, yviewoffset;
 #define	markanimated(pos)	(state->map[pos].top.state |= 0x20)
 #define	clearanimated(pos)	(state->map[pos].top.state &= ~0x20)
 #define	ismarkedanimated(pos)	(state->map[pos].top.state & 0x20)
-#if 0
-#define	countervalue(pos)	(state->map[pos].top.state & 0x1F)
-#define	incrcounter(pos)	(++state->map[pos].top.state & 0x1F)
-#define	decrcounter(pos)	(--state->map[pos].top.state & 0x1F)
-#define	resetcounter(pos)	(state->map[pos].top.state &= ~0x1F)
-#define	setcounter(pos, n)	\
-    (state->map[pos].top.state = (state->map[pos].top.state & ~0x1F) \
-			       | ((n) & 0x1F))
-#else
-#define	countervalue(cr)	(cr->moving)
-#define	incrcounter(cr)		(++cr->moving)
-#define	decrcounter(cr)		(--cr->moving)
-#define	resetcounter(cr)	(cr->moving = 0)
-#define	setcounter(cr, n)	(cr->moving = (n))
-#endif
 
 #define	possession(obj)	(*_possession(obj))
 static short *_possession(int obj)
@@ -519,14 +504,6 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
     { 0, 0, 0 },
     /* Floor_Reserved1 */
     { 0, 0, 0 }
-#if 0
-    /* Water_Splash */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Dirt_Splash */
-    { ALL_OUT, ALL_OUT, ALL_OUT },
-    /* Bomb_Explosion */
-    { ALL_OUT, ALL_IN_OUT, ALL_IN_OUT },
-#endif
 };
 
 static int canpushblock(creature *block, int dir, int noreally);
@@ -1026,10 +1003,8 @@ static int endmovement(creature *cr)
 
     assert(cr->moving <= 0);
 
-    if (isanimation(cr->id)) {
-	removecreature(cr);
+    if (isanimation(cr->id))
 	return TRUE;
-    }
 
     floor = floorat(cr->pos);
 
@@ -1041,12 +1016,7 @@ static int endmovement(creature *cr)
 	  case Water:
 	    if (!possession(Boots_Water)) {
 		removecreature(cr);
-#if 0
-		floorat(cr->pos) = Water_Splash;
-		setcounter(cr->pos, 4);
-#else
 		addanimation(cr->pos, Water_Splash, 12);
-#endif
 		addsoundeffect(SND_WATER_SPLASH);
 	    }
 	    break;
@@ -1111,13 +1081,8 @@ static int endmovement(creature *cr)
 	switch (floor) {
 	  case Water:
 	    removecreature(cr);
-#if 0
-	    floorat(cr->pos) = Dirt_Splash;
-	    setcounter(cr->pos, 12);
-#else
 	    floorat(cr->pos) = Dirt;
 	    addanimation(cr->pos, Dirt_Splash, 12);
-#endif
 	    addsoundeffect(SND_WATER_SPLASH);
 	    break;
 	  case Key_Blue:
@@ -1129,12 +1094,7 @@ static int endmovement(creature *cr)
 	  case Water:
 	    if (cr->id != Glider) {
 		removecreature(cr);
-#if 0
-		floorat(cr->pos) = Water_Splash;
-		setcounter(cr->pos, 4);
-#else
 		addanimation(cr->pos, Water_Splash, 12);
-#endif
 		addsoundeffect(SND_WATER_SPLASH);
 	    }
 	    break;
@@ -1147,13 +1107,8 @@ static int endmovement(creature *cr)
     switch (floor) {
       case Bomb:
 	removecreature(cr);
-#if 0
-	floorat(cr->pos) = Bomb_Explosion;
-	setcounter(cr->pos, 10);
-#else
 	floorat(cr->pos) = Empty;
 	addanimation(cr->pos, Bomb_Explosion, 10);
-#endif
 	addsoundeffect(SND_BOMB_EXPLODES);
 	break;
       case Teleport:
@@ -1257,11 +1212,9 @@ static void verifymap(void)
 	    die("%d: Undefined floor state %02X at (%d %d)",
 		currenttime(), state->map[pos].top.id,
 		pos % CXGRID, pos / CXGRID);
-#if 0
-	if (isanimation(state->map[pos].top.id) && countervalue(pos) > 12)
-	    die("%d: Excessive floor decay %02X at (%d %d)",
-		currenttime(), countervalue(pos), pos % CXGRID, pos / CXGRID);
-#endif
+	if (isanimation(state->map[pos].top.id) && cr->moving > 12)
+	    die("%d: Too-large animation frame %02X at (%d %d)",
+		currenttime(), cr->moving, pos % CXGRID, pos / CXGRID);
     }
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
@@ -1351,8 +1304,10 @@ static void initialhousekeeping(void)
     verifymap();
 
     for (cr = creaturelist() ; cr->id ; ++cr) {
+	if (isanimation(cr->id) && cr->moving <= 0)
+	    removecreature(cr);
 	if (cr->state & CS_NOISYMOVEMENT) {
-	    if (cr->hidden || cr->moving == 0) {
+	    if (cr->hidden || cr->moving <= 0) {
 		stopsoundeffect(SND_BLOCK_MOVING);
 		cr->state &= ~CS_NOISYMOVEMENT;
 	    }
