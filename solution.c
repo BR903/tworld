@@ -360,7 +360,8 @@ static int readsolution(fileinfo *file, gamesetup *game)
 	return FALSE;
     if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
-    game->savedrndslidedir = idxdir8[val8];
+    game->savedrndslidedir = idxdir8[val8 & 7];
+    game->savedstepping = (val8 >> 3) & 7;
     game->savedstepping = 0;
     if (!filereadint32(file, &val32, "unexpected EOF"))
 	return FALSE;
@@ -378,6 +379,7 @@ static int writesolution(fileinfo *file, gamesetup const *game)
 {
     unsigned long	size;
     fpos_t		start, end;
+    unsigned char	val8;
 
     if (!game->savedsolution.count) {
 	if (!(game->sgflags & SGF_HASPASSWD))
@@ -394,6 +396,9 @@ static int writesolution(fileinfo *file, gamesetup const *game)
     if (!filewriteint32(file, 0, "write error"))
 	return FALSE;
 
+    val8 = diridx8[(int)game->savedrndslidedir];
+    val8 |= game->savedstepping << 3;
+    val8 &= 7;
     if (!filewriteint16(file, game->number, "write error")
 		|| !filewrite(file, game->passwd, 4, "write error")
 		|| !filewriteint8(file, 0, "write error")
