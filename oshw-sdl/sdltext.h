@@ -34,19 +34,16 @@ extern void _sdlsettextfont(fontinfo const *f);
  * draws text without erasing its background.
  */
 extern void _sdlputtext(int xpos, int ypos, char const *text);
-extern void _sdlputtranstext(int xpos, int ypos, char const *text);
 
 /* Draw a line of text len characters long.
  */
 extern void _sdlputntext(int xpos, int ypos, int len, char const *text);
-extern void _sdlputtransntext(int xpos, int ypos, int len, char const *text);
 
 /* Draw one or more lines of text, breaking the string up at the
  * whitespace characters (if possible). area defines the rectangle to
  * draw in. Upon return, area specifies the area not draw in.
  */
 extern void _sdlputmltext(SDL_Rect *area, char const *text);
-extern void _sdlputtransmltext(SDL_Rect *area, char const *text);
 
 /*
  * Functions for displaying a scrollable list.

@@ -19,56 +19,114 @@ static SDL_Surface     *surface = NULL;
  */
 static fontinfo const  *font = NULL;
 
-/* The functions that do all the drawing. It is assumed that surface
+/* A pointer to one of the following four functions.
+ */
+static void (*putline)(int, int, int, char const*) = NULL;
+
+/*
+ * The functions that do all the drawing. It is assumed that surface
  * has been locked before calling these functions.
  */
-static void putlinetransparent(int xpos, int ypos, int len, char const *text)
+
+static void putline8(int xpos, int ypos, int len, char const *text)
 {
     unsigned char const	       *glyph;
-    unsigned char	       *dest;
-    unsigned char	       *top;
+    Uint8		       *top;
+    Uint8		       *p;
     unsigned char		ch;
     unsigned char		b;
     int				n, x, y;
 
-    top = (unsigned char*)surface->pixels + ypos * surface->pitch;
+    top = (Uint8*)((unsigned char*)surface->pixels + ypos * surface->pitch);
+    top += xpos;
     for (n = 0 ; n < len ; ++n) {
 	ch = *(unsigned char const*)(text + n);
 	glyph = font->bits + ch * font->h;
-	dest = (unsigned char*)(((Uint32*)top) + xpos);
-	for (y = 0 ; y < font->h ; ++y) {
+	for (y = 0, p = top ; y < font->h ; ++y, p += surface->pitch)
 	    for (x = 0, b = 128 ; b ; ++x, b >>= 1)
-		if (glyph[y] & b)
-		    ((Uint32*)dest)[x] = font->color;
-	    dest += surface->pitch;
-	}
-	xpos += font->w;
+		p[x] = glyph[y] & b ? font->color : font->bkgnd;
+	top += font->w;
     }
 }
 
-/* Exactly the same as the previous function, except that the
- * background pixels are set to the font's background color.
- */
-static void putlineopaque(int xpos, int ypos, int len, char const *text)
+static void putline16(int xpos, int ypos, int len, char const *text)
 {
     unsigned char const	       *glyph;
-    unsigned char	       *dest;
-    unsigned char	       *top;
+    Uint16		       *top;
+    Uint16		       *p;
     unsigned char		ch;
     unsigned char		b;
     int				n, x, y;
 
-    top = (unsigned char*)surface->pixels + ypos * surface->pitch;
+    top = (Uint16*)((unsigned char*)surface->pixels + ypos * surface->pitch);
+    top += xpos;
     for (n = 0 ; n < len ; ++n) {
 	ch = *(unsigned char const*)(text + n);
 	glyph = font->bits + ch * font->h;
-	dest = (unsigned char*)(((Uint32*)top) + xpos);
+	p = top;
 	for (y = 0 ; y < font->h ; ++y) {
 	    for (x = 0, b = 128 ; b ; ++x, b >>= 1)
-		((Uint32*)dest)[x] = glyph[y] & b ? font->color : font->bkgnd;
-	    dest += surface->pitch;
+		p[x] = glyph[y] & b ? font->color : font->bkgnd;
+	    p = (Uint16*)((unsigned char*)p + surface->pitch);
 	}
-	xpos += font->w;
+	top += font->w;
+    }
+}
+
+static void putline24(int xpos, int ypos, int len, char const *text)
+{
+    unsigned char const	       *glyph;
+    unsigned char	       *top;
+    unsigned char	       *p;
+    unsigned char		ch;
+    unsigned char		b;
+    int				n, x, y;
+    Uint32			c;
+
+    top = (unsigned char*)surface->pixels + ypos * surface->pitch;
+    top += xpos * 3;
+    for (n = 0 ; n < len ; ++n) {
+	ch = *(unsigned char const*)(text + n);
+	glyph = font->bits + ch * font->h;
+	for (y = 0, p = top ; y < font->h ; ++y, p += surface->pitch) {
+	    for (x = 0, b = 128 ; b ; x += 3, b >>= 1) {
+		c = glyph[y] & b ? font->color : font->bkgnd;
+		if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+		    p[x + 0] = (c >> 16) & 0xFF;
+		    p[x + 1] = (c >> 8) & 0xFF;
+		    p[x + 2] = c & 0xFF;
+		} else {
+		    p[x + 0] = c & 0xFF;
+		    p[x + 1] = (c >> 8) & 0xFF;
+		    p[x + 2] = (c >> 16) & 0xFF;
+		}
+	    }
+	}
+	top += font->w * 3;
+    }
+}
+
+static void putline32(int xpos, int ypos, int len, char const *text)
+{
+    unsigned char const	       *glyph;
+    Uint32		       *top;
+    Uint32		       *p;
+    unsigned char		ch;
+    unsigned char		b;
+    int				n, x, y;
+
+    top = (Uint32*)((unsigned char*)surface->pixels + ypos * surface->pitch);
+    top += xpos;
+    for (n = 0 ; n < len ; ++n) {
+	ch = *(unsigned char const*)(text + n);
+	glyph = font->bits + ch * font->h;
+	p = top;
+	for (y = 0 ; y < font->h ; ++y) {
+	    for (x = 0, b = 128 ; b ; ++x, b >>= 1)
+		p[x] = glyph[y] & b ? font->color : font->bkgnd;
+	    p = (Uint32*)((unsigned char*)p + surface->pitch);
+	}
+	top += font->w;
     }
 }
 
@@ -78,8 +136,18 @@ static void putlineopaque(int xpos, int ypos, int len, char const *text)
 
 /* Specify the surface to draw on and the font to draw with.
  */
-void _sdlsettextsurface(SDL_Surface *s) { surface = s; }
 void _sdlsettextfont(fontinfo const *f) { font = f; }
+
+void _sdlsettextsurface(SDL_Surface *s)
+{
+    surface = s;
+    switch (surface->format->BytesPerPixel) {
+      case 1:	putline = putline8;	break;
+      case 2:	putline = putline16;	break;
+      case 3:	putline = putline24;	break;
+      case 4:	putline = putline32;	break;
+    }
+}
 
 /* Draw a line of NUL-terminated text.
  */
@@ -87,16 +155,7 @@ void _sdlputtext(int xpos, int ypos, char const *text)
 {
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
-    putlineopaque(xpos, ypos, strlen(text), text);
-    if (SDL_MUSTLOCK(surface))
-	SDL_UnlockSurface(surface);
-}
-
-void _sdlputtranstext(int xpos, int ypos, char const *text)
-{
-    if (SDL_MUSTLOCK(surface))
-	SDL_LockSurface(surface);
-    putlinetransparent(xpos, ypos, strlen(text), text);
+    putline(xpos, ypos, strlen(text), text);
     if (SDL_MUSTLOCK(surface))
 	SDL_UnlockSurface(surface);
 }
@@ -107,16 +166,7 @@ void _sdlputntext(int xpos, int ypos, int len, char const *text)
 {
     if (SDL_MUSTLOCK(surface))
 	SDL_LockSurface(surface);
-    putlineopaque(xpos, ypos, len, text);
-    if (SDL_MUSTLOCK(surface))
-	SDL_UnlockSurface(surface);
-}
-
-void _sdlputtransntext(int xpos, int ypos, int len, char const *text)
-{
-    if (SDL_MUSTLOCK(surface))
-	SDL_LockSurface(surface);
-    putlinetransparent(xpos, ypos, len, text);
+    putline(xpos, ypos, len, text);
     if (SDL_MUSTLOCK(surface))
 	SDL_UnlockSurface(surface);
 }
@@ -146,39 +196,7 @@ void _sdlputmltext(SDL_Rect *area, char const *text)
 	    if (n < 0)
 		n = width;
 	}
-	putlineopaque(area->x, area->y, n, text + index);
-	index += n;
-	area->y += font->h;
-	area->h -= font->h;
-    }
-
-    if (SDL_MUSTLOCK(surface))
-	SDL_UnlockSurface(surface);
-}
-
-void _sdlputtransmltext(SDL_Rect *area, char const *text)
-{
-    int	index, width, n;
-
-    if (SDL_MUSTLOCK(surface))
-	SDL_LockSurface(surface);
-
-    width = area->w / font->w;
-    index = 0;
-    while (area->h >= font->h) {
-	while (isspace(text[index]))
-	    ++index;
-	if (!text[index])
-	    break;
-	n = strlen(text + index);
-	if (n > width) {
-	    n = width;
-	    while (!isspace(text[index + n]) && n >= 0)
-		--n;
-	    if (n < 0)
-		n = width;
-	}
-	putlinetransparent(area->x, area->y, n, text + index);
+	putline(area->x, area->y, n, text + index);
 	index += n;
 	area->y += font->h;
 	area->h -= font->h;
@@ -216,9 +234,9 @@ void _sdlscrollredraw(scrollinfo *scroll)
 	    font = &selfont;
 	len = strlen(scroll->items[n]);
 	if (len > scroll->maxlen)
-	    putlineopaque(scroll->area.x, y, scroll->maxlen, scroll->items[n]);
+	    putline(scroll->area.x, y, scroll->maxlen, scroll->items[n]);
 	else
-	    putlineopaque(scroll->area.x, y, len, scroll->items[n]);
+	    putline(scroll->area.x, y, len, scroll->items[n]);
 	if (n == scroll->index)
 	    font = origfont;
 	y += font->h;
