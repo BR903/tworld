@@ -349,6 +349,8 @@ static int startinput(gamespec *gs)
 	  case CmdNext:		leveldelta(+1);			return CmdNone;
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
 	  case CmdKillSolution:	replaceablesolution(gs);	break;
+	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
+	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdHelp:		onlinehelp(Help_KeysBetweenGames); break;
 	  case CmdQuit:						exit(0);
 	  case CmdPlayback:
@@ -446,6 +448,14 @@ static int playgame(gamespec *gs, int firstcmd)
 	      case CmdDebugCmd1:				break;
 	      case CmdDebugCmd2:				break;
 	      case CmdQuit:					exit(0);
+	      case CmdVolumeUp:
+		changevolume(+2, TRUE);
+		cmd = CmdNone;
+		break;
+	      case CmdVolumeDown:
+		changevolume(-2, TRUE);
+		cmd = CmdNone;
+		break;
 	      case CmdPauseGame:
 		setgameplaymode(SuspendPlay);
 		anykey();
@@ -512,6 +522,12 @@ static int playbackgame(gamespec *gs)
 	  case CmdPlayback:	gs->playback = FALSE;		goto quitloop;
 	  case CmdQuitLevel:	gs->playback = FALSE;		goto quitloop;
 	  case CmdQuit:						exit(0);
+	  case CmdVolumeUp:
+	    changevolume(+2, TRUE);
+	    break;
+	  case CmdVolumeDown:
+	    changevolume(-2, TRUE);
+	    break;
 	  case CmdPauseGame:
 	    setgameplaymode(SuspendPlay);
 	    anykey();

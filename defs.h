@@ -94,6 +94,8 @@ enum {
     CmdPlayback,
     CmdSeeScores,
     CmdKillSolution,
+    CmdVolumeUp,
+    CmdVolumeDown,
     CmdProceed,
     CmdDebugCmd1,
     CmdDebugCmd2,

@@ -59,7 +59,6 @@ typedef	struct oshwglobals
     Uint32		transpixel;	/* value of the transparent pixel */
     SDL_Surface	       *screen;		/* the display */
     fontinfo		font;		/* the font */
-    SDL_Rect		textsfxrect;	/* where onomatopoeia are displayed */
 
     /* 
      * Shared functions.
@@ -109,6 +108,13 @@ typedef	struct oshwglobals
      */
     Uint32 const* (*getcellimagefunc)(int top, int bot, int timerval);
 
+    /* Display a (very short) message for the given number of
+     * milliseconds. bold indicates the amount of time the message is
+     * with highlighting. After that (if the message is still visible)
+     * it is shown dimmed.
+     */
+    int (*setdisplaymsgfunc)(char const *msg, int msecs, int bold);
+
 } oshwglobals;
 
 extern oshwglobals sdlg;
@@ -124,7 +130,7 @@ extern oshwglobals sdlg;
 #define	scrollmove		(*sdlg.scrollmovefunc)
 #define	getcreatureimage	(*sdlg.getcreatureimagefunc)
 #define	getcellimage		(*sdlg.getcellimagefunc)
-#define	getonomatopoeia		(*sdlg.getonomatopoeiafunc)
+#define	setdisplaymsg		(*sdlg.setdisplaymsgfunc)
 
 /* The initialization functions.
  */

@@ -74,6 +74,8 @@ static keycmdmap const gamekeycmds[] = {
     { 'i',                        0, +1,  0,   CmdPlayback,   FALSE },
     { 's',                        0,  0,  0,   CmdSeeScores,  FALSE },
     { 'x',                       -1, +1,  0,   CmdKillSolution, FALSE },
+    { 'v',                       +1,  0,  0,   CmdVolumeUp,   FALSE },
+    { 'v',                        0,  0,  0,   CmdVolumeDown, FALSE },
     { SDLK_RETURN,               -1, -1,  0,   CmdProceed,    FALSE },
     { SDLK_KP_ENTER,             -1, -1,  0,   CmdProceed,    FALSE },
     { ' ',                       -1, -1,  0,   CmdProceed,    FALSE },

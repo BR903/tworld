@@ -43,7 +43,7 @@ static SDL_Surface     *prompticons = NULL;
 /* Coordinates specifying the layout of the screen elements.
  */
 static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
-static SDL_Rect		promptloc, displayloc;
+static SDL_Rect		promptloc, displayloc, messageloc;
 static int		screenw, screenh;
 
 /* Setup a fontcolors structure, calculating the middle color from the
@@ -182,15 +182,15 @@ static int layoutscreen(void)
     promptloc.w = ENDICONW;
     promptloc.h = ENDICONH;
 
-    sdlg.textsfxrect.x = infoloc.x;
-    sdlg.textsfxrect.y = titleloc.y;
-    sdlg.textsfxrect.w = promptloc.x - sdlg.textsfxrect.x - MARGINW;
-    sdlg.textsfxrect.h = titleloc.h;
+    messageloc.x = infoloc.x;
+    messageloc.y = titleloc.y;
+    messageloc.w = promptloc.x - messageloc.x - MARGINW;
+    messageloc.h = titleloc.h;
 
     hintloc.x = infoloc.x;
     hintloc.y = invloc.y + invloc.h + MARGINH;
     hintloc.w = screenw - MARGINW - hintloc.x;
-    hintloc.h = sdlg.textsfxrect.y - hintloc.y;
+    hintloc.h = messageloc.y - hintloc.y;
     if (hintloc.y + hintloc.h + MARGINH > promptloc.y)
 	hintloc.h = promptloc.y - MARGINH - hintloc.y;
 
@@ -309,6 +309,56 @@ static void drawtransptileclipped(SDL_Rect const *rect, Uint32 const *src)
 	line += sdlg.screen->pitch;
 	src += rect->w;
     }
+}
+
+/*
+ * Message display function.
+ */
+
+static char		currentmsg[64];
+static unsigned int	currentmsglen = 0;
+static unsigned long	msguntil = 0;
+static unsigned long	msgbolduntil = 0;
+
+static void displaymsg(int update)
+{
+    int	f;
+
+    if (currentmsg && msguntil < SDL_GetTicks()) {
+	*currentmsg = '\0';
+	currentmsglen = 0;
+	f = 0;
+    } else {
+	if (!currentmsglen)
+	    return;
+	f = PT_CENTER;
+	if (msgbolduntil < SDL_GetTicks())
+	    f |= PT_DIM;
+    }
+    puttext(&messageloc, currentmsg, currentmsglen, f);
+    if (update)
+	SDL_UpdateRect(sdlg.screen, messageloc.x, messageloc.y,
+				    messageloc.w, messageloc.h);
+}
+
+static int _setdisplaymsg(char const *msg, int msecs, int bold)
+{
+    if (!msg) {
+	*currentmsg = '\0';
+	currentmsglen = 0;
+	msguntil = 0;
+	msgbolduntil = 0;
+    } else {
+	currentmsglen = strlen(msg);
+	if (currentmsglen >= sizeof currentmsg)
+	    currentmsglen = sizeof currentmsg - 1;
+	memcpy(currentmsg, msg, currentmsglen);
+	currentmsg[currentmsglen] = '\0';
+	msguntil = SDL_GetTicks() + msecs;
+	msgbolduntil = SDL_GetTicks() + bold;
+    }
+    displaymsg(TRUE);
+    return TRUE;
 }
 
 /*
@@ -468,19 +518,16 @@ static int displayprompticon(int completed)
 
 /* Display the current state of the game.
  */
-int displaygame(void const *_state, int timeleft, int besttime)
+int displaygame(void const *state, int timeleft, int besttime)
 {
-    gamestate const    *state = _state;
-
     if (SDL_MUSTLOCK(sdlg.screen))
 	SDL_LockSurface(sdlg.screen);
     displaymapview(state);
     displayinfo(state, timeleft, besttime);
     if (SDL_MUSTLOCK(sdlg.screen))
 	SDL_UnlockSurface(sdlg.screen);
-
+    displaymsg(FALSE);
     SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
-
     return TRUE;
 }
 
@@ -762,6 +809,8 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(void)
 {
+    sdlg.setdisplaymsgfunc = _setdisplaymsg;
+
     screenw = 640;
     screenh = 480;
     promptloc.x = screenw - MARGINW - ENDICONW;

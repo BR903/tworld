@@ -199,6 +199,13 @@ extern void playsoundeffects(unsigned long sfx);
  */
 extern void clearsoundeffects(void);
 
+/* Change the current volume level. Volume ranges from 0 (silence) to
+ * 10, which is the default. Turning the sound all the way down
+ * enables textual sound effects. If display is TRUE, the new volume
+ * level will be displayed to the user.
+ */
+extern int changevolume(int delta, int display);
+
 /* Release all memory used for the given sound effect.
  */
 extern void freesfx(int index);
