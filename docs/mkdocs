@@ -82,7 +82,7 @@ sub sfix($) { local $_ = shift; s/\s+/ /; $_ }
 sub toman($)
 {
     my $mantop =
-	".TH \@name\@ 6 \"January 2002\" \"\@title\@\"\n"
+	".TH \@name\@ 6 \"\@date\@\" \"\@title\@\"\n"
       . ".LO 1\n"
       . ".SH NAME\n"
       . "\@name\@ \\- \@desc\@\n";
@@ -115,9 +115,10 @@ sub toman($)
 
     tr/\e_/. /;
 
-    my ($name, $title, $desc) = split " / ", $topline;
+    my ($name, $title, $date, $desc) = split " / ", $topline;
     $mantop =~ s/\@name\@/$name/g;
     $mantop =~ s/\@title\@/$title/g;
+    $mantop =~ s/\@date\@/$date/g;
     $mantop =~ s/\@desc\@/$desc/g;
 
     return "$mantop$_";
