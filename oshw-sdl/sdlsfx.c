@@ -85,44 +85,9 @@ static void initonomatopoeia(void)
  */
 static void displaysoundeffects(unsigned long sfx, int display)
 {
-    static int		nowplaying = -1;
-    static Uint32	playtime = 0;
     unsigned long	flag;
-    int			play;
-    int			i, f;
+    int			i;
 
-#if 0
-    if (!display) {
-	nowplaying = -1;
-	playtime = 0;
-	return;
-    }
-
-    play = -1;
-    for (flag = 1, i = 0 ; flag ; flag <<= 1, ++i) {
-	if (sfx & flag) {
-	    play = i;
-	    break;
-	}
-    }
-
-    f = PT_CENTER;
-    if (play >= 0) {
-	nowplaying = i;
-	playtime = SDL_GetTicks() + 500;
-    } else if (nowplaying >= 0) {
-	if (SDL_GetTicks() < playtime) {
-	    play = nowplaying;
-	    f |= PT_DIM;
-	} else
-	    nowplaying = -1;
-    }
-
-    if (play >= 0)
-	puttext(&sdlg.textsfxrect, sounds[play].textsfx, -1, f);
-    else
-	puttext(&sdlg.textsfxrect, "", 0, 0);
-#else
     if (!display) {
 	setdisplaymsg(NULL, 0, 0);
 	return;
@@ -134,7 +99,6 @@ static void displaysoundeffects(unsigned long sfx, int display)
 	    return;
 	}
     }
-#endif
 }
 
 /* The function that is called by the sound driver to supply the

@@ -367,11 +367,13 @@ tablespec const *keyboardhelp(int which)
 	"1-arrows", "1-move Chip",
 	"1-2 4 6 8 (keypad)", "1-also move Chip",
 	"1-q", "1-quit the current game",
-	"1-Q", "1-exit the program",
+	"1-Shift-Q", "1-exit the program",
 	"1-Ctrl-h (Bkspc)", "1-pause the game",
 	"1-Ctrl-r", "1-restart the current level",
 	"1-Ctrl-p", "1-jump to the previous level",
-	"1-Ctrl-n", "1-jump to the next level"
+	"1-Ctrl-n", "1-jump to the next level",
+	"1-v", "1-decrease volume",
+	"1-Shift-V", "1-increase volume"
     };
     static tablespec const keyhelp_ingame = { 8, 2, 4, 1, ingame_items };
 
@@ -385,7 +387,9 @@ tablespec const *keyboardhelp(int which)
 	"1-q", "1-return to the file list",
 	"1-Q", "1-exit the program",
 	"1-Ctrl-i (Tab)", "1-playback saved solution",
-	"1-Ctrl-x", "1-replace existing solution"
+	"1-Ctrl-x", "1-replace existing solution",
+	"1-v", "1-decrease volume",
+	"1-Shift-V", "1-increase volume"
     };
     static tablespec const keyhelp_twixtgame = { 8, 2, 4, 1, twixtgame_items };
 
