@@ -163,11 +163,9 @@ static int readlevelmap(fileinfo *file, gamesetup *game)
 		|| !datfilereadint16(file, &i, &lvlsize, 0, 65535))
 	goto badlevel;
 
-    if (i != lvlsize) {
-	warn("Level %d: inconsistent size data (%d vs %d); using the latter",
+    if (i != lvlsize)
+	warn("Level %d: inconsistent size data (%d vs %d)",
 	     game->number, lvlsize, i);
-	lvlsize = i;
-    }
 
     while (lvlsize) {
 	if (!datfilereadint8(file, &id, &lvlsize, 1, 255)
