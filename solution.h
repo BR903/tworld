@@ -14,6 +14,10 @@
  */
 extern char    *savedir;
 
+/* No file modification will be done unless this variable is FALSE.
+ */
+extern int	readonly;
+
 /* Initialize or reinitialize list as empty.
  */
 extern void initmovelist(actlist *list);

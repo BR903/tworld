@@ -96,13 +96,17 @@ static int const idxdir8[8] = {
     NORTH | WEST, SOUTH | WEST, NORTH | EAST, SOUTH | EAST
 };
 
+/* TRUE if file modification is prohibited.
+ */
+int		readonly = FALSE;
+
 /* The path of the directory containing the user's solution files.
  */
-char		       *savedir = NULL;
+char	       *savedir = NULL;
 
 /* FALSE if savedir's existence is unverified.
  */
-int			savedirchecked = FALSE;
+static int	savedirchecked = FALSE;
 
 /*
  * Functions for manipulating move lists.
@@ -518,7 +522,7 @@ int savesolutions(gameseries *series)
     gamesetup  *game;
     int		i;
 
-    if (!*savedir)
+    if (!*savedir || readonly)
 	return TRUE;
 
     if (!savedirchecked) {
