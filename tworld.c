@@ -31,6 +31,7 @@ typedef	struct gamespec {
     int		currentgame;	/* which level is currently selected */
     int		invalid;	/* TRUE if the current level is invalid */
     int		playback;	/* TRUE if in playback mode */
+    int		usepasswds;	/* FALSE if passwords are to be ignored */
 } gamespec;
 
 /* Structure used to pass data back from initoptionswithcmdline().
@@ -40,16 +41,18 @@ typedef	struct startupdata {
     int		levelnum;	/* a selected initial level */ 
     int		listseries;	/* TRUE if the files should be listed */
     int		listscores;	/* TRUE if the scores should be listed */
+    int		usepasswds;	/* FALSE if passwords are to be ignored */
 } startupdata;
 
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlspqH] [-DRS DIR] [NAME] [LEVEL]\n"
+	"Usage: tworld [-hvlspqH] [-CDRS DIR] [NAME] [LEVEL]\n"
+	"   -C  Read configured data files from DIR instead of the default\n"
 	"   -D  Read data files from DIR instead of the default\n"
 	"   -R  Read shared resources from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
-	"   -p  Enable password checking\n"
+	"   -p  Disable password checking\n"
 	"   -q  Run quietly\n"
 	"   -H  Produce histogram of idle time upon exit\n"
 	"   -l  Display the list of available data files and exit\n"
@@ -78,10 +81,6 @@ static char const *vourzhon =
 /* FALSE suppresses sound and the console bell.
  */
 static int	silence = FALSE;
-
-/* FALSE removes the requirement for a password to jump to a new level.
- */
-static int	passwdchecking = FALSE;
 
 /* TRUE if the user requested an idle-time histogram.
  */
@@ -223,7 +222,8 @@ static void showscores(gamespec *gs)
     int	       *levellist;
     int		count, n;
 
-    if (!createscorelist(&gs->series, &levellist, &count, &table)) {
+    if (!createscorelist(&gs->series, gs->usepasswds,
+			 &levellist, &count, &table)) {
 	bell();
 	return;
     }
@@ -272,7 +272,7 @@ static int changecurrentgame(gamespec *gs, int offset)
     else if (n >= gs->series.total)
 	n = gs->series.total - 1;
 
-    if (passwdchecking) {
+    if (gs->usepasswds) {
 	sign = offset < 0 ? -1 : +1;
 	for ( ; n >= 0 && n < gs->series.total ; n += sign) {
 	    if (hassolution(gs->series.games + n)
@@ -473,8 +473,12 @@ static void playbackgame(gamespec *gs)
     }
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
-    if (n > 0 && gs->currentgame + 1 >= gs->series.count)
-	n = 0;
+    if (n > 0) {
+	if (gs->series.games[gs->currentgame].number == gs->series.final)
+	    n = 0;
+	else if (gs->currentgame + 1 >= gs->series.count)
+	    n = 0;
+    }
     endinput(gs, n);
     return;
 
@@ -515,7 +519,8 @@ static void noplaygame(gamespec *gs)
 
 /* Assign values to the different directories that the program uses.
  */
-static void initdirs(char const *res, char const *series, char const *save)
+static void initdirs(char const *series, char const *seriesdat,
+		     char const *res, char const *save)
 {
     unsigned int	maxpath = getpathbufferlen() - 1;
     char const	       *root = NULL;
@@ -556,6 +561,12 @@ static void initdirs(char const *res, char const *series, char const *save)
     else
 	combinepath(seriesdir, root, "data");
 
+    seriesdatdir = getpathbuffer();
+    if (seriesdat)
+	strcpy(seriesdatdir, seriesdat);
+    else
+	combinepath(seriesdatdir, root, "config");
+
     savedir = getpathbuffer();
     if (!save) {
 #ifdef SAVEDIR
@@ -580,6 +591,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     cmdlineinfo	opts;
     char const *optresdir = NULL;
     char const *optseriesdir = NULL;
+    char const *optseriesdatdir = NULL;
     char const *optsavedir = NULL;
     int		ch, n;
 
@@ -588,8 +600,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->levelnum = 0;
     start->listseries = FALSE;
     start->listscores = FALSE;
+    start->usepasswds = TRUE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:HR:S:hlpqsv");
+    initoptions(&opts, argc - 1, argv + 1, "C:D:HR:S:hlpqsv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -603,11 +616,12 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	    else
 		strncpy(start->filename, opts.val, getpathbufferlen() - 1);
 	    break;
+	  case 'C':	optseriesdatdir = opts.val;			break;
 	  case 'D':	optseriesdir = opts.val;			break;
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = !showhistogram;			break;
-	  case 'p':	passwdchecking = !passwdchecking;		break;
+	  case 'p':	start->usepasswds = !start->usepasswds;		break;
 	  case 'q':	silence = !silence;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
@@ -631,7 +645,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	strcpy(start->filename, "chips.dat");
     start->filename[getpathbufferlen() - 1] = '\0';
 
-    initdirs(optresdir, optseriesdir, optsavedir);
+    initdirs(optseriesdir, optseriesdatdir, optresdir, optsavedir);
 
     return TRUE;
 }
@@ -687,7 +701,8 @@ static int startup(gamespec *gs, startupdata const *start)
 	    return FALSE;
 	if (start->listscores) {
 	    freeserieslist(&table);
-	    if (!createscorelist(&gs->series, NULL, NULL, &table))
+	    if (!createscorelist(&gs->series, gs->usepasswds,
+				 NULL, NULL, &table))
 		return FALSE;
 	    printtable(&table);
 	    exit(EXIT_SUCCESS);
@@ -723,6 +738,7 @@ static int startup(gamespec *gs, startupdata const *start)
 	}
     }
     gs->playback = FALSE;
+    gs->usepasswds = start->usepasswds && gs->series.usepasswds;
     return TRUE;
 }
 

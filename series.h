@@ -9,9 +9,13 @@
 
 #include	"defs.h"
 
-/* The directory containing the data files.
+/* The directory containing the series files.
  */
 extern char    *seriesdir;
+
+/* The directory containing the configured data files.
+ */
+extern char    *seriesdatdir;
 
 /* Load all levels of the given series.
  */

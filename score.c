@@ -65,12 +65,13 @@ int getscoresforlevel(gameseries const *series, int level,
 
 /* Produce a table that breaks down the player's current score.
  */
-int createscorelist(gameseries const *series,
+int createscorelist(gameseries const *series, int usepasswds,
 		    int **plevellist, int *pcount, tablespec *table)
 {
     gamesetup	       *game;
     char	      **ptrs;
     char	       *textheap;
+    char	       *blank;
     int		       *levellist = NULL;
     unsigned int	levelscore, timescore;
     unsigned int	totalscore;
@@ -101,12 +102,15 @@ int createscorelist(gameseries const *series,
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1+Score");
 
+    blank = textheap + used;
+    used += 1 + sprintf(textheap + used, "4- ");
+
     count = 0;
     for (j = 0, game = series->games ; j < series->count ; ++j, ++game) {
 	if (j >= series->allocated)
 	    break;
 #if 0
-	if (!(game->sgflags & SGF_HASPASSWD))
+	if (usepasswds && !(game->sgflags & SGF_HASPASSWD))
 	    continue;
 	if (plevellist)
 	    levellist[count] = j;
@@ -141,16 +145,17 @@ int createscorelist(gameseries const *series,
 	    ++count;
 #endif
 	} else {
-	    ptrs[n++] = textheap + used;
 #if 0
+	    ptrs[n++] = textheap + used;
 	    used += 1 + sprintf(textheap + used, "4-%s", game->name);
 #else
-	    if (game->sgflags & SGF_HASPASSWD) {
+	    if (!usepasswds || (game->sgflags & SGF_HASPASSWD)) {
+		ptrs[n++] = textheap + used;
 		used += 1 + sprintf(textheap + used, "4-%s", game->name);
 		if (plevellist)
 		    levellist[count] = j;
 	    } else {
-		used += 1 + sprintf(textheap + used, "4- ");
+		ptrs[n++] = blank;
 		if (plevellist)
 		    levellist[count] = -1;
 	    }
@@ -158,6 +163,12 @@ int createscorelist(gameseries const *series,
 #endif
 	}
     }
+
+    while (ptrs[n - 1] == blank) {
+	n -= 2;
+	--count;
+    }
+
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "2-Total Score");
     ptrs[n++] = textheap + used;

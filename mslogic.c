@@ -2056,7 +2056,7 @@ int ms_advancegame(gamestate *pstate)
 	if (currenttime() >= timelimit()) {
 	    addsoundeffect(SND_TIME_OUT);
 	    return -1;
-	} else if (timelimit() - currenttime() < 15 * TICKS_PER_SECOND
+	} else if (timelimit() - currenttime() <= 15 * TICKS_PER_SECOND
 				&& currenttime() % TICKS_PER_SECOND == 0)
 	    addsoundeffect(SND_TIME_LOW);
     }

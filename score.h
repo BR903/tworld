@@ -23,7 +23,7 @@ extern int getscoresforlevel(gameseries const *series, int level,
  * NULL, is filled in with a pointer to a string providing headers for
  * the columns of the other strings.
  */
-extern int createscorelist(gameseries const *series,
+extern int createscorelist(gameseries const *series, int usepasswds,
 			   int **plevellist, int *pcount, tablespec *table);
 
 /* Free the memory allocated by createscorelist().

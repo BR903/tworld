@@ -132,20 +132,13 @@ static void initresourcedefaults(void)
 	   sizeof globalresources);
 }
 
-static void lower(char *str)
-{
-    char       *p;
-
-    for (p = str ; *p ; ++p)
-	*p = tolower(*p);
-}
-
 static int readrcfile(void)
 {
     resourceitem	item;
     fileinfo		file;
     char		buf[256];
     char		name[256];
+    char	       *p;
     int			ruleset;
     int			lineno, i, j;
 
@@ -161,7 +154,7 @@ static int readrcfile(void)
 	if (*buf == '\n' || *buf == '#')
 	    continue;
 	if (sscanf(buf, "[%[^]]]", name) == 1) {
-	    lower(name);
+	    for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	    if (!strcmp(name, "ms"))
 		ruleset = Ruleset_MS;
 	    else if (!strcmp(name, "lynx"))
@@ -176,7 +169,7 @@ static int readrcfile(void)
 	    warn("rc:%d: syntax error", lineno);
 	    continue;
 	}
-	lower(name);
+	for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	for (i = sizeof rclist / sizeof *rclist - 1 ; i >= 0 ; --i)
 	    if (!strcmp(name, rclist[i].name))
 		break;

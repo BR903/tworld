@@ -510,7 +510,7 @@ int readsolutions(gameseries *series)
 
     if (!savedir || !*savedir
 		 || !opensolutionfile(&series->solutionfile,
-				      series->mapfile.name, TRUE)) {
+				      series->filebase, TRUE)) {
 	series->solutionflags = series->ruleset;
 	return TRUE;
     }
@@ -572,7 +572,7 @@ int savesolutions(gameseries *series)
     if (series->solutionfile.fp)
 	fileclose(&series->solutionfile, NULL);
     if (!opensolutionfile(&series->solutionfile,
-			  series->mapfile.name, FALSE)) {
+			  series->filebase, FALSE)) {
 	*savedir = '\0';
 	return FALSE;
     }

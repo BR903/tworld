@@ -90,6 +90,7 @@ int fileopen(fileinfo *file, char const *name, char const *mode,
 	    file->alloc = FALSE;
 	}
     }
+    errno = 0;
     file->fp = fopen(name, mode);
     if (file->fp)
 	return TRUE;
@@ -100,6 +101,7 @@ int fileopen(fileinfo *file, char const *name, char const *mode,
  */
 void fileclose(fileinfo *file, char const *msg)
 {
+    errno = 0;
     if (!fclose(file->fp))
 	fileerr(file, msg);
     file->fp = NULL;
@@ -113,6 +115,7 @@ void fileclose(fileinfo *file, char const *msg)
  */
 int filegetpos(fileinfo *file, fpos_t *pos, char const *msg)
 {
+    errno = 0;
     if (!fgetpos(file->fp, pos))
 	return TRUE;
     return fileerr(file, msg);
@@ -122,6 +125,7 @@ int filegetpos(fileinfo *file, fpos_t *pos, char const *msg)
  */
 int filesetpos(fileinfo *file, fpos_t *pos, char const *msg)
 {
+    errno = 0;
     if (!fsetpos(file->fp, pos))
 	return TRUE;
     return fileerr(file, msg);
@@ -155,6 +159,7 @@ int filetestend(fileinfo *file)
  */
 int fileread(fileinfo *file, void *data, unsigned long size, char const *msg)
 {
+    errno = 0;
     if (fread(data, size, 1, file->fp) == 1)
 	return TRUE;
     return fileerr(file, msg);
@@ -170,6 +175,7 @@ void *filereadbuf(fileinfo *file, unsigned long size, char const *msg)
 	fileerr(file, msg);
 	return NULL;
     }
+    errno = 0;
     if (fread(buf, size, 1, file->fp) != 1) {
 	fileerr(file, msg);
 	free(buf);
@@ -185,6 +191,7 @@ int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
 {
     int	n, ch;
 
+    errno = 0;
     if (!fgets(buf, *len, file->fp))
 	return fileerr(file, msg);
     n = strlen(buf);
@@ -203,6 +210,7 @@ int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
 int filewrite(fileinfo *file, void const *data, unsigned long size,
 	      char const *msg)
 {
+    errno = 0;
     if (fwrite(data, size, 1, file->fp) == 1)
 	return TRUE;
     return fileerr(file, msg);
@@ -214,6 +222,7 @@ int filereadint8(fileinfo *file, unsigned char *val8, char const *msg)
 {
     int	byte;
 
+    errno = 0;
     if ((byte = fgetc(file->fp)) == EOF)
 	return fileerr(file, msg);
     *val8 = (unsigned char)byte;
@@ -224,6 +233,7 @@ int filereadint8(fileinfo *file, unsigned char *val8, char const *msg)
  */
 int filewriteint8(fileinfo *file, unsigned char val8, char const *msg)
 {
+    errno = 0;
     if (fputc(val8, file->fp) != EOF)
 	return TRUE;
     return fileerr(file, msg);
@@ -235,6 +245,7 @@ int filereadint16(fileinfo *file, unsigned short *val16, char const *msg)
 {
     int	byte;
 
+    errno = 0;
     if ((byte = fgetc(file->fp)) != EOF) {
 	*val16 = (unsigned char)byte;
 	if ((byte = fgetc(file->fp)) != EOF) {
@@ -249,6 +260,7 @@ int filereadint16(fileinfo *file, unsigned short *val16, char const *msg)
  */
 int filewriteint16(fileinfo *file, unsigned short val16, char const *msg)
 {
+    errno = 0;
     if (fputc(val16 & 0xFF, file->fp) != EOF
 			&& fputc((val16 >> 8) & 0xFF, file->fp) != EOF)
 	return TRUE;
@@ -261,6 +273,7 @@ int filereadint32(fileinfo *file, unsigned long *val32, char const *msg)
 {
     int	byte;
 
+    errno = 0;
     if ((byte = fgetc(file->fp)) != EOF) {
 	*val32 = (unsigned char)byte;
 	if ((byte = fgetc(file->fp)) != EOF) {
@@ -281,6 +294,7 @@ int filereadint32(fileinfo *file, unsigned long *val32, char const *msg)
  */
 int filewriteint32(fileinfo *file, unsigned long val32, char const *msg)
 {
+    errno = 0;
     if (fputc(val32 & 0xFF, file->fp) != EOF
 			&& fputc((val32 >> 8) & 0xFF, file->fp) != EOF
 			&& fputc((val32 >> 16) & 0xFF, file->fp) != EOF
@@ -360,6 +374,32 @@ int finddir(char const *dir)
     struct stat	st;
 
     return stat(dir, &st) ? createdir(dir) : S_ISDIR(st.st_mode);
+}
+
+/* Return the pathname for a directory and/or filename, using the
+ * same algorithm to construct the path as openfileindir().
+ */
+char *getpathforfileindir(char const *dir, char const *filename)
+{
+    char       *path;
+    int		m, n;
+
+    path = getpathbuffer();
+    if (!dir || !*dir || strchr(filename, DIRSEP_CHAR)) {
+	strcpy(path, filename);
+    } else {
+	n = strlen(dir);
+	m = strlen(filename);
+	if (m + n + 1 > PATH_MAX) {
+	    errno = ENAMETOOLONG;
+	    free(path);
+	    return NULL;
+	}
+	memcpy(path, dir, n);
+	path[n++] = DIRSEP_CHAR;
+	memcpy(path + n, filename, m + 1);
+    }
+    return path;
 }
 
 /* Open a file, using dir as the directory if filename is not a path.

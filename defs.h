@@ -188,12 +188,16 @@ typedef	struct gameseries {
     int			total;		/* the number of levels in the file */
     int			allocated;	/* number of elements allocated */
     int			count;		/* actual size of array */
+    int			final;		/* number of the ending level */
     int			ruleset;	/* the ruleset for the game file */
+    int			usepasswds;	/* FALSE if passwords are ignored */
     gamesetup	       *games;		/* the list of levels */
+    fileinfo		cfgfile;	/* the file containing the levels */
     fileinfo		mapfile;	/* the file containing the levels */
     fileinfo		solutionfile;	/* the file of the user's solutions */
     int			solutionflags;	/* settings for the saved solutions */
     int			allmapsread;	/* TRUE if levels are at EOF */
+    char		filebase[256];	/* the root of the main filename */
     char		name[256];	/* the name of the series */
 } gameseries;
 

@@ -20,17 +20,30 @@
 #define	CCSIG_RULESET_MS	0x00
 #define	CCSIG_RULESET_LYNX	0x01
 
+#define	SIG_DATFILE_0		0xAC
+#define	SIG_DATFILE_1		0xAA
+#define	SIG_DATFILE_2		0x02
+
+#define	SIG_CFGFILE_0		0x66
+#define	SIG_CFGFILE_1		0x69
+#define	SIG_CFGFILE_2		0x6C
+
 /* Mini-structure for our findfiles() callback.
  */
 typedef	struct seriesdata {
     gameseries *list;		/* the gameseries list */
     int		allocated;	/* number of gameseries currently allocated */
     int		count;		/* number of gameseries filled in */
+    int		usedatdir;	/* TRUE if the file is in seriesdatdir. */
 } seriesdata;
 
 /* The directory containing the data files.
  */
 char   *seriesdir = NULL;
+
+/* The directory containing the configured data files.
+ */
+char   *seriesdatdir = NULL;
 
 /*
  * File I/O functions, with error-handling specific to the data files.
@@ -94,22 +107,24 @@ static int datfilereadbuf(fileinfo *file, unsigned char **buf, int bufsize,
  */
 static int readseriesheader(gameseries *series)
 {
-    unsigned long	sig;
+    unsigned char	magic[4];
     unsigned short	total;
+    int			ruleset;
 
-    if (!filereadint32(&series->mapfile, &sig, "not a valid data file"))
+    if (!fileread(&series->mapfile, magic, 4, "not a valid data file"))
 	return FALSE;
-    if ((sig & 0x00FFFFFF) != CCSIG) {
-	fileerr(&series->mapfile, "not a valid data file");
-	return FALSE;
-    }
-    switch (sig >> 24) {
-      case CCSIG_RULESET_MS:	series->ruleset = Ruleset_MS;	break;
-      case CCSIG_RULESET_LYNX:	series->ruleset = Ruleset_Lynx;	break;
+    if (magic[0] != SIG_DATFILE_0 || magic[1] != SIG_DATFILE_1
+				  || magic[2] != SIG_DATFILE_2)
+	return fileerr(&series->mapfile, "not a valid data file");
+    switch (magic[3]) {
+      case CCSIG_RULESET_MS:	ruleset = Ruleset_MS;	break;
+      case CCSIG_RULESET_LYNX:	ruleset = Ruleset_Lynx;	break;
       default:
 	fileerr(&series->mapfile, "unrecognized header in data file");
 	return FALSE;
     }
+    if (series->ruleset == Ruleset_None)
+	series->ruleset = ruleset;
     if (!filereadint16(&series->mapfile, &total, "not a valid data file"))
 	return FALSE;
     series->total = total;
@@ -269,6 +284,68 @@ int readseriesfile(gameseries *series)
 }
 
 /*
+ *
+ */
+
+/*
+ */
+static char *readconfigfile(fileinfo *file, gameseries *series)
+{
+    static char	datfilename[256];
+    char	buf[256];
+    char	name[256];
+    char	value[256];
+    char       *p;
+    int		lineno, n;
+
+    n = sizeof buf - 1;
+    if (!filegetline(file, buf, &n, "invalid configuration file"))
+	return NULL;
+    if (sscanf(buf, "file = %s", datfilename) != 1) {
+	warn("bad filename in configuration file");
+	fileerr(file, "bad filename in configuration file");
+	return NULL;
+    }
+    for (lineno = 2 ; ; ++lineno) {
+	n = sizeof buf - 1;
+	if (!filegetline(file, buf, &n, NULL))
+	    break;
+	if (*buf == '\n' || *buf == '#')
+	    continue;
+	if (sscanf(buf, "%[^= \t] = %s", name, value) != 2) {
+	    fileerr(file, "invalid configuration file syntax");
+	    return NULL;
+	}
+	for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
+	if (!strcmp(name, "name")) {
+	    strcpy(series->name, value);
+	} else if (!strcmp(name, "lastlevel")) {
+	    n = (int)strtol(value, &p, 10);
+	    if (*p || n <= 0) {
+		fileerr(file, "invalid lastlevel in configuration file");
+		return NULL;
+	    }
+	    series->final = n;
+	} else if (!strcmp(name, "usepasswords")) {
+	    series->usepasswds = !(tolower(*value) == 'n' || *value == '0');
+	} else if (!strcmp(name, "ruleset")) {
+	    for (p = value ; (*p = tolower(*p)) != '\0' ; ++p) ;
+	    if (strcmp(value, "ms") && strcmp(value, "lynx")) {
+		fileerr(file, "invalid ruleset in configuration file");
+		return NULL;
+	    }
+	    series->ruleset = *value == 'm' ? Ruleset_MS : Ruleset_Lynx;
+	} else {
+	    warn("line %d: directive \"%s\" unknown", lineno, name);
+	    fileerr(file, "unrecognized setting in configuration file");
+	    return NULL;
+	}
+    }
+
+    return datfilename;
+}
+
+/*
  * Functions to find the data files.
  */
 
@@ -277,50 +354,94 @@ int readseriesfile(gameseries *series)
  */
 static int getseriesfile(char *filename, void *data)
 {
-    seriesdata *sdata = (seriesdata*)data;
-    gameseries *series;
-    int		f;
+    fileinfo		file;
+    unsigned char	magic[3];
+    seriesdata	       *sdata = (seriesdata*)data;
+    gameseries	       *series;
+    char	       *datfilename;
+    int			config;
+    int			f;
 
-    while (sdata->count >= sdata->allocated) {
-	++sdata->allocated;
+    clearfileinfo(&file);
+    if (!openfileindir(&file, seriesdir, filename, "rb", "unknown error"))
+	return 0;
+    if (!fileread(&file, &magic, 3, "unexpected EOF")) {
+	fileclose(&file, NULL);
+	return 0;
+    }
+    filerewind(&file, NULL);
+    if (magic[0] == SIG_CFGFILE_0 && magic[1] == SIG_CFGFILE_1
+				  && magic[2] == SIG_CFGFILE_2) {
+	config = TRUE;
+    } else if (magic[0] == SIG_DATFILE_0 && magic[1] == SIG_DATFILE_1
+					 && magic[2] == SIG_DATFILE_2) {
+	config = FALSE;
+    } else {
+	fileerr(&file, "not a valid data file or configuration file");
+	fileclose(&file, NULL);
+	return 0;
+    }
+
+    if (sdata->count >= sdata->allocated) {
+	sdata->allocated = sdata->count + 1;
 	xalloc(sdata->list, sdata->allocated * sizeof *sdata->list);
     }
     series = sdata->list + sdata->count;
-    clearfileinfo(&series->mapfile);
     clearfileinfo(&series->solutionfile);
-    series->mapfile.name = filename;
     series->solutionflags = 0;
     series->allmapsread = FALSE;
     series->allocated = 0;
     series->count = 0;
+    series->final = 0;
+    series->ruleset = Ruleset_None;
     series->games = NULL;
-    strncpy(series->name, series->mapfile.name, sizeof series->name - 1);
-    series->name[sizeof series->name - 1] = '\0';
+    series->usepasswds = TRUE;
+    strncpy(series->filebase, filename, sizeof series->filebase - 1);
+    series->filebase[sizeof series->filebase - 1] = '\0';
+    strcpy(series->name, series->filebase);
 
     f = FALSE;
-    if (openfileindir(&series->mapfile, seriesdir, series->mapfile.name,
-		      "rb", "unknown error")) {
+    if (config) {
+	clearfileinfo(&series->mapfile);
+	datfilename = readconfigfile(&file, series);
+	fileclose(&file, NULL);
+	if (datfilename) {
+	    if (openfileindir(&series->mapfile, seriesdatdir,
+			      datfilename, "rb", "unknown error"))
+		f = readseriesheader(series);
+	    fileclose(&series->mapfile, NULL);
+	    clearfileinfo(&series->mapfile);
+	    series->mapfile.name = getpathforfileindir(seriesdatdir,
+						       datfilename);
+	}
+    } else {
+	series->mapfile = file;
 	f = readseriesheader(series);
 	fileclose(&series->mapfile, NULL);
+	clearfileinfo(&series->mapfile);
+	series->mapfile.name = filename;
     }
     if (f)
 	++sdata->count;
     return f ? 1 : 0;
 }
 
+/*
+ *
+ */
+
 /* A callback function to compare two gameseries structures by
  * comparing their filenames.
  */
 static int gameseriescmp(void const *a, void const *b)
 {
-    return strcmp(((gameseries*)a)->mapfile.name,
-		  ((gameseries*)b)->mapfile.name);
+    return strcmp(((gameseries*)a)->name, ((gameseries*)b)->name);
 }
 
 /* Search the game file directory and generate an array of gameseries
  * structures corresponding to the data files found there.
  */
-static int getseriesfiles(char const *filename, gameseries **list, int *count)
+static int getseriesfiles(char const *preferred, gameseries **list, int *count)
 {
     seriesdata	s;
     int		n;
@@ -328,17 +449,18 @@ static int getseriesfiles(char const *filename, gameseries **list, int *count)
     s.list = NULL;
     s.allocated = 0;
     s.count = 0;
-    if (filename && *filename && haspathname(filename)) {
-	if (getseriesfile((char*)filename, &s) <= 0 || !s.count)
-	    die("%s: couldn't read data file", filename);
+    s.usedatdir = FALSE;
+    if (preferred && *preferred && haspathname(preferred)) {
+	if (getseriesfile((char*)preferred, &s) <= 0 || !s.count)
+	    die("%s: couldn't read data file", preferred);
 	*seriesdir = '\0';
 	*savedir = '\0';
     } else {
 	if (!findfiles(seriesdir, &s, getseriesfile) || !s.count)
 	    die("%s: directory contains no data files", seriesdir);
-	if (filename && *filename) {
+	if (preferred && *preferred) {
 	    for (n = 0 ; n < s.count ; ++n) {
-		if (!strcmp(s.list[n].name, filename)) {
+		if (!strcmp(s.list[n].name, preferred)) {
 		    s.list[0] = s.list[n];
 		    s.count = 1;
 		    n = 0;
@@ -346,7 +468,7 @@ static int getseriesfiles(char const *filename, gameseries **list, int *count)
 		}
 	    }
 	    if (n == s.count)
-		die("%s: no such data file", filename);
+		die("%s: no such data file", preferred);
 	}
 	if (s.count > 1)
 	    qsort(s.list, s.count, sizeof *s.list, gameseriescmp);
@@ -385,11 +507,7 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
 
     rulesetname[Ruleset_Lynx] = "Lynx";
     rulesetname[Ruleset_MS] = "MS";
-#if 0
-    ptrs = malloc((listsize + 1) * 3 * sizeof *ptrs);
-#else
     ptrs = malloc((listsize + 1) * 2 * sizeof *ptrs);
-#endif
     textheap = malloc((listsize + 1) * (col + 32));
     if (!ptrs || !textheap)
 	memerrexit();
@@ -398,21 +516,12 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     used = 0;
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1-Filename");
-#if 0
-    ptrs[n++] = textheap + used;
-    used += 1 + sprintf(textheap + used, "1+No. of levels");
-#endif
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1.Ruleset");
     for (y = 0 ; y < listsize ; ++y) {
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used,
 			    "1-%-*s", col, serieslist[y].name);
-#if 0
-	ptrs[n++] = textheap + used;
-	used += 1 + sprintf(textheap + used,
-			    "1+%d", serieslist[y].total);
-#endif
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used,
 			    "1.%s", rulesetname[serieslist[y].ruleset]);
@@ -421,13 +530,8 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     *pserieslist = serieslist;
     *pcount = listsize;
     table->rows = listsize + 1;
-#if 0
-    table->cols = 3;
-    table->sep = 1;
-#else
     table->cols = 2;
     table->sep = 2;
-#endif
     table->collapse = 0;
     table->items = ptrs;
     return TRUE;

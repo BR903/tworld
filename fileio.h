@@ -69,6 +69,13 @@ extern void *filereadbuf(fileinfo *file, unsigned long size, char const *msg);
  */
 extern int filegetline(fileinfo *file, char *buf, int *len, char const *msg);
 
+/* Read a config-style line from a file, looking for the pattern
+ * "name=value". FALSE is returned when the end of the file is
+ * reached.
+ */
+extern int filegetconfigline(fileinfo *file, char **name, char **value,
+			     char const *msg);
+
 /* Return the maximum size of a legal pathname.
  */
 extern int getpathbufferlen(void);
@@ -85,6 +92,11 @@ extern int haspathname(char const *name);
  * result in dest. dest and dir can point to the same buffer.
  */
 extern int combinepath(char *dest, char const *dir, char const *path);
+
+/* Return the pathname for a directory and/or filename, using the
+ * same algorithm to construct the path as openfileindir().
+ */
+extern char *getpathforfileindir(char const *dir, char const *filename);
 
 /* Verify that the given directory exists, or create it if it doesn't.
  */
