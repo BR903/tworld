@@ -1,3 +1,10 @@
+2001 Nov 03: version 0.8.2
+
+* Found problem with teleports: creatures provide their own teleport
+  blockage! Fixed.
+* Fixed (I believe) funny timing issues with pushbuttons.
+* Trivial changes to program appearance.
+
 2001 Oct 29: version 0.8.1
 
 * Fixed bug introduced in 0.7.2, correctly this time.
@@ -11,6 +18,8 @@
 * Fixed buried beartrap behavior in MS game logic.
 * Altered the solution file format (been wanting to do that for a long
   time).
+* Gave the program an icon (a temporary one, until I can get someone to
+  make me a real icon).
 
 2001 Oct 23: version 0.7.2
 

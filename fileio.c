@@ -179,7 +179,7 @@ void *filereadbuf(fileinfo *file, unsigned long size, char const *msg)
 }
 
 /* Read one full line from fp and store the first len characters,
- * minus the trailing newline.
+ * including any trailing newline.
  */
 int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
 {

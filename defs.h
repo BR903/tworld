@@ -135,6 +135,34 @@ enum {
     CmdCount
 };
 
+/* The list of available sound effects.
+ */
+#define	SND_CHIP_LOSES		0
+#define	SND_CHIP_WINS		1
+#define	SND_TIME_OUT		2
+#define	SND_TIME_LOW		3
+#define	SND_CANT_MOVE		4
+#define	SND_IC_COLLECTED	5
+#define	SND_ITEM_COLLECTED	6
+#define	SND_BOOTS_STOLEN	7
+#define	SND_TELEPORTING		8
+#define	SND_DOOR_OPENED		9
+#define	SND_SOCKET_OPENED	10
+#define	SND_BUTTON_PUSHED	11
+#define	SND_TILE_EMPTIED	12
+#define	SND_WALL_CREATED	13
+#define	SND_TRAP_SPRUNG		14
+#define	SND_BLOCK_MOVING	15
+#define	SND_BOMB_EXPLODES	16
+#define	SND_WATER_SPLASH	17
+#define	SND_SLIDEWALKING	18
+#define	SND_ICEWALKING		19
+#define	SND_WATERWALKING	20
+#define	SND_FIREWALKING		21
+#define	SND_SKATING_FORWARD	22
+#define	SND_SKATING_TURN	23
+#define	SND_SLIDING		24
+
 /*
  * Structures for managing the different games.
  */
