@@ -5,12 +5,16 @@
  */
 
 #include	<stdlib.h>
-#include	<assert.h>
 #include	"defs.h"
 #include	"err.h"
 #include	"state.h"
 #include	"random.h"
 #include	"lxlogic.h"
+
+#undef assert
+#define	assert(test)	((test) || (die("internal error: failed sanity check" \
+				        " (%s)\nPlease report this error to"  \
+				        " breadbox@muppetlabs.com", #test), 0))
 
 /* Internal status flags.
  */

@@ -81,9 +81,10 @@ extern char *getpathbuffer(void);
  */
 extern int haspathname(char const *name);
 
-/* Append the path and/or file contained in path to dir.
+/* Append the path and/or file contained in path to dir, storing the
+ * result in dest. dest and dir can point to the same buffer.
  */
-extern int combinepath(char *dir, char const *path);
+extern int combinepath(char *dest, char const *dir, char const *path);
 
 /* Verify that the given directory exists, or create it if it doesn't.
  */

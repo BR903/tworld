@@ -20,8 +20,9 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-Something's wrong somewhere in Eric Schmidt's level 29 (PARAMECIA).
-Unfortunately, I don't know where the discrepancy is.
+There's a bug somewhere in the code that deals with creatures
+colliding on ice. I don't know yet if it's involved with slide delay,
+or just in the code that decides when on ice to turn around.
 <li>
 (It is debatable whether or not this one qualifies as a bug.) The
 keyboard is scanned twice per tick, once at the beginning and once in
@@ -30,6 +31,10 @@ tick, the game does not update the display twice in a row (once after
 the creatures move and once after Chip moves), but just does it once.
 In a few places this does have a non-trivial effect on how the game
 appears, most notably when Chip tries to move against a force floor.
+<li>
+The bug of tank-hits-red-button-cloning-block-which-hits-blue-button
+is only partially reproduced in the emulation. Not sure if I care
+about this one enough to try to improve it.
 </ol>
 <p>
 <hr>

@@ -213,19 +213,18 @@ static int loadimages(void)
 
     path = getpathbuffer();
 
-    strcpy(path, resdir);
     switch (currentruleset) {
       case Ruleset_MS:
 	f = FALSE;
 	if (*ms_resources[RES_TILEIMAGES].str) {
-	    combinepath(path, ms_resources[RES_TILEIMAGES].str);
+	    combinepath(path, resdir, ms_resources[RES_TILEIMAGES].str);
 	    f = loadsmalltileset(path, FALSE);
 	}
 	break;
       case Ruleset_Lynx:
 	f = FALSE;
 	if (*lynx_resources[RES_TILEIMAGES].str) {
-	    combinepath(path, lynx_resources[RES_TILEIMAGES].str);
+	    combinepath(path, resdir, lynx_resources[RES_TILEIMAGES].str);
 	    if (lynx_resources[RES_USEANIM].num)
 		f = loadlargetileset(path, FALSE);
 	    else
@@ -241,9 +240,8 @@ static int loadimages(void)
 	return TRUE;
     }
 
-    strcpy(path, resdir);
     if (*globalresources[RES_TILEIMAGES].str) {
-	combinepath(path, globalresources[RES_TILEIMAGES].str);
+	combinepath(path, resdir, globalresources[RES_TILEIMAGES].str);
 	f = loadsmalltileset(path, TRUE);
     }
 
