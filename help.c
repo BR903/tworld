@@ -25,11 +25,12 @@ static char *gamekeys_items[] = {
     "1-Ctrl-R", "1-restart the current level",
     "1-Ctrl-P", "1-jump to the previous level",
     "1-Ctrl-N", "1-jump to the next level",
-    "2- ",
+    /*"2- ",*/
     "2.Inbetween Games",
     "1-q", "1-exit the program",
     "1-p", "1-jump to the previous level",
     "1-n", "1-jump to the next level",
+    "1-Ctrl-G", "1-enter a level password",
     "1-s", "1-see the current score",
     "1-Ctrl-I (Tab)", "1-playback saved solution",
     "1-Ctrl-X", "1-replace existing solution"

@@ -45,10 +45,11 @@ typedef	struct startupdata {
 /* Online help.
  */
 static char const *yowzitch = 
-	"Usage: tworld [-hvlsqH] [-DRS DIR] [NAME] [LEVEL]\n"
+	"Usage: tworld [-hvlspqH] [-DRS DIR] [NAME] [LEVEL]\n"
 	"   -D  Read data files from DIR instead of the default\n"
 	"   -R  Read shared resources from DIR instead of the default\n"
 	"   -S  Save games in DIR instead of the default\n"
+	"   -p  Enable password checking\n"
 	"   -q  Run quietly\n"
 	"   -H  Produce histogram of idle time upon exit\n"
 	"   -l  Display the list of available data files and exit\n"
@@ -74,9 +75,13 @@ static char const *vourzhon =
 	"   Please direct bug reports to breadbox@muppetlabs.com, or post\n"
 	"them on annexcafe.chips.challenge.\n";
 
-/* A FALSE value suppresses sound and the console bell.
+/* FALSE suppresses sound and the console bell.
  */
 static int	silence = FALSE;
+
+/* FALSE removes the requirement for a password to jump to a new level.
+ */
+static int	passwdchecking = FALSE;
 
 /* TRUE if the user requested an idle-time histogram.
  */
@@ -153,14 +158,14 @@ static int keyinputcallback(void)
     int	ch;
 
     ch = input(TRUE);
-    if (ch >= 'a' && ch <= 'z')
+    if (isalpha(ch))
 	return toupper(ch);
     else if (ch == CmdWest)
 	return '\b';
     else if (ch == CmdProceed)
 	return '\n';
     else if (ch == CmdQuitLevel)
-	return '[' - '@';
+	return -1;
     else if (ch == CmdQuit)
 	exit(0);
     return 0;
@@ -251,15 +256,14 @@ static void passwordseen(gamespec *gs)
 
 /* Change the current game, ensuring that the user is not granted
  * access to a forbidden level. FALSE is returned if the current game
- * could not be changed at all.
+ * was not changed.
  */
 static int changecurrentgame(gamespec *gs, int offset)
 {
-    int	sign;
-    int	m, n;
+    int	sign, m, n;
 
     if (offset == 0)
-	return TRUE;
+	return FALSE;
 
     m = gs->currentgame;
     n = m + offset;
@@ -268,27 +272,28 @@ static int changecurrentgame(gamespec *gs, int offset)
     else if (n >= gs->series.total)
 	n = gs->series.total - 1;
 
-    sign = offset < 0 ? -1 : +1;
-    for ( ; n >= 0 && n < gs->series.total ; n += sign) {
-	if (hassolution(gs->series.games + n)
-		    || (gs->series.games[n].sgflags & SGF_HASPASSWD)
-		    || (n > 0 && hassolution(gs->series.games + n - 1))) {
-	    m = n;
-	    break;
-	}
-    }
-    n = m;
-
-    if (n == gs->currentgame && offset != sign) {
-	n = gs->currentgame + offset - sign;
-	for ( ; n != gs->currentgame ; n -= sign) {
-	    if (n < 0 || n >= gs->series.total)
-		continue;
+    if (passwdchecking) {
+	sign = offset < 0 ? -1 : +1;
+	for ( ; n >= 0 && n < gs->series.total ; n += sign) {
 	    if (hassolution(gs->series.games + n)
 			|| (gs->series.games[n].sgflags & SGF_HASPASSWD)
 			|| (n > 0 && hassolution(gs->series.games + n - 1))) {
 		m = n;
 		break;
+	    }
+	}
+	n = m;
+	if (n == gs->currentgame && offset != sign) {
+	    n = gs->currentgame + offset - sign;
+	    for ( ; n != gs->currentgame ; n -= sign) {
+		if (n < 0 || n >= gs->series.total)
+		    continue;
+		if (hassolution(gs->series.games + n)
+			|| (gs->series.games[n].sgflags & SGF_HASPASSWD)
+			|| (n > 0 && hassolution(gs->series.games + n - 1))) {
+		    m = n;
+		    break;
+		}
 	    }
 	}
     }
@@ -316,17 +321,6 @@ static void endinput(gamespec *gs, int status)
 
     for (;;) {
 	switch (input(TRUE)) {
-#if 0
-	  case CmdPrev10:	gs->currentgame -= 10;		return;
-	  case CmdPrevLevel:	--gs->currentgame;		return;
-	  case CmdPrev:		--gs->currentgame;		return;
-	  case CmdSameLevel:					return;
-	  case CmdSame:						return;
-	  case CmdNextLevel:	++gs->currentgame;		return;
-	  case CmdNext:		++gs->currentgame;		return;
-	  case CmdNext10:	gs->currentgame += 10;		return;
-	  case CmdProceed:	if (status > 0) ++gs->currentgame; return;
-#else
 	  case CmdPrev10:	changecurrentgame(gs, -10);	return;
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
 	  case CmdPrev:		changecurrentgame(gs, -1);	return;
@@ -335,8 +329,6 @@ static void endinput(gamespec *gs, int status)
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	return;
 	  case CmdNext:		changecurrentgame(gs, +1);	return;
 	  case CmdNext10:	changecurrentgame(gs, +10);	return;
-	  case CmdProceed:	if (status > 0) changecurrentgame(gs, +1); return;
-#endif
 	  case CmdGotoLevel:	selectlevelbypassword(gs);	return;
 	  case CmdPlayback:	gs->playback = !gs->playback;	return;
 	  case CmdHelp:		gameplayhelp();			return;
@@ -344,6 +336,10 @@ static void endinput(gamespec *gs, int status)
 	  case CmdKillSolution:	replaceablesolution(gs);	return;
 	  case CmdQuitLevel:					exit(0);
 	  case CmdQuit:						exit(0);
+	  case CmdProceed:
+	    if (status > 0)
+		changecurrentgame(gs, +1);
+	    return;
 	}
     }
 }
@@ -362,21 +358,12 @@ static void playgame(gamespec *gs)
     switch (cmd) {
       case CmdNorth: case CmdWest:				break;
       case CmdSouth: case CmdEast:				break;
-#if 0
-      case CmdPrev10:		gs->currentgame -= 10;		return;
-      case CmdPrev:		--gs->currentgame;		return;
-      case CmdPrevLevel:	--gs->currentgame;		return;
-      case CmdNextLevel:	++gs->currentgame;		return;
-      case CmdNext:		++gs->currentgame;		return;
-      case CmdNext10:		gs->currentgame += 10;		return;
-#else
       case CmdPrev10:		changecurrentgame(gs, -10);	return;
       case CmdPrev:		changecurrentgame(gs, -1);	return;
       case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
       case CmdNextLevel:	changecurrentgame(gs, +1);	return;
       case CmdNext:		changecurrentgame(gs, +1);	return;
       case CmdNext10:		changecurrentgame(gs, +10);	return;
-#endif
       case CmdGotoLevel:	selectlevelbypassword(gs);	return;
       case CmdPlayback:		gs->playback = TRUE;		return;
       case CmdSeeScores:	showscores(gs);			return;
@@ -446,11 +433,8 @@ static void playgame(gamespec *gs)
 
   quitloop:
     setgameplaymode(EndPlay);
-#if 0
-    gs->currentgame += n;
-#else
-    changecurrentgame(gs, n);
-#endif
+    if (n)
+	changecurrentgame(gs, n);
 }
 
 /* Play back the user's best solution for the current level.
@@ -469,13 +453,8 @@ static void playbackgame(gamespec *gs)
 	    break;
 	waitfortick();
 	switch (input(FALSE)) {
-#if 0
-	  case CmdPrevLevel:	--gs->currentgame;		goto quitloop;
-	  case CmdNextLevel:	++gs->currentgame;		goto quitloop;
-#else
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
-#endif
 	  case CmdSameLevel:					goto quitloop;
 	  case CmdPlayback:	gs->playback = FALSE;		goto quitloop;
 	  case CmdQuitLevel:	gs->playback = FALSE;		goto quitloop;
@@ -514,26 +493,17 @@ static void noplaygame(gamespec *gs)
 
     for (;;) {
 	switch (input(TRUE)) {
-#if 0
-	  case CmdPrev10:	gs->currentgame -= 10;	return;
-	  case CmdPrev:		--gs->currentgame;	return;
-	  case CmdPrevLevel:	--gs->currentgame;	return;
-	  case CmdNextLevel:	++gs->currentgame;	return;
-	  case CmdNext:		++gs->currentgame;	return;
-	  case CmdNext10:	gs->currentgame += 10;	return;
-#else
 	  case CmdPrev10:	changecurrentgame(gs, -10);	return;
 	  case CmdPrev:		changecurrentgame(gs, -1);	return;
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	return;
 	  case CmdNext:		changecurrentgame(gs, +1);	return;
 	  case CmdNext10:	changecurrentgame(gs, +10);	return;
-#endif
-	  case CmdSeeScores:	showscores(gs);		return;
-	  case CmdHelp:		gameplayhelp();		return;
-	  case CmdQuitLevel:				exit(0);
-	  case CmdQuit:					exit(0);
-	  default:		bell();			break;
+	  case CmdSeeScores:	showscores(gs);			return;
+	  case CmdHelp:		gameplayhelp();			return;
+	  case CmdQuitLevel:					exit(0);
+	  case CmdQuit:						exit(0);
+	  default:		bell();				break;
 	}
 	drawscreen();
     }
@@ -619,7 +589,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listseries = FALSE;
     start->listscores = FALSE;
 
-    initoptions(&opts, argc - 1, argv + 1, "D:HR:S:hlqsv");
+    initoptions(&opts, argc - 1, argv + 1, "D:HR:S:hlpqsv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -636,8 +606,9 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'D':	optseriesdir = opts.val;			break;
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
-	  case 'H':	showhistogram = TRUE;				break;
-	  case 'q':	silence = TRUE;					break;
+	  case 'H':	showhistogram = !showhistogram;			break;
+	  case 'p':	passwdchecking = !passwdchecking;		break;
+	  case 'q':	silence = !silence;				break;
 	  case 'l':	start->listseries = TRUE;			break;
 	  case 's':	start->listscores = TRUE;			break;
 	  case 'h':	fputs(yowzitch, stdout); 	   exit(EXIT_SUCCESS);
@@ -776,22 +747,6 @@ int main(int argc, char *argv[])
     cleardisplay();
 
     for (;;) {
-#if 0
-	if (spec.currentgame < 0) {
-	    spec.currentgame = 0;
-	    bell();
-	}
-	if (spec.currentgame >= spec.series.total) {
-	    spec.currentgame = spec.series.total - 1;
-	    bell();
-	}
-	if (spec.playback
-		&& !hassolution(spec.series.games + spec.currentgame)) {
-	    spec.playback = FALSE;
-	    bell();
-	}
-#endif
-
 	spec.invalid = !initgamestate(spec.series.games + spec.currentgame,
 				      spec.series.ruleset, spec.playback);
 	setsubtitle(spec.series.games[spec.currentgame].name);

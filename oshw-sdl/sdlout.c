@@ -691,20 +691,20 @@ int displayinputprompt(char const *prompt, char *input, int maxlen,
 	input[len] = '\0';
 	SDL_UpdateRect(screen, area.x, area.y, area.w, area.h);
 	ch = (*inputcallback)();
-	if (ch == '\n' || ch == '[' - '@')
+	if (ch == '\n' || ch < 0)
 	    break;
-	if (ch == 'U' - '@') {
-	    len = 0;
-	    input[0] = '\0';
-	} else if (ch == '\b') {
-	    if (len)
-		--len;
-	    input[len] = '\0';
-	} else if (isprint(ch)) {
+	if (isprint(ch)) {
 	    input[len] = ch;
 	    if (len < maxlen)
 		++len;
 	    input[len] = '\0';
+	} else if (ch == '\b') {
+	    if (len)
+		--len;
+	    input[len] = '\0';
+	} else if (ch == '\f') {
+	    len = 0;
+	    input[0] = '\0';
 	} else {
 	    /* no op */
 	}
