@@ -11,10 +11,6 @@
 #include	"../gen.h"
 #include	"../oshw.h"
 
-/* The total number of tile images.
- */
-#define	NTILES		128
-
 /* The data defining a font.
  */
 typedef	struct fontinfo {

@@ -89,12 +89,7 @@ void addtomovelist(actlist *list, action move)
 {
     if (list->count >= list->allocated) {
 	list->allocated *= 2;
-	if (!(list->list = realloc(list->list,
-				   list->allocated * sizeof *list->list))) {
-	    fprintf(stderr, "unable to allocate %lu bytes",
-		    (unsigned long)(list->allocated * sizeof *list->list));
-	    memerrexit();
-	}
+	xalloc(list->list, list->allocated * sizeof *list->list);
     }
     list->list[list->count++] = move;
 }
@@ -109,8 +104,7 @@ void copymovelist(actlist *to, actlist const *from)
 	to->allocated = 16;
     while (to->allocated < from->count)
 	to->allocated *= 2;
-    if (!(to->list = realloc(to->list, to->allocated * sizeof *to->list)))
-	memerrexit();
+    xalloc(to->list, to->allocated * sizeof *to->list);
     to->count = from->count;
     memcpy(to->list, from->list, from->count * sizeof *from->list);
 }
@@ -336,9 +330,7 @@ static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
 				  && tolower(datname[n - 2]) == 'a'
 				  && tolower(datname[n - 1]) == 't')
 	    n -= 4;
-	buf = malloc(n + 5);
-	if (!buf)
-	    memerrexit();
+	xalloc(buf, n + 5);
 	memcpy(buf, datname, n);
 	memcpy(buf + n, ".tws", 5);
 	filename = buf;

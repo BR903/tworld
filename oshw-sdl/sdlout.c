@@ -591,7 +591,8 @@ int displaylist(char const *title, void const *tab, int *idx,
     area.h = area.y - MARGINH;
     area.y = MARGINH;
     cols = measuretable(&area, table);
-    colstmp = malloc(table->cols * sizeof *colstmp);
+    if (!(colstmp = malloc(table->cols * sizeof *colstmp)))
+	memerrexit();
 
     itemcount = table->rows - 1;
     topitem = 0;

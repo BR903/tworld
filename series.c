@@ -234,9 +234,7 @@ static int readlevelinseries(gameseries *series, int level)
 	while (!series->allmapsread && series->count <= level) {
 	    while (series->count >= series->allocated) {
 		n = series->allocated ? series->allocated * 2 : 16;
-		if (!(series->games = realloc(series->games,
-					      n * sizeof *series->games)))
-		    memerrexit();
+		xalloc(series->games, n * sizeof *series->games);
 		memset(series->games + series->allocated, 0,
 		       (n - series->allocated) * sizeof *series->games);
 		series->allocated = n;
@@ -260,9 +258,7 @@ int readseriesfile(gameseries *series)
 {
     if (series->allmapsread)
 	return TRUE;
-    if (!(series->games = realloc(series->games,
-				  series->total * sizeof *series->games)))
-	memerrexit();
+    xalloc(series->games, series->total * sizeof *series->games);
     memset(series->games + series->allocated, 0,
 	   (series->total - series->allocated) * sizeof *series->games);
     series->allocated = series->total;
@@ -287,9 +283,7 @@ static int getseriesfile(char *filename, void *data)
 
     while (sdata->count >= sdata->allocated) {
 	++sdata->allocated;
-	if (!(sdata->list = realloc(sdata->list,
-				    sdata->allocated * sizeof *sdata->list)))
-	    memerrexit();
+	xalloc(sdata->list, sdata->allocated * sizeof *sdata->list);
     }
     series = sdata->list + sdata->count;
     clearfileinfo(&series->mapfile);

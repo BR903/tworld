@@ -13,6 +13,10 @@
 #include	"../err.h"
 #include	"../state.h"
 
+/* The total number of tile images.
+ */
+#define	NTILES		128
+
 typedef	struct tilemap {
     Uint32     *opaque;
     Uint32     *transp;
@@ -200,9 +204,9 @@ static Uint32 const *_getcellimage(int top, int bot)
  */
 
 /* First, the tiles are transferred from the bitmap surface to a
- * surface with the same pixel format as the display. Then, the mask
- * is applied, to set the transparent pixels. Finally, the tiles are
- * transferred to a one-dimensional surface for easy copying.
+ * 32-bit surface. Then, the mask is applied, setting the transparent
+ * pixels.  Finally, the tiles are individually transferred to a
+ * one-dimensional array.
  */
 static int inittileswithmask(SDL_Surface *bmp, int wset, int hset,
 			     int xmask, int ymask, int wmask, int hmask,
@@ -271,9 +275,8 @@ static int inittileswithmask(SDL_Surface *bmp, int wset, int hset,
 	SDL_UnlockSurface(mask);
     SDL_FreeSurface(mask);
 
-    cctiles = calloc(wset * hset * sdlg.cptile, sizeof *cctiles);
-    if (!dest)
-	die("insufficient memory");
+    if (!(cctiles = calloc(wset * hset * sdlg.cptile, sizeof *cctiles)))
+	memerrexit();
     dest = cctiles;
     for (x = 0 ; x < wset * sdlg.wtile ; x += sdlg.wtile) {
 	for (y = 0 ; y < hset * sdlg.htile ; y += sdlg.htile) {

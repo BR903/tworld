@@ -120,7 +120,7 @@ static short *_possession(int obj)
       case Fire:		return &state->boots[2];
       case Water:		return &state->boots[3];
     }
-    warn("Invalid object %d handed to possession()\n", obj);
+    warn("Invalid object %d handed to possession()", obj);
     assert(!"possession() called with an invalid object");
     return NULL;
 }
@@ -564,9 +564,6 @@ static void updatecreature(creature const *cr)
 	    switch (getchipstatus()) {
 	      case SF_CHIPBURNED:	tile->id = Burned_Chip;		return;
 	      case SF_CHIPDROWNED:	tile->id = Water_Splash;	return;
-#if 0
-	      case SF_CHIPBOMBED:	tile->id = Bombed_Chip;		return;
-#endif
 	    }
 	} else if (cellat(cr->pos)->bot.id == Water) {
 	    id = Swimming_Chip;
@@ -1095,18 +1092,8 @@ static void choosechipmove(creature *cr, int discard)
 	dir = NIL;
     if (dir == NIL || discard)
 	return;
-
-#if 0
-    if (cr->state & CS_SLIDE) {
-	int floor = floorat(cr->pos);
-	if (isslide(floor) && !possession(Boots_Slide)
-			   && dir == getslidedir(floor, FALSE))
-	    return;
-    }
-#else
     if ((cr->state & CS_SLIDE) && dir == cr->dir)
 	return;
-#endif
 
     lastmove() = dir;
     cr->tdir = dir;
@@ -1629,24 +1616,11 @@ static void floormovements(void)
 
 static void createclones(void)
 {
-#if 0
-    maptile    *tile;
-    int		pos;
-
-    for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	tile = &cellat(pos)->top;
-	if (tile->state & FS_CLONING) {
-	    tile->state &= ~FS_CLONING;
-	    awakencreature(pos);
-	}
-    }
-#else
     int	n;
 
     for (n = 0 ; n < creaturecount ; ++n)
 	if (creatures[n]->state & CS_CLONING)
 	    creatures[n]->state &= ~CS_CLONING;
-#endif
 }
 
 /*
@@ -1688,8 +1662,8 @@ static void dumpmap(void)
 			cr->state & CS_SLIP ? " slipping" : "",
 			cr->state & CS_SLIDE ? " sliding" : "");
 	if (x < slipcount)
-	    printf(" %c", "-^<?v???>"[(int)slips[x].dir]);
-	putchar('\n');
+	    fprintf(stderr, " %c", "-^<?v???>"[(int)slips[x].dir]);
+	fputc('\n', stderr);
     }
     for (y = 0 ; y < blockcount ; ++y) {
 	cr = blocks[y];
@@ -1708,8 +1682,8 @@ static void dumpmap(void)
 			cr->state & CS_SLIP ? " slipping" : "",
 			cr->state & CS_SLIDE ? " sliding" : "");
 	if (x < slipcount)
-	    printf(" %c", "-^<?v???>"[(int)slips[x].dir]);
-	putchar('\n');
+	    fprintf(stderr, " %c", "-^<?v???>"[(int)slips[x].dir]);
+	fputc('\n', stderr);
     }
 }
 
@@ -1976,9 +1950,12 @@ int ms_initgame(gamestate *pstate)
     }
 
     for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
+	if (layer1[pos] >= 0x70)
+	    layer1[pos] = 0x01;
+	if (layer2[pos] >= 0x70)
+	    layer2[pos] = 0x01;
 	cell = cellat(pos);
 	cell->top.state = 0;
-	/*n = FALSE;*/
 	if (fileids[layer1[pos]].isfloor) {
 	    cell->top.id = fileids[layer1[pos]].id;
 	    transparent = iskey(cell->top.id) || isboots(cell->top.id);
@@ -2010,7 +1987,7 @@ int ms_initgame(gamestate *pstate)
     for (n = 0 ; n < game->creaturecount ; ++n) {
 	pos = game->creatures[n];
 	if (!layer1[pos] || fileids[layer1[pos]].isfloor) {
-	    warn("Level %d: No creature at location (%d %d)\n",
+	    warn("Level %d: No creature at location (%d %d)",
 		 game->number, pos % CXGRID, pos / CXGRID);
 	    continue;
 	}

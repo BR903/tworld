@@ -405,8 +405,7 @@ int findfiles(char const *dir, void *data,
     while ((dent = readdir(dp))) {
 	if (dent->d_name[0] == '.')
 	    continue;
-	if (!(filename = realloc(filename, strlen(dent->d_name) + 1)))
-	    memerrexit();
+	xalloc(filename, strlen(dent->d_name) + 1);
 	strcpy(filename, dent->d_name);
 	r = (*filecallback)(filename, data);
 	if (r < 0)

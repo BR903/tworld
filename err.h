@@ -7,9 +7,10 @@
 #ifndef	_err_h_
 #define	_err_h_
 
-/* Quick macro for dealing with memory-allocation failure.
+/* Quick macros for dealing with memory allocation.
  */
 #define	memerrexit()	(die("out of memory"))
+#define	xalloc(p, n)	(((p) = realloc((p), (n))) || (memerrexit(), NULL))
 
 /* Exit with an error message.
  */

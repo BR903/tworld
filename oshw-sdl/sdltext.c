@@ -60,7 +60,8 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
     }
 
     count = ch;
-    pf->memory = calloc(wsum, pf->h);
+    if (!(pf->memory = calloc(wsum, pf->h)))
+	memerrexit();
 
     x0 = 1;
     y0 = 1;
@@ -359,7 +360,8 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
     int				sep, ml;
     int				n, i, j, w, x, c;
 
-    cols = malloc(table->cols * sizeof *cols);
+    if (!(cols = malloc(table->cols * sizeof *cols)))
+	memerrexit();
     for (i = 0 ; i < table->cols ; ++i) {
 	cols[i].x = 0;
 	cols[i].y = area->y;

@@ -182,8 +182,7 @@ int loadsfxfromfile(int index, char const *filename)
 	warn("can't create converter for %s: %s\n", filename, SDL_GetError());
 	return FALSE;
     }
-    wavecvt = malloc(lengthin * convert.len_mult);
-    if (!wavecvt)
+    if (!(wavecvt = malloc(lengthin * convert.len_mult)))
 	memerrexit();
     memcpy(wavecvt, wavein, lengthin);
     SDL_FreeWAV(wavein);
