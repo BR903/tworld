@@ -12,6 +12,9 @@
 #include	"../err.h"
 #include	"../state.h"
 
+/* The requested settings for the sound output. The sample buffer is
+ * set especially low so that sounds can come and go on every tick.
+ */
 #define DEFAULT_SND_FMT		AUDIO_S16LSB
 #define DEFAULT_SND_FREQ	22050
 #define	DEFAULT_SND_SAMP	512
@@ -98,7 +101,6 @@ static void sfxcallback(void *data, Uint8 *wave, int len)
 int setaudiosystem(int active)
 {
     SDL_AudioSpec	des;
-    int			n;
 
     if (!active) {
 	if (spec.freq) {
