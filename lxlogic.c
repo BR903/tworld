@@ -405,7 +405,7 @@ static int stopanimationat(int pos)
  */
 static void removecreature(creature *cr, int animationid)
 {
-#if 0
+#if 1
     addanimation(cr, animationid);
     killcreature(cr);
 #else

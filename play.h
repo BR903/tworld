@@ -40,9 +40,10 @@ extern int secondsplayed(void);
  */
 extern int doturn(int cmd);
 
-/* Update the display during game play.
+/* Update the display during game play. If showframe is FALSE, then
+ * nothing is actually displayed.
  */
-extern int drawscreen(void);
+extern int drawscreen(int showframe);
 
 /* Quit game play early.
  */

@@ -203,12 +203,18 @@ int doturn(int cmd)
 }
 
 /* Update the display to show the current game state (including sound
- * effects, if any).
+ * effects, if any). If showframe is FALSE, then nothing is actually
+ * displayed.
  */
-int drawscreen(void)
+int drawscreen(int showframe)
 {
     int	currenttime;
     int timeleft, besttime;
+
+    playsoundeffects(state.soundeffects);
+
+    if (!showframe)
+	return TRUE;
 
     currenttime = state.currenttime + state.timeoffset;
     if (hassolution(state.game))
@@ -222,7 +228,6 @@ int drawscreen(void)
     else
 	timeleft = TIME_NIL;
 
-    playsoundeffects(state.soundeffects);
     return displaygame(&state, timeleft, besttime);
 }
 

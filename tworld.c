@@ -544,7 +544,7 @@ static int startinput(gamespec *gs)
 {
     int	cmd;
 
-    drawscreen();
+    drawscreen(TRUE);
     for (;;) {
 	cmd = input(TRUE);
 	if (cmd >= CmdMoveFirst && cmd <= CmdMoveLast)
@@ -581,7 +581,7 @@ static int startinput(gamespec *gs)
 	  default:
 	    continue;
 	}
-	drawscreen();
+	drawscreen(TRUE);
     }
 }
 
@@ -697,8 +697,7 @@ static int playgame(gamespec *gs, int firstcmd)
     render = TRUE;
     for (;;) {
 	n = doturn(cmd);
-	if (render)
-	    drawscreen();
+	drawscreen(render);
 	if (n)
 	    break;
 	render = waitfortick();
@@ -761,7 +760,7 @@ static int playgame(gamespec *gs, int firstcmd)
 
   quitloop:
     if (!render)
-	drawscreen();
+	drawscreen(TRUE);
     quitgamestate();
     setgameplaymode(EndPlay);
     if (n)
@@ -778,15 +777,14 @@ static int playbackgame(gamespec *gs)
     int	render;
     int	n;
 
-    drawscreen();
+    drawscreen(TRUE);
 
     gs->status = 0;
     setgameplaymode(BeginPlay);
     render = TRUE;
     for (;;) {
 	n = doturn(CmdNone);
-	if (render)
-	    drawscreen();
+	drawscreen(render);
 	if (n)
 	    break;
 	render = waitfortick();
@@ -831,7 +829,7 @@ static int playbackgame(gamespec *gs)
 
   quitloop:
     if (!render)
-	drawscreen();
+	drawscreen(TRUE);
     quitgamestate();
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
@@ -853,7 +851,7 @@ static int runcurrentlevel(gamespec *gs)
 	gs->enddisplay = FALSE;
 	initgamestate(enddisplaylevel(), gs->series.ruleset);
 	changesubtitle(NULL);
-	drawscreen();
+	drawscreen(TRUE);
 	displayendmessage(0, 0, 0, 0);
 	endgamestate();
 	return finalinput(gs);
