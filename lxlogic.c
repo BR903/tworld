@@ -16,11 +16,13 @@
  */
 #define	MAX_CREATURES	(2 * CXGRID * CYGRID)
 
-/* The walker's PRNG seed value. Don't change this; it needs to
- * remain forever constant.
+/* Temporary "holding" values used in place of a direction.
  */
-#define	WALKER_PRNG_SEED	105977040UL
+#define	WALKER_TURN	(NORTH | SOUTH | EAST)
+#define	BLOB_TURN	(NORTH | SOUTH | WEST)
 
+/* My internal assertion macro.
+ */
 #ifdef NDEBUG
 #define	_assert(test)
 #else
@@ -44,9 +46,10 @@ struct lxstate {
     unsigned char	couldntmove;	/* can't-move sound has been played */
     unsigned char	pushing;	/* Chip is pushing against something */
     unsigned char	completed;	/* level completed successfully */
-    prng		walkerprng;	/* the PRNG used for the walkers */
     creature	       *chiptocr;	/* is Chip colliding with a creature */
     short		chiptopos;	/*   just starting to move itself? */
+    unsigned char	prng1;		/* the values used to make the */
+    unsigned char	prng2;		/*   pseudorandom number sequence */
     signed char		xviewoffset;	/* offset of map view center */
     signed char		yviewoffset;	/*   position from position of Chip */
     unsigned char	endgametimer;	/* end-game countdown timer */
@@ -66,7 +69,7 @@ static int const	delta[] = { 0, -CXGRID, -1, 0, +CXGRID, 0, 0, 0, +1 };
  */
 static int		lastrndslidedir = NORTH;
 
-static int		stepping = 6;
+static int		stepping = 2;
 
 /* The memory used to hold the list of creatures.
  */
@@ -120,9 +123,10 @@ static gamestate       *state;
 #define	chippushing()		(getlxstate()->pushing)
 #define	chiptopos()		(getlxstate()->chiptopos)
 #define	chiptocr()		(getlxstate()->chiptocr)
+#define	prngvalue1()		(getlxstate()->prng1)
+#define	prngvalue2()		(getlxstate()->prng2)
 #define	xviewoffset()		(getlxstate()->xviewoffset)
 #define	yviewoffset()		(getlxstate()->yviewoffset)
-#define	walkerprng()		(&(getlxstate()->walkerprng))
 
 #define	inendgame()		(getlxstate()->endgametimer)
 #define	startendgametimer()	(getlxstate()->endgametimer = 12 + 1)
@@ -175,19 +179,19 @@ static short *_possession(int obj)
     return NULL;
 }
 
-static unsigned char	P, Q;
-
-static void INTERNAL_PRNG_RESET(void) { P = Q = 0; }
-static unsigned char INTERNAL_PRNG(void)
+/* The pseudorandom number generator, used by walkers and blobs. This
+ * exactly matches the PRNG used in the original Lynx game.
+ */
+static unsigned char lynx_prng(void)
 {
     unsigned char n;
 
-    n = (P >> 2) - P;
-    if (!(P & 0x02))
+    n = (prngvalue1() >> 2) - prngvalue1();
+    if (!(prngvalue1() & 0x02))
         --n;
-    P = (P >> 1) | (Q & 0x80);
-    Q = (Q << 1) | (n & 0x01);
-    return P ^ Q;
+    prngvalue1() = (prngvalue1() >> 1) | (prngvalue2() & 0x80);
+    prngvalue2() = (prngvalue2() << 1) | (n & 0x01);
+    return (prngvalue1() ^ prngvalue2()) & 0xFF;
 }
 
 /*
@@ -797,19 +801,10 @@ static void choosecreaturemove(creature *cr)
 	break;
       case Walker:
 	choices[0] = dir;
-#if 0
-	choices[1] = randomof3(walkerprng(),
-			       left(dir), back(dir), right(dir));
-#else
-	choices[1] = 42;
-#endif
+	choices[1] = WALKER_TURN;
 	break;
       case Blob:
-#if 0
-	choices[0] = 1 << random4(mainprng());
-#else
-	choices[0] = 43;
-#endif
+	choices[0] = BLOB_TURN;
 	break;
       case Teeth:
 	if ((currenttime() + stepping) & 4)
@@ -836,18 +831,15 @@ static void choosecreaturemove(creature *cr)
     }
 
     for (n = 0 ; n < 4 && choices[n] != NIL ; ++n) {
-#if 0
-#else
-	if (choices[n] == 42) {
-	    int q = INTERNAL_PRNG() & 3;
+	if (choices[n] == WALKER_TURN) {
+	    m = lynx_prng() & 3;
 	    choices[n] = cr->dir;
-	    while (q--)
+	    while (m--)
 		choices[n] = right(choices[n]);
-	} else if (choices[n] == 43) {
-	    int d[4] = { NORTH, EAST, SOUTH, WEST };
-	    choices[n] = d[(INTERNAL_PRNG() ^ (currenttime() + stepping)) & 3];
+	} else if (choices[n] == BLOB_TURN) {
+	    int cw[4] = { NORTH, EAST, SOUTH, WEST };
+	    choices[n] = cw[(lynx_prng() ^ (currenttime() + stepping)) & 3];
 	}
-#endif
 	cr->tdir = choices[n];
 	if (canmakemove(cr, choices[n], 0))
 	    return;
@@ -1906,13 +1898,10 @@ static int initgame(gamelogic *logic)
     completed() = FALSE;
     chiptopos() = -1;
     chiptocr() = NULL;
+    prngvalue1() = 0;
+    prngvalue2() = 0;
     xviewoffset() = 0;
     yviewoffset() = 0;
-#if 0
-    restartprng(walkerprng(), WALKER_PRNG_SEED);
-#else
-    INTERNAL_PRNG_RESET();
-#endif
 
     preparedisplay();
     return !ismarkedinvalid();
