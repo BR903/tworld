@@ -1,6 +1,7 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<unistd.h>
 
 typedef	unsigned char	_uchar;
 typedef	unsigned short	_ushrt;
@@ -13,7 +14,7 @@ typedef	unsigned long	_ulong;
 #undef ulong
 #define ulong		_ulong
 
-#define	DEFAULTFILE	"/usr/local/share/tworld/data/chips.dat"
+#define	DEFAULTDIR	"/usr/local/share/tworld/sets/"
 
 #define	readval(var)	(fread(&(var), sizeof(var), 1, fp) == 1)
 
@@ -526,10 +527,9 @@ int main(int argc, char *argv[])
     int		from = 0, to = 0;
     int		i, x, y;
 
-    if (argc < 2) {
-	argv[1] = DEFAULTFILE;
-	from = 0;
-	to = 65535;
+    if (argc < 2 || argc > 4) {
+	fprintf(stderr, "Usage: datview DATFILE [FIRSTLEVEL [LASTLEVEL]]\n");
+	return EXIT_FAILURE;
     } else if (argc < 3) {
 	from = 0;
 	to = 65535;
@@ -541,6 +541,7 @@ int main(int argc, char *argv[])
 	to = atoi(argv[3]);
     }
 
+    chdir(DEFAULTDIR);
     fp = fopen(argv[1], "r");
     if (!fp)
 	return 1;
