@@ -4,7 +4,7 @@
 </head>
 <body>
 <p>
-2004 ??? ??: version 1.2.0
+2004 Oct 04: version 1.2.0
 <ul>
 <li>
 Fixed a bug (MS logic) preventing cloned tanks from turning around
@@ -16,12 +16,11 @@ trying to make the behavior arise naturally from the code.
 <li>
 Improved some of the behavior of blocks being pushed (Lynx logic).
 <li>
-Improved some of the behavior of creatures moving across blocked
-teleports (Lynx logic).
+Improved some of the behavior of blocked teleports (Lynx logic).
 <li>
 Altered animations to run for either 11 or 12 frames, depending on the
 parity of their initial frame, as discovered by ccexplore. (This
-finally killed the nine-lived clone-boosting bug in ICEHOUSE.) Also
+finally killed the nine-lived clone-boosting bug in ICEHOUSE!) Also
 modified the point during the frame when animations get removed.
 <li>
 Changed the Lynx walker to use a PRNG equivalent to the original, as
@@ -35,7 +34,7 @@ deferring Chip's button presses and not just those caused by block
 pushing.
 <li>
 Fixed a horrid bug when encountering bogus values in a dat file. (The
-code was meant to gracefully delete the broken level and continue
+code was meant to gracefully ignore the broken level and continue
 reading the next level, but it failed to move the file position out of
 the broken level before doing so.)
 <li>
@@ -43,7 +42,7 @@ Fixed keyboard routines so that they now understand characters as well
 as keystrokes (thus e.g. the program recognizes "?" when entered on a
 European keyboard).
 <li>
-Added a small help screen for the initial file menu.
+Added a help screen for the initial file menu.
 <li>
 A few other minor bug fixes and miscellaneous improvements.
 </ul>
