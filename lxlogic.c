@@ -405,8 +405,25 @@ static int stopanimationat(int pos)
  */
 static void removecreature(creature *cr, int animationid)
 {
+#if 0
     addanimation(cr, animationid);
     killcreature(cr);
+#else
+    if (cr->id != Chip)
+	removeclaim(cr->pos);
+    cr->id = animationid;
+    cr->frame = 12;
+    cr->hidden = FALSE;
+    if (cr->state & CS_NOISYMOVEMENT)
+	stopsoundeffect(SND_BLOCK_MOVING);
+    cr->state = 0;
+    cr->tdir = NIL;
+    if (cr->moving == 8) {
+	cr->pos -= delta[cr->dir];
+	cr->moving = 0;
+    }
+    markanimated(cr->pos);
+#endif
 }
 
 /* What happens when Chip dies.

@@ -53,6 +53,10 @@ static msgdisplayinfo	msgdisplay;
  */
 static SDL_Surface     *prompticons = NULL;
 
+/* TRUE means the program should attempt to run in fullscreen mode.
+ */
+static int		fullscreen = FALSE;
+
 /* Coordinates specifying the placement of the various screen elements.
  */
 static SDL_Rect		titleloc, infoloc, rinfoloc, invloc, hintloc;
@@ -220,12 +224,16 @@ static int layoutscreen(void)
  */
 static int createdisplay(void)
 {
+    int	flags;
+
     if (sdlg.screen) {
 	SDL_FreeSurface(sdlg.screen);
 	sdlg.screen = NULL;
     }
-    if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh,
-					 32, SDL_SWSURFACE))) {
+    flags = SDL_SWSURFACE;
+    if (fullscreen)
+	flags |= SDL_FULLSCREEN;
+    if (!(sdlg.screen = SDL_SetVideoMode(screenw, screenh, 32, flags))) {
 	errmsg(NULL, "cannot open %dx%d display: %s\n",
 		     screenw, screenh, SDL_GetError());
 	return FALSE;
@@ -904,8 +912,9 @@ int creategamedisplay(void)
 /* Initialize the display with a generic surface capable of rendering
  * text.
  */
-int _sdloutputinitialize(void)
+int _sdloutputinitialize(int _fullscreen)
 {
+    fullscreen = _fullscreen;
     screenw = 640;
     screenh = 480;
     promptloc.x = screenw - MARGINW - PROMPTICONW;

@@ -21,7 +21,8 @@
  * more efficient, but pushes the sound effects farther out of
  * synchronization with the video.
  */
-extern int oshwinitialize(int silence, int soundbufsize, int showhistogram);
+extern int oshwinitialize(int silence, int soundbufsize,
+			  int showhistogram, int fullscreen);
 
 /*
  * Timer functions.

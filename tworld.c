@@ -61,6 +61,10 @@ typedef	struct seriesdata {
  */
 static int	silence = FALSE;
 
+/* TRUE means the program should attempt to run in fullscreen mode.
+ */
+static int	fullscreen = FALSE;
+
 /* FALSE suppresses all password checking.
  */
 static int	usepasswds = TRUE;
@@ -756,6 +760,8 @@ static int playgame(gamespec *gs, int firstcmd)
     return TRUE;
 
   quitloop:
+    if (!render)
+	drawscreen();
     quitgamestate();
     setgameplaymode(EndPlay);
     if (n)
@@ -824,6 +830,8 @@ static int playbackgame(gamespec *gs)
     return TRUE;
 
   quitloop:
+    if (!render)
+	drawscreen();
     quitgamestate();
     setgameplaymode(EndPlay);
     gs->playback = FALSE;
@@ -1103,7 +1111,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     mudsucking = 1;
     soundbufsize = 0;
 
-    initoptions(&opts, argc - 1, argv + 1, "aD:dHhL:lm:pqR:S:stVv");
+    initoptions(&opts, argc - 1, argv + 1, "aD:dFHhL:lm:pqR:S:stVv");
     while ((ch = readoption(&opts)) >= 0) {
 	switch (ch) {
 	  case 0:
@@ -1122,6 +1130,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	  case 'R':	optresdir = opts.val;				break;
 	  case 'S':	optsavedir = opts.val;				break;
 	  case 'H':	showhistogram = !showhistogram;			break;
+	  case 'F':	fullscreen = !fullscreen;			break;
 	  case 'p':	usepasswds = !usepasswds;			break;
 	  case 'q':	silence = !silence;				break;
 	  case 'a':	++soundbufsize;					break;
@@ -1166,7 +1175,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 static int initializesystem(void)
 {
     setmudsuckingfactor(mudsucking);
-    if (!oshwinitialize(silence, soundbufsize, showhistogram))
+    if (!oshwinitialize(silence, soundbufsize, showhistogram, fullscreen))
 	return FALSE;
     if (!initresources())
 	return FALSE;

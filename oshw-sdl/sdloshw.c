@@ -32,10 +32,17 @@ static void _eventupdate(int wait)
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_ALLEVENTS)) {
 	switch (event.type) {
 	  case SDL_KEYDOWN:
+	    SDL_ShowCursor(SDL_DISABLE);
 	    keyeventcallback(event.key.keysym.sym, TRUE);
 	    break;
 	  case SDL_KEYUP:
+	    SDL_ShowCursor(SDL_DISABLE);
 	    keyeventcallback(event.key.keysym.sym, FALSE);
+	    break;
+	  case SDL_MOUSEMOTION:
+	  case SDL_MOUSEBUTTONUP:
+	  case SDL_MOUSEBUTTONDOWN:
+	    SDL_ShowCursor(SDL_ENABLE);
 	    break;
 	  case SDL_QUIT:
 	    exit(EXIT_SUCCESS);
@@ -67,7 +74,8 @@ static void shutdown(void)
 /* Initialize SDL, create the program's icon, and then initialize
  * the other modules of the library.
  */
-int oshwinitialize(int silence, int soundbufsize, int showhistogram)
+int oshwinitialize(int silence, int soundbufsize,
+		   int showhistogram, int fullscreen)
 {
     SDL_Surface	       *icon;
 
@@ -94,6 +102,6 @@ int oshwinitialize(int silence, int soundbufsize, int showhistogram)
 	&& _sdltextinitialize()
 	&& _sdltileinitialize()
 	&& _sdlinputinitialize()
-	&& _sdloutputinitialize()
+	&& _sdloutputinitialize(fullscreen)
 	&& _sdlsfxinitialize(silence, soundbufsize);
 }

@@ -157,7 +157,7 @@ extern int _sdlresourceinitialize(void);
 extern int _sdltextinitialize(void);
 extern int _sdltileinitialize(void);
 extern int _sdlinputinitialize(void);
-extern int _sdloutputinitialize(void);
+extern int _sdloutputinitialize(int fullscreen);
 extern int _sdlsfxinitialize(int silence, int soundbufsize);
 
 #endif
