@@ -477,7 +477,7 @@ static void changesubtitle(char const *subtitle)
 static void dohelp(int topic)
 {
     pushsubtitle("Help");
-    onlinehelp(topic);
+    onlinemainhelp(topic);
     popsubtitle();
 }
 
@@ -956,6 +956,8 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 	    } else if (f == CmdQuitLevel) {
 		okay = FALSE;
 		break;
+	    } else if (f == CmdHelp) {
+		onlinelisthelp();
 	    }
 	}
     }

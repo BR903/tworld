@@ -28,6 +28,7 @@ extern tablespec const *vourzhon;
 /* Display online help screens for the game, using the given topic as
  * the default topic.
  */
-extern void onlinehelp(int topic);
+extern void onlinemainhelp(int topic);
+extern void onlinelisthelp(void);
 
 #endif

@@ -214,7 +214,7 @@ static int scrollinputcallback(int *move)
 /* Display the list of help topics and allow the user to select which
  * ones to view.
  */
-void onlinehelp(int topic)
+void onlinemainhelp(int topic)
 {
     static char *items[] = {
 	"2-",
@@ -254,5 +254,15 @@ void onlinehelp(int topic)
 	}
     }
 
+    cleardisplay();
+}
+
+/* Display the list of help topics and allow the user to select which
+ * ones to view.
+ */
+void onlinelisthelp(void)
+{
+    displaytable("KEYS", keyboardhelp(KEYHELP_FILELIST), -1);
+    anykey();
     cleardisplay();
 }
