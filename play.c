@@ -173,6 +173,10 @@ int doturn(int cmd)
 
     state.soundeffects &= ~((1 << SND_ONESHOT_COUNT) - 1);
     state.currenttime = gettickcount();
+    if (state.currenttime >= 0x7FFFFFF) {
+	warn("timer reached its maximum size of 77.672 days -- quitting now");
+	return -1;
+    }
     if (state.replay < 0) {
 	if (cmd != CmdPreserve)
 	    state.currentinput = cmd;
