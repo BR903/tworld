@@ -1476,8 +1476,9 @@ static void endmovement(creature *cr, int dir)
 	break;
       case Teleport:
 	if (cr->id == Chip && !(tile->state & FS_BROKEN)) {
+	    i = newpos;
 	    newpos = teleportcreature(cr, newpos);
-	    if (cr->pos != newpos)
+	    if (newpos != i)
 		addsoundeffect(SND_TELEPORTING);
 	    cr->pos = newpos;
 	}
@@ -1508,21 +1509,11 @@ static void endmovement(creature *cr, int dir)
 	} else if (cell->bot.id == Exit) {
 	    setcompleted();
 	    return;
-#if 0
-	} else if (floor == Teleport && !(tile->state & FS_BROKEN)) {
-	    oldpos = newpos;
-	    poptile(newpos);
-	    newpos = teleportcreature(cr, newpos);
-	    cr->pos = newpos;
-	    addcreaturetomap(cr);
-	    if (oldpos != newpos)
-		addsoundeffect(SND_TELEPORTING);
-#endif
 	}
     } else {
 	if (iscreature(cell->bot.id)) {
 	    assert(creatureid(cell->bot.id) == Chip
-		   || creatureid(cell->bot.id) == Swimming_Chip);
+			|| creatureid(cell->bot.id) == Swimming_Chip);
 	    setchipstatus(SF_CHIPHIT);
 	    return;
 	}
