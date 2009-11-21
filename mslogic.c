@@ -867,9 +867,8 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
  * causes blue and hidden walls to remain unexposed.
  * CMM_CLONECANTBLOCK means that the creature will not be prevented
  * from moving by an identical creature standing in the way.
- * CMM_NOPUSHING prevents Chip from pushing blocks inside this
- * function. CMM_TELEPORTPUSH indicates to the block-pushing logic
- * that Chip is teleporting. This prevents a stack of two blocks from
+ * CMM_TELEPORTPUSH indicates to the block-pushing logic that
+ * Chip is teleporting. This prevents a stack of two blocks from
  * being treated as a single block, and allows Chip to push a slipping
  * block away from him. CMM_NOFIRECHECK causes bugs and walkers to not
  * avoid fire. Finally, CMM_NODEFERBUTTONS causes buttons pressed by
@@ -878,10 +877,9 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
 #define	CMM_NOLEAVECHECK	0x0001
 #define	CMM_NOEXPOSEWALLS	0x0002
 #define	CMM_CLONECANTBLOCK	0x0004
-#define	CMM_NOPUSHING		0x0008
-#define	CMM_TELEPORTPUSH	0x0010
-#define	CMM_NOFIRECHECK		0x0020
-#define	CMM_NODEFERBUTTONS	0x0040
+#define	CMM_TELEPORTPUSH	0x0008
+#define	CMM_NOFIRECHECK		0x0010
+#define	CMM_NODEFERBUTTONS	0x0020
 
 /* Move a block at the given position forward in the given direction.
  * FALSE is returned if the block cannot be pushed.
@@ -954,6 +952,13 @@ static int canmakemove(creature const *cr, int dir, int flags)
     }
 
     if (cr->id == Chip) {
+	/* If the top tile is a block, push it. */
+	floor = cellat(to)->top.id;
+	if (floor == Block_Static) {
+	    if (!pushblock(to, dir, flags))
+		return FALSE;
+	}
+	/* Now check the floor tile */
 	floor = floorat(to);
 	if (!(movelaws[floor].chip & dir))
 	    return FALSE;
@@ -970,16 +975,6 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    if (!(flags & CMM_NOEXPOSEWALLS))
 		getfloorat(to)->id = Wall;
 	    return FALSE;
-	}
-	if (floor == Block_Static) {
-	    if (!pushblock(to, dir, flags))
-		return FALSE;
-	    else if (flags & CMM_NOPUSHING)
-		return FALSE;
-	    if ((flags & CMM_TELEPORTPUSH) && floorat(to) == Block_Static
-					   && cellat(to)->bot.id == Empty)
-		return TRUE;
-	    return canmakemove(cr, dir, flags | CMM_NOPUSHING);
 	}
     } else if (cr->id == Block) {
 	floor = cellat(to)->top.id;
