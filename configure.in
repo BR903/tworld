@@ -15,8 +15,8 @@ dnl
 AC_ARG_WITH(debug,
 	    [  --with-debug            Build with debugging info],
 	    [if test $withval = yes ; then
-	       CFLAGS=" -Wall -W -O2 -ggdb"
-	       LDFLAGS=" -Wall -W -O2 -ggdb"
+	       CFLAGS=" -Wall -W -ggdb"
+	       LDFLAGS=" -Wall -W -ggdb"
 	     fi])
 
 LOADLIBES=""
@@ -59,7 +59,6 @@ if test "$OSHWDIR" = "sdl" ; then
   if test -z "$sdlpresent" ; then
     AC_MSG_ERROR([SDL installation not found.])
   fi
-  CFLAGS=$CFLAGS' $(shell sdl-config --cflags)'
   OSHWCFLAGS=$OSHWCFLAGS' $(shell sdl-config --cflags)'
   LOADLIBES=$LOADLIBES' $(shell sdl-config --libs)'
 fi

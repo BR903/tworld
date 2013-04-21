@@ -1,6 +1,6 @@
 /* fileio.h: Simple file/directory access functions with error-handling.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -35,6 +35,10 @@ extern int fileread(fileinfo *file, void *data, unsigned long size,
 extern int filewrite(fileinfo *file, void const *data, unsigned long size,
 		     char const *msg);
 extern void fileclose(fileinfo *file, char const *msg);
+
+/* fileskip() works like fseek() with whence set to SEEK_CUR.
+ */
+extern int fileskip(fileinfo *file, int offset, char const *msg);
 
 /* filetestend() forces a check for EOF by attempting to read a byte
  * from the file, and ungetting the byte if one is successfully read.
@@ -88,9 +92,16 @@ extern char *getpathbuffer(void);
  */
 extern int haspathname(char const *name);
 
+/* Return a pointer to the filename, skipping over any directories in
+ * the front.
+ */
+extern char *skippathname(char const *name);
+
 /* Append the path and/or file contained in path to dir, storing the
- * result in dest. dest and dir can point to the same buffer. FALSE is
- * returned if the resulting path is too long.
+ * result in dest. dest and dir can point to the same buffer. dest is
+ * assumed to be a buffer of size getpathbufferlen(). If the resulting
+ * path is longer than this, FALSE is returned and errno is set to
+ * ENAMETOOLONG.
  */
 extern int combinepath(char *dest, char const *dir, char const *path);
 

@@ -1,6 +1,6 @@
 /* play.c: Functions to drive game-play and manage the game state.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -71,12 +71,22 @@ extern int hassolution(gamesetup const *game);
  */
 extern int replacesolution(void);
 
-/* Double-checks the timing for a solution that has just been played
+/* Delete the user's best solution for the current game. FALSE is
+ * returned if no solution was present to delete.
+ */
+extern int deletesolution(void);
+
+/* Double-check the timing for a solution that has just been played
  * back. If the timing is incorrect, but the cause of the discrepancy
  * can be reasonably ascertained to be benign, the timings will be
  * corrected and the return value will be TRUE.
  */
 extern int checksolution(void);
+
+/* Turn pedantic mode on. The ruleset will be slightly changed to be
+ * as faithful as possible to the original source material.
+ */
+extern void setpedanticmode(void);
 
 /* Slow down the game clock by the given factor. Used for debugging
  * purposes.

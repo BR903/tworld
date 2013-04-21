@@ -1,6 +1,6 @@
 /* gen.h: General definitions belonging to no single module.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 

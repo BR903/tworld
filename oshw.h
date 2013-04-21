@@ -1,6 +1,6 @@
 /* oshw.h: Platform-specific functions that talk with the OS/hardware.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -9,6 +9,11 @@
 
 #include	<stdarg.h>
 #include	"gen.h"
+
+/* This is the declaration of the top layer's main function. It is
+ * called directly from the real main() inside the OS/hardware layer.
+ */
+extern int tworld(int argc, char *argv[]);
 
 /* Initialize the OS/hardware interface. This function must be called
  * before any others in the oshw library. If silence is TRUE, the

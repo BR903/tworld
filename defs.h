@@ -1,6 +1,6 @@
 /* defs.h: Definitions used throughout the program.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -93,8 +93,9 @@ enum {
     CmdHelp,
     CmdPlayback,
     CmdCheckSolution,
-    CmdSeeScores,
+    CmdReplSolution,
     CmdKillSolution,
+    CmdSeeScores,
     CmdVolumeUp,
     CmdVolumeDown,
     CmdStepping,
@@ -188,8 +189,9 @@ typedef	struct gamesetup {
 
 /* Flags associated with a saved game.
  */
-#define	SGF_HASPASSWD	0x01		/* player knows the level's password */
-#define	SGF_REPLACEABLE	0x02		/* solution is marked as replaceable */
+#define	SGF_HASPASSWD		0x0001	/* player knows the level's password */
+#define	SGF_REPLACEABLE		0x0002	/* solution is marked as replaceable */
+#define	SGF_SETNAME		0x0004	/* internal to solution.c */
 
 /* The collection of data maintained for each series.
  */
@@ -199,20 +201,26 @@ typedef	struct gameseries {
     int			count;		/* actual size of array */
     int			final;		/* number of the ending level */
     int			ruleset;	/* the ruleset for the game file */
-    int			gsflags;	/* flags (see below) */
+    int			gsflags;	/* series flags (see below) */
     gamesetup	       *games;		/* the array of levels */
     fileinfo		mapfile;	/* the file containing the levels */
     char	       *mapfilename;	/* the name of said file */
-    fileinfo		solutionfile;	/* the file of the user's solutions */
-    int			solutionflags;	/* settings for the saved solutions */
+    fileinfo		savefile;	/* the file holding the solutions */
+    char	       *savefilename;	/* non-default name for said file */
+    int			solheaderflags;	/* solution flags (none defined yet) */
+    int			solheadersize;	/* size of extra solution header */
     char		filebase[256];	/* the root of the main filename */
     char		name[256];	/* the name of the series */
+    unsigned char	solheader[256];	/* extra solution header bytes */
 } gameseries;
 
 /* Flags associated with a series.
  */
 #define	GSF_ALLMAPSREAD		0x0001	/* finished reading the data file */
-#define	GSF_IGNOREPASSWDS	0x0002	/* don't require passwords */
-#define	GSF_LYNXFIXES		0x0004	/* change MS data into Lynx levels */
+#define	GSF_NOSAVING		0x0002	/* treat solution file as read-only */
+#define	GSF_SAVESETNAME		0x0004  /* store set name in solution file */
+#define	GSF_NODEFAULTSAVE	0x0008	/* don't use default tws filename */
+#define	GSF_IGNOREPASSWDS	0x0010	/* don't require passwords */
+#define	GSF_LYNXFIXES		0x0020	/* change MS data into Lynx levels */
 
 #endif

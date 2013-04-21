@@ -22,28 +22,6 @@ Bugs in the MS game logic emulation
 <p>
 <ol>
 <li>
-Situation: Chip enters a teleport which a block cloner faces, and at
-the teleport Chip exits, there is a block in the way, next to which is
-the red button for said cloner. Thus, Chip entering the teleport
-causes the block to be pushed onto the red button. In the real game,
-Chip and the cloned block both emerge from the same teleport, which
-vanishes. However, Chip does not exit in the correct direction: he
-exits in the same direction as when he <em>last</em> exited a
-teleport. If this is the first time Chip has entered a teleport on
-this level, then Chip exits in the direction of the block, but facing
-north regardless. The block itself vanishes, and in the place of the
-teleport is a new Chip, also facing north. In this particular case,
-Chip remains on the slide list, pushing against the new Chip tile,
-until the player makes a move. In TW, Chip exits in the expected
-direction. The teleport always vanishes, and the block never does.
-<li>
-TW does not correctly handle the situation when a trap's brown button
-is on the bottom layer and then gets permanently lost when a creature
-passes through the tile. In TW, the button is removed from further
-consideration, as if it never existed. In the MS game, the trap
-usually becomes stuck in the open position, but the location where the
-button used to be can still influence the trap's behavior.
-<li>
 The MS game checks for input more than once per tick. Probably this
 was done to catch last-minute keyboard events, but it has the effect
 that by having more than one input event in the queue, Chip can
@@ -61,6 +39,10 @@ the screen when pushing against a force floor.
 The MS game permits movement via the mouse, which allows for a few
 unusual maneuvers that are difficult or even impossible to do with the
 keyboard. Tile World does not have any form of mouse input.
+<li>
+There are a number of miscellaneous emulation bugs, mostly involving
+"illegal" tile combinations. These are documented more thoroughly in
+the msbugs.txt file on the website.
 </ol>
 <p>
 <hr>
@@ -98,6 +80,9 @@ Teleports are handled incorrectly when Chip enters a teleport and no
 exit is available, including at the teleport just entered. There are
 obscure behaviors that Chip displays after getting trapped which Tile
 World fails to capture.
+<li>
+Most of the above emulation bugs are documented more thoroughly in the
+lxbugs.txt file on the website.
 </ol>
 <p>
 <hr>

@@ -1,6 +1,6 @@
 /* play.c: Top-level game-playing functions.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -27,6 +27,14 @@ static gamelogic       *logic = NULL;
 /* How much mud to make the timer suck (i.e., the slowdown factor).
  */
 static int		mudsucking = 1;
+
+/* Turn the pedantry mode on.
+ */
+void setpedanticmode(void)
+{
+    pedanticmode = TRUE;
+}
+
 
 /* Set the slowdown factor.
  */
@@ -171,7 +179,8 @@ void setgameplaymode(int mode)
     }
 }
 
-/* Alter the stepping.
+/* Alter the stepping. If display is true, update the screen to
+ * reflect the change.
  */
 int setstepping(int stepping, int display)
 {
@@ -188,6 +197,9 @@ int setstepping(int stepping, int display)
     return TRUE;
 }
 
+/* Alter the stepping by a delta. Force the stepping to be appropriate
+ * to the current ruleset.
+ */
 int changestepping(int delta, int display)
 {
     int	n;
@@ -196,7 +208,7 @@ int changestepping(int delta, int display)
 	state.stepping = 0;
     n = (state.stepping + delta) % 8;
     if (state.ruleset == Ruleset_MS)
-	n &= ~4;
+	n &= ~3;
     if (state.stepping != n)
 	return setstepping(n, display);
     return TRUE;
@@ -209,7 +221,6 @@ int changestepping(int delta, int display)
  */
 int doturn(int cmd)
 {
-    int const	playbackslop = 32;
     action	act;
     int		n;
 
@@ -232,7 +243,8 @@ int doturn(int cmd)
 		++state.replay;
 	    }
 	} else {
-	    if (state.currenttime > state.game->besttime + playbackslop)
+	    n = state.currenttime + state.timeoffset - 1;
+	    if (n > state.game->besttime)
 		return -1;
 	}
     }
@@ -335,6 +347,22 @@ int replacesolution(void)
     state.game->savedstepping = state.stepping;
     state.game->savedrndseed = getinitialseed(&state.mainprng);
     copymovelist(&state.game->savedsolution, &state.moves);
+    return TRUE;
+}
+
+/* Delete the user's best solution for the current game. FALSE is
+ * returned if no solution was present.
+ */
+int deletesolution(void)
+{
+    if (!hassolution(state.game))
+	return FALSE;
+    state.game->besttime = TIME_NIL;
+    state.game->sgflags = SGF_HASPASSWD;
+    state.game->savedrndslidedir = NIL;
+    state.game->savedstepping = 0;
+    state.game->savedrndseed = 0;
+    initmovelist(&state.game->savedsolution);
     return TRUE;
 }
 

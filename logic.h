@@ -1,6 +1,6 @@
 /* logic.h: Declarations for the game logic modules.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -25,5 +25,11 @@ struct gamelogic {
  */
 extern gamelogic *lynxlogicstartup(void);
 extern gamelogic *mslogicstartup(void);
+
+/* The high simluation fidelity flag: if true, the simulation should
+ * forgo "standard play" in favor of being as true as possible to the
+ * original source material.
+ */
+extern int	pedanticmode;
 
 #endif

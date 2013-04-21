@@ -1,4 +1,4 @@
-tworld / Tile World / Oct 2004 / Tile World
+tworld / Tile World / Feb 2006 / Tile World
 
 .section Synopsis
 
@@ -159,8 +159,10 @@ can also be used for the same purpose. Other keys have the following
 functions:
 
 .table
-. <Ctrl>-<H>
+. <Bkspc>
 . pauses the game; press any key to resume play.
+. <Ctrl>-<H>
+. same as <Bkspc>.
 . <Ctrl>-<N>
 . stops the current game and moves forward to the next level.
 . <Ctrl>-<P>
@@ -197,8 +199,16 @@ commands are available:
 . <G>
 . displays a prompt and accepts a password, then jumps to the level with
 that password.
-. <Ctrl>-<I>
+. <Tab>
 . plays back the best solution for that level.
+. <Shift>-<Tab>
+. verifies the best solution for that level. If the solution is no
+longer valid (e.g. because the level has been altered), the solution
+will automatically be deprecated.
+. <Ctrl>-<I>
+. same as <Tab>.
+. <Shift>-<Ctrl>-<I>
+. same as <Shift>-<Tab>.
 . <O>
 . toggles between even-step and odd-step offset.
 . <Shift>-<O>
@@ -207,6 +217,9 @@ that password.
 . deprecates the best solution for that level. If the level is then
 succesfully completed again, the saved solution will be replaced with
 the new one, whether or not it had a better time.
+. <Shift>-<Ctrl>-<X>
+. deletes the saved solution for that level. If confirmed, the
+solution will be immediately removed from the solution file.
 . <S>
 . displays the list of known levels and their current scores. The score
 list also permits changing the current level.
@@ -291,12 +304,16 @@ exit.
 . Look for level sets in %DIR% instead of the default directory.
 . <-l>
 . Write a list of available level sets to standard output and exit.
-. <-p>
-. Turn off all password-checking. This option allows the normal sequence
-of levels to be bypassed.
 . <-n>_%N%
 . Set the initial volume level to %N%, 0 being silence and 10 being
 full volume. The default level is 10.
+. <-P>
+. Turn on pedantic mode, forcing the Lynx ruleset to emulate the
+original game as closely as possible. See #Lynx Ruleset Differences#
+below.
+. <-p>
+. Turn off all password-checking. This option allows the normal sequence
+of levels to be bypassed.
 . <-q>
 . Run quietly. All sounds, including the ringing of the terminal bell,
 are suppressed.
@@ -321,6 +338,54 @@ option to be generally useful.)
 output and exit.
 . <-v>
 . Display the program's version number on standard output and exit.
+
+Besides the above options, tworld can accept up to three
+command-line arguments: the name of a level set, the number of a level
+to start on, and the name of an alternate solution file. If the name
+of an installed level set is specified, then Tile World will start up
+in that set, skipping the initial level set selection.
+
+If the specified level set is not a simple name but is a pathname
+(relative or absolute), then Tile World will use that level set only,
+without requiring that it first be installed. No solutions will be
+saved unless an explicit solution file is also supplied on the
+command-line.
+
+.section Lynx Ruleset Differences
+
+The Lynx ruleset emulation intentionally diverges from the original in
+four aspects. They are as follows:
+
+.list
+. On the Atari Lynx, no more than 128 creatures could exist at one
+time. Attempting to create a 129th creature with a clone machine
+would cause it to "run out". Tile World imposes no such limit.
+. In a similar vein, Chip could not carry more than 255 keys of one
+color. Picking up a 256th key would cause the key counter to "wrap
+around" to zero. Tile World permits any number of keys to be carried.
+. On the Atari Lynx, there were no Wall North or Wall West tiles.
+These two tiles were introduced by the MS version, even though they do
+not appear in the original level set. Tile World nonetheless permits
+these tiles to be used in Lynx levels.
+. The Atari Lynx did not permit arbitrary wiring of buttons. Brown
+buttons were automatically connected to the next bear trap in reading
+order (scanning to the right, then along the next row going down, and
+restarting at the top if the bottom is reached, until a beartrap is
+found), and likewise with red buttons and clone machines. Tile World
+follows the explicit wiring information present in the data file.
+
+(These differences were specifically elected to be made because they
+are aspects of the game that are rarely or never addressed by the
+original level set, and were felt by the community at the time to be
+more like artifacts of the original implementation than intentional
+features of the original game design.)
+
+These differences from the original ruleset are suppressed when Tile
+World is run in "pedantic mode". (See the documentation for -P under
+#Command-Line Options# above.) In pedantic mode, Tile World's Lynx
+ruleset imposes a maximum of 128 creatures and 255 keys per color,
+ignores wiring data in the data file, and refuses to play levels
+containing the new wall tiles.
 
 .section Configuration Files
 
@@ -519,7 +584,7 @@ the resource, level set, and data file directories.
 
 .section License
 
-Tile World is copyright (C) 2001-2004 by Brian Raiter.
+Tile World is copyright (C) 2001-2006 by Brian Raiter.
 
 This program is free software; you can redistribute it and/or  
 modify it under the terms of the GNU General Public License as 

@@ -1,6 +1,6 @@
 /* fileio.c: Simple file/directory access functions with error-handling.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -144,6 +144,16 @@ int filerewind(fileinfo *file, char const *msg)
     return TRUE;
 }
 
+/* fseek().
+ */
+int fileskip(fileinfo *file, int offset, char const *msg)
+{
+    errno = 0;
+    if (!fseek(file->fp, offset, SEEK_CUR))
+	return TRUE;
+    return fileerr(file, msg);
+}
+
 /* feof().
  */
 int filetestend(fileinfo *file)
@@ -163,6 +173,8 @@ int filetestend(fileinfo *file)
  */
 int fileread(fileinfo *file, void *data, unsigned long size, char const *msg)
 {
+    if (!size)
+	return TRUE;
     errno = 0;
     if (fread(data, size, 1, file->fp) == 1)
 	return TRUE;
@@ -179,6 +191,8 @@ void *filereadbuf(fileinfo *file, unsigned long size, char const *msg)
 	fileerr(file, msg);
 	return NULL;
     }
+    if (!size)
+	return buf;
     errno = 0;
     if (fread(buf, size, 1, file->fp) != 1) {
 	fileerr(file, msg);
@@ -195,6 +209,10 @@ int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
 {
     int	n, ch;
 
+    if (!*len) {
+	*buf = '\0';
+	return TRUE;
+    }
     errno = 0;
     if (!fgets(buf, *len, file->fp))
 	return fileerr(file, msg);
@@ -214,6 +232,8 @@ int filegetline(fileinfo *file, char *buf, int *len, char const *msg)
 int filewrite(fileinfo *file, void const *data, unsigned long size,
 	      char const *msg)
 {
+    if (!size)
+	return TRUE;
     errno = 0;
     if (fwrite(data, size, 1, file->fp) == 1)
 	return TRUE;
@@ -342,6 +362,17 @@ int haspathname(char const *name)
     return TRUE;
 }
 
+/* Return a pointer to the filename, skipping over any directories in
+ * the front.
+ */
+char *skippathname(char const *name)
+{
+    char const *p;
+
+    p = strrchr(name, DIRSEP_CHAR);
+    return (char*)(p ? p + 1 : name);
+}
+
 /* Append the path and/or file contained in path to dir. If path is
  * an absolute path, the contents of dir are ignored.
  */
@@ -350,6 +381,11 @@ int combinepath(char *dest, char const *dir, char const *path)
     int	m, n;
 
     if (path[0] == DIRSEP_CHAR) {
+	n = strlen(path);
+	if (n > PATH_MAX) {
+	    errno = ENAMETOOLONG;
+	    return FALSE;
+	}
 	strcpy(dest, path);
 	return TRUE;
     }
@@ -388,17 +424,21 @@ char *getpathforfileindir(char const *dir, char const *filename)
     char       *path;
     int		m, n;
 
-    path = getpathbuffer();
+    m = strlen(filename);
     if (!dir || !*dir || strchr(filename, DIRSEP_CHAR)) {
+	if (m > PATH_MAX) {
+	    errno = ENAMETOOLONG;
+	    return NULL;
+	}
+	path = getpathbuffer();
 	strcpy(path, filename);
     } else {
 	n = strlen(dir);
-	m = strlen(filename);
 	if (m + n + 1 > PATH_MAX) {
 	    errno = ENAMETOOLONG;
-	    free(path);
 	    return NULL;
 	}
+	path = getpathbuffer();
 	memcpy(path, dir, n);
 	path[n++] = DIRSEP_CHAR;
 	memcpy(path + n, filename, m + 1);

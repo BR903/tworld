@@ -1,6 +1,6 @@
 /* mslogic.c: The game logic for the MS ruleset.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -464,15 +464,12 @@ static maptile *getfloorat(int pos)
     return &cell->bot; /* ? */
 }
 
-/* Return TRUE if a creature, a block, or Chip is at the given
- * location.
+/* Return TRUE if the brown button at the give location is currently
+ * held down.
  */
-static int isoccupied(int pos)
+static int istrapbuttondown(int pos)
 {
-    int	id;
-
-    id = cellat(pos)->top.id;
-    return id == Block_Static || iscreature(id);
+    return cellat(pos)->top.id != Button_Brown;
 }
 
 /* Place a new tile at the given location, causing the current upper
@@ -505,14 +502,15 @@ static maptile poptile(int pos)
 
 /* Return TRUE if a bear trap is currently passable.
  */
-static int istrapopen(int pos)
+static int istrapopen(int pos, int skippos)
 {
     xyconn     *traps;
     int		i;
 
     traps = traplist();
     for (i = traplistsize() ; i ; ++traps, --i)
-	if (traps->to == pos && isoccupied(traps->from))
+	if (traps->to == pos && traps->from != skippos
+			     && istrapbuttondown(traps->from))
 	    return TRUE;
     return FALSE;
 }
@@ -967,10 +965,10 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	}
 	if (floor == Block_Static) {
 	    if (pushblock(to, dir, !(flags & CMM_NOCOLLAPSEBLOCKS))) {
-		if (flags & CMM_NOCOLLAPSEBLOCKS) {
-		    if (floorat(to) == Block_Static)
+		if (flags & CMM_NOCOLLAPSEBLOCKS)
+		    if (floorat(to) == Block_Static
+					&& cellat(to)->bot.id == Empty)
 			return TRUE;
-		}
 		return canmakemove(cr, dir, flags);
 	    } else
 		return FALSE;
@@ -1269,24 +1267,16 @@ static void activatecloner(int buttonpos)
     int		pos, tileid;
 
     pos = clonerfrombutton(buttonpos);
-    if (pos < 0)
+    if (pos < 0 || pos >= CXGRID * CYGRID)
 	return;
-    if (pos >= CXGRID * CYGRID) {
-	warn("Off-map cloning attempted: (%d %d)",
-	     pos % CXGRID, pos / CXGRID);
-	return;
-    }
     tileid = cellat(pos)->top.id;
+    if (!iscreature(tileid) || creatureid(tileid) == Chip)
+	return;
     if (creatureid(tileid) == Block) {
 	cr = lookupblock(pos);
 	if (cr->dir != NIL)
 	    advancecreature(cr, cr->dir);
     } else {
-	if (!iscreature(tileid)) {
-	    warn("Non-creature %02X cloning attempted at (%d %d)",
-		 tileid, pos % CXGRID, pos / CXGRID);
-	    return;
-	}
 	if (cellat(pos)->bot.state & FS_CLONING)
 	    return;
 	memset(&dummy, 0, sizeof dummy);
@@ -1296,6 +1286,8 @@ static void activatecloner(int buttonpos)
 	if (!canmakemove(&dummy, dummy.dir, CMM_CLONECANTBLOCK))
 	    return;
 	cr = awakencreature(pos);
+	if (!cr)
+	    return;
 	cr->state |= CS_CLONING;
 	if (cellat(pos)->bot.id == CloneMachine)
 	    cellat(pos)->bot.state |= FS_CLONING;
@@ -1548,7 +1540,7 @@ static void endmovement(creature *cr, int dir)
 	}
     }
 
-    if (cellat(oldpos)->bot.id != CloneMachine)
+    if (cellat(oldpos)->bot.id != CloneMachine || cr->id == Chip)
 	poptile(oldpos);
     if (dead) {
 	removecreature(cr);
@@ -1605,7 +1597,7 @@ static void endmovement(creature *cr, int dir)
 	cellat(oldpos)->bot.state &= ~FS_CLONING;
 
     if (floor == Beartrap) {
-	if (istrapopen(newpos))
+	if (istrapopen(newpos, oldpos))
 	    cr->state |= CS_RELEASED;
     } else if (cellat(newpos)->bot.id == Beartrap) {
 	for (i = 0 ; i < traplistsize() ; ++i) {
@@ -2062,8 +2054,7 @@ static int initgame(gamelogic *logic)
     creature	       *cr;
     creature	       *chip;
     gamesetup	       *game;
-    int			transparent;
-    int			pos, n;
+    int			buried, pos, n;
 
     setstate(logic);
 
@@ -2111,20 +2102,20 @@ static int initgame(gamelogic *logic)
 	cell->top.state = 0;
 	if (fileids[layer1[pos]].isfloor) {
 	    cell->top.id = fileids[layer1[pos]].id;
-	    transparent = iskey(cell->top.id) || isboots(cell->top.id);
 	    layer1[pos] = 0;
+	    buried = TRUE;
 	} else {
 	    cell->top.id = crtile(fileids[layer1[pos]].id,
 				  fileids[layer1[pos]].dir);
-	    transparent = fileids[layer1[pos]].id != Chip
-		       && fileids[layer1[pos]].id != Block;
+	    buried = fileids[layer1[pos]].id == Chip
+		  || fileids[layer1[pos]].id == Block;
 	}
 	cell->bot.state = 0;
 	if (fileids[layer2[pos]].isfloor) {
 	    cell->bot.id = fileids[layer2[pos]].id;
-	    if (!transparent && (cell->bot.id == Teleport
-					|| cell->bot.id == SwitchWall_Closed
-					|| cell->bot.id == SwitchWall_Open))
+	    if (buried && (cell->bot.id == Teleport
+				|| cell->bot.id == SwitchWall_Closed
+				|| cell->bot.id == SwitchWall_Open))
 		cell->bot.state |= FS_BROKEN;
 	} else {
 	    cell->bot.id = crtile(fileids[layer2[pos]].id,
@@ -2144,7 +2135,7 @@ static int initgame(gamelogic *logic)
 		 game->number, pos % CXGRID, pos / CXGRID);
 	    continue;
 	}
-	if (!layer1[pos] || fileids[layer1[pos]].isfloor) {
+	if (fileids[layer1[pos]].isfloor) {
 	    warn("Level %d: No creature at location (%d %d)",
 		 game->number, pos % CXGRID, pos / CXGRID);
 	    continue;
@@ -2190,7 +2181,7 @@ static int initgame(gamelogic *logic)
 
     traps = traplist();
     for (n = traplistsize() ; n ; ++traps, --n)
-	if (isoccupied(traps->from))
+	if (istrapbuttondown(traps->from) || traps->to == chippos())
 	    springtrap(traps->from);
 
     chipwait() = 0;

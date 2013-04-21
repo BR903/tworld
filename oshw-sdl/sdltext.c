@@ -1,6 +1,6 @@
 /* sdltext.c: Font-rendering functions for SDL.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -99,7 +99,7 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
     int	brk, w, h, n;
 
     if (len < 0)
-	len = strlen(text);
+	len = strlen((char const*)text);
     h = 0;
     brk = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
@@ -241,7 +241,7 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
     int		pitch, bpp, n, w, y;
 
     if (len < 0)
-	len = text ? strlen(text) : 0;
+	len = text ? strlen((char const*)text) : 0;
 
     w = 0;
     for (n = 0 ; n < len ; ++n)
@@ -278,24 +278,24 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
     for (y = 0 ; y < sdlg.font.h && y < rect->h ; ++y) {
 	switch (bpp) {
 	  case 1:
-	    q = drawtextscanline8(p, l, y, clr, "", 0);
+	    q = drawtextscanline8(p, l, y, clr, NULL, 0);
 	    q = drawtextscanline8(q, w, y, clr, text, len);
-	    q = drawtextscanline8(q, r, y, clr, "", 0);
+	    q = drawtextscanline8(q, r, y, clr, NULL, 0);
 	    break;
 	  case 2:
-	    q = drawtextscanline16(p, l, y, clr, "", 0);
+	    q = drawtextscanline16(p, l, y, clr, NULL, 0);
 	    q = drawtextscanline16(q, w, y, clr, text, len);
-	    q = drawtextscanline16(q, r, y, clr, "", 0);
+	    q = drawtextscanline16(q, r, y, clr, NULL, 0);
 	    break;
 	  case 3:
-	    q = drawtextscanline24(p, l, y, clr, "", 0);
+	    q = drawtextscanline24(p, l, y, clr, NULL, 0);
 	    q = drawtextscanline24(q, w, y, clr, text, len);
-	    q = drawtextscanline24(q, r, y, clr, "", 0);
+	    q = drawtextscanline24(q, r, y, clr, NULL, 0);
 	    break;
 	  case 4:
-	    q = drawtextscanline32(p, l, y, clr, "", 0);
+	    q = drawtextscanline32(p, l, y, clr, NULL, 0);
 	    q = drawtextscanline32(q, w, y, clr, text, len);
-	    q = drawtextscanline32(q, r, y, clr, "", 0);
+	    q = drawtextscanline32(q, r, y, clr, NULL, 0);
 	    break;
 	}
 	p = (unsigned char*)p + pitch;
@@ -323,7 +323,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
     }
 
     if (len < 0)
-	len = strlen(text);
+	len = strlen((char const*)text);
 
     area = *rect;
     brkw = brkn = 0;
@@ -354,7 +354,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	*rect = area;
     } else {
 	while (area.h)
-	    drawtext(&area, "", 0, PT_UPDATERECT);
+	    drawtext(&area, NULL, 0, PT_UPDATERECT);
     }
 }
 
@@ -414,7 +414,8 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
 		    ml = i;
 		} else {
 		    w = 0;
-		    for (p = table->items[n] + 2 ; *p ; ++p)
+		    p = (unsigned char const*)table->items[n];
+		    for (p += 2 ; *p ; ++p)
 			w += sdlg.font.w[*p];
 		    if (w > cols[i].w)
 			cols[i].w = w;
@@ -471,7 +472,7 @@ static int _drawtablerow(tablespec const *table, SDL_Rect *cols,
     y = cols[0].y;
     n = *row;
     for (i = 0 ; i < table->cols ; ++n) {
-	p = table->items[n];
+	p = (unsigned char const*)table->items[n];
 	c = p[0] - '0';
 	rect = cols[i];
 	i += c;

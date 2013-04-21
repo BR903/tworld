@@ -83,7 +83,7 @@ liboshw.a: oshw.h defs.h gen.h state.h err.h oshw/*.c oshw/*.h
 #
 
 tworldres.o: tworld.ico
-	echo 1 ICON $^ | windres -o $@
+	echo SDL_app ICON $^ | windres -o $@
 
 #
 # Other

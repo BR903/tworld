@@ -1,6 +1,6 @@
 /* solution.c: Functions for reading and writing the solution files.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -14,24 +14,33 @@
 #include	"series.h"
 #include	"solution.h"
 
-/* The solution file uses the following format:
+/*
+ * The following is a description of the solution file format. Note that
+ * numeric values are always stored in little-endian order, consistent
+ * with the data file.
+ *
+ * The header is at least eight bytes long, and contains the following
+ * values:
  *
  * HEADER
- *  0-3   signature bytes
+ *  0-3   signature bytes (35 33 9B 99)
  *   4    ruleset (1=Lynx, 2=MS)
- *  5-7   other options (currently always zero)
+ *   5    other options (currently always zero)
+ *   6    other options (currently always zero)
+ *   7    count of bytes in remainder of header (currently always zero)
  *
- * After the header are level solutions, in order:
+ * After the header are level solutions, usually but not necessarily
+ * in numerical order. Each solution begins with the following values:
  *
  * PER LEVEL
  *  0-3   offset to next solution (from the end of this field)
  *  4-5   level number
  *  6-9   level password (four ASCII characters in "cleartext")
- *  10    unused, always zero
+ *  10    other flags (currently always zero)
  *  11    initial random slide direction (only used in Lynx ruleset)
  * 12-15  initial random number generator value
  * 16-19  time of solution in ticks
- * 19-xx  solution bytes
+ * 20-xx  solution bytes
  *
  * If the offset field is 0, then none of the other fields are
  * present. (This permits the file to contain padding.) If the offset
@@ -39,37 +48,68 @@
  * without a saved game. Otherwise, the offset should never be less
  * than 16.
  *
- * The solution bytes consist of a stream of 1-, 2-, and 4-byte
- * values. There are four possible formats, with the first two bits of
- * the value providing unique identification:
+ * The solution bytes consist of a stream of values indicating the
+ * moves of the solution. The values vary in size from one to five
+ * bytes in length. The size of each value is always specified in the
+ * first byte. There are five different formats for the values.
  *
- * 01234567
- * 00DDddDD
+ * The first two are similar in structure:
  *
- * 01234567
- * 10DDDTTT
+ * #1: 01234567    #2: 01234567 89012345
+ *     10DDDTTT        01DDDTTT TTTTTTTT
  *
- * 01234567 89012345
- * 01DDDTTT TTTTTTTT
+ * The two lowest bits indicate which format is used. The next three
+ * bits, marked with Ds, contain the direction of the move. The
+ * remaining bits are marked with Ts, and these indicate the amount of
+ * time, in ticks, between this move and the prior move, less one.
+ * (Thus, a value of T=0 indicates a move that occurs on the tick
+ * immediately following the previous move.) The very first move of a
+ * solution is an exception: it is not decremented, as that would
+ * sometimes require a negative value to be stored.
  *
- * 01234567 89012345 67890123 45678901
- * 11DDDTTT TTTTTTTT TTTTTTTT TTTTTTTT
+ * The third format has the form:
  *
- * Ignoring for the moment the first form, in each case the three bits
- * marked D contain the direction of the move, and the bits marked T
- * indicate the amount of time, in ticks, between this move and the
- * prior move, less one (i.e., a value of T=0 indicates a move that
- * occurs on the tick immediately following the previous move). The
- * exception to this is the very first move of a level: it is not
- * decremented, as that would sometimes require a negative value to be
- * stored.
+ * #3: 01234567
+ *     00DDEEFF
  *
- * The first form, unlike the others, holds three separate moves in a
- * single byte. A value of T=3 (i.e., four ticks) is automatically
- * implied for all three moves.
+ * This value encodes three separate moves (DD, EE, and FF) packed
+ * into a single byte. Each move has an implicit time value of four
+ * ticks separating it from the prior move. Note that since only two
+ * bytes are used to store each move, this format can only store
+ * orthogonal moves (i.e. it cannot be used to store a Lynx diagonal
+ * move).
  *
- * Numeric values are always stored in little-endian order, consistent
- * with the data file.
+ * The fourth format is four bytes in length:
+ *
+ * #4: 01234567 89012345 67890123 45678901
+ *     11DD0TTT TTTTTTTT TTTTTTTT TTTTTTTT
+ *
+ * Like the third format, there are only two bits available for
+ * storing the direction.
+ *
+ * The fifth and final format is like the first two formats, in that
+ * it can vary in length, depending on how many bits are required to
+ * store the time interval. It is shown here in its largest form:
+ *
+ * #5: 01234567 89012345 67890123 45678901 23456789
+ *     11NN1DDD DDDDTTTT TTTTTTTT TTTTTTTT TTTTTTTT
+ *
+ * The two bits marked NN indicate the size of the field in bytes,
+ * less two (i.e., 00 for a two-byte value, 11 for a five-byte value).
+ * Seven bits are used to indicate the move's direction, which allows
+ * this field to store MS mouse moves. The time value is encoded
+ * normally, and can be 4, 12, 20, or 28 bits long.
+ *
+ * Because Tile World does not currently support mouse moves, this
+ * version of the code will never write out a solution value using
+ * this format. It will read such values, but only for non-mouse
+ * moves.
+ *
+ * (Note that it is possible for a solution to exist that requires
+ * more than 28 bits to store one of its time intervals. However, 28
+ * bits covers an interval of over five months, which is a long time
+ * to leave a level running and then pick up again and solve
+ * successfully. So this is not seen as a realistic concern.)
  */
 
 /* The signature bytes of the solution files.
@@ -103,10 +143,6 @@ int		readonly = FALSE;
 /* The path of the directory containing the user's solution files.
  */
 char	       *savedir = NULL;
-
-/* FALSE if savedir's existence is unverified.
- */
-static int	savedirchecked = FALSE;
 
 /*
  * Functions for manipulating move lists.
@@ -163,30 +199,61 @@ void destroymovelist(actlist *list)
  */
 
 /* Read the header bytes of the given solution file. flags receives
- * the option bytes (bytes 4-7).
+ * the option bytes (bytes 5-6). extra receives any bytes in the
+ * header that this code doesn't recognize.
  */
-static int readsolutionheader(fileinfo *file, int *flags)
+static int readsolutionheader(fileinfo *file, int ruleset, int *flags,
+			      int *extrasize, unsigned char *extra)
 {
-    unsigned long	sig, f;
+    unsigned long	sig;
+    unsigned short	f;
+    unsigned char	n;
 
     if (!filereadint32(file, &sig, "not a valid solution file"))
 	return FALSE;
     if (sig != CSSIG)
 	return fileerr(file, "not a valid solution file");
-    if (!filereadint32(file, &f, "not a valid solution file"))
+    if (!filereadint8(file, &n, "not a valid solution file"))
+	return FALSE;
+    if (n != ruleset)
+	return fileerr(file, "solution file is for a different ruleset"
+			     " than the level set file");
+    if (!filereadint16(file, &f, "not a valid solution file"))
 	return FALSE;
     *flags = (int)f;
+
+    if (!filereadint8(file, &n, "not a valid solution file"))
+	return FALSE;
+    *extrasize = n;
+    if (n)
+	if (!fileread(file, extra, *extrasize, "not a valid solution file"))
+	    return FALSE;
+
     return TRUE;
 }
 
 /* Write the header bytes to the given solution file.
  */
-static int writesolutionheader(fileinfo *file, int flags)
+static int writesolutionheader(fileinfo *file, int ruleset, int flags,
+			       int extrasize, unsigned char const *extra)
 {
     return filewriteint32(file, CSSIG, NULL)
-	&& filewriteint32(file, flags, NULL);
+	&& filewriteint8(file, ruleset, NULL)
+	&& filewriteint16(file, flags, NULL)
+	&& filewriteint8(file, extrasize, NULL)
+	&& filewrite(file, extra, extrasize, NULL);
 }
 
+static int writesolutionsetname(fileinfo *file, char const *setname)
+{
+    char	zeroes[16] = "";
+    int		n;
+
+    n = strlen(setname) + 1;
+    return filewriteint32(file, n + 16, NULL)
+	&& filewrite(file, zeroes, 16, NULL)
+	&& filewrite(file, setname, n, NULL);
+}
 /*
  * File I/O for move lists.
  */
@@ -239,17 +306,45 @@ static int readmovelist(fileinfo *file, actlist *moves, unsigned long size)
 	    addtomovelist(moves, act);
 	    break;
 	  case 3:
-	    act.dir = idxdir8[(byte >> 2) & 7];
-	    act.when += (byte >> 5) & 7;
-	    if (!filereadint8(file, &byte, "unexpected EOF"))
-		return FALSE;
-	    --n;
-	    act.when += (unsigned long)byte << 3;
-	    if (!filereadint16(file, &word, "unexpected EOF"))
-		return FALSE;
-	    n -= 2;
-	    act.when += (unsigned long)word << 11;
-	    ++act.when;
+	    if (byte & 16) {
+		word = (byte >> 2) & 3;
+		act.dir = idxdir8[(byte >> 5) & 7];
+		if (!filereadint8(file, &byte, "unexpected EOF"))
+		    return FALSE;
+		--n;
+		if (byte & 15)
+		    return fileerr(file, "unrecognized move in solution");
+		act.when += (byte >> 4) & 15;
+		if (word--) {
+		    if (!filereadint8(file, &byte, "unexpected EOF"))
+			return FALSE;
+		    --n;
+		    act.when += (unsigned long)byte << 4;
+		    if (word == 1) {
+			if (!filereadint8(file, &byte, "unexpected EOF"))
+			    return FALSE;
+			--n;
+			act.when += (unsigned long)byte << 12;
+		    } else if (word == 2) {
+			if (!filereadint16(file, &word, "unexpected EOF"))
+			    return FALSE;
+			n -= 2;
+			act.when += (unsigned long)word << 12;
+		    }
+		}
+	    } else {
+		act.dir = idxdir8[(byte >> 2) & 3];
+		act.when += (byte >> 5) & 7;
+		if (!filereadint8(file, &byte, "unexpected EOF"))
+		    return FALSE;
+		--n;
+		act.when += (unsigned long)byte << 3;
+		if (!filereadint16(file, &word, "unexpected EOF"))
+		    return FALSE;
+		n -= 2;
+		act.when += (unsigned long)word << 11;
+		++act.when;
+	    }
 	    addtomovelist(moves, act);
 	    break;
 	}
@@ -307,6 +402,8 @@ static int writemovelist(fileinfo *file, actlist const *moves,
 		return FALSE;
 	    size += 2;
 	} else if (delta < (1 << 27)) {
+	    if (diridx8[moves->list[n].dir] >= 4)
+		return fileerr(file, "!!! large delta before diagonal move");
 	    dwrd = 0x03 | (diridx8[moves->list[n].dir] << 2)
 			| ((delta << 5) & 0xFFFFFFE0);
 	    if (!filewriteint32(file, dwrd, "write error"))
@@ -359,6 +456,10 @@ static int readsolution(fileinfo *file, gamesetup *game)
 
     if (size == 6)
 	return TRUE;
+    if (size < 16) {
+	fileskip(file, size - 6, NULL);
+	return fileerr(file, "truncated metadata in solution file");
+    }
 
     if (!filereadint8(file, &val8, "unexpected EOF"))
 	return FALSE;
@@ -372,7 +473,21 @@ static int readsolution(fileinfo *file, gamesetup *game)
     if (!filereadint32(file, &val32, "unexpected EOF"))
 	return FALSE;
     game->besttime = val32;
-    return readmovelist(file, &game->savedsolution, size - 16);
+
+    size -= 16;
+    if (!game->number && !*game->passwd) {
+	game->sgflags |= SGF_SETNAME;
+	if (size < 256) {
+	    return fileread(file, game->name, size, "unexpected EOF");
+	} else {
+	    game->name[255] = '\0';
+	    if (!fileread(file, game->name, 255, "unexpected EOF"))
+		return FALSE;
+	    return fileskip(file, size - 255, "unexpected EOF");
+	}
+    } else {
+	return readmovelist(file, &game->savedsolution, size);
+    }
 }
 
 /* Write the data of one complete solution from the appropriate fields
@@ -380,7 +495,7 @@ static int readsolution(fileinfo *file, gamesetup *game)
  */
 static int writesolution(fileinfo *file, gamesetup const *game)
 {
-    unsigned long	size;
+    unsigned long	size = 0;
     fpos_t		start, end;
     unsigned char	val8;
 
@@ -425,11 +540,15 @@ static int writesolution(fileinfo *file, gamesetup const *game)
 
 /* Locate the solution file for the given data file and open it.
  */
-static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
+static int opensolutionfile(fileinfo *file, char const *datname, int writable)
 {
+    static int	savedirchecked = FALSE;
     char       *buf = NULL;
     char const *filename;
     int		n;
+
+    if (writable && readonly)
+	return FALSE;
 
     if (file->name) {
 	filename = file->name;
@@ -444,51 +563,69 @@ static int opensolutionfile(fileinfo *file, char const *datname, int readonly)
 	memcpy(buf + n, ".tws", 5);
 	filename = buf;
     }
+
+    if (!savedirchecked && savedir && *savedir && !haspathname(filename)) {
+	savedirchecked = TRUE;
+	if (readonly) {
+	    *savedir = '\0';
+	} else {
+	    if (!finddir(savedir)) {
+		*savedir = '\0';
+		fileerr(file, "can't access directory");
+	    }
+	}
+    }
+
     n = openfileindir(file, savedir, filename,
-		      readonly ? "rb" : "wb",
-		      readonly ? NULL : "can't access file");
+		      writable ? "wb" : "rb",
+		      writable ? "can't access file" : NULL);
     if (buf)
 	free(buf);
     return n;
 }
 
-/* Read all the solutions for the given series. FALSE is returned if
- * an error occurs. Note that it is not an error for the solution file
- * to not exist.
+/* Read any and all saved solutions for the given series.
  */
 int readsolutions(gameseries *series)
 {
     gamesetup	gametmp;
-    int		i, j;
+    int		i;
 
-    if (!savedir || !*savedir
-		 || !opensolutionfile(&series->solutionfile,
-				      series->filebase, TRUE)) {
-	series->solutionflags = series->ruleset;
+    if (!series->savefile.name)
+	series->savefile.name = series->savefilename;
+    if ((!series->savefile.name && (series->gsflags & GSF_NODEFAULTSAVE))
+		|| !opensolutionfile(&series->savefile,
+				     series->filebase, FALSE)) {
+	series->solheaderflags = 0;
+	series->solheadersize = 0;
 	return TRUE;
     }
 
-    if (!readsolutionheader(&series->solutionfile,
-			    &series->solutionflags))
+    if (!readsolutionheader(&series->savefile, series->ruleset,
+			    &series->solheaderflags,
+			    &series->solheadersize, series->solheader))
 	return FALSE;
-    if (series->solutionflags != series->ruleset)
-	return fileerr(&series->solutionfile,
-		       "saved-game file is for a different"
-		       " ruleset than the data file");
-    savedirchecked = TRUE;
 
-    j = 0;
     memset(&gametmp, 0, sizeof gametmp);
     for (;;) {
-	if (!readsolution(&series->solutionfile, &gametmp))
+	if (!readsolution(&series->savefile, &gametmp))
 	    break;
-	if (!gametmp.number || !*gametmp.passwd)
+	if (gametmp.sgflags & SGF_SETNAME) {
+	    if (strcmp(gametmp.name, series->name)) {
+		errmsg(series->name, "ignoring solution file %s as it was"
+				     " recorded for a different level set: %s",
+		       series->savefile.name, gametmp.name);
+		series->gsflags |= GSF_NOSAVING;
+		return FALSE;
+	    }
+	    series->gsflags |= GSF_SAVESETNAME;
 	    continue;
+	}
 	i = findlevelinseries(series, gametmp.number, gametmp.passwd);
 	if (i < 0) {
 	    i = findlevelinseries(series, 0, gametmp.passwd);
 	    if (i < 0) {
-		fileerr(&series->solutionfile,
+		fileerr(&series->savefile,
 			"unmatched password in solution file");
 		continue;
 	    }
@@ -501,11 +638,9 @@ int readsolutions(gameseries *series)
 	series->games[i].savedstepping = gametmp.savedstepping;
 	series->games[i].savedrndseed = gametmp.savedrndseed;
 	copymovelist(&series->games[i].savedsolution, &gametmp.savedsolution);
-	if (i == j)
-	    ++j;
     }
     destroymovelist(&gametmp.savedsolution);
-    fileclose(&series->solutionfile, NULL);
+    fileclose(&series->savefile, NULL);
     return TRUE;
 }
 
@@ -520,31 +655,34 @@ int savesolutions(gameseries *series)
     gamesetup  *game;
     int		i;
 
-    if (!*savedir || readonly)
+    if (readonly || (series->gsflags & GSF_NOSAVING))
 	return TRUE;
 
-    if (!savedirchecked) {
-	savedirchecked = TRUE;
-	if (!finddir(savedir))
-	    return fileerr(&series->solutionfile, "can't access directory");
-    }
-    if (series->solutionfile.fp)
-	fileclose(&series->solutionfile, NULL);
-    if (!opensolutionfile(&series->solutionfile,
-			  series->filebase, FALSE)) {
-	*savedir = '\0';
+    if (series->savefile.fp)
+	fileclose(&series->savefile, NULL);
+    if (!series->savefile.name)
+	series->savefile.name = series->savefilename;
+    if (!series->savefile.name && (series->gsflags & GSF_NODEFAULTSAVE))
+	return TRUE;
+    if (!opensolutionfile(&series->savefile, series->filebase, TRUE))
 	return FALSE;
-    }
 
-    if (!writesolutionheader(&series->solutionfile, series->solutionflags))
-	return fileerr(&series->solutionfile,
+    if (!writesolutionheader(&series->savefile, series->ruleset,
+			     series->solheaderflags,
+			     series->solheadersize, series->solheader))
+	return fileerr(&series->savefile,
 		       "saved-game file has become corrupted!");
+    if (series->gsflags & GSF_SAVESETNAME) {
+	if (!writesolutionsetname(&series->savefile, series->name))
+	    return fileerr(&series->savefile,
+			   "saved-game file has become corrupted!");
+    }
     for (i = 0, game = series->games ; i < series->count ; ++i, ++game) {
-	if (!writesolution(&series->solutionfile, game))
-	    return fileerr(&series->solutionfile,
+	if (!writesolution(&series->savefile, game))
+	    return fileerr(&series->savefile,
 			   "saved-game file has become corrupted!");
     }
 
-    fileclose(&series->solutionfile, NULL);
+    fileclose(&series->savefile, NULL);
     return TRUE;
 }

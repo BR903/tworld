@@ -1,6 +1,6 @@
 /* sdlgen.h: The internal shared definitions of the SDL OS/hardware layer.
  * 
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -14,10 +14,10 @@
 /* Structure to hold the definition of a font.
  */
 typedef	struct fontinfo {
-    signed char	h;		/* height of each character */
-    signed char	w[256];		/* width of each character */
-    void       *memory;		/* memory allocated for the font */
-    char       *bits[256];	/* pointers to each glyph */
+    signed char		h;		/* height of each character */
+    signed char		w[256];		/* width of each character */
+    void	       *memory;		/* memory allocated for the font */
+    unsigned char      *bits[256];	/* pointers to each glyph */
 } fontinfo;
 
 /* Structure to hold a font's colors.

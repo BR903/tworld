@@ -1,6 +1,6 @@
 /* sdloshw.c: Top-level SDL management functions.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -110,4 +110,11 @@ int oshwinitialize(int silence, int soundbufsize,
 	&& _sdlinputinitialize()
 	&& _sdloutputinitialize(fullscreen)
 	&& _sdlsfxinitialize(silence, soundbufsize);
+}
+
+/* The real main().
+ */
+int main(int argc, char *argv[])
+{
+    return tworld(argc, argv);
 }

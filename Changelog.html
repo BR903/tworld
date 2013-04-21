@@ -4,6 +4,48 @@
 </head>
 <body>
 <p>
+2006 Feb 24: version 1.2.2
+<p>
+<ul>
+<li>
+Finally got the handling of brown buttons (MS logic) working
+correctly. It's been a long time coming, and it's all so simple in
+hindsight.
+<li>
+Added code to grok the new solution file format. This version of Tile
+World will continue to use the old solution file format, but if it
+encounters a file in the new format, it will handle it correctly.
+<li>
+Added the ability to specify a solution file by name on the
+command-line.
+<li>
+Added -P option for Lynx pedantic mode.
+<li>
+Added the Shift-Ctrl-X feature to permanently delete solutions.
+<li>
+Fixed bugs in Shift-Tab feature, and formally documented this feature.
+<li>
+Fixed bug in the stepping UI.
+<li>
+Fixed bug reported by Thomas Harte, where an international keyboard
+generating a non-Latin-1 character could cause TW to segfault.
+<li>
+Fixed bug reported by Catatonic Porpoise, where SDL was being asked to
+blit to a locked surface.
+<li>
+Fixed a segfault in MS logic reported by Evan Dummit (occurring when a
+cloner's creature in the northwest corner is replaced by Chip).
+<li>
+Added casts to avoid new warnings in gcc 4.
+<li>
+Fixed a few other minor MS emulation bugs reported by Evan Dummit.
+<li>
+Added a number of unfixed MS emulation bugs to msbugs.txt, several of
+which were reported by Evan Dummit.
+<li>
+A handful of documentation errors were also found and fixed.
+</ul>
+<p>
 2004 Oct 21: version 1.2.1
 <ul>
 <li>

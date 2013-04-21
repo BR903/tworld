@@ -1,6 +1,6 @@
 /* series.c: Functions for finding and reading the data files.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -386,14 +386,14 @@ void freeseriesdata(gameseries *series)
     gamesetup  *game;
     int		n;
 
-    fileclose(&series->solutionfile, NULL);
+    fileclose(&series->savefile, NULL);
     fileclose(&series->mapfile, NULL);
-    clearfileinfo(&series->solutionfile);
+    clearfileinfo(&series->savefile);
     clearfileinfo(&series->mapfile);
     free(series->mapfilename);
     series->mapfilename = NULL;
     series->gsflags = 0;
-    series->solutionflags = 0;
+    series->solheaderflags = 0;
 
     for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
 	free(game->map1);
@@ -449,7 +449,8 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 	}
 	for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	if (!strcmp(name, "name")) {
-	    strcpy(series->name, value);
+	    strncpy(series->name, skippathname(value), sizeof series->name);
+	    series->name[sizeof series->name - 1] = '\0';
 	} else if (!strcmp(name, "lastlevel")) {
 	    n = (int)strtol(value, &p, 10);
 	    if (*p || n <= 0) {
@@ -529,9 +530,10 @@ static int getseriesfile(char *filename, void *data)
     }
     series = sdata->list + sdata->count;
     series->mapfilename = NULL;
-    clearfileinfo(&series->solutionfile);
+    clearfileinfo(&series->savefile);
+    series->savefilename = NULL;
     series->gsflags = 0;
-    series->solutionflags = 0;
+    series->solheaderflags = 0;
     series->allocated = 0;
     series->count = 0;
     series->final = 0;
@@ -539,7 +541,7 @@ static int getseriesfile(char *filename, void *data)
     series->games = NULL;
     strncpy(series->filebase, filename, sizeof series->filebase - 1);
     series->filebase[sizeof series->filebase - 1] = '\0';
-    strcpy(series->name, series->filebase);
+    strcpy(series->name, skippathname(series->filebase));
 
     f = FALSE;
     if (config) {
@@ -609,7 +611,7 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
 	    return FALSE;
 	}
 	*seriesdir = '\0';
-	*savedir = '\0';
+	s.list[0].gsflags |= GSF_NODEFAULTSAVE;
     } else {
 	if (!*seriesdir)
 	    return FALSE;

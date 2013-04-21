@@ -1,6 +1,6 @@
 /* sdlout.c: Creating the program's displays.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -665,8 +665,6 @@ int displaytiletable(char const *title,
     int		col, id, i;
 
     cleardisplay();
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_LockSurface(sdlg.screen);
 
     left.x = MARGINW;
     left.y = screenh - MARGINH - sdlg.font.h;
@@ -705,8 +703,6 @@ int displaytiletable(char const *title,
 	}
     }
 
-    if (SDL_MUSTLOCK(sdlg.screen))
-	SDL_UnlockSurface(sdlg.screen);
     displayprompticon(completed);
 
     SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);

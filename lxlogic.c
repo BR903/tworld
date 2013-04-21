@@ -1,6 +1,6 @@
 /* lxlogic.c: The game logic for the Lynx ruleset.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -16,6 +16,10 @@
  * exist simultaneously.
  */
 #define	MAX_CREATURES	(2 * CXGRID * CYGRID)
+
+/* The maximum number of creatures on the original Atari Lynx version.
+ */
+#define	PMAX_CREATURES	128
 
 /* Temporary "holding" values used in place of a direction.
  */
@@ -55,6 +59,11 @@ struct lxstate {
     signed char		yviewoffset;	/*   position from position of Chip */
     unsigned char	completed;	/* level completed successfully */
 };
+
+/* Pedantic mode flag. (Having this variable defined here is a hack,
+ * but this is the only module that actually uses it.)
+ */
+int			pedanticmode = FALSE;
 
 /* Declarations of (indirectly recursive) functions.
  */
@@ -256,10 +265,22 @@ static int trapfrombutton(int pos)
     xyconn     *xy;
     int		i;
 
-    for (xy = traplist(), i = traplistsize() ; i ; ++xy, --i)
-	if (xy->from == pos)
-	    return xy->to;
-    warn("unconnected trap button at (%d %d)", pos % CXGRID, pos / CXGRID);
+    if (pedanticmode) {
+	i = pos;
+	for (;;) {
+	    ++i;
+	    if (i == CXGRID * CYGRID)
+		i = 0;
+	    if (i == pos)
+		break;
+	    if (floorat(i) == Beartrap)
+		return i;
+	}
+    } else {
+	for (xy = traplist(), i = traplistsize() ; i ; ++xy, --i)
+	    if (xy->from == pos)
+		return xy->to;
+    }
     return -1;
 }
 
@@ -270,10 +291,22 @@ static int clonerfrombutton(int pos)
     xyconn     *xy;
     int		i;
 
-    for (xy = clonerlist(), i = clonerlistsize() ; i ; ++xy, --i)
-	if (xy->from == pos)
-	    return xy->to;
-    warn("unconnected cloner button at (%d %d)", pos % CXGRID, pos / CXGRID);
+    if (pedanticmode) {
+	i = pos;
+	for (;;) {
+	    ++i;
+	    if (i == CXGRID * CYGRID)
+		i = 0;
+	    if (i == pos)
+		break;
+	    if (floorat(i) == CloneMachine)
+		return i;
+	}
+    } else {
+	for (xy = clonerlist(), i = clonerlistsize() ; i ; ++xy, --i)
+	    if (xy->from == pos)
+		return xy->to;
+    }
     return -1;
 }
 
@@ -354,8 +387,10 @@ static creature *newcreature(void)
 	warn("Ran out of room in the creatures array!");
 	return NULL;
     }
-    cr->hidden = TRUE;
+    if (pedanticmode && cr - creaturelist() + 1 >= PMAX_CREATURES)
+	return NULL;
 
+    cr->hidden = TRUE;
     cr[1].id = Nothing;
     return cr;
 }
@@ -1292,14 +1327,17 @@ static int endmovement(creature *cr)
 	    floorat(cr->pos) = Empty;
 	    addsoundeffect(SND_DOOR_OPENED);
 	    break;
-	  case Boots_Ice:
-	  case Boots_Slide:
-	  case Boots_Fire:
-	  case Boots_Water:
 	  case Key_Red:
 	  case Key_Blue:
 	  case Key_Yellow:
 	  case Key_Green:
+	    if (pedanticmode)
+		if (possession(floor) == 255)
+		    possession(floor) = -1;
+	  case Boots_Ice:
+	  case Boots_Slide:
+	  case Boots_Fire:
+	  case Boots_Water:
 	    ++possession(floor);
 	    floorat(cr->pos) = Empty;
 	    addsoundeffect(SND_ITEM_COLLECTED);
@@ -1862,6 +1900,9 @@ static int initgame(gamelogic *logic)
 	} else {
 	    floorat(pos) = Empty;
 	}
+	if (pedanticmode)
+	    if (floorat(pos) == Wall_North || floorat(pos) == Wall_West)
+		markinvalid();
 	if (!fileids[layer1[pos]].isfloor) {
 	    cr->pos = pos;
 	    cr->id = fileids[layer1[pos]].id;

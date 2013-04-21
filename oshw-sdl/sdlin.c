@@ -1,6 +1,6 @@
 /* sdlin.c: Reading the keyboard.
  * 
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -73,8 +73,9 @@ static keycmdmap const gamekeycmds[] = {
     { 'o',			 +1,  0,  0,   CmdSubStepping,        FALSE },
     { '\t',                       0, -1,  0,   CmdPlayback,           FALSE },
     { '\t',                      +1, -1,  0,   CmdCheckSolution,      FALSE },
+    { 'x',                        0, +1,  0,   CmdReplSolution,       FALSE },
+    { 'x',                       +1, +1,  0,   CmdKillSolution,       FALSE },
     { 's',                        0,  0,  0,   CmdSeeScores,          FALSE },
-    { 'x',                       -1, +1,  0,   CmdKillSolution,       FALSE },
     { 'v',                       +1,  0,  0,   CmdVolumeUp,           FALSE },
     { 'v',                        0,  0,  0,   CmdVolumeDown,         FALSE },
     { SDLK_RETURN,               -1, -1,  0,   CmdProceed,            FALSE },
@@ -182,12 +183,14 @@ static void _keyeventcallback(int scancode, int down)
 	keystates[scancode] = down ? KS_ON : KS_OFF;
 	break;
       default:
-	if (down) {
-	    keystates[scancode] = keystates[scancode] == KS_OFF ? KS_PRESSED
-								: KS_REPEATING;
-	} else {
-	    keystates[scancode] = keystates[scancode] == KS_PRESSED ? KS_STRUCK
-								    : KS_OFF;
+	if (scancode < SDLK_LAST) {
+	    if (down) {
+		keystates[scancode] = keystates[scancode] == KS_OFF ?
+						KS_PRESSED : KS_REPEATING;
+	    } else {
+		keystates[scancode] = keystates[scancode] == KS_PRESSED ?
+						KS_STRUCK : KS_OFF;
+	    }
 	}
 	break;
     }
@@ -409,7 +412,9 @@ tablespec const *keyboardhelp(int which)
 	"1-S", "1-see the current score",
 	"1-Q", "1-return to the file list",
 	"1-Tab", "1-playback saved solution",
+	"1-Shift-Tab", "1-verify saved solution",
 	"1-Ctrl-X", "1-replace existing solution",
+	"1-ShiftCtrl-X", "1-delete existing solution",
 	"1-O", "1-toggle between even-step and odd-step offset",
 	"1-Shift-O", "1-increment stepping offset (Lynx only)",
 	"1-V", "1-decrease volume",
@@ -417,7 +422,7 @@ tablespec const *keyboardhelp(int which)
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_twixtgame = { 15, 2, 4, 1,
+    static tablespec const keyhelp_twixtgame = { 16, 2, 4, 1,
 						 twixtgame_items };
 
     static char *scroll_items[] = {

@@ -1,6 +1,6 @@
 /* solution.c: Functions for reading and writing the solution files.
  *
- * Copyright (C) 2001-2004 by Brian Raiter, under the GNU General Public
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
  */
 
@@ -34,7 +34,9 @@ extern void copymovelist(actlist *to, actlist const *from);
  */
 extern void destroymovelist(actlist *list);
 
-/* Read any and all saved solutions for the given series.
+/* Read all the solutions for the given series. FALSE is returned if
+ * an error occurs. Note that it is not an error for the solution file
+ * to not exist.
  */
 extern int readsolutions(gameseries *series);
 
