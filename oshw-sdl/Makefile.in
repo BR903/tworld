@@ -37,6 +37,8 @@ sdlout.o  : sdlout.c sdlgen.h ../gen.h ../oshw.h ../err.h \
 # Other
 #
 
+all: liboshw.a
+
 clean:
 	rm -f $(OBJS) liboshw.a
 

@@ -60,4 +60,14 @@ typedef	struct tablespec {
  */
 #define	TICKS_PER_SECOND	20
 
+/* The gameplay timer's value is forced to remain within 23 bits.
+ * Thus, gameplay of a single level cannot exceed 4 days 20 hours 30
+ * minutes and 30.4 seconds.
+ */
+#define	MAXIMUM_TICK_COUNT	0x7FFFFF
+
+/* A magic number used to indicate an undefined time value.
+ */
+#define	TIME_NIL		0x7FFFFFFF
+
 #endif

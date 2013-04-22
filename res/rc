@@ -3,6 +3,7 @@ BackgroundColor=000000
 TextColor=CCCCCC
 BoldTextColor=FFFFFF
 DimTextColor=999999
+UnsolvableList=unslist.txt
 LevelCompleteSound=tada.wav
 PickupToolSound=ting.wav
 ThiefSound=thief.wav

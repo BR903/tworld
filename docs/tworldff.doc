@@ -1,0 +1,722 @@
+tworldff / Tile World File Formats / Mar 2006 / Tile World File Formats
+
+Tile World makes use of a number of files besides the data files of
+Chip's Challenge itself. This document collects information on all of
+these files in one place.
+
+.Section The Configuration File
+
+Configuration files are used to override some of the settings in a
+data file, or to set values not provided for by the data file format.
+Configuration files are by convention named with a <.dac> extension. A
+configuration file is stored in the level set directory in the place
+of the data file; the latter then is placed in the data directory.
+
+The configuration file is a simple text file. The first line of a
+configuration file %must% have the following form:
+
+<file = >%DATAFILE%
+
+where %DATAFILE% is the filename of the data file. (Arbitrary
+whitespace is permitted around the equal sign, but there cannot be any
+whitespace embedded at the beginning of the line.)
+
+After this initial line, the configuration file can contain any of the
+following lines:
+
+<usepasswords = >%y|n%
+
+This line permits password-checking to be enabled/disabled when
+playing the levels in the set. The default is <y>.
+
+<ruleset = >%ms|lynx%
+
+This line allows the configuration file to override the ruleset
+setting in the data file. This is mainly useful in the case where one
+level set is playable under either ruleset (as is the case with the
+original level set). The author can then provide one data file and two
+configuration files to make both versions available.
+
+<lastlevel = >%levelnum%
+
+This line marks an arbitrary level as being the last level in the
+set. The game will stop when this level is completed, instead of
+proceeding to the next level. (Note that if the data file contains any
+levels beyond this one, they will only be reachable via a password.)
+
+<fixlynx = >%y|n%
+
+This line is specifically for use with the original level set. It is
+not generally useful, and is described here only for completeness. The
+<chips.dat> file that MS distributed with their version of "Chip's
+Challenge" contained a few minor differences from the original level
+set as appeared on the Lynx. A positive value for this entry instructs
+the program to undo those changes, so that the original Lynx level set
+is obtained. (The changes made in the MS version were: an extra level
+was added; four passwords were garbled; and four or five levels' maps
+had minor alterations.)
+
+.Section The Solution File
+
+Tile World saves its solutions in binary files, typically named with
+an extension of <.tws>. Solution files are stored in the save
+directory. They are the only files that Tile World actually creates.
+
+Note that all numeric values in the solution file are stored
+little-endian, for the sake of consistency with the data file format.
+
+A solution file begins with the following eight-byte header:
+
+.grid
+c      l
+ 0-3   the 32-bit signature, always equal to <0x999B3335>.
+  4    the ruleset of the solutions: 1 for Lynx, 2 for MS.
+  5    other options: currently always zero.
+  6    other options: currently always zero.
+  7    count of bytes in remainder of header (currently always zero).
+
+When reading a solution file, a program should always read byte 7 and
+seek past that many bytes before continuing. This allows for future
+expansion of the header.
+
+After the header is a series of records. Prepended to each record is a
+32-bit value that indicates the size of the record. Thus, a program
+does not need to fully examine each record to find the next record.
+
+Two special size values should be noted here. A 32-bit size value of
+zero ostensibly indicates a zero-length record, and can be safely
+ignored. A 32-bit size value of <0xFFFFFFFF> indicates that no more
+records appear in the file -- i.e. it functions as an EOF marker.
+(Neither of these values appear in solution files created by Tile
+World, but they may be useful to other programs in certain
+situations.)
+
+The very first record in the file is optional. If present, it provides
+the name of the associated level set, and takes the following form:
+
+.grid
+c      l
+ 0-5   all zero bytes; indicates that this record is present.
+_6-15  ignored; should be set to zero.
+16...  A zero-terminated string naming the associated level set.
+
+This record should not appear anywhere else in the file. Programs
+looking for this record should examine the first six bytes of the
+first record. If any of them are non-zero, then it should be assumed
+that this record is not present.
+
+The remaining records in the file should each be associated with one
+of the levels in the level set. The levels typically appear in
+numerical order, but this is not required.
+
+There are two types of records. The smaller record is distinguished
+from the larger record because it is always six bytes in size. It
+provides a level's password but no solution, and its format is as
+follows:
+
+.grid
+c      l
+ 0-1   the level number.
+ 2-5   the level password, stored as four ASCII characters.
+
+Note that, unlike the data file, the password is stored in "clear
+text".
+
+The larger record type provides both a password and a complete
+solution. This record type has its own header, with the following
+format:
+
+.grid
+c      l
+ 0-1   the level number.
+ 2-5   the level password, stored as four ASCII characters.
+  6    other flags: currently always zero.
+  7    initial random slide direction and stepping value.
+_8-11  initial random number generator value.
+12-15  the time of the solution, in ticks (20ths of a second).
+16...  the moves of the solution.
+
+Byte 7 combines two separate pieces of information. The three lowest
+bits contain the solution's initial random slide direction. (See below
+for the encoding of directions.) This value is only meaningful under
+the Lynx ruleset; for MS solutions these bits should be zero. The next
+three bits provide the solution's stepping value. Under the MS ruleset
+this value can only be zero or four; under the Lynx ruleset it can be
+any value between zero and seven inclusive. The following C code
+clarifies how the two values are combined:
+
+.indent
+<value = (steppingdir << 3) | slidedir;>
+
+After the header, the remaining bytes of this record specify the
+solution proper. A solution consists of a sequence of moves. A move is
+defined by two pieces of information: a direction, and a time. Time
+is, as always, measured in ticks. A single tick is equal to 1/20th of
+a game second.
+
+For the first move of a solution, the associated time is the absolute
+time at which the move occurs. For subsequent moves, the associated
+time measures the number of ticks, less one, that elapsed between it
+and the previous move. For example, imagine a solution consisted of
+the following three moves: <0:N>, <3:W>, <9:S>. This would translate
+to a move north at tick 0, a move west at tick 4, and a move south at
+tick 14.
+
+There are three kinds of directions that can appear in a solution. The
+first kind (and by far the most common) is a simple orthogonal
+direction, and is encoded as follows:
+
+.grid
+c  l
+0  = north
+1  = west
+2  = south
+3  = east
+
+The second kind is a diagonal direction, and only appears in solutions
+under the Lynx ruleset.
+
+.grid
+c  l
+4  = northwest
+5  = southwest
+6  = northeast
+7  = southeast
+
+The third kind of move is created by using the mouse under the MS
+ruleset. It is encoded as a value between 16 and 376 inclusive. The
+value specifies a relative x-y offset, ranging from (-9,_-9) to
+(+9,_+9). The coordinates are packed into a single move value by the
+following calculation:
+
+.indent
+<value = 16 + ((y + 9) * 19) + (x + 9);>
+
+In the most general case, then, a move requires 9 bits for the
+direction value and 23 bits for the time value, or 32 bits total.
+However, in a typical solution, the vast majority of moves consist of
+small time and direction values. In order to conserve space, there are
+four different formats for storing move values. The four formats vary
+in size from one to five bytes. Each value is stored little-endian, so
+the least significant byte of each value contains sufficient
+information to determine the value's format and size. Thus, in order
+to reconstruct the moves of a solution in detail, a program must read
+the solution as a stream of bytes, examining each value in turn.
+
+The four formats are defined as follows. The diagrams indicate the bit
+contents of each.
+
+The first format can be either one byte in size:
+
+.indent
+<76543210>
+.brk
+<TTTDDD01>
+
+Or two bytes:
+
+.indent
+<11111>
+.brk
+<54321098 76543210>
+.brk
+<TTTTTTTT TTTDDD10>
+
+In each of the above diagrams, the bits marked with <D> contain the
+direction value, and the bits marked with <T> contain the time value.
+The two lowest bits contain either 1 or 2, indicating the format and
+the size.
+
+This format can be used to encode orthogonal and diagonal moves when
+the time value is 2047 or less. (The smaller size can be used only if
+the time value is 7 or less.)
+
+The second format is four bytes in size:
+
+.indent
+<33222222 22221111 11111>
+.brk
+<10987654 32109876 54321098 76543210>
+.brk
+<0000TTTT TTTTTTTT TTTTTTTT TTT0DD11>
+
+This format provides 23 bits for the time value, allowing for any
+legal time value. Only two bits are provided for the direction,
+however, so this format can only be used to encode orthogonal moves.
+Bits 0, 1, and 4 in the lowest byte identify this format.
+
+The third format packs three moves into one byte:
+
+.indent
+<76543210>
+.brk
+<FFEEDD00>
+
+The bits marked with <D>, <E>, and <F> encode three different
+directions. These are assigned to three consecutive moves. Each move
+is given a time value of four ticks (i.e. <T> = 3). Like the second
+format, only orthogonal moves can be stored in this format.
+
+The fourth format is the most general. Like the first format, it can
+vary in size. It can be two, three, four, or five bytes long,
+depending on how many bits are needed to store the time value. It is
+shown here in its largest form:
+
+.indent
+<33333333 33222222 22221111 11111>
+.brk
+<98765432 10987654 32109876 54321098 76543210>
+.brk
+<000TTTTT TTTTTTTT TTTTTTTT TTDDDDDD DDD1NN11>
+
+The bits marked with <N> indicate the number of bytes that the value
+spans. Thus <N> = 0 indicates two bytes, and <N> = 3 indicates a
+five-byte value.
+
+Nine bits are provided for the direction value, making this format the
+only one that can encode mouse moves. The time value is either 2, 10,
+18, or 23 bits in size, depending on the size of the value.
+
+.Section The Resource Configuration File
+
+The resource configuration file serves as an index to the various
+resources that Tile World needs to access at runtime. It is a plain
+text file, stored in the resource directory, and is always named <rc>.
+
+The file contains lines of the form:
+
+%resource%< = >%filename%
+
+where %resource% is a symbolic resource name, and %filename% is the
+name of a file in the resource directory.
+
+The resources can be set differently depending on the ruleset that the
+program is using. A line in the <rc> file of the form
+
+<[>%ruleset%<]>
+
+indicates that the lines that follow only apply when that ruleset is
+in effect (where %ruleset% is either <MS> or <Lynx>). Resources that
+are defined before any such line apply to both rulesets, and are also
+used as fallbacks if a ruleset-specific resource could not be
+loaded. Note also that some resources need to have ruleset-independent
+values, as indicated below.
+
+A line of the form
+
+<TileImages = >%FILENAME%
+
+identifies the file that provides the images used to draw the game.
+These images are stored in a Windows bitmap. See #The Tile Bitmap# for
+more information about this file.
+
+A line of the form
+
+<Font = >%FILENAME%
+
+identifies the file that provides the program's font. The font is
+stored as a Windows bitmap. See #The Font Bitmap# for more information
+about this file. A ruleset-independent font must be provided in order
+to display the initial list of level sets.
+
+A line of the form
+
+<UnsolvableList = >%FILENAME%
+
+identifies the filename for the database of unsolvable levels. See
+#The Unsolvable Levels Database# below for more information about this
+file. Note that this resource should always be a ruleset-independent
+entry, as it is loaded during initialization.
+
+Four resources define the colors used in rendering text:
+
+<BackgroundColor = >%RRGGBB%
+.brk
+<TextColor = >%RRGGBB%
+.brk
+<BoldTextColor = >%RRGGBB%
+.brk
+<DimTextColor = >%RRGGBB%
+
+The value of %RRGGBB% is a string of six hexadecimal digits defining
+the red, green, and blue values of the color (as with the color
+specification used in HTML or X Windows, but without the preceding
+octothorpe). Again, font colors should have ruleset-independent
+definitions in order to display the initial list of level sets.
+
+The remaining resources define the game's sound effects. The sounds
+are stored as Microsoft RIFF files (so-called wave files). Unlike the
+tile images, each sound effect is defined as a separate file. The
+complete list of symbolic resource names is as follows:
+
+Sounds used in both rulesets
+.list
+. <LevelCompleteSound>
+. <ChipDeathSound>
+. <BlockedMoveSound>
+. <PickupToolSound>
+. <ThiefSound>
+. <TeleportSound>
+. <OpenDoorSound>
+. <SocketSound>
+. <SwitchSound>
+. <BombSound>
+. <SplashSound>
+
+Sounds used only under the MS ruleset
+.list
+. <TickSound>
+. <ChipDeathByTimeSound>
+. <PickupChipSound>
+
+Sounds used only under the Lynx ruleset
+.list
+. <TileEmptiedSound>
+. <WallCreatedSound>
+. <TrapEnteredSound>
+. <BlockMovingSound>
+. <SkatingForwardSound>
+. <SkatingTurnSound>
+. <SlidingSound>
+. <SlideWalkingSound>
+. <IceWalkingSound>
+. <WaterWalkingSound>
+. <FireWalkingSound>
+
+(Note that the symbolic names for the shared and MS-only sounds match
+the names in the <entpack.ini> file used by the Microsoft program.)
+
+.Section The Unsolvable Levels Database
+
+The database of unsolvable levels provides a list of levels that Tile
+World should identify as unsolvable. It is a plain text file, and is
+stored in the resource directory, and optionally also in the user's
+save directory. If the file is present in both places, Tile World will
+use their union.
+
+The list of unsolvable levels are grouped by level set. Each group is
+introduced by a line of the form:
+
+<[>%LEVELSET%<]>
+
+where %LEVELSET% is the name of the level set for the following lines.
+
+Each line defines one unsolvable level. These lines are of the form:
+
+%NUMBER%<:> %IDENTIFIER%<:> %COMMENT%
+
+where %NUMBER% is the level's number, and %IDENTIFIER% is a short
+string of characters that identifies the contents of that level. The
+second colon and %COMMENT% field are optional. If present, the
+%COMMENT% should be a very brief sentence fragment describing why the
+level is unsolvable. This comment will then be displayed to the user
+when they visit this level.
+
+Note that a single level can usefully have more than one entry, as
+long as each one has a different %IDENTIFIER%. This would indicate
+that a level designer had released multiple versions of a level which
+were all unsolvable.
+
+The %IDENTIFIER% is a twelve-digit hexadecimal value, calculated by
+hashing the level's representation in the data file and prepending the
+level's size in bytes.
+
+.Section The Font Bitmap
+
+The font used by the program is defined by a Windows bitmap file,
+which is found the resource directory.
+
+The bitmap uses three different colors of pixels to define the glyphs
+of the font. The three pixel colors are used to indicate glyph pixels,
+halftone pixels, and background pixels. When the glyphs of the font
+are rendered by the program, the halftone pixels will be displayed in
+the color that is halfway between the background color and the
+foreground color. Thus the halftone pixels are useful for doing simple
+anti-aliasing of the glyphs.
+
+The pixel in the top-left corner must be the color of the glyph
+pixels. The pixel immediately below this must be the color of the
+background pixels. Any other pixel colors in the bitmap are taken as
+halftone pixels. Note that the colors used in the bitmap do not affect
+the actual colors used in rendering the font.
+
+All glyphs must be of the same height, though the widths may vary
+freely. The glyphs appear in rows, and are read in reading order: from
+left-to-right, then top-to-bottom. Each row of glyphs includes an
+extra line of pixels above it. In addition, there is an extra column
+of pixels running down the left side of the bitmap. These pixel-wide
+lines contain markers that locate the separation between individual
+glyphs.
+
+The left column of pixels will have one glyph-colored pixel per row of
+glyphs in the bitmap. The height of each pixel in the left column
+indicates the height of the row of pixels above each row of glyphs.
+All other pixels in the left column will have the background color.
+
+The glyphs in a given row will be separated from each other by a
+single column of pixels. This column will be indicated by a
+glyph-colored pixel directly above it, in the row of pixels. All other
+pixels in the rows will have the background color. There will also be
+a glyph-colored pixel immediately after the last glyph in a row. (The
+net result is that every glyph will have a glyph-colored pixel on
+either side.) Each row can contain any number of glyphs; anything to
+the right of the last glyph in a row is ignored.
+
+The glyphs in the bitmap will correspond to the ISO-8859-1 characters
+32 through 126 inclusive, followed by an alternate set of ten decimal
+digits, followed by the characters 160 through 255 inclusive. (It is
+not possible to define glyphs for the characters 0 through 31 or for
+the characters 127 through 159.) The alternate decimal digit glyphs
+should be monospaced versions of the decimal digits; Tile World will
+use these digits to display numbers in aligned columns.
+
+.Section The Tile Bitmap
+
+The appearance of the game's tiles are defined by one or more Windows
+bitmap files, which are stored in the resource directory.
+
+There are three different formats that the tile image bitmap can use.
+(The program automatically determines which one is being used by
+examining the dimensions of the bitmap.) They are referred to here as
+the small format, the large format, and the masked format.
+
+The %masked format% is essentially the same one that is used by the
+original MS program. In fact, anyone with a copy of the original
+program and a resource editor can extract the bitmap from the Windows
+executable and use it with Tile World directly. The tiles are laid out
+in a 13x16 grid. The first four columns of the bitmap are:
+
+.grid
+l               l             l               l
+Empty           Clone Block S Overlay Buffer  Wall SE
+Wall            Clone Block E Thief           Clone Machine
+IC Chip         Force Floor N Socket          Random Force
+Water           Force Floor E Green Button    Water Splash
+Fire            Force Floor W Red Button      Burned Chip
+Hidden Wall (p) Exit          Toggle Wall     Bombed Chip
+Wall N          Blue Door     Toggle Floor    Explosion
+Wall W          Red Door      Brown Button    Disintegrate
+Wall S          Green Door    Blue Button     Empty (unused)
+Wall E          Yellow Door   Teleport        Exited Chip
+Block           Ice Wall SE   Bomb            Extra Exit 1
+Dirt            Ice Wall SW   Bear Trap       Extra Exit 2
+Ice             Ice Wall NW   Hidden Wall (t) Chip Swimming N
+Force Floor S   Ice Wall NE   Gravel          Chip Swimming W
+Clone Block N   Blue Wall (f) Popup Wall      Chip Swimming S
+Clone Block W   Blue Wall (r) Hint Button     Chip Swimming E
+
+(See below for comments regarding the tile names.)
+
+The next three columns contain the following tiles:
+
+.grid
+l             l             l
+Bug N         Glider N      Paramecium N
+Bug W         Glider W      Paramecium W
+Bug S         Glider S      Paramecium S
+Bug E         Glider E      Paramecium E
+Fireball N    Teeth N       Blue Key
+Fireball W    Teeth W       Red Key
+Fireball S    Teeth S       Green Key
+Fireball E    Teeth E       Yellow Key
+Ball N        Walker N      Water Boots
+Ball W        Walker W      Fire Boots
+Ball S        Walker S      Ice Boots
+Ball E        Walker E      Force Boots
+Tank N        Blob N        Chip N
+Tank W        Blob W        Chip W
+Tank S        Blob S        Chip S
+Tank E        Blob E        Chip E
+
+Each of these tiles are drawn with an empty tile in the background.
+The next three columns repeat the images of the previous three
+columns, but with a pure white background instead. The last three
+columns then have the "masks" for these images. The mask images are
+monochrome, with black used for the background and white used for the
+figure. When the program is displaying a creature, a key, or a pair of
+boots, it uses a tile from columns 4-6 if the item is upon an empty
+tile.  Otherwise, it uses the image from columns 7-9, coupled with the
+mask from columns 10-12, to combine the image with the proper floor
+tile image.
+
+The %small format% is an abbreviated layout of the masked format. The
+tiles are laid out in a 7x16 grid. The first four columns are the same
+as with the masked format. The remaining three columns contain the
+creatures, boots, and keys (again, as with the small format) with a
+solid background of magenta pixels (RGB=255,0,255). When the bitmap is
+read by Tile World, all magenta pixels in the last three columns will
+be made transparent. (Magenta pixels in the first four columns will
+not be altered.) If you wish to use magenta in any of these tiles
+(e.g., for the balls), then you will have to use one of the other
+formats instead.
+
+The %large format% is the only format that permits inclusion of animated
+tiles. This format has a less rigid layout. Tiles are arranged in rows
+instead of columns. The tiles are extracted from the bitmap in reading
+order -- scanning from left-to-right, top-to-bottom.  The rows do not
+have to have a specific width.
+
+A one-pixel-high horizontal line is above each row of tiles. The
+pixels in this line indicate the divisions between tiles in the
+row. There is also a one-pixel-wide vertical line at the left edge of
+the bitmap, which is used to indicate the placement of the rows.
+
+One color is used throughout the bitmap to indicate transparency.
+This color can be magenta, or some other color. The program determines
+which color is used to show transparency by reading the color of the
+second pixel in the horizontal line above the first row -- pixel (1,0)
+in x-y coordinates.
+
+The vertical line on the left side of the bitmap has a non-transparent
+pixel at the position of the horizonal lines above the tiles. All
+other pixels in the vertical line must be transparent. (The
+non-transparent pixels can be of different colors.) The horizontal
+lines have a non-transparent pixel at the rightmost edge of each tile
+image. (Note that the tile images are separated from each other by a
+line of pixels vertically, but not horizontally.)
+
+The first tile in the first row is the Empty tile. The Empty tile
+cannot be animated, nor is it permitted to have any transparent
+pixels.
+
+The next 49 tiles in the bitmap are the following, in order:
+
+.indent
+Force Floor N; Force Floor W; Force Floor S; Force Floor E; Random
+Force; Ice; Ice Wall NW; Ice Wall NE; Ice Wall SW; Ice Wall SE;
+Gravel; Dirt; Water; Fire; Bomb; Bear Trap; Thief; Hint Button; Blue
+Button; Green Button; Red Button; Brown Button; Teleport; Wall; Wall
+N; Wall W; Wall S; Wall E; Wall SE; Blue Wall; Toggle Floor; Toggle
+Wall; Popup Wall; Clone Machine; Red Door; Blue Door; Yellow Door;
+Green Door; Socket; Exit; IC Chip; Red Key; Blue Key; Yellow Key;
+Green Key; Ice Boots; Force Boots; Fire Boots; Water Boots.
+
+(Note that there are no tile images for Hidden Walls. These tiles
+always use the Empty tile image. Likewise, there is only a single tile
+used to display a Blue Wall, whether the wall is real or fake.)
+
+The tiles can be broken up across any number of rows, and each row can
+be of different length.
+
+Any of these tile images can have transparent pixels. Those that do
+will have their transparent pixels replaced with the corresponding
+pixels from the Empty tile image. Note that if the bitmap is intended
+to be used under MS emulation, then the Keys and Boots need to be
+rendered with transparent backgrounds.
+
+These tiles may also have more than one image supplied for them. Those
+that do will be animated under Lynx emulation; Tile World will loop
+through the images in the sequence while the game is playing. (Under
+MS emulation, only the first image in the sequence will be used.) In
+this case, the horizontal line above the row will have only one
+non-transparent pixel, placed at the rightmost edge of the last tile
+in the sequence. (The tiles of a single animated sequence may NOT be
+broken up across rows.)
+
+The next 10 tiles following these are:
+
+.indent
+Extra Exit 1; Extra Exit 2; Burned Chip; Bombed Chip; Exited
+Chip; Water Splash; Chip Swimming N; Chip Swimming W; Chip
+Swimming S; Chip Swimming E.
+
+With the exception of "Exited Chip", these tiles are only used during
+MS emulation. They cannot be animated; each tile can only have a
+single image. Transparent pixels are permitted, however, and will be
+handled as before.
+
+After these come the following 12 tiles:
+
+.indent
+Chip; Pushing Chip; Block; Tank; Ball; Glider; Fireball; Bug;
+Paramecium; Teeth; Blob; Walker.
+
+These tiles will usually have one of a set number of multiple images.
+Note that some of the possible layouts require rows that are two tiles
+high. Any given row in the bitmap is of a fixed height all the way
+across, however. So any change of height between neighboring tile
+images requires that a new row be started in the bitmap.
+
+The possible "sub-layouts" of the images of these 12 tiles are:
+
+.list
+. 1x1: A single image. The lone image is used to display the creature,
+regardless of its movement or orientation.
+. 1x2: Two images side by side. The left image shows the creature
+moving N and S, and the right image shows the creature moving W and E.
+. 1x4: Four images in a single row, showing the creature moving N, W,
+S, and E, respectively.
+. 2x1: Two images, arranged in a column. The top image shows the
+creature moving N and S, and the bottom image shows the creature
+moving W and E.
+. 2x2: Four images arranged in a square. The top two images show N and
+W movement, and S and E constitute the bottom row.
+. 2x8: Sixteen images, giving four animated images per direction. The
+top row contains the four N images followed by the four W images,
+and the bottom row contains the four S images followed by the four E
+images.
+. 2x16: Sixteen images, but each image occupies two tiles' worth of
+space. The leftmost 2x4 area contains the four animated images of
+the creature moving N. Each image is two tiles high, and is drawn
+across both tiles as the creature moves. (Note that the final image
+will ideally be completely transparent in the bottom half.) The next
+2x4 area has the four animated images of the creature moving S,
+arranged as before. The right half contains the images of the
+creature moving W and E. These images are a single tile high but two
+tiles wide, with the sequence of four W images appearing above the
+sequence of four E images.
+
+Finally, the bitmap contains three more tile images:
+
+.indent
+Water Splash; Explosion; Disintegrate.
+
+The images for these tiles can either be 1x1 or 3x3 in size. There
+should be exactly twelve images for each. (If there are only six, each
+image will be displayed for twice as long.)
+
+The following notes clarify the meanings of the names used to identify
+the tile images.
+
+The ice wall tiles are identified by their open sides. Thus "Ice Wall
+NW" indicates an ice tile with thin walls on the S and E sides.
+
+The parenthetical parts of tile names distinguish between tiles that
+are identical in appearance. Thus, "Blue Wall" is suffixed by "(f)" or
+"(r)" to indicate "fake" or "real" walls.
+
+The "Overlay Buffer" tile is used by the program as a place to build
+up images made with one or more transparent tiles. Whatever is
+actually placed here in the bitmap will only be visible if a level
+containing this tile is displayed before it is ever used by the
+program. Normally this tile contains a duplicate of the Empty tile
+image.
+
+The "Exited Chip" tile and the two "Extra Exit" tiles are used by the
+original MS program to create the ending sequence shown after
+completing one of the two final levels. The two "Extra Exit" tiles are
+used with the main "Exit" tile to create an three-frame animated
+sequence.
+
+The "Empty (Unused)" tile in the first two formats indicates tiles
+that are not used by the program, and normally appear the same as
+Empty.
+
+In the original MS program, the tiles marked "Explosion" and
+"Disintegrate" are actually unused, and contain an Empty tile
+image. These extra tiles only appear during Lynx emulation. (If your
+masked format bitmap is only intended to be used under MS emulation,
+these tiles can be left as Empty.) "Explosion" is displayed when a
+bomb goes off; "Disintegrate" is displayed when Chip collides with
+another creature.
+
+The "Water Splash" tile is displayed by the MS game when Chip dies
+from walking into a water square. The "Burned Chip" tile is displayed
+by the MS game when Chip dies from walking into a fire square. The
+"Bombed Chip" tile is not used by the original program unless it is
+explicitly inserted in a level's map.
+
+Note that the "Water Splash" tile appears twice in the large format.
+The first occurrence is as a single tile used only for MS emulation,
+and the second occurrence is an animation sequence used only under
+Lynx emulation.

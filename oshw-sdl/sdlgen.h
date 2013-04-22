@@ -73,6 +73,19 @@ typedef	struct oshwglobals
      */
     void (*keyeventcallbackfunc)(int scancode, int down);
 
+    /* A callback function, to be called when a mouse button is
+     * pressed or released. xpos and ypos give the mouse's location.
+     * button is the number of the mouse button. down is TRUE if the
+     * button was pressed or FALSE if it was released.
+     */
+    void (*mouseeventcallbackfunc)(int xpos, int ypos, int button, int down);
+
+    /* Given a pixel's coordinates, return an integer identifying the
+     * tile on the map view display under that pixel, or -1 if the
+     * pixel is not within the map view.
+     */
+    int (*windowmapposfunc)(int x, int y);
+
     /* Return a pointer to an image of a cell with the two given
      * tiles. If the top image is transparent, the composite image is
      * created using the overlay buffer. (Thus the caller should be
@@ -139,6 +152,8 @@ extern oshwglobals sdlg;
  */
 #define eventupdate		(*sdlg.eventupdatefunc)
 #define	keyeventcallback	(*sdlg.keyeventcallbackfunc)
+#define	mouseeventcallback	(*sdlg.mouseeventcallbackfunc)
+#define	windowmappos		(*sdlg.windowmapposfunc)
 #define	puttext			(*sdlg.puttextfunc)
 #define	measuretable		(*sdlg.measuretablefunc)
 #define	drawtablerow		(*sdlg.drawtablerowfunc)

@@ -5,7 +5,9 @@
 #
 
 cp -f BUGS.html Changelog.html README.html website/.
-(cd docs && ./mkdocs tworld.doc && cp -f tworld.html ../website/.)
+(cd docs && ./mkdocs tworld.doc && cp -f tworld.html ../website/. \
+         && ./mkdocs tworldff.doc && cp -f tworldff.html ../website/. \
+                                  && rm -f tworldff.6)
 (cd res && cp -f bomb.wav bump.wav chack.wav click.wav death.wav \
                  derezz.wav ding.wav door.wav oof.wav popup.wav \
                  socket.wav splash.wav tada.wav teleport.wav thief.wav \
@@ -21,3 +23,5 @@ tar -cvf twdocs.tar --exclude=CVS *
 gzip -9 twdocs.tar
 mv twdocs.tar.gz ..
 cd ..
+
+echo Done.

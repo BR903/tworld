@@ -64,7 +64,7 @@ sub mkgrid($$)
 	    } elsif ($col->[2] eq "r") {
 		$tbl .= ("\\ " x $n) . $entry;
 	    } elsif ($col->[2] eq "c") {
-		my $m = $col / 2;
+		my $m = $n >> 1;
 		$tbl .= ("\\ " x $m) . $entry . ("\\ " x ($n - $m));
 	    } else {
 		$tbl .= $entry;
@@ -85,7 +85,8 @@ sub toman($)
 	".TH \@name\@ 6 \"\@date\@\" \"\@title\@\"\n"
       . ".LO 1\n"
       . ".SH NAME\n"
-      . "\@name\@ \\- \@desc\@\n";
+      . "\@name\@ \\- \@desc\@\n"
+      . ".P\n";
 
     local $_ = shift;
     s/\A\s*(\S[^\n]+\S) *\n//;
@@ -95,7 +96,7 @@ sub toman($)
     s/\n\.brk\n/\n\ebr\n/g;
     s/\n\.list((?:\n[^\n]+)+)\n\n/"\n\eTP 2\n\ePD 0".mklist($1)."\n\ePD 1\n\n"/eg;
     s/\n\.table((?:\n[^\n]+)+)\n\n/"\n".mktable($1)."\n"/eg;
-    s/\n+\.section\s+([^\n]+)\n/"\n\ebr\n\eSH ".uc$1/eg;
+    s/\n+\.[Ss]ection\s+([^\n]+)\n/"\n\ebr\n\eSH ".uc$1/eg;
 
     s/<([^>]+)>/$1/g;
 
@@ -113,7 +114,8 @@ sub toman($)
 
     s/\n\./\n \./g;
 
-    tr/\e_/. /;
+    s/_/\\ /g;
+    tr/\e/./;
 
     my ($name, $title, $date, $desc) = split " / ", $topline;
     $mantop =~ s/\@name\@/$name/g;
@@ -167,7 +169,7 @@ sub mktable($)
 	if ($n ^= 1) {
 	    substr($_, $pos, 3) = "</td></tr>\n<tr><td>";
 	} else {
-	    substr($_, $pos, 3) = "&nbsp;</td>\n<td>";
+	    substr($_, $pos, 3) = "_</td>\n<td>";
 	}
     }
     s{\A</td></tr>}{};
@@ -193,12 +195,12 @@ sub mkgrid($$)
     my $tbl = "";
     while (s/^([^\n]+)\n//) {
 	my $line = $1;
-	$tbl .= "<tr>\n<td>&nbsp;</td>\n";
+	$tbl .= "<tr>\n<td>_</td>\n";
 	foreach my $col (@cols) {
 	    my $entry = substr $line, $col->[0], $col->[1];
-	    1 while $entry =~ s/(\s+)\s$/&nbsp;$1/;
+	    1 while $entry =~ s/(\s+)\s$/_$1/;
 	    $entry =~ s/\s$//;
-	    1 while $entry =~ s/^\s(\s*)/$1&nbsp;/;
+	    1 while $entry =~ s/^\s(\s*)/$1_/;
 	    $tbl .= "<td align=$align{$col->[2]}>$entry</td>\n";
 	}
 	$tbl .= "</tr>\n";
@@ -219,14 +221,12 @@ sub tohtml($)
     s{\A[^/]+/\s+([^/]*\S)\s+/[^\n]+\n+}{\n};
     my $title = $1;
 
-    s/&/&amp;/;
-    s/_/&nbsp;/g;
-
     s{<([^>]+)>}{<tt>$1</tt>}g;
     s{%([^%]+)%}{<i>$1</i>}g;
     s{!([^!]+)!}{<strong>$1</strong>}g;
 
     s/\n\.section\s+([^\n]+)\n/item$1/eg;
+    s/\n\.Section\s+([^\n]+)\n/"\n\n<hr>".item$1/eg;
     s/\#([^\#]+)\#/itemlkup$1/eg;
     s{\n\.indent((?:\n[^\n]+)+)\n\n}{\n<blockquote>$1\n</blockquote>\n\n}g;
 
@@ -237,6 +237,9 @@ sub tohtml($)
     s{\n\.grid\n([^\n]+)\n((?:[^\n]+\n)+)\n}
      {mkgrid($1,$2)}eg;
 
+    s/&/&amp;/;
+    s/_/&nbsp;/g;
+
     s/\n.brk\n/\n<br>\n/g;
     s/\n\n+/\n<p>\n/g;
 
@@ -244,7 +247,7 @@ sub tohtml($)
     if (@toc > 2) {
 	$toc = "<p>\n<h3>Contents</h3>\n<p>\n<ul>\n"
 	     . join("", map { "<li><a href=\"\#$_\">$toc[$_]</a>\n" } 0..$#toc)
-	     . "</ul>\n";
+	     . "</ul>\n<p>\n";
     }
 
     $htmltop =~ s/\@title\@/$title/g;

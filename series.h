@@ -63,9 +63,4 @@ extern void freeserieslist(gameseries *serieslist, int count,
 extern int findlevelinseries(gameseries const *series,
 			     int number, char const *passwd);
 
-/* A small level created at runtime, used for the display at the
- * completion of a series.
- */
-extern gamesetup *enddisplaylevel(void);
-
 #endif

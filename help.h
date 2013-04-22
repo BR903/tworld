@@ -11,8 +11,11 @@
  */
 enum {
     Help_None = 0,
+    Help_First,
     Help_KeysDuringGame,
     Help_KeysBetweenGames,
+    Help_FileListKeys,
+    Help_ScoreListKeys,
     Help_ObjectsOfGame,
     Help_CmdlineOptions,
     Help_AboutGame
@@ -26,14 +29,13 @@ extern tablespec const *yowzitch;
  */
 extern tablespec const *vourzhon;
 
-/* Display an online help screen, explaining the purpose of the
- * initial level set list and how to use Tile World.
- */
-extern void onlinefirsthelp(void);
-
 /* Display online help screens for the game, using the given topic as
  * the default topic.
  */
 extern void onlinemainhelp(int topic);
+
+/* Display a single online help screen for the given topic.
+ */
+extern void onlinecontexthelp(int topic);
 
 #endif

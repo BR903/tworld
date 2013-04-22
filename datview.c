@@ -79,14 +79,14 @@ static char const *objects[] = {
 /* 02 chip			*/	"#",
 /* 03 water			*/	"\033[36;44m=\033[0m",
 /* 04 fire			*/	"\033[31mx\033[0m",
-/* 05 invisible wall, perm.	*/	"\033[33m\016a\017\033[0m",
-/* 06 blocked north		*/	"\016o\017",
-/* 07 blocked west		*/	"\033(U\335\033(B",
+/* 05 invisible wall, perm.	*/	"\033[7mx\033[0m",
+/* 06 blocked north		*/	"\033(0o\033(B",
+/* 07 blocked west		*/	"(", /* "\033(U\335\033(B", */
 /* 08 blocked south		*/	"_",
-/* 09 blocked east		*/	"\033(U\336\033(B",
+/* 09 blocked east		*/	")", /* "\033(U\336\033(B", */
 /* 0A block			*/	"O",
-/* 0B dirt			*/	"\016h\017",
-/* 0C ice			*/	"\033[36m\016h\017\033[0m",
+/* 0B dirt			*/	"\033[33m\033(0a\033(B\033[0m",
+/* 0C ice			*/	"\033[36m\033(0a\033(B\033[0m",
 /* 0D force south		*/	"\033[32mv\033[0m",
 /* 0E cloning block north	*/	"O",
 /* 0F cloning block west	*/	"O",
@@ -95,17 +95,17 @@ static char const *objects[] = {
 /* 12 force north		*/	"\033[32m^\033[0m",
 /* 13 force east		*/	"\033[32m\273\033[0m",
 /* 14 force west		*/	"\033[32m\253\033[0m",
-/* 15 exit			*/	"\033[37;44m@\033[0m",
+/* 15 exit			*/	"\033[44m@\033[0m",
 /* 16 blue door			*/	"\033[36m0\033[0m",
 /* 17 red door			*/	"\033[31m0\033[0m",
 /* 18 green door		*/	"\033[32m0\033[0m",
 /* 19 yellow door		*/	"\033[1;33m0\033[0m",
-/* 1A SE ice slide		*/	"\033[36m\016l\017\033[0m",
-/* 1B SW ice slide		*/	"\033[36m\016k\017\033[0m",
-/* 1C NE ice slide		*/	"\033[36m\016j\017\033[0m",
-/* 1D NW ice slide		*/	"\033[36m\016m\017\033[0m",
-/* 1E blue block, tile		*/	"\033[7;34m\016h\017\033[0m",
-/* 1F blue block, wall		*/	"\033[7;34m \033[0m",
+/* 1A SE ice slide		*/	"\033[36m\033(0l\033(B\033[0m",
+/* 1B SW ice slide		*/	"\033[36m\033(0k\033(B\033[0m",
+/* 1C NE ice slide		*/	"\033[36m\033(0j\033(B\033[0m",
+/* 1D NW ice slide		*/	"\033[36m\033(0m\033(B\033[0m",
+/* 1E blue block, tile		*/	"\033[34m\033(0a\033(B\033[0m",
+/* 1F blue block, wall		*/	"\033[44m \033[0m",
 /* 20 not used			*/	"\033[1;31m?\033[0m",
 /* 21 thief			*/	"T",
 /* 22 socket			*/	"H",
@@ -118,11 +118,11 @@ static char const *objects[] = {
 /* 29 teleport			*/	"\033[36m*\033[0m",
 /* 2A bomb			*/	"\033[1;31m\362\033[0m",
 /* 2B trap			*/	"\033[31m*\033[0m",
-/* 2C invisible wall, temp.	*/	"\033[33m\016h\017\033[0m",
-/* 2D gravel			*/	"\016a\017",
+/* 2C invisible wall, temp.	*/	"\033[7m\327\033[0m",
+/* 2D gravel			*/	"\033(0a\033(B",
 /* 2E pass once			*/	"*",
 /* 2F hint			*/	"?",
-/* 30 blocked SE		*/	"\016j\017",
+/* 30 blocked SE		*/	"\033(0j\033(B",
 /* 31 cloning machine		*/	"C",
 /* 32 force all directions	*/	"\033[32m+\033[0m",
 /* 33 drowning Chip		*/	"\033[36;44m*\033[0m",
@@ -130,7 +130,7 @@ static char const *objects[] = {
 /* 35 burned Chip		*/	"\033[31m\251\033[0m",
 /* 36 not used			*/	"\033[1;31m?\033[0m",
 /* 37 not used			*/	"\033[1;31m?\033[0m",
-/* 38 not used			*/	"\033[1;31m?\033[0m",
+/* 38 not used			*/	"\033[36mO\033[0m",
 /* 39 Chip in exit		*/	"\033[1;37;44m\251\033[0m",
 /* 3A exit - end game		*/	"\033[1;37;44m@\033[0m",
 /* 3B exit - end game		*/	"\033[1;37;44m@\033[0m",
@@ -202,12 +202,12 @@ static char const *objects[] = {
  * centipede = paramecium	hug right
  */
 
-static void printwrap(char const *str, int x0)
+static void printwrap(unsigned char const *str, int x0)
 {
     char const *p;
     int		i, n, x;
 
-    p = str;
+    p = (char const*)str;
     n = strlen(p);
     x = x0;
     while (n > 78 - x) {
@@ -240,7 +240,7 @@ static int readlevel(FILE *fp, cclevelhead *lhead, field fields[16])
 
     if (!readval(fieldnum) || !readval(off))
 	return 2;
-    if (fieldnum != 1)
+    if (fieldnum != 0 && fieldnum != 1)
 	return 3;
     fields[1].type = 1;
     fields[1].size = off;
@@ -319,12 +319,14 @@ static void fixpassword(field *f)
 	*p ^= 0x99;
 }
 
+#if 0
 static int isobject(uchar item)
 {
     return item == 0x0A || (item >= 0x0E && item <= 0x11)
 			|| (item >= 0x3C && item <= 0x63)
 			|| (item >= 0x6C && item <= 0x6F);
 }
+#endif
 
 static void makelevelmap(ccmapcell map[32][32],
 			 uchar const map1[32][32], uchar const map2[32][32])
@@ -333,12 +335,11 @@ static void makelevelmap(ccmapcell map[32][32],
 
     for (y = 0 ; y < 32 ; ++y) {
 	for (x = 0 ; x < 32 ; ++x) {
+#if 1
+	    map[x][y].floor = map1[x][y];
+	    map[x][y].object = map2[x][y];
+#else
 	    if (map2[x][y]) {
-/*
-		if (!isobject(map1[x][y]) || isobject(map2[x][y]))
-		    printf("!!!! %02d %02d: %02X on %02X\n",
-			   x, y, map1[x][y], map2[x][y]);
-*/
 		map[x][y].floor = map2[x][y];
 		map[x][y].object = map1[x][y];
 		if (map2[x][y] && !map1[x][y])
@@ -350,6 +351,7 @@ static void makelevelmap(ccmapcell map[32][32],
 		map[x][y].floor = map1[x][y];
 		map[x][y].object = 0;
 	    }
+#endif
 	}
     }
 }
@@ -357,6 +359,7 @@ static void makelevelmap(ccmapcell map[32][32],
 static cclevel makelevel(cclevelhead lhead, field fields[16])
 {
     cclevel	level;
+    ccmapcell  *cell;
     int		i;
 
     level.num = lhead.levelnum;
@@ -370,15 +373,15 @@ static cclevel makelevel(cclevelhead lhead, field fields[16])
     memset(fields + 1, 0, sizeof fields[1]);
     free(fields[2].data);
     memset(fields + 2, 0, sizeof fields[2]);
-    strcpy(level.name, fields[3].data);
+    memcpy(level.name, fields[3].data, fields[3].size);
     free(fields[3].data);
     memset(fields + 3, 0, sizeof fields[3]);
     fixpassword(&fields[6]);
-    strcpy(level.pass, fields[6].data);
+    memcpy(level.pass, fields[6].data, fields[6].size);
     free(fields[6].data);
     memset(fields + 6, 0, sizeof fields[6]);
     if (fields[7].type) {
-	strcpy(level.hint, fields[7].data);
+	memcpy(level.hint, fields[7].data, fields[7].size);
 	free(fields[7].data);
 	memset(fields + 7, 0, sizeof fields[7]);
     } else
@@ -392,7 +395,11 @@ static cclevel makelevel(cclevelhead lhead, field fields[16])
 	    level.traps[i].from.y = fields[4].data[i * 10 + 2];
 	    level.traps[i].to.x   = fields[4].data[i * 10 + 4];
 	    level.traps[i].to.y   = fields[4].data[i * 10 + 6];
-	    level.map[level.traps[i].to.y][level.traps[i].to.x].floor = 0x71;
+	    cell = &level.map[level.traps[i].to.y][level.traps[i].to.x];
+	    if (cell->floor == 0x2B)
+		cell->floor = 0x71;
+	    if (cell->object == 0x2B)
+		cell->object = 0x71;
 	}
 	free(fields[4].data);
 	memset(fields + 4, 0, sizeof fields[4]);
@@ -588,7 +595,8 @@ int main(int argc, char *argv[])
 			   level.cloners[y - level.trapcount].to.y);
 		else if (y == level.trapcount + level.clonercount
 						&& level.creaturecount)
-		    printf(" %d creatures", level.creaturecount);
+		    printf(" %d creature%s", level.creaturecount,
+					level.creaturecount == 1 ? "" : "s");
 		printf("\n");
 	    }
 	}

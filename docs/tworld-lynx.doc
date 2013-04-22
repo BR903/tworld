@@ -1,0 +1,34 @@
+tworld-lynx / Tile World and the Lynx Ruleset / Apr 2006 / Tile World and the Lynx Ruleset
+
+.section Lynx Ruleset Differences
+
+The Lynx ruleset emulation intentionally diverges from the original in
+a few minor aspects. The most noticeable of the differences are as
+follows:
+
+.list
+. On the Atari Lynx, no more than 128 creatures could exist at one
+time. Attempting to create a 129th creature with a clone machine
+would cause it to "run out". Tile World imposes no such limit.
+. On the Atari Lynx, there were no Wall North or Wall West tiles.
+These two tiles were introduced by the MS version, even though they do
+not appear in the original level set. Tile World nonetheless permits
+these tiles to be used in Lynx levels.
+. The Atari Lynx did not permit arbitrary wiring of buttons. Brown
+buttons were automatically connected to the next bear trap in reading
+order (scanning to the right, then along the next row going down, and
+restarting at the top if the bottom is reached, until a beartrap is
+found), and likewise with red buttons and clone machines. Tile World
+follows the explicit wiring information present in the data file.
+
+These differences were specifically allowed to stand because they are
+aspects of the game that are rarely or never addressed by the original
+level set, and were felt by the community at the time to be more like
+artifacts of the implementation than intentional features of the
+original design.
+
+These differences, however, can be suppressed by running Tile World in
+"pedantic mode". (See the documentation for <-P> under #Command-Line
+Options# above.) Thus for example in pedantic mode Tile World's Lynx
+ruleset imposes a maximum of 128 creatures, ignores wiring data in the
+data file, and refuses to play levels containing the new wall tiles.

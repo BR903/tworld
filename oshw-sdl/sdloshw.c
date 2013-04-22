@@ -24,6 +24,7 @@ oshwglobals	sdlg;
  */
 static void _eventupdate(int wait)
 {
+    static int	mouselastx = -1, mouselasty = -1;
     SDL_Event	event;
 
     if (wait)
@@ -32,23 +33,33 @@ static void _eventupdate(int wait)
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_ALLEVENTS)) {
 	switch (event.type) {
 	  case SDL_KEYDOWN:
-	    SDL_ShowCursor(SDL_DISABLE);
+	    if (windowmappos(mouselastx, mouselasty) < 0)
+		SDL_ShowCursor(SDL_DISABLE);
 	    keyeventcallback(event.key.keysym.sym, TRUE);
 	    if (event.key.keysym.unicode
-			&& event.key.keysym.unicode != event.key.keysym.sym)
+			&& event.key.keysym.unicode != event.key.keysym.sym) {
 		keyeventcallback(event.key.keysym.unicode, TRUE);
+		keyeventcallback(event.key.keysym.unicode, FALSE);
+	    }
 	    break;
 	  case SDL_KEYUP:
-	    SDL_ShowCursor(SDL_DISABLE);
+	    if (windowmappos(mouselastx, mouselasty) < 0)
+		SDL_ShowCursor(SDL_DISABLE);
 	    keyeventcallback(event.key.keysym.sym, FALSE);
-	    if (event.key.keysym.unicode
-			&& event.key.keysym.unicode != event.key.keysym.sym)
-		keyeventcallback(event.key.keysym.unicode, FALSE);
+	    break;
+	  case SDL_MOUSEBUTTONDOWN:
+	  case SDL_MOUSEBUTTONUP:
+	    SDL_ShowCursor(SDL_ENABLE);
+	    mouselastx = event.motion.x;
+	    mouselasty = event.motion.y;
+	    mouseeventcallback(event.button.x, event.button.y,
+			       event.button.button,
+			       event.type == SDL_MOUSEBUTTONDOWN);
 	    break;
 	  case SDL_MOUSEMOTION:
-	  case SDL_MOUSEBUTTONUP:
-	  case SDL_MOUSEBUTTONDOWN:
 	    SDL_ShowCursor(SDL_ENABLE);
+	    mouselastx = event.motion.x;
+	    mouselasty = event.motion.y;
 	    break;
 	  case SDL_QUIT:
 	    exit(EXIT_SUCCESS);

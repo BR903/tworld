@@ -44,37 +44,23 @@ static void nextrandom(prng *gen)
 	gen->value = nextvalue(gen->value);
 }
 
+/* Create a new PRNG, reset to the shared sequence.
+ */
+prng createprng(void)
+{
+    prng gen;
+    resetprng(&gen);
+    return gen;
+}
+
 /* We start off a fresh series by taking the current time. A few
  * numbers are generated and discarded to work out any biases in the
  * seed value.
  */
-prng createprng(void)
-{
-    prng	gen;
-
-    if (lastvalue > 0x7FFFFFFFUL) {
-	lastvalue = (unsigned long)time(NULL);
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-    }
-    gen.value = gen.initial = lastvalue;
-    gen.shared = TRUE;
-    return gen;
-}
-
-/* Reset a PRNG to the shared sequence.
- */
 void resetprng(prng *gen)
 {
-    if (lastvalue > 0x7FFFFFFFUL) {
-	lastvalue = (unsigned long)time(NULL);
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-	lastvalue = ((lastvalue * 1103515245UL) + 12345UL) & 0x7FFFFFFFUL;
-    }
+    if (lastvalue > 0x7FFFFFFFUL)
+	lastvalue = nextvalue(nextvalue(nextvalue(nextvalue(time(NULL)))));
     gen->value = gen->initial = lastvalue;
     gen->shared = TRUE;
 }

@@ -51,7 +51,7 @@ typedef	struct prng {
 
 /* A move is specified by its direction and when it takes place.
  */
-typedef	struct action { int when:27, dir:5; } action;
+typedef	struct action { unsigned int when:23, dir:9; } action;
 
 /* A structure for managing the memory holding the moves of a game.
  */
@@ -61,13 +61,23 @@ typedef struct actlist {
     action	       *list;		/* the array */
 } actlist;
 
-/* Two x,y-coordinates give the locations of a button and what it is
- * connected to.
+/* A structure holding all the data needed to reconstruct a solution.
  */
-typedef	struct xyconn {
-    short		from;		/* location of the button */
-    short		to;		/* location of the trap/cloner */
-} xyconn;
+typedef	struct solutioninfo {
+    actlist		moves;		/* the actual moves of the solution */
+    unsigned long	rndseed;	/* the PRNG's initial seed */
+    unsigned long	flags;		/* other flags (currently unused) */
+    unsigned char	rndslidedir;	/* random slide's initial direction */
+    signed char		stepping;	/* the timer offset */
+} solutioninfo;
+
+/* The range of relative mouse moves is a 19x19 square around Chip.
+ * (Mouse moves are stored as a relative offset in order to fit all
+ * possible moves in nine bits.)
+ */
+#define	MOUSERANGEMIN	-9
+#define	MOUSERANGEMAX	+9
+#define	MOUSERANGE	19
 
 /* The complete list of commands that the user can given.
  */
@@ -77,8 +87,17 @@ enum {
     CmdWest = WEST,
     CmdSouth = SOUTH,
     CmdEast = EAST,
-    CmdMoveFirst = NORTH,
-    CmdMoveLast = NORTH | WEST | SOUTH | EAST,
+    CmdKeyMoveFirst = NORTH,
+    CmdKeyMoveLast = NORTH | WEST | SOUTH | EAST,
+    CmdMouseMoveFirst,
+    CmdMoveNop = CmdMouseMoveFirst - MOUSERANGEMIN * (MOUSERANGE + 1),
+    CmdMouseMoveLast = CmdMouseMoveFirst + MOUSERANGE * MOUSERANGE - 1,
+    CmdReservedFirst,
+    CmdReservedLast = 511,
+    CmdAbsMouseMoveFirst,
+    CmdAbsMouseMoveLast = CmdAbsMouseMoveFirst + CXGRID * CYGRID - 1,
+    CmdMoveFirst = CmdKeyMoveFirst,
+    CmdMoveLast = CmdAbsMouseMoveLast,
     CmdPrevLevel,
     CmdNextLevel,
     CmdSameLevel,
@@ -96,6 +115,7 @@ enum {
     CmdReplSolution,
     CmdKillSolution,
     CmdSeeScores,
+    CmdSeeSolutionFiles,
     CmdVolumeUp,
     CmdVolumeDown,
     CmdStepping,
@@ -121,6 +141,11 @@ enum {
     CmdCheatICChip,
     CmdCount
 };
+
+/* True if cmd is a simple directional command, i.e. a single
+ * orthogonal or diagonal move (or CmdNone).
+ */
+#define	directionalcmd(cmd)	(((cmd) & ~CmdKeyMoveLast) == 0)
 
 /* The list of available sound effects.
  */
@@ -165,26 +190,16 @@ enum {
 typedef	struct gamesetup {
     int			number;		/* numerical ID of the level */
     int			time;		/* no. of seconds allotted */
-    int			chips;		/* no. of chips for the socket */
     int			besttime;	/* time (in ticks) of best solution */
-    unsigned long	savedrndseed;	/* PRNG seed of best solution */
-    unsigned char	savedrndslidedir; /* rnd-slide dir of best solution */
-    signed char		savedstepping;	/* timer offset of best solution */
-    unsigned char	sgflags;	/* saved-game flags (see below) */
-    int			map1size;	/* compressed size of layer 1 */
-    int			map2size;	/* compressed size of layer 2 */
-    unsigned char      *map1;		/* layer 1 (top) of the map */
-    unsigned char      *map2;		/* layer 2 (bottom) of the map */
-    int			creaturecount;	/* size of active creature list */
-    int			trapcount;	/* size of beartrap connection list */
-    int			clonercount;	/* size of cloner connection list */
-    actlist		savedsolution;	/* the player's best solution so far */
-    short		creatures[256];	/* the active creature list */
-    xyconn		traps[256];	/* the beatrap connection list */
-    xyconn		cloners[256];	/* the clone machine connection list */
+    int			sgflags;	/* saved-game flags (see below) */
+    int			levelsize;	/* size of the level data */
+    int			solutionsize;	/* size of the saved solution data */
+    unsigned char      *leveldata;	/* the data defining the level */
+    unsigned char      *solutiondata;	/* the player's best solution so far */
+    unsigned long	levelhash;	/* the level data's hash value */
+    char const	       *unsolvable;	/* why level is unsolvable, or NULL */
     char		name[256];	/* name of the level */
     char		passwd[256];	/* the level's password */
-    char		hinttext[256];	/* the level's hint */
 } gamesetup;
 
 /* Flags associated with a saved game.
@@ -196,9 +211,8 @@ typedef	struct gamesetup {
 /* The collection of data maintained for each series.
  */
 typedef	struct gameseries {
-    int			total;		/* number of levels in the series */
+    int			count;		/* number of levels in the series */
     int			allocated;	/* number of elements allocated */
-    int			count;		/* actual size of array */
     int			final;		/* number of the ending level */
     int			ruleset;	/* the ruleset for the game file */
     int			gsflags;	/* series flags (see below) */
@@ -209,8 +223,8 @@ typedef	struct gameseries {
     char	       *savefilename;	/* non-default name for said file */
     int			solheaderflags;	/* solution flags (none defined yet) */
     int			solheadersize;	/* size of extra solution header */
-    char		filebase[256];	/* the root of the main filename */
-    char		name[256];	/* the name of the series */
+    char		filebase[256];	/* the level set's filename */
+    char		name[256];	/* the filename minus any path */
     unsigned char	solheader[256];	/* extra solution header bytes */
 } gameseries;
 
@@ -218,9 +232,8 @@ typedef	struct gameseries {
  */
 #define	GSF_ALLMAPSREAD		0x0001	/* finished reading the data file */
 #define	GSF_NOSAVING		0x0002	/* treat solution file as read-only */
-#define	GSF_SAVESETNAME		0x0004  /* store set name in solution file */
-#define	GSF_NODEFAULTSAVE	0x0008	/* don't use default tws filename */
-#define	GSF_IGNOREPASSWDS	0x0010	/* don't require passwords */
-#define	GSF_LYNXFIXES		0x0020	/* change MS data into Lynx levels */
+#define	GSF_NODEFAULTSAVE	0x0004	/* don't use default tws filename */
+#define	GSF_IGNOREPASSWDS	0x0008	/* don't require passwords */
+#define	GSF_LYNXFIXES		0x0010	/* change MS data into Lynx levels */
 
 #endif

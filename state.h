@@ -122,6 +122,8 @@ enum
 #define	isdoor(f)	((f) >= Door_Red && (f) <= Door_Green)
 #define	iskey(f)	((f) >= Key_Red && (f) <= Key_Green)
 #define	isboots(f)	((f) >= Boots_Ice && (f) <= Boots_Water)
+#define	ismsspecial(f)	((f) >= Drowned_Chip && (f) <= Overlay_Buffer)
+#define	isfloor(f)	((f) <= Floor_Reserved1)
 #define	iscreature(f)	((f) >= Chip && (f) < Water_Splash)
 #define	isanimation(f)	((f) >= Water_Splash && (f) <= Animation_Reserved1)
 
@@ -129,22 +131,35 @@ enum
  */
 #define	crtile(id, dir)	((id) | diridx(dir))
 
+/* Macros for decomposing a creature tile into ID and direction.
+ */
+#define	creatureid(id)		((id) & ~3)
+#define	creaturedirid(id)	(idxdir((id) & 3))
+
 /*
  * Substructures of the game state
  */
 
+/* Two x,y-coordinates give the locations of a button and what it is
+ * connected to.
+ */
+typedef	struct xyconn {
+    short		from;		/* location of the button */
+    short		to;		/* location of the trap/cloner */
+} xyconn;
+
 /* A tile on the map.
  */
 typedef struct maptile {
-    unsigned char	id;	/* identity of the tile */
-    unsigned char	state;	/* internal state flags */
+    unsigned char	id;		/* identity of the tile */
+    unsigned char	state;		/* internal state flags */
 } maptile;
 
 /* A location on the map.
  */
 typedef	struct mapcell {
-    maptile		top;	/* the upper tile */
-    maptile		bot;	/* the lower tile */
+    maptile		top;		/* the upper tile */
+    maptile		bot;		/* the lower tile */
 } mapcell;
 
 /* A creature.
@@ -195,14 +210,21 @@ typedef struct gamestate {
     short		keys[4];		/* keys collected */
     short		boots[4];		/* boots collected */
     short		statusflags;		/* flags (see below) */
-    unsigned char	lastmove;		/* most recent move */
+    short		lastmove;		/* most recent move */
     unsigned char	initrndslidedir;	/* initial random-slide dir */
     signed char		stepping;		/* initial timer offset 0-7 */
     unsigned long	soundeffects;		/* the latest sound effects */
     actlist		moves;			/* the list of moves */
     prng		mainprng;		/* the main PRNG */
-    mapcell		map[CXGRID * CYGRID];	/* the game's map */
     creature	       *creatures;		/* the creature list */
+    short		trapcount;		/* number of trap buttons */
+    short		clonercount;		/* number of cloner buttons */
+    short		crlistcount;		/* number of creatures */
+    xyconn		traps[256];		/* list of trap wirings */
+    xyconn		cloners[256];		/* list of cloner wirings */
+    short		crlist[256];		/* list of creatures */
+    char		hinttext[256];		/* text of the hint */
+    mapcell		map[CXGRID * CYGRID];	/* the game's map */
     unsigned char	localstateinfo[256];	/* rule-specific state data */
 } gamestate;
 
@@ -210,8 +232,10 @@ typedef struct gamestate {
  */
 #define	SF_NOSAVING		0x0001		/* solution won't be saved */
 #define	SF_INVALID		0x0002		/* level is not playable */
-#define	SF_SHOWHINT		0x0004		/* display the hint text */
-#define	SF_NOANIMATION		0x0008		/* suppress tile animation */
+#define	SF_BADTILES		0x0004		/* map has undefined tiles */
+#define	SF_SHOWHINT		0x0008		/* display the hint text */
+#define	SF_NOANIMATION		0x0010		/* suppress tile animation */
+#define	SF_SHUTTERED		0x0020		/* hide map view */
 
 /* Macros for the keys and boots.
  */

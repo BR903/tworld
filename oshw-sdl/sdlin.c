@@ -20,6 +20,14 @@ typedef	struct keycmdmap {
     int		hold;		/* TRUE for repeating joystick-mode keys */
 } keycmdmap;
 
+/* Structure describing mouse activity.
+ */
+typedef struct mouseaction {
+    int		state;		/* state of mouse action (KS_*) */
+    int		x, y;		/* position of the mouse */
+    int		button;		/* which button generated the event */
+} mouseaction;
+
 /* The possible states of keys.
  */
 enum { KS_OFF = 0,		/* key is not currently pressed */
@@ -29,17 +37,22 @@ enum { KS_OFF = 0,		/* key is not currently pressed */
        KS_PRESSED,		/* key was pressed in this tick */
        KS_DOWNBUTOFF1,		/* key has been down since the previous tick */
        KS_DOWNBUTOFF2,		/* key has been down since two ticks ago */
+       KS_DOWNBUTOFF3,		/* key has been down since three ticks ago */
        KS_REPEATING,		/* key is down and is now repeating */
        KS_count
 };
 
 /* The complete array of key states.
  */
-static char	keystates[SDLK_LAST];
+static char		keystates[SDLK_LAST];
+
+/* The last mouse action.
+ */
+static mouseaction	mouseinfo;
 
 /* TRUE if direction keys are to be treated as always repeating.
  */
-static int	joystickstyle = FALSE;
+static int		joystickstyle = FALSE;
 
 /* The complete list of key commands recognized by the game while
  * playing. hold is TRUE for keys that are to be forced to repeat.
@@ -76,6 +89,7 @@ static keycmdmap const gamekeycmds[] = {
     { 'x',                        0, +1,  0,   CmdReplSolution,       FALSE },
     { 'x',                       +1, +1,  0,   CmdKillSolution,       FALSE },
     { 's',                        0,  0,  0,   CmdSeeScores,          FALSE },
+    { 's',			  0, +1,  0,   CmdSeeSolutionFiles,   FALSE },
     { 'v',                       +1,  0,  0,   CmdVolumeUp,           FALSE },
     { 'v',                        0,  0,  0,   CmdVolumeDown,         FALSE },
     { SDLK_RETURN,               -1, -1,  0,   CmdProceed,            FALSE },
@@ -153,7 +167,7 @@ static keycmdmap const *keycmds = gamekeycmds;
 /* A map of keys that can be held down simultaneously to produce
  * multiple commands.
  */
-static int mergeable[CmdCount];
+static int mergeable[CmdKeyMoveLast + 1];
 
 /*
  * Running the keyboard's state machine.
@@ -228,6 +242,7 @@ static void resetkeystates(void)
 	/* KS_PRESSED     => */	KS_DOWN,
 	/* KS_DOWNBUTOFF1 => */	KS_DOWN,
 	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
+	/* KS_DOWNBUTOFF3 => */	KS_DOWN,
 	/* KS_REPEATING   => */	KS_DOWN
     };
     /* The transition table for keys in keyboard behavior mode.
@@ -240,6 +255,7 @@ static void resetkeystates(void)
 	/* KS_PRESSED     => */	KS_DOWNBUTOFF1,
 	/* KS_DOWNBUTOFF1 => */	KS_DOWNBUTOFF2,
 	/* KS_DOWNBUTOFF2 => */	KS_DOWN,
+	/* KS_DOWNBUTOFF3 => */	KS_DOWN,
 	/* KS_REPEATING   => */	KS_DOWN
     };
 
@@ -249,6 +265,58 @@ static void resetkeystates(void)
     newstate = joystickstyle ? joystick_trans : keyboard_trans;
     for (n = 0 ; n < SDLK_LAST ; ++n)
 	keystates[n] = newstate[(int)keystates[n]];
+}
+
+/*
+ * Mouse event functions.
+ */
+
+/* This callback is called whenever there is a state change in the
+ * mouse buttons. Up events are ignored. Down events are stored to
+ * be examined later.
+ */
+static void _mouseeventcallback(int xpos, int ypos, int button, int down)
+{
+    if (down) {
+	mouseinfo.state = KS_PRESSED;
+	mouseinfo.x = xpos;
+	mouseinfo.y = ypos;
+	mouseinfo.button = button;
+    }
+}
+
+/* Return the command appropriate to the most recent mouse activity.
+ */
+static int retrievemousecommand(void)
+{
+    int	n;
+
+    switch (mouseinfo.state) {
+      case KS_PRESSED:
+	mouseinfo.state = KS_OFF;
+	if (mouseinfo.button == SDL_BUTTON_WHEELDOWN)
+	    return CmdNext;
+	if (mouseinfo.button == SDL_BUTTON_WHEELUP)
+	    return CmdPrev;
+	if (mouseinfo.button == SDL_BUTTON_LEFT) {
+	    n = windowmappos(mouseinfo.x, mouseinfo.y);
+	    if (n >= 0) {
+		mouseinfo.state = KS_DOWNBUTOFF1;
+		return CmdAbsMouseMoveFirst + n;
+	    }
+	}
+	break;
+      case KS_DOWNBUTOFF1:
+	mouseinfo.state = KS_DOWNBUTOFF2;
+	return CmdPreserve;
+      case KS_DOWNBUTOFF2:
+	mouseinfo.state = KS_DOWNBUTOFF3;
+	return CmdPreserve;
+      case KS_DOWNBUTOFF3:
+	mouseinfo.state = KS_OFF;
+	return CmdPreserve;
+    }
+    return 0;
 }
 
 /*
@@ -285,50 +353,56 @@ int anykey(void)
  */
 int input(int wait)
 {
-    int	lingerflag = FALSE;
-    int	cmd1, cmd;
-    int	i, n;
+    keycmdmap const    *kc;
+    int			lingerflag = FALSE;
+    int			cmd1, cmd, n;
 
     for (;;) {
 	resetkeystates();
 	eventupdate(wait);
 
 	cmd1 = cmd = 0;
-	for (i = 0 ; keycmds[i].scancode ; ++i) {
-	    n = keystates[keycmds[i].scancode];
+	for (kc = keycmds ; kc->scancode ; ++kc) {
+	    n = keystates[kc->scancode];
 	    if (!n)
 		continue;
-	    if (keycmds[i].shift != -1)
-		if (keycmds[i].shift != (keystates[SDLK_LSHIFT]
-						|| keystates[SDLK_RSHIFT]))
+	    if (kc->shift != -1)
+		if (kc->shift !=
+			(keystates[SDLK_LSHIFT] || keystates[SDLK_RSHIFT]))
 		    continue;
-	    if (keycmds[i].ctl != -1)
-		if (keycmds[i].ctl != (keystates[SDLK_LCTRL]
-						|| keystates[SDLK_RCTRL]))
+	    if (kc->ctl != -1)
+		if (kc->ctl !=
+			(keystates[SDLK_LCTRL] || keystates[SDLK_RCTRL]))
 		    continue;
-	    if (keycmds[i].alt != -1)
-		if (keycmds[i].alt != (keystates[SDLK_LALT]
-						|| keystates[SDLK_RALT]))
+	    if (kc->alt != -1)
+		if (kc->alt != (keystates[SDLK_LALT] || keystates[SDLK_RALT]))
 		    continue;
 
-	    if (n == KS_PRESSED || (keycmds[i].hold && n == KS_DOWN)) {
+	    if (n == KS_PRESSED || (kc->hold && n == KS_DOWN)) {
 		if (!cmd1) {
-		    cmd1 = keycmds[i].cmd;
-		    if (!joystickstyle || !mergeable[cmd1])
+		    cmd1 = kc->cmd;
+		    if (!joystickstyle || cmd1 > CmdKeyMoveLast
+				       || !mergeable[cmd1])
 			return cmd1;
 		} else {
-		    if ((mergeable[cmd1] & keycmds[i].cmd) == keycmds[i].cmd)
-			return cmd1 | keycmds[i].cmd;
+		    if (cmd1 <= CmdKeyMoveLast
+				&& (mergeable[cmd1] & kc->cmd) == kc->cmd)
+			return cmd1 | kc->cmd;
 		}
 	    } else if (n == KS_STRUCK || n == KS_REPEATING) {
-		cmd = keycmds[i].cmd;
+		cmd = kc->cmd;
 	    } else if (n == KS_DOWNBUTOFF1 || n == KS_DOWNBUTOFF2) {
 		lingerflag = TRUE;
 	    }
 	}
 	if (cmd1)
 	    return cmd1;
-	if (cmd || !wait)
+	if (cmd)
+	    return cmd;
+	cmd = retrievemousecommand();
+	if (cmd)
+	    return cmd;
+	if (!wait)
 	    break;
     }
     if (!cmd && lingerflag)
@@ -375,6 +449,7 @@ int setkeyboardinputmode(int enable)
 int _sdlinputinitialize(void)
 {
     sdlg.keyeventcallbackfunc = _keyeventcallback;
+    sdlg.mouseeventcallbackfunc = _mouseeventcallback;
 
     mergeable[CmdNorth] = mergeable[CmdSouth] = CmdWest | CmdEast;
     mergeable[CmdWest] = mergeable[CmdEast] = CmdNorth | CmdSouth;
@@ -408,22 +483,34 @@ tablespec const *keyboardhelp(int which)
 	"1-N", "1-jump to the next level",
 	"1-PgUp", "1-skip back ten levels",
 	"1-PgDn", "1-skip ahead ten levels",
-	"1-G", "1-go to a level with a password",
-	"1-S", "1-see the current score",
-	"1-Q", "1-return to the file list",
+	"1-G", "1-go to a level using a password",
+	"1-S", "1-see the scores for each level",
 	"1-Tab", "1-playback saved solution",
 	"1-Shift-Tab", "1-verify saved solution",
 	"1-Ctrl-X", "1-replace existing solution",
-	"1-ShiftCtrl-X", "1-delete existing solution",
+	"1-Shift-Ctrl-X", "1-delete existing solution",
+	"1-Ctrl-S", "1-see the available solution files",
 	"1-O", "1-toggle between even-step and odd-step offset",
 	"1-Shift-O", "1-increment stepping offset (Lynx only)",
 	"1-V", "1-decrease volume",
 	"1-Shift-V", "1-increase volume",
+	"1-Q", "1-return to the file list",
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_twixtgame = { 16, 2, 4, 1,
+    static tablespec const keyhelp_twixtgame = { 18, 2, 4, 1,
 						 twixtgame_items };
+
+    static char *scorelist_items[] = {
+	"1-up down", "1-move selection",
+	"1-PgUp PgDn", "1-scroll selection",
+	"1-Enter Space", "1-select level",
+	"1-Ctrl-S", "1-change solution file",
+	"1-Q", "1-return to the last level",
+	"1-Ctrl-C", "1-exit the program",
+	"1-Alt-F4", "1-exit the program"
+    };
+    static tablespec const keyhelp_scorelist = { 7, 2, 4, 1, scorelist_items };
 
     static char *scroll_items[] = {
 	"1-up down", "1-move selection",
@@ -438,8 +525,8 @@ tablespec const *keyboardhelp(int which)
     switch (which) {
       case KEYHELP_INGAME:	return &keyhelp_ingame;
       case KEYHELP_TWIXTGAMES:	return &keyhelp_twixtgame;
+      case KEYHELP_SCORELIST:	return &keyhelp_scorelist;
       case KEYHELP_FILELIST:	return &keyhelp_scroll;
-      case KEYHELP_SCORELIST:	return &keyhelp_scroll;
     }
 
     return NULL;

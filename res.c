@@ -11,6 +11,7 @@
 #include	"fileio.h"
 #include	"err.h"
 #include	"oshw.h"
+#include	"unslist.h"
 #include	"res.h"
 
 /*
@@ -29,7 +30,11 @@
 #define	RES_CLR_DIM		(RES_CLR_BASE + 3)
 #define	RES_CLR_LAST		RES_CLR_DIM
 
-#define	RES_SND_BASE		(RES_CLR_LAST + 1)
+#define	RES_TXT_BASE		(RES_CLR_LAST + 1)
+#define	RES_TXT_UNSLIST		(RES_TXT_BASE + 0)
+#define	RES_TXT_LAST		RES_TXT_UNSLIST
+
+#define	RES_SND_BASE		(RES_TXT_LAST + 1)
 #define	RES_SND_CHIP_LOSES	(RES_SND_BASE + SND_CHIP_LOSES)
 #define	RES_SND_CHIP_WINS	(RES_SND_BASE + SND_CHIP_WINS)
 #define	RES_SND_TIME_OUT	(RES_SND_BASE + SND_TIME_OUT)
@@ -83,6 +88,7 @@ static rcitem rclist[] = {
     { "textcolor",		FALSE },
     { "boldtextcolor",		FALSE },
     { "dimtextcolor",		FALSE },
+    { "unsolvablelist",		FALSE },
     { "chipdeathsound",		FALSE },
     { "levelcompletesound",	FALSE },
     { "chipdeathbytimesound",	FALSE },
@@ -301,6 +307,23 @@ static int loadfont(void)
     return f;
 }
 
+/* Load the list of unsolvable levels.
+ */
+static int loadunslist(void)
+{
+    char const *filename;
+
+    if (*resources[RES_TXT_UNSLIST].str)
+	filename = resources[RES_TXT_UNSLIST].str;
+    else if (resources != globalresources
+			&& *globalresources[RES_TXT_UNSLIST].str)
+	filename = globalresources[RES_TXT_UNSLIST].str;
+    else
+	return FALSE;
+
+    return loadunslistfromfile(filename);
+}
+
 /* Load all of the sound resources.
  */
 static int loadsounds(void)
@@ -354,7 +377,10 @@ int initresources(void)
 {
     initresourcedefaults();
     resources = allresources[Ruleset_None];
-    return readrcfile() && loadcolors() && loadfont();
+    if (!readrcfile() || !loadcolors() || !loadfont())
+	return FALSE;
+    loadunslist();
+    return TRUE;
 }
 
 /* Free all resources.
@@ -365,6 +391,7 @@ void freeallresources(void)
 
     freefont();
     freetileset();
+    clearunslist();
     for (n = 0 ; n < SND_COUNT ; ++n)
 	 freesfx(n);
 }

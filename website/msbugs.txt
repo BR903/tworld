@@ -2,108 +2,29 @@ ruleset ms
 
 %%%
 
-title   Buried Brown Button I
-passwd  BDHP
+title   Erasing Monsters
 
 tiles
-*	beartrap
-0	toggle wall open + brown button
-G	glider north
-F	fireball west
+F	fireball north
 end
 
 map
-E | G   | G
-        , 0     F
-    * @   *
-  , 0   F
-  _  |  _  |
-and
-E | 1   | 2
-        , x     3
-    y @   x
-  , y   4
-  _  |  _  |
+  & E
+F
 end
 
-% Action: None.
-% TW result: Both traps are permanently closed.
-% MS result: Left-hand glider becomes trapped, right-hand glider does
-% not. The left-hand glider moves from where the button used to be
-% directly into the trap, whereas the right-hand glider does not. Chip
-% can test this by moving through the right-hand trap. Only if he
-% enters it from the north will he get stuck.
-
-%%%
-
-title   Buried Brown Button II
-passwd  JXMJ
-
-tiles
-*	beartrap
-.	brown button
-;	red key + brown button
->	glider east
-<	glider west
-end
-
-map
-# # # #     # # # #
-#     # @   #     #
-# # * # . . # * # #
-# > ; #     # . < #
-# # # #   E # # # #
-and
-# # # #     # # # #
-#     # @   #     #
-# # x # x y # y # #
-# > x #     # y < #
-# # # #   E # # # #
-end
-
-% Action: Variously press and release the brown buttons.
-% TW result: After the brown button under the red key goes away, the
-% left-hand trap behaves as if it had never been there.
-% MS result: The left-hand glider can pass through the trap without
-% Chip standing on the brown button, but only when moving south. When
-% moving north (i.e. out of the square where the button used to be),
-% the glider will be trapped.
-
-%%%
-
-title   Buried Brown Button III
-passwd  YMCJ
-
-tiles
-*	beartrap
-.	brown button
-;	red key + brown button
-o	ball east
-O	ball north
-end
-
-map
-E     #
-  . @
-   
-# o ; *     #
-
-      O
-      #
-end
-
-% Action: Variously press and release the brown button.
-% TW result: The trap behaves as if the extra button (under the key)
-% was never there.
-% MS result: The vertical ball always passed through the trap without
-% becoming trapped. The horizontal ball will become trapped when
-% moving eastwards into the trap unless Chip is standing on the brown
-% button.
+% Action: Start the level without moving. On the next tick, push left.
+% MS result: Chip replaces the fireball briefly, then is erased again
+% as the fireball moves into (1,0). The fireball is somehow destroyed
+% by the fire tile. If the fire is replaced by an empty tile, the
+% fireball survives. Similar results can be obtained using a glider
+% and water.
+% TW result: The fireball moves into (1,0). Neither it nor Chip is
+% harmed.
 
 %%%
 
 title   You Win I
-passwd  TQKB
 
 tiles
 .	red button
@@ -119,15 +40,14 @@ end
 creatures
 
 % Action: Move west.
+% MS result: Chip and the cloned block get confused, and Chip gets
+% pushed into the exit, presumably as the cloned block. The force
+% floor and the block are replaced by an extra (south-facing) Chip.
 % TW result: Chip is hit with a cloned block and dies.
-% MS result: Chip is forced south into the exit before the cloned
-% block arrives. The cloned block and the force floor are replaced by
-% an extra (south-facing) Chip tile.
 
 %%%
 
 title   You Win II
-passwd  WNLP
 
 tiles
 .	red button
@@ -141,15 +61,16 @@ map
 end
 
 % Action: Move west.
-% TW result: Chip is hit with a cloned block and dies.
 % MS result: Sometimes the same as "You Win I", and sometimes Chip is
 % hit with a cloned block and dies. The only difference between this
-% level and the previous one is that here the ball is alive.
+% level and the previous one is that here the ball is alive. The
+% different behaviors presumably depend on the size of the first
+% second. (A full second results in death.)
+% TW result: The same as "You Win I".
 
 %%%
 
 title   Buffering Weirdness
-passwd  FXQO
 
 tiles
 G	glider west
@@ -162,8 +83,72 @@ map 10 10
 end
 
 % Action: Move east, and then use the mouse to move south just before
-% Chip is directly above the exit. 
-% TW result: N/A -- no mouse interface.
+% Chip is directly above the exit. (In theory, you can make the final
+% move without using the mouse, but the timing is more difficult.)
 % MS result: When timed correctly, Chip makes it into the exit.
+% TW result: Chip always gets hit by the glider.
+
+%%%
+
+title	Simultaneous Teleporting
+
+tiles
+.	red button
+*	teleport
+o	beartrap
+x	brown button
+end
+
+map 10 10
+                    v]
+            * []. @ *   E
+            v
+v < < < < < <       x
+> > > > > > > > > > o
+              ,
+end
+
+% Action: Walk east.
+% MS result: The block pushes the red button, cloning a block into the
+% same teleport as Chip. As a result Chip and the block become
+% confused. Chip is set facing north, but is not moved off of the
+% now-vanished teleport. The block moves south as expected, but turns
+% into a copy of the north-facing Chip. The real Chip remains on the
+% slip list, despite having nothing to push against, and will make
+% oofing sounds until he is moved away. The block that looks like Chip
+% will slide across the force floor and land in the beartrap. When
+% Chip presses the brown button, it will pop out of the trap just like
+% a normal block. (If the block were to land in water instead of a
+% beartrap, it would turn the water into dirt.) Chip cannot push the
+% "block" at all, however, and once it is no longer slipping, it will
+% become fixed at that location. If any creature hits it, Chip will die.
+% TW result: Chip does not remain on the slip list after emerging from
+% the teleport.
+% Note 1: The bug is currently presumed to be purely cosmetic, as
+% Chip's slip status does not influence slide delay.
+% Note 2: The above behavior only happens when Chip has never been on
+% the slip list before he teleports. In the case where Chip has a
+% prior slipping direction, the block exits normally, and Chip exits
+% in his prior slipping direction. TW correctly emulates this case.
+
+%%%
+
+title	Do the Twist
+
+tiles
+/	ice wall southeast
+end
+
+map
+/ = = = = = = = = = = =
+= E
+@
+end
+
+% Action: Move north and hold down the key.
+% MS behavior: While sliding on the ice, Chip turns north and oofs
+% against the edge of the map.
+% TW behavior: Keystrokes are ignored while sliding on ice.
+% Note: This bug is purely cosmetic.
 
 %%%

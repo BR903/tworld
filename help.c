@@ -18,8 +18,8 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "1-Usage:", "1!tworld [-hvVdlstpqrPFa] [-n N] [-DLRS DIR] "
-		"[NAME [SNAME]] [LEVEL]",
+    "1-Usage:", "1!tworld [-hvVdlsbtpqrPFa] [-n N] [-DLRS DIR] "
+		"[NAME] [SNAME] [LEVEL]",
     "1-   -D", "1!Read data files from DIR instead of the default.",
     "1-   -L", "1!Read level sets from DIR instead of the default.",
     "1-   -R", "1!Read resource files from DIR instead of the default.",
@@ -34,6 +34,7 @@ static char *yowzitch_items[] = {
     "1-   -l", "1!Display the list of available data files and exit.",
     "1-   -s", "1!Display scores for the selected data file and exit.",
     "1-   -t", "1!Display times for the selected data file and exit.",
+    "1-   -b", "1!Batch-verify solutions for the selected data file and exit.",
     "1-   -h", "1!Display this help and exit.",
     "1-   -d", "1!Display default directories and exit.",
     "1-   -v", "1!Display version number and exit.",
@@ -42,7 +43,7 @@ static char *yowzitch_items[] = {
     "2!LEVEL specifies which level to start at.",
     "2!SNAME specifies an alternate solution file."
 };
-static tablespec const yowzitch_table = { 22, 2, 2, -1, yowzitch_items };
+static tablespec const yowzitch_table = { 23, 2, 2, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
 
 /* Version and license information.
@@ -221,41 +222,52 @@ void onlinemainhelp(int topic)
 {
     static char *items[] = {
 	"2-",
-	"1+\267", "1-Return to the program",
 	"1+\267", "1-Key commands during the game",
 	"1+\267", "1-Key commands inbetween games",
 	"1+\267", "1-Objects of the game",
 	"1+\267", "1-Command-line options",
-	"1+\267", "1-About Tile World"
+	"1+\267", "1-About Tile World",
+	"1+\267", "1-Return to the program"
     };
     static tablespec const table = { 7, 2, 4, 1, items };
 
-    while (displaylist("HELP", &table, &topic, scrollinputcallback)) {
-	if (!topic)
+    int n;
+
+    switch (topic) {
+      case Help_KeysDuringGame:		n = 0;		break;
+      case Help_KeysBetweenGames:	n = 1;		break;
+      case Help_ObjectsOfGame:		n = 2;		break;
+      case Help_CmdlineOptions:		n = 3;		break;
+      case Help_AboutGame:		n = 4;		break;
+      default:				n = 5;		break;
+    }
+
+    while (displaylist("HELP", &table, &n, scrollinputcallback)) {
+	if (n == 5)
 	    break;
-	switch (topic) {
-	  case Help_KeysDuringGame:
+	switch (n) {
+	  case 0:
 	    displaytable("KEYS - DURING THE GAME",
 			 keyboardhelp(KEYHELP_INGAME), -1);
 	    anykey();
 	    break;
-	  case Help_KeysBetweenGames:
+	  case 1:
 	    displaytable("KEYS - INBETWEEN GAMES",
 			 keyboardhelp(KEYHELP_TWIXTGAMES), -1);
 	    anykey();
 	    break;
-	  case Help_ObjectsOfGame:
+	  case 2:
 	    (void)(helptilescreen("FLOORS", array(help_floors), +1)
 		&& helptilescreen("WALLS", array(help_walls), +1)
 		&& helptilescreen("OBJECTS", array(help_objects), +1)
 		&& helptilescreen("TOOLS", array(help_tools), +1)
 		&& helptilescreen("MONSTERS", array(help_monsters), 0));
 	    break;
-	  case Help_CmdlineOptions:
+	  case 3:
 	    displaytable("COMMAND-LINE OPTIONS", &yowzitch_table, -1);
 	    anykey();
 	    break;
-	  case Help_AboutGame:
+	  case 4:
 	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
 	    anykey();
 	    break;
@@ -265,12 +277,11 @@ void onlinemainhelp(int topic)
     cleardisplay();
 }
 
-/* Display help explaining the purpose of the initial level set
- * selection screen.
+/* Display a single online help screen for the given topic.
  */
-void onlinefirsthelp(void)
+void onlinecontexthelp(int topic)
 {
-    static char *items[] = {
+    static char *firsthelp_items[] = {
 	"1!Welcome to Tile World!",
 	"1-",
 	"1!In order to begin, you must first decide which level set you"
@@ -284,14 +295,38 @@ void onlinefirsthelp(void)
 	"1-",
 	"1!At any point in the program, you may use the Q key to quit the"
 	" current activity and go back up one step. Typing Shift-Q will"
-	" exit Tile World completely. Typing ? at any time will bring up"
-	" a list of online help topics.",
+	" exit Tile World completely. Typing ? or F1 at any time will bring"
+	" up a list of online help topics.",
+	"1-",
+	"1!Tile World also comes with offline documentation. Please see the"
+	" tworld.html file included for more help on playing the game and"
+	" using this program.",
 	"1-",
 	"1!Now, press any key to go back to the list of level sets."
     };
-    static tablespec const table = { 9, 1, 0, 1, items };
+    static tablespec const firsthelp_table = { 9, 1, 0, 1, firsthelp_items };
 
-    displaytable("HELP", &table, -1);
+    switch (topic) {
+      case Help_First:
+	displaytable("HELP", &firsthelp_table, -1);
+	break;
+      case Help_KeysDuringGame:
+	displaytable("KEYS - DURING THE GAME",
+		     keyboardhelp(KEYHELP_INGAME), -1);
+	break;
+      case Help_KeysBetweenGames:
+	displaytable("KEYS - INBETWEEN GAMES",
+		     keyboardhelp(KEYHELP_TWIXTGAMES), -1);
+	break;
+      case Help_FileListKeys:
+	displaytable("KEYS - FILE LIST",
+		     keyboardhelp(KEYHELP_FILELIST), -1);
+	break;
+      case Help_ScoreListKeys:
+	displaytable("KEYS - SCORE LIST",
+		     keyboardhelp(KEYHELP_SCORELIST), -1);
+	break;
+    }
     anykey();
     cleardisplay();
 }

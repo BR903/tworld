@@ -129,13 +129,13 @@ extern int loadtileset(char const *filename, int complain);
  */
 extern void freetileset(void);
 
+/* The font provides special monospaced digit characters at 144-153.
+ */
+enum { CHAR_MZERO = 144 };
+
 /*
  * Video output functions.
  */
-
-/* A magic number used to indicate an undefined time value.
- */
-#define	TIME_NIL	0x7FFFFFFF
 
 /* Create a display surface appropriate to the requirements of the
  * game (e.g., sized according to the tiles and the font). FALSE is

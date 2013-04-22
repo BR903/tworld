@@ -18,7 +18,7 @@
  */
 static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
 {
-    char		brk[256];
+    char		brk[267];
     unsigned char      *p;
     unsigned char      *dest;
     Uint8		foregnd, bkgnd;
@@ -56,7 +56,11 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
 	    wsum += w;
 	    ++ch;
 	    if (ch == 127)
+		ch = 144;
+	    else if (ch == 154)
 		ch = 160;
+	    else if (ch == 256)
+		break;
 	}
 	brk[ch] = 1;
     }
@@ -386,69 +390,114 @@ static void _puttext(SDL_Rect *rect, char const *text, int len, int flags)
 
 /* Lay out the columns of the given table so that the entire table
  * fits within area (horizontally; no attempt is made to make it fit
- * vertically). Return an array of rectangles, one per column.
+ * vertically). Return an array of rectangles, one per column. This
+ * function is essentially the same algorithm used within printtable()
+ * in tworld.c
  */
 static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
 {
-    SDL_Rect		       *cols;
+    SDL_Rect		       *colsizes;
     unsigned char const	       *p;
-    int				sep, ml;
-    int				n, i, j, w, x, c;
+    int				sep, mlindex, mlwidth, diff;
+    int				i, j, n, i0, c, w, x;
 
-    if (!(cols = malloc(table->cols * sizeof *cols)))
+    if (!(colsizes = malloc(table->cols * sizeof *colsizes)))
 	memerrexit();
     for (i = 0 ; i < table->cols ; ++i) {
-	cols[i].x = 0;
-	cols[i].y = area->y;
-	cols[i].w = 0;
-	cols[i].h = area->h;
+	colsizes[i].x = 0;
+	colsizes[i].y = area->y;
+	colsizes[i].w = 0;
+	colsizes[i].h = area->h;
     }
 
-    ml = -1;
+    mlindex = -1;
+    mlwidth = 0;
     n = 0;
     for (j = 0 ; j < table->rows ; ++j) {
 	for (i = 0 ; i < table->cols ; ++n) {
 	    c = table->items[n][0] - '0';
 	    if (c == 1) {
+		w = 0;
+		p = (unsigned char const*)table->items[n];
+		for (p += 2 ; *p ; ++p)
+		    w += sdlg.font.w[*p];
 		if (table->items[n][1] == '!') {
-		    ml = i;
+		    if (w > mlwidth || mlindex != i)
+			mlwidth = w;
+		    mlindex = i;
 		} else {
-		    w = 0;
-		    p = (unsigned char const*)table->items[n];
-		    for (p += 2 ; *p ; ++p)
-			w += sdlg.font.w[*p];
-		    if (w > cols[i].w)
-			cols[i].w = w;
+		    if (w > colsizes[i].w)
+			colsizes[i].w = w;
 		}
 	    }
 	    i += c;
 	}
     }
+
     sep = sdlg.font.w[' '] * table->sep;
     w = -sep;
     for (i = 0 ; i < table->cols ; ++i)
-	w += cols[i].w + sep;
-    if (w > area->w) {
-	w -= area->w;
-	if (table->collapse >= 0 && cols[table->collapse].w > w)
-	    cols[table->collapse].w -= w;
-    } else if (ml >= 0) {
-	cols[ml].w += area->w - w;
+	w += colsizes[i].w + sep;
+    diff = area->w - w;
+    if (diff < 0 && table->collapse >= 0) {
+	w = -diff;
+	if (colsizes[table->collapse].w < w)
+	    w = colsizes[table->collapse].w - sdlg.font.w[' '];
+	colsizes[table->collapse].w -= w;
+	diff += w;
+    }
+
+    if (diff > 0) {
+	n = 0;
+	for (j = 0 ; j < table->rows && diff > 0 ; ++j) {
+	    for (i = 0 ; i < table->cols ; ++n) {
+		c = table->items[n][0] - '0';
+		if (c > 1 && table->items[n][1] != '!') {
+		    w = sep;
+		    p = (unsigned char const*)table->items[n];
+		    for (p += 2 ; *p ; ++p)
+			w += sdlg.font.w[*p];
+		    for (i0 = i ; i0 < i + c ; ++i0)
+			w -= colsizes[i0].w + sep;
+		    if (w > 0) {
+			if (table->collapse >= i && table->collapse < i + c)
+			    i0 = table->collapse;
+			else if (mlindex >= i && mlindex < i + c)
+			    i0 = mlindex;
+			else
+			    i0 = i + c - 1;
+			if (w > diff)
+			    w = diff;
+			colsizes[i0].w += w;
+			diff -= w;
+			if (diff == 0)
+			    break;
+		    }
+		}
+		i += c;
+	    }
+	}
+    }
+    if (diff > 0 && mlindex >= 0 && colsizes[mlindex].w < mlwidth) {
+	mlwidth -= colsizes[mlindex].w;
+	w = mlwidth < diff ? mlwidth : diff;
+	colsizes[mlindex].w += w;
+	diff -= w;
     }
 
     x = 0;
     for (i = 0 ; i < table->cols && x < area->w ; ++i) {
-	cols[i].x = area->x + x;
-	x += cols[i].w + sep;
+	colsizes[i].x = area->x + x;
+	x += colsizes[i].w + sep;
 	if (x >= area->w)
-	    cols[i].w = area->x + area->w - cols[i].x;
+	    colsizes[i].w = area->x + area->w - colsizes[i].x;
     }
     for ( ; i < table->cols ; ++i) {
-	cols[i].x = area->x + area->w;
-	cols[i].w = 0;
+	colsizes[i].x = area->x + area->w;
+	colsizes[i].w = 0;
     }
 
-    return cols;
+    return colsizes;
 }
 
 /* Render a single row of a table to the screen, using cols to locate

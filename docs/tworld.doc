@@ -1,4 +1,4 @@
-tworld / Tile World / Feb 2006 / Tile World
+tworld / Tile World / Mar 2006 / Tile World
 
 .section Synopsis
 
@@ -9,7 +9,7 @@ which takes you to the next level. The levels contain many different
 kinds of obstacles, creatures both hostile and indifferent, tools,
 protective gear -- and, of course, chips.
 
-.section Overview of the Game
+.Section Overview of the Game
 
 The main display shows Chip in the current level and his immediate
 surroundings. To the right of this display is shown the basic
@@ -151,7 +151,7 @@ times the level's number. Furthermore, if the level is timed, an extra
 the level. You can thus sometimes improve your score by returning to
 already-completed levels and playing them again.
 
-.section Key Commands
+.Section Key Commands
 
 During game play, the arrows are the most important keys; they move
 Chip through the level. The keys <2> <4> <6> <8> on the numeric keypad
@@ -221,20 +221,26 @@ the new one, whether or not it had a better time.
 . deletes the saved solution for that level. If confirmed, the
 solution will be immediately removed from the solution file.
 . <S>
-. displays the list of known levels and their current scores. The score
-list also permits changing the current level.
+. displays the list of known levels and the score for each, as well as
+the overall score for the level set. The score list display also
+permits changing the current level by moving the selection and
+pressing <Enter>.
+. <Ctrl>-<S>
+. displays the list of solution files in the save directory whose
+names start with the name of the current level set. From here a
+different solution file can be selected.
 . <?>
 . displays a list of topics for which help is available within the
 program.
 
-At most other points, the <Q> key will abort the current activity
-and return to the start of the current level.
+At every point in the program, the <Q> key will abort the current
+activity and return to the previous display.
 
 Finally, the program can be exited at any time by pressing
 <Shift>-<Q>. (<Ctrl>-<C> or <Alt>-<F4> will also force an immediate
 exit.)
 
-.section Rulesets
+.Section Rulesets
 
 Tile World contains emulators for two different versions of "Chip's
 Challenge". They are referred to as the Lynx ruleset and the MS
@@ -270,13 +276,12 @@ it available for playing.
 An alternate method is to use a configuration file (see #Configuration
 Files# below).
 
-.section Command-Line Options
+.Section Command-Line Options
 
 <tworld> is normally invoked without arguments. The program begins by
 displaying a list of the available level sets. After a level set is
 chosen, the program jumps to the first unsolved level to begin
-play. However, the name of a level set can be specified directly on
-the command line, as well as the number of a level to start with.
+play.
 
 The available command-line options are enumerated in the following
 table. (Windows users: The options that cause the program to display
@@ -287,6 +292,14 @@ information on standard output actually go to a file named
 . <-a>
 . Double the size of the audio buffer. This option can be repeated, so
 for example <-aaa> would increase the audio buffer size eightfold.
+. <-b>
+. Do a batch-mode verification of the existing solutions and exit.
+Levels with invalid solutions are displayed on standard output. If
+used with <-q>, then nothing is displayed, and the program's exit code
+is the number of invalid solutions. Can also be used with <-s> or <-t>
+to have solutions verified before the other option is applied. Note
+that this options requires a level set file and/or a solution file be
+named on the command line.
 . <-D>_%DIR%
 . Read level data files from %DIR% instead of the default directory.
 . <-d>
@@ -309,8 +322,8 @@ exit.
 full volume. The default level is 10.
 . <-P>
 . Turn on pedantic mode, forcing the Lynx ruleset to emulate the
-original game as closely as possible. See #Lynx Ruleset Differences#
-below.
+original game as closely as possible. (See the Tile World website for
+more information on emulation of the Lynx ruleset.)
 . <-p>
 . Turn off all password-checking. This option allows the normal sequence
 of levels to be bypassed.
@@ -318,8 +331,8 @@ of levels to be bypassed.
 . Run quietly. All sounds, including the ringing of the terminal bell,
 are suppressed.
 . <-r>
-. Run in read-only mode. No changes will be made to the solution
-files.
+. Run in read-only mode. This guarantees that no changes will be made
+to the solution files.
 . <-R>_%DIR%
 . Read resource data from %DIR% instead of the default directory.
 . <-S>_%DIR%
@@ -327,19 +340,21 @@ files.
 directory.
 . <-s>
 . Display the current scores for the selected level set on standard
-output and exit. (A level set must be specified on the command line
-for this option to be generally useful.)
+output and exit. A level set must be named on the command line. If
+used with <-b>, the solutions are verified beforehand, and invalid
+solutions are indicated.
 . <-t>
 . Display the best times for the selected level set on standard output
-and exit. (A level set must be specified on the command line for this
-option to be generally useful.)
+and exit. A level set must be named on the command line. If used with
+<-b>, the solutions are verified beforehand, and invalid solutions are
+indicated.
 . <-V>
 . Display the program's version and license information on standard
 output and exit.
 . <-v>
 . Display the program's version number on standard output and exit.
 
-Besides the above options, tworld can accept up to three
+Besides the above options, <tworld> can accept up to three
 command-line arguments: the name of a level set, the number of a level
 to start on, and the name of an alternate solution file. If the name
 of an installed level set is specified, then Tile World will start up
@@ -349,52 +364,18 @@ If the specified level set is not a simple name but is a pathname
 (relative or absolute), then Tile World will use that level set only,
 without requiring that it first be installed. No solutions will be
 saved unless an explicit solution file is also supplied on the
-command-line.
+command-line. (If the command-line only specifies a solution file,
+then Tile World will look up the name of the level set in the solution
+file.)
 
-.section Lynx Ruleset Differences
-
-The Lynx ruleset emulation intentionally diverges from the original in
-four aspects. They are as follows:
-
-.list
-. On the Atari Lynx, no more than 128 creatures could exist at one
-time. Attempting to create a 129th creature with a clone machine
-would cause it to "run out". Tile World imposes no such limit.
-. In a similar vein, Chip could not carry more than 255 keys of one
-color. Picking up a 256th key would cause the key counter to "wrap
-around" to zero. Tile World permits any number of keys to be carried.
-. On the Atari Lynx, there were no Wall North or Wall West tiles.
-These two tiles were introduced by the MS version, even though they do
-not appear in the original level set. Tile World nonetheless permits
-these tiles to be used in Lynx levels.
-. The Atari Lynx did not permit arbitrary wiring of buttons. Brown
-buttons were automatically connected to the next bear trap in reading
-order (scanning to the right, then along the next row going down, and
-restarting at the top if the bottom is reached, until a beartrap is
-found), and likewise with red buttons and clone machines. Tile World
-follows the explicit wiring information present in the data file.
-
-(These differences were specifically elected to be made because they
-are aspects of the game that are rarely or never addressed by the
-original level set, and were felt by the community at the time to be
-more like artifacts of the original implementation than intentional
-features of the original game design.)
-
-These differences from the original ruleset are suppressed when Tile
-World is run in "pedantic mode". (See the documentation for -P under
-#Command-Line Options# above.) In pedantic mode, Tile World's Lynx
-ruleset imposes a maximum of 128 creatures and 255 keys per color,
-ignores wiring data in the data file, and refuses to play levels
-containing the new wall tiles.
-
-.section Configuration Files
+.Section Configuration Files
 
 Configuration files are used to override some of the settings in a
 data file, or to set values not provided for by the data file format.
-Configuration files are by convention named with a <.dac>
-extension. A configuration file is stored in the level set directory
-in the place of the data file, which then goes into the data directory
-(cf #Directories#).
+Configuration files are by convention named with a <.dac> extension. A
+configuration file is stored in the level set directory in the place
+of the data file, which then goes into the data directory (cf
+#Directories#).
 
 The configuration file is a simple text file. The first line of a
 configuration file %must% have the following form:
@@ -434,11 +415,9 @@ not generally useful, and is described here only for completeness. The
 Challenge" contained a few minor differences from the original level
 set as appeared on the Lynx. A positive value for this entry instructs
 the program to undo those changes, so that the original Lynx level set
-is obtained. (The changes made by MS were: an extra level was added;
-three passwords were garbled; another password was replaced with the
-password to the prior level; and, on most but not all copies, a wall
-was removed from one level, presumably to alleviate its unexpected
-difficulty.)
+is obtained. (The changes made in the MS version were: an extra level
+was added; four passwords were garbled; and four or five levels' maps
+had minor alterations.)
 
 .section Resources
 
@@ -474,16 +453,25 @@ A line of the form
 <TileImages = >%FILENAME%
 
 identifies the file that provides the images used to draw the game.
-These images are stored in a Windows bitmap. (See #Appendix: Layout of
-the Tile Bitmap# for more information about this resource.)
+These images are stored in a Windows bitmap. (See the Tile World
+website for more information about this resource.)
 
 A line of the form
 
 <Font = >%FILENAME%
 
 identifies the file that provides the program's font. The font is
-stored as a Windows bitmap. (See #Appendix: Layout of the Font Bitmap#
-for more information about this resource.)
+stored as a Windows bitmap. (See the Tile World website for more
+information about this resource.)
+
+A line of the form
+
+<UnsolvableList = >%FILENAME%
+
+identifies the filename for the database of unsolvable levels. See
+#Database of Unsolvable Levels# below for more information about this
+file. Note that this resource must be defined independent of the
+ruleset, or else it will be ignored.
 
 Four resources define the colors used in rendering text:
 
@@ -501,9 +489,9 @@ specification used in HTML or X Windows, but without the preceding
 octothorpe).
 
 The remaining resources all define the game's sound effects. The
-sounds are stored as Microsoft .wav (RIFF) files. Unlike the tile
-images, each sound effect is defined as a separate file. The complete
-list of symbolic resource names is as follows:
+sounds are stored as Microsoft RIFF files (so-called wave files).
+Unlike the tile images, each sound effect is defined as a separate
+file. The complete list of symbolic resource names is as follows:
 
 Sounds used in both rulesets
 .list
@@ -540,10 +528,35 @@ Sounds used only under the Lynx ruleset
 . <FireWalkingSound>
 
 (Note that the symbolic names for the shared and MS-only sounds match
-the names in the <entpack.ini> file used by the Microsoft
-program. This makes it easy for someone with a copy of Microsoft's
-"Chip's Challenge" to use the sound effects that were provided with
-that version of the game.)
+the names in the <entpack.ini> file used by the Microsoft program.
+This makes it easy for someone with a copy of Microsoft's "Chip's
+Challenge" to use the sound effects that were provided with that
+version of the game.)
+
+.section Database of Unsolvable Levels
+
+Of the many thousands of user-created levels that are publicly
+available, there are some that are not possible to complete. Some of
+these are intentionally so (e.g. requiring the player to deduce the
+password to the next level). The remainder, however, are simply due to
+poor design, and there is typically no indication that attempting to
+solve these levels is fruitless.
+
+To help alleviate this, Tile World comes with a database of levels
+that have been identified by the community to be definitely
+unsolvable. When the player visits a level that appears in this
+database, a warning is displayed, and the password to the next level
+is automatically supplied.
+
+The main database of unsolvable levels is stored in the resource
+directory. In addition, a player can keep a separate database in a
+file of the same name in the directory for solution files. If present,
+Tile World will use the information from both of these files.
+
+The offending levels are identified by content as well as by name and
+number, so that updated versions will no longer be identified as
+unsolvable. See the Tile World website for more information about the
+format of this file, and to check for updates to the database.
 
 .section Directories
 
@@ -552,7 +565,7 @@ The following list enumerates the directories and describes their
 purpose. The default directories that the program uses can be
 configured at compile time. The directories can also be changed at
 runtime via command-line options and/or environment variables (see
-above).
+below).
 
 .table
 . Sets
@@ -582,7 +595,7 @@ the resource, level set, and data file directories.
 . <TWORLDSAVEDIR>
 . Specifies a directory for saving solution files.
 
-.section License
+.Section License
 
 Tile World is copyright (C) 2001-2006 by Brian Raiter.
 
@@ -598,7 +611,7 @@ General Public License for more details.
 
 Please send bug reports to breadbox@muppetlabs.com.
 
-.section History
+.Section History
 
 "Chip's Challenge" was created by Chuck Sommerville, and was
 originally written for the Atari Lynx handheld game console. ("Tile
@@ -608,26 +621,26 @@ the rights to Atari) in 1989, and was among the first set of games
 made available for the Lynx.
 
 "Chip's Challenge" was subsequently ported to several other platforms:
-MS-DOS, Microsoft Windows, Amiga, and the Commodore 64. (A NES port
-was also planned, but never completed.) The most well-known port was
-the Windows version, done by Microsoft and sold as part of Windows
-Entertainment Pack 4 (and later as part of Best of Windows
-Entertainment Pack).
+MS-DOS, Microsoft Windows (16-bit), Amiga, ZX Spectrum, Atari ST, and
+the Commodore 64. (A NES port was also planned, but never completed.)
 
-In the process of recreating the game for the 16-bit Windows platform,
+The Windows port was different from most (perhaps all?) of the others
+in that it was not done by the original team at Epyx. Instead it was
+done by Microsoft and sold as part of Windows Entertainment Pack 4
+(and later as part of Best of Windows Entertainment Pack). In the
+process of recreating the game for the 16-bit Windows platform,
 Microsoft introduced a surprising number of changes to the mechanics
 of the game. Some were clearly intentional, some were done through
 ignorance or indifference, and others were simply bugs in the program.
-
 The programs in WEP4 came pre-installed on many PC computers sold
-during the 1990s, which is part of the reason for its widespread
-popularity. A small but fanatically loyal community of adherents to
-the game connected via a MSN chatroom (and later through the
-internet). A few members of this community managed to decipher the
-format of the MS game's data file, and John K. Elion subsequently
-created a freeware level editor, called ChipEdit. As a result there
-are now dozens of new level sets, created by fans of the game and all
-freely available.
+during the 1990s, which is part of the reason why this particular
+version became the most popular. A small but fanatically loyal
+community of adherents to the game connected via a MSN chatroom (and
+later through the internet). A few members of this community managed
+to decipher the format of the MS game's data file, and John K. Elion
+subsequently created a freeware level editor, called ChipEdit. As a
+result there are now dozens of new level sets, created by fans of the
+game and all freely available.
 
 Atari discontinued support for the Lynx in 1994. When Epyx went under,
 the rights to their games were purchased by Bridgestone Multimedia.
@@ -649,7 +662,7 @@ encouragement of Chuck Sommerville, this project was expanded to
 include the goals of recreating the original Lynx game as well, and
 also making the program work under MS Windows in addition to Linux.
 
-.section Appendix: Notes on Nomenclature
+.Section Appendix: Notes on Nomenclature
 
 "Chip's Challenge" has seen several incarnations. Each had its own
 graphical rendering, and thus many of the objects in the game are
@@ -672,298 +685,3 @@ Finally, the thief tile was called a spy in the MS version.
 
 None of this information is needed in order to play the game, but it
 helps to explain the titles of some of the user-created levels.
-
-.section Appendix: Layout of the Font Bitmap
-
-The font used by the program is stored in a Windows bitmap file. The
-bitmap uses three different colors of pixels to define the glyphs of
-the font. The three pixel colors are used to indicate glyph pixels,
-halftone pixels, and background pixels.
-
-When the glyphs of the font are rendered by the program, the halftone
-pixels will be displayed in the color that is halfway between the
-background color and the foreground color. Thus the halftone pixels
-are useful for doing simple anti-aliasing of the glyphs.
-
-The pixel in the top-left corner must be the color of the glyph
-pixels. The pixel immediately below this must be the color of the
-background pixels. Any other pixel colors in the bitmap are taken as
-halftone pixels. Note that the colors used in the bitmap do not affect
-the actual colors used in rendering the font.
-
-All glyphs must be of the same height, though the widths may vary
-freely. The glyphs appear in rows, and are read in reading order: from
-left-to-right, then top-to-bottom. Each row of glyphs includes an
-extra line of pixels above it. In addition, there is an extra column
-of pixels running down the left side of the bitmap. These pixel-wide
-lines contain markers that locate the separation between individual
-glyphs.
-
-The left column of pixels will have one glyph-colored pixel per row of
-glyphs in the bitmap. The height of each pixel in the left column
-indicates the height of the row of pixels above each row of glyphs.
-All other pixels in the left column will have the background color.
-
-The glyphs in a given row will be separated from each other by a
-single column of pixels. This column will be indicated by a
-glyph-colored pixel directly above it, in the row of pixels. All other
-pixels in the rows will have the background color. There will also be
-a glyph-colored pixel immediately after the last glyph in a row. (The
-net result is that every glyph will have a glyph-colored pixel on
-either side.) Each row can contain any number of glyphs; anything to
-the right of the last glyph in a row is ignored.
-
-The glyphs in the bitmap will correspond to the ISO-8859-1 characters
-32 through 126 inclusive, followed by the characters 160 through 255
-inclusive. (It is not possible to define glyphs for the characters 0
-through 31 or for the characters 127 through 159.) The bitmap can
-contain fewer glyphs; in such a case, the characters that are absent
-will not be displayed by the program.
-
-.section Appendix: Layout of the Tile Bitmap
-
-There are three different formats that the tile image bitmap can use.
-(The program automatically determines which one is being used by
-examining the dimensions of the bitmap.) They are referred to here as
-the small format, the large format, and the masked format.
-
-The %masked format% is essentially the same one that is used by the
-original MS program. In fact, anyone with a copy of the original
-program and a resource editor can extract the bitmap from the Windows
-executable and use it with Tile World directly. The tiles are laid out
-in a 13x16 grid. The first four columns of the bitmap are:
-
-.grid
-l               l             l               l
-Empty           Clone Block S Overlay Buffer  Wall SE
-Wall            Clone Block E Thief           Clone Machine
-IC Chip         Force Floor N Socket          Random Force
-Water           Force Floor E Green Button    Water Splash
-Fire            Force Floor W Red Button      Burned Chip
-Hidden Wall (p) Exit          Toggle Wall     Bombed Chip
-Wall N          Blue Door     Toggle Floor    Explosion
-Wall W          Red Door      Brown Button    Disintegrate
-Wall S          Green Door    Blue Button     Empty (unused)
-Wall E          Yellow Door   Teleport        Exited Chip
-Block           Ice Wall SE   Bomb            Extra Exit 1
-Dirt            Ice Wall SW   Bear Trap       Extra Exit 2
-Ice             Ice Wall NW   Hidden Wall (t) Chip Swimming N
-Force Floor S   Ice Wall NE   Gravel          Chip Swimming W
-Clone Block N   Blue Wall (f) Popup Wall      Chip Swimming S
-Clone Block W   Blue Wall (r) Hint Button     Chip Swimming E
-
-(See below for comments regarding the tile names.)
-
-The next three columns contain the following tiles:
-
-.grid
-l             l             l
-Bug N         Glider N      Paramecium N
-Bug W         Glider W      Paramecium W
-Bug S         Glider S      Paramecium S
-Bug E         Glider E      Paramecium E
-Fireball N    Teeth N       Blue Key
-Fireball W    Teeth W       Red Key
-Fireball S    Teeth S       Green Key
-Fireball E    Teeth E       Yellow Key
-Ball N        Walker N      Water Boots
-Ball W        Walker W      Fire Boots
-Ball S        Walker S      Ice Boots
-Ball E        Walker E      Force Boots
-Tank N        Blob N        Chip N
-Tank W        Blob W        Chip W
-Tank S        Blob S        Chip S
-Tank E        Blob E        Chip E
-
-Each of these tiles are drawn with an empty tile in the background.
-The next three columns repeat the images of the previous three
-columns, but with a pure white background instead. The last three
-columns then have the "masks" for these images. The mask images are
-monochrome, with black used for the background and white used for the
-figure. When the program is displaying a creature, a key, or a pair of
-boots, it uses a tile from columns 4-6 if the item is upon an empty
-tile.  Otherwise, it uses the image from columns 7-9, coupled with the
-mask from columns 10-12, to combine the image with the proper floor
-tile image.
-
-The %small format% is an abbreviated layout of the masked format. The
-tiles are laid out in a 7x16 grid. The first four columns are the same
-as with the masked format. The remaining three columns contain the
-creatures, boots, and keys (again, as with the small format) with a
-solid background of magenta pixels (RGB=255,0,255). When the bitmap is
-read by Tile World, all magenta pixels in the last three columns will
-be made transparent. (Magenta pixels in the first four columns will
-not be altered.) If you wish to use magenta in any of these tiles
-(e.g., for the balls), then you will have to use one of the other
-formats instead.
-
-The %large format% is the only format that permits inclusion of animated
-tiles. This format has a less rigid layout. Tiles are arranged in rows
-instead of columns. The tiles are extracted from the bitmap in reading
-order -- scanning from left-to-right, top-to-bottom.  The rows do not
-have to have a specific width.
-
-A one-pixel-high horizontal line is above each row of tiles. The
-pixels in this line indicate the divisions between tiles in the
-row. There is also a one-pixel-wide vertical line at the left edge of
-the bitmap, which is used to indicate the placement of the rows.
-
-One color is used throughout the bitmap to indicate transparency.
-This color can be magenta, or some other color. The program determines
-which color is used to show transparency by reading the color of the
-second pixel in the horizontal line above the first row -- pixel (1,0)
-in x-y coordinates.
-
-The vertical line on the left side of the bitmap has a non-transparent
-pixel at the position of the horizonal lines above the tiles. All
-other pixels in the vertical line must be transparent. (The
-non-transparent pixels can be of different colors.) The horizontal
-lines have a non-transparent pixel at the rightmost edge of each tile
-image. (Note that the tile images are separated from each other by a
-line of pixels vertically, but not horizontally.)
-
-The first tile in the first row is the Empty tile. The Empty tile
-cannot be animated, nor is it permitted to have any transparent
-pixels.
-
-The next 49 tiles in the bitmap are the following, in order:
-
-.indent
-Force Floor N; Force Floor W; Force Floor S; Force Floor E; Random
-Force; Ice; Ice Wall NW; Ice Wall NE; Ice Wall SW; Ice Wall SE;
-Gravel; Dirt; Water; Fire; Bomb; Bear Trap; Thief; Hint Button; Blue
-Button; Green Button; Red Button; Brown Button; Teleport; Wall; Wall
-N; Wall W; Wall S; Wall E; Wall SE; Blue Wall; Toggle Floor; Toggle
-Wall; Popup Wall; Clone Machine; Red Door; Blue Door; Yellow Door;
-Green Door; Socket; Exit; IC Chip; Red Key; Blue Key; Yellow Key;
-Green Key; Ice Boots; Force Boots; Fire Boots; Water Boots.
-
-(Note that there are no tile images for Hidden Walls. These tiles
-always use the Empty tile image. Likewise, there is only a single tile
-used to display a Blue Wall, whether the wall is real or fake.)
-
-The tiles can be broken up across any number of rows, and each row can
-be of different length.
-
-Any of these tile images can have transparent pixels. Those that do
-will have their transparent pixels replaced with the corresponding
-pixels from the Empty tile image. Note that if the bitmap is intended
-to be used under MS emulation, then the Keys and Boots need to be
-rendered with transparent backgrounds.
-
-These tiles may also have more than one image supplied for them. Those
-that do will be animated under Lynx emulation; Tile World will loop
-through the images in the sequence while the game is playing. (Under
-MS emulation, only the first image in the sequence will be used.) In
-this case, the horizontal line above the row will have only one
-non-transparent pixel, placed at the rightmost edge of the last tile
-in the sequence. (The tiles of a single animated sequence may NOT be
-broken up across rows.)
-
-The next 10 tiles following these are:
-
-.indent
-Extra Exit 1; Extra Exit 2; Burned Chip; Bombed Chip; Exited
-Chip; Water Splash; Chip Swimming N; Chip Swimming W; Chip
-Swimming S; Chip Swimming E.
-
-These tiles are only used during the MS emulation. They cannot be
-animated; each tile can only have a single image. (Transparent pixels
-are permitted, however, and will be handled as before.) If the bitmap
-is only intended for use under Lynx emulation, these tiles can be left
-blank, but they still need to be present.
-
-After these come the following 12 tiles:
-
-.indent
-Chip; Pushing Chip; Block; Tank; Ball; Glider; Fireball;
-Walker; Blob; Teeth; Bug; Paramecium.
-
-These tiles will usually have one of a set number of multiple images.
-Note that some of the possible layouts require rows that are two tiles
-high. Any given row in the bitmap is of a fixed height all the way
-across, however. So any change of height between neighboring tile
-images requires that a new row be started in the bitmap.
-
-The possible "sub-layouts" of the images of these 12 tiles are:
-
-.list
-. 1x1: A single image. The lone image is used to display the creature,
-regardless of its movement or orientation.
-. 1x2: Two images side by side. The left image shows the creature
-moving N and S, and the right image shows the creature moving W and E.
-. 1x4: Four images in a single row, showing the creature moving N, W,
-S, and E, respectively.
-. 2x1: Two images, arranged in a column. The top image shows the
-creature moving N and S, and the bottom image shows the creature
-moving W and E.
-. 2x2: Four images arranged in a square. The top two images show N and
-W movement, and S and E constitute the bottom row.
-. 2x8: Sixteen images, giving four animated images per direction. The
-top row contains the four N images followed by the four W images,
-and the bottom row contains the four S images followed by the four E
-images.
-. 2x16: Sixteen images, but each image occupies two tiles' worth of
-space. The leftmost 2x4 area contains the four animated images of
-the creature moving N. Each image is two tiles high, and is drawn
-across both tiles as the creature moves. (Note that the final image
-will ideally be completely transparent in the bottom half.) The next
-2x4 area has the four animated images of the creature moving S,
-arranged as before. The right half contains the images of the
-creature moving W and E. These images are a single tile high but two
-tiles wide, with the sequence of four W images appearing above the
-sequence of four E images.
-
-Finally, the bitmap contains three more tile images:
-
-.indent
-Water Splash; Explosion; Disintegrate.
-
-The images for these tiles can either be 1x1 or 3x3 in size. There
-must be exactly twelve images for each.
-
-The following notes clarify the meanings of the names used to identify
-the tile images.
-
-The ice wall tiles are identified by their open sides. Thus "Ice Wall
-NW" indicates an ice tile with thin walls on the S and E sides.
-
-The parenthetical parts of tile names distinguish between tiles that
-are identical in appearance. Thus, "Blue Wall" is suffixed by "(f)" or
-"(r)" to indicate "fake" or "real" walls.
-
-The "Overlay Buffer" tile is used by the program as a place to build
-up images made with one or more transparent tiles. Whatever is
-actually placed here in the bitmap will only be visible if a level
-containing this tile is displayed before it is ever used by the
-program. Normally this tile contains a duplicate of the Empty tile
-image.
-
-The "Exited Chip" tile and the two "Extra Exit" tiles are used by the
-original MS program to create the ending sequence shown after
-completing one of the two final levels. The two "Extra Exit" tiles are
-used with the main "Exit" tile to create an three-frame animated
-sequence.
-
-The "Empty (Unused)" tile in the first two formats indicates tiles
-that are not used by the program, and normally appear the same as
-Empty.
-
-In the original MS program, the tiles marked "Explosion" and
-"Disintegrate" are actually unused, and contain an Empty tile
-image. These extra tiles only appear during Lynx emulation. (If your
-masked format bitmap is only intended to be used under MS emulation,
-these tiles can be left as Empty.) "Explosion" is displayed when a
-bomb goes off; "Disintegrate" is displayed when Chip collides with
-another creature.
-
-The "Water Splash" tile is displayed by the MS game when Chip dies
-from walking into a water square. The "Burned Chip" tile is displayed
-by the MS game when Chip dies from walking into a fire square. The
-"Bombed Chip" tile is not used by the original program unless it is
-explicitly inserted in a level's map.
-
-Note that the "Water Splash" tile appears twice in the large format.
-The first occurrence is as a single tile used only for MS emulation,
-and the second occurrence is an animation sequence used only under
-Lynx emulation.

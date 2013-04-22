@@ -28,16 +28,15 @@ enum {
     CHIP_NOTOKAY
 };
 
-#define	creatureid(id)		((id) & ~3)
-#define	creaturedirid(id)	(idxdir((id) & 3))
-
 /* Status information specific to the MS game logic.
  */
 struct msstate {
     unsigned char	chipwait;	/* ticks since Chip's last movement */
     unsigned char	chipstatus;	/* Chip's status (one of CHIP_*) */
     unsigned char	controllerdir;	/* current controller direction */
+    unsigned char	lastslipdir;	/* Chip's last involuntary movement */
     unsigned char	completed;	/* level completed successfully */
+    short		goalpos;	/* mouse spot to move Chip towards */
     signed char		xviewoffset;	/* offset of map view center */
     signed char		yviewoffset;	/*   position from position of Chip */
 };
@@ -68,10 +67,10 @@ static gamestate       *state;
 
 #define	chipsneeded()		(state->chipsneeded)
 
-#define	clonerlist()		(state->game->cloners)
-#define	clonerlistsize()	(state->game->clonercount)
-#define	traplist()		(state->game->traps)
-#define	traplistsize()		(state->game->trapcount)
+#define	clonerlist()		(state->cloners)
+#define	clonerlistsize()	(state->clonercount)
+#define	traplist()		(state->traps)
+#define	traplistsize()		(state->trapcount)
 
 #define	timelimit()		(state->timelimit)
 #define	timeoffset()		(state->timeoffset)
@@ -99,8 +98,13 @@ static gamestate       *state;
 #define	chipstatus()		(getmsstate()->chipstatus)
 #define	chipwait()		(getmsstate()->chipwait)
 #define	controllerdir()		(getmsstate()->controllerdir)
+#define	lastslipdir()		(getmsstate()->lastslipdir)
 #define	xviewoffset()		(getmsstate()->xviewoffset)
 #define	yviewoffset()		(getmsstate()->yviewoffset)
+
+#define	goalpos()		(getmsstate()->goalpos)
+#define	hasgoal()		(goalpos() >= 0)
+#define	cancelgoal()		(goalpos() = -1)
 
 #define	possession(obj)	(*_possession(obj))
 static short *_possession(int obj)
@@ -367,9 +371,13 @@ static void removefromsliplist(creature *cr)
  * Simple floor functions.
  */
 
-#define	FS_BUTTONDOWN		0x01
-#define	FS_CLONING		0x02
-#define	FS_BROKEN		0x04
+/* Floor state flags.
+ */
+#define	FS_BUTTONDOWN		0x01	/* button press is deferred */
+#define	FS_CLONING		0x02	/* clone machine is activated */
+#define	FS_BROKEN		0x04	/* teleport/toggle wall doesn't work */
+#define	FS_HASMUTANT		0x08	/* beartrap contains mutant block */
+#define	FS_MARKER		0x10	/* marker used during initialization */
 
 /* Translate a slide floor into the direction it points in. In the
  * case of a random slide floor, a new direction is selected.
@@ -469,7 +477,8 @@ static maptile *getfloorat(int pos)
  */
 static int istrapbuttondown(int pos)
 {
-    return cellat(pos)->top.id != Button_Brown;
+    return pos >= 0 && pos < CXGRID * CYGRID
+		    && cellat(pos)->top.id != Button_Brown;
 }
 
 /* Place a new tile at the given location, causing the current upper
@@ -548,6 +557,7 @@ static void togglewalls(void)
 #define	CS_SLIP			0x10	/* is on the slip list */
 #define	CS_SLIDE		0x20	/* is on the slip list but can move */
 #define	CS_DEFERPUSH		0x40	/* button pushes will be delayed */
+#define	CS_MUTANT		0x80	/* block is mutant, looks like Chip */
 
 /* Return the creature located at pos. Ignores Chip unless includechip
  * is TRUE. Return NULL if no such creature is present.
@@ -621,6 +631,8 @@ static void updatecreature(creature const *cr)
     id = cr->id;
     if (id == Block) {
 	tile->id = Block_Static;
+	if (cr->state & CS_MUTANT)
+	    tile->id = crtile(Chip, NORTH);
 	return;
     } else if (id == Chip) {
 	if (chipstatus()) {
@@ -764,40 +776,6 @@ static void updatesliplist()
 	    endfloormovement(slips[n].cr);
 }
 
-/* Move a block at the given position forward in the given direction.
- * FALSE is returned if the block cannot be pushed. If collapse is
- * TRUE and the block is atop another block, the bottom block will
- * be destroyed.
- */
-static int pushblock(int pos, int dir, int collapse)
-{
-    creature   *cr;
-    int		slipdir, r;
-
-    _assert(cellat(pos)->top.id == Block_Static);
-    _assert(dir != NIL);
-
-    cr = lookupblock(pos);
-    if (!cr) {
-	warn("%d: attempt to push disembodied block!", currenttime());
-	return FALSE;
-    }
-    if (cr->state & (CS_SLIP | CS_SLIDE)) {
-	slipdir = getslipdir(cr);
-	if (dir == slipdir || dir == back(slipdir))
-	    return FALSE;
-    }
-    if (collapse && cellat(pos)->bot.id == Block_Static)
-	cellat(pos)->bot.id = Empty;
-
-    cr->state |= CS_DEFERPUSH;
-    r = advancecreature(cr, dir);
-    cr->state &= ~CS_DEFERPUSH;
-    if (!r)
-	cr->state &= ~(CS_SLIP | CS_SLIDE);
-    return r;
-}
-
 /*
  * The laws of movement across the various floors.
  *
@@ -891,14 +869,58 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
  * automatically presumed to permit such movement. CMM_NOEXPOSEWALLS
  * causes blue and hidden walls to remain unexposed.
  * CMM_CLONECANTBLOCK means that the creature will not be prevented
- * from moving by an identical creature standing in the way. Finally,
- * CMM_NOCOLLAPSEBLOCKS stops a block atop another block from being
- * treated as a single block when pushed.
+ * from moving by an identical creature standing in the way.
+ * CMM_NOPUSHING prevents Chip from pushing blocks inside this
+ * function. CMM_TELEPORTPUSH indicates to the block-pushing logic
+ * that Chip is teleporting. This prevents a stack of two blocks from
+ * being treated as a single block, and allows Chip to push a slipping
+ * block away from him. Finally, CMM_NODEFERBUTTONS causes buttons
+ * pressed by pushed blocks to take effect immediately.
  */
 #define	CMM_NOLEAVECHECK	0x0001
 #define	CMM_NOEXPOSEWALLS	0x0002
 #define	CMM_CLONECANTBLOCK	0x0004
-#define	CMM_NOCOLLAPSEBLOCKS	0x0008
+#define	CMM_NOPUSHING		0x0008
+#define	CMM_TELEPORTPUSH	0x0010
+#define	CMM_NODEFERBUTTONS	0x0020
+
+/* Move a block at the given position forward in the given direction.
+ * FALSE is returned if the block cannot be pushed.
+ */
+static int pushblock(int pos, int dir, int flags)
+{
+    creature   *cr;
+    int		slipdir, r;
+
+    _assert(cellat(pos)->top.id == Block_Static);
+    _assert(dir != NIL);
+
+    cr = lookupblock(pos);
+    if (!cr) {
+	warn("%d: attempt to push disembodied block!", currenttime());
+	return FALSE;
+    }
+    if (cr->state & (CS_SLIP | CS_SLIDE)) {
+	slipdir = getslipdir(cr);
+	if (dir == slipdir || dir == back(slipdir))
+	    if (!(flags & CMM_TELEPORTPUSH))
+		return FALSE;
+    }
+
+    if (flags & CMM_NOPUSHING)
+	return FALSE;
+
+    if (!(flags & CMM_TELEPORTPUSH) && cellat(pos)->bot.id == Block_Static)
+	cellat(pos)->bot.id = Empty;
+    if (!(flags & CMM_NODEFERBUTTONS))
+	cr->state |= CS_DEFERPUSH;
+    r = advancecreature(cr, dir);
+    if (!(flags & CMM_NODEFERBUTTONS))
+	cr->state &= ~CS_DEFERPUSH;
+    if (!r)
+	cr->state &= ~(CS_SLIP | CS_SLIDE);
+    return r;
+}
 
 /* Return TRUE if the given creature is allowed to attempt to move in
  * the given direction. Side effects can and will occur from calling
@@ -964,14 +986,14 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    return FALSE;
 	}
 	if (floor == Block_Static) {
-	    if (pushblock(to, dir, !(flags & CMM_NOCOLLAPSEBLOCKS))) {
-		if (flags & CMM_NOCOLLAPSEBLOCKS)
-		    if (floorat(to) == Block_Static
-					&& cellat(to)->bot.id == Empty)
-			return TRUE;
-		return canmakemove(cr, dir, flags);
-	    } else
+	    if (!pushblock(to, dir, flags))
 		return FALSE;
+	    else if (flags & CMM_NOPUSHING)
+		return TRUE;
+	    if ((flags & CMM_TELEPORTPUSH) && floorat(to) == Block_Static
+					   && cellat(to)->bot.id == Empty)
+		return TRUE;
+	    return canmakemove(cr, dir, flags | CMM_NOPUSHING);
 	}
     } else if (cr->id == Block) {
 	floor = cellat(to)->top.id;
@@ -1001,10 +1023,6 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	}
 	if (!(movelaws[floor].creature & dir))
 	    return FALSE;
-#if 0
-	if (isboots(cellat(to)->top.id))
-	    return FALSE;
-#endif
 	if (floor == Fire && (cr->id == Bug || cr->id == Walker))
 	    return FALSE;
     }
@@ -1175,6 +1193,67 @@ static void choosecreaturemove(creature *cr)
     cr->tdir = pdir;
 }
 
+/* Select a direction for Chip to move towards the goal position.
+ */
+static int chipmovetogoalpos(void)
+{
+    creature   *cr;
+    int		dir, d1, d2;
+    int		x, y;
+
+    if (!hasgoal())
+	return NIL;
+    cr = getchip();
+    if (goalpos() == cr->pos) {
+	cancelgoal();
+	return NIL;
+    }
+
+    y = goalpos() / CXGRID - cr->pos / CXGRID;
+    x = goalpos() % CXGRID - cr->pos % CXGRID;
+    d1 = y < 0 ? NORTH : y > 0 ? SOUTH : NIL;
+    if (y < 0)
+	y = -y;
+    d2 = x < 0 ? WEST : x > 0 ? EAST : NIL;
+    if (x < 0)
+	x = -x;
+    if (x > y) {
+	dir = d1;
+	d1 = d2;
+	d2 = dir;
+    }
+    if (d1 != NIL && d2 != NIL)
+	dir = canmakemove(cr, d1, 0) ? d1 : d2;
+    else
+	dir = d2 == NIL ? d1 : d2;
+
+    return dir;
+}
+
+/* Translate a map position into a packed location relative to Chip.
+ */
+static int makemouserelative(int abspos)
+{
+    int	x, y;
+
+    x = abspos % CXGRID - chippos() % CXGRID;
+    y = abspos / CXGRID - chippos() / CXGRID;
+    _assert(x >= MOUSERANGEMIN && x <= MOUSERANGEMAX);
+    _assert(y >= MOUSERANGEMIN && y <= MOUSERANGEMAX);
+    return (y - MOUSERANGEMIN) * MOUSERANGE + (x - MOUSERANGEMIN);
+}
+
+/* Unpack a Chip-relative map location.
+ */
+static int makemouseabsolute(int relpos)
+{
+    int	x, y;
+
+    x = relpos % MOUSERANGE + MOUSERANGEMIN;
+    y = relpos / MOUSERANGE + MOUSERANGEMIN;
+    return chippos() + y * CXGRID + x;
+}
+
 /* Determine the direction of Chip's next move. If discard is TRUE,
  * then Chip is not currently permitted to select a direction of
  * movement, and the player's input should not be retained.
@@ -1190,19 +1269,39 @@ static void choosechipmove(creature *cr, int discard)
 
     if (!(currenttime() & 3))
 	cr->state &= ~CS_HASMOVED;
-    if (cr->state & CS_HASMOVED)
+    if (cr->state & CS_HASMOVED) {
+	if (currentinput() != NIL && hasgoal()) {
+	    cancelgoal();
+	    lastmove() = CmdMoveNop;
+	}
 	return;
+    }
 
     dir = currentinput();
     currentinput() = NIL;
-    if (!(dir >= NORTH && dir <= EAST))
-	dir = NIL;
-    if (dir == NIL || discard)
+    if (discard || ((cr->state & CS_SLIDE) && dir == cr->dir)) {
+	if (currenttime() && !(currenttime() & 1))
+	    cancelgoal();
 	return;
-    if ((cr->state & CS_SLIDE) && dir == cr->dir)
-	return;
+    }
 
-    lastmove() = dir;
+    if (dir >= CmdAbsMouseMoveFirst && dir <= CmdAbsMouseMoveLast) {
+	goalpos() = dir - CmdAbsMouseMoveFirst;
+	lastmove() = CmdMouseMoveFirst + makemouserelative(goalpos());
+	dir = NIL;
+    } else if (dir >= CmdMouseMoveFirst && dir <= CmdMouseMoveLast) {
+	lastmove() = dir;
+	goalpos() = makemouseabsolute(dir - CmdMouseMoveFirst);
+	dir = NIL;
+    } else {
+	if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST)))
+	    dir &= NORTH | SOUTH;
+	lastmove() = dir;
+    }
+
+    if (dir == NIL && hasgoal() && currenttime() && !(currenttime() & 1))
+	dir = chipmovetogoalpos();
+
     cr->tdir = dir;
 }
 
@@ -1235,7 +1334,8 @@ static int teleportcreature(creature *cr, int start)
 	    continue;
 	cr->pos = dest;
 	f = canmakemove(cr, cr->dir, CMM_NOLEAVECHECK | CMM_NOEXPOSEWALLS
-						      | CMM_NOCOLLAPSEBLOCKS);
+						      | CMM_NODEFERBUTTONS
+						      | CMM_TELEPORTPUSH);
 	cr->pos = origpos;
 	if (f)
 	    break;
@@ -1310,7 +1410,7 @@ static void springtrap(int buttonpos)
 	return;
     }
     id = cellat(pos)->top.id;
-    if (id == Block_Static) {
+    if (id == Block_Static || (cellat(pos)->bot.state & FS_HASMUTANT)) {
 	cr = lookupblock(pos);
 	if (cr)
 	    cr->state |= CS_RELEASED;
@@ -1396,8 +1496,11 @@ static int startmovement(creature *cr, int dir)
 	return FALSE;
     }
 
-    if (floor == Beartrap)
+    if (floor == Beartrap) {
 	_assert(cr->state & CS_RELEASED);
+	if (cr->state & CS_MUTANT)
+	    cellat(cr->pos)->bot.state &= ~FS_HASMUTANT;
+    }
     cr->state &= ~CS_RELEASED;
 
     cr->dir = dir;
@@ -1467,6 +1570,8 @@ static void endmovement(creature *cr, int dir)
 	  case Key_Blue:
 	  case Key_Yellow:
 	  case Key_Green:
+	    if (iscreature(cell->bot.id))
+		chipstatus() = CHIP_COLLIDED;
 	    ++possession(floor);
 	    poptile(newpos);
 	    addsoundeffect(SND_ITEM_COLLECTED);
@@ -1492,6 +1597,10 @@ static void endmovement(creature *cr, int dir)
 	  case Bomb:
 	    chipstatus() = CHIP_BOMBED;
 	    addsoundeffect(SND_BOMB_EXPLODES);
+	    break;
+	  default:
+	    if (iscreature(floor))
+		chipstatus() = CHIP_COLLIDED;
 	    break;
 	}
     } else if (cr->id == Block) {
@@ -1552,15 +1661,26 @@ static void endmovement(creature *cr, int dir)
     if (cr->id == Chip && floor == Teleport && !(tile->state & FS_BROKEN)) {
 	i = newpos;
 	newpos = teleportcreature(cr, newpos);
-	if (newpos != i)
+	if (newpos != i) {
 	    addsoundeffect(SND_TELEPORTING);
+	    if (floorat(newpos) == Block_Static) {
+		if (lastslipdir() == NIL) {
+		    cr->dir = NORTH;
+		    lookupblock(newpos)->state |= CS_MUTANT;
+		    cellat(newpos)->top.id = crtile(Chip, NORTH);
+		    floor = Empty;
+		} else {
+		    cr->dir = lastslipdir();
+		}
+	    }
+	}
     }
 
     cr->pos = newpos;
     addcreaturetomap(cr);
     cr->pos = oldpos;
-    tile = &cell->bot;
 
+    tile = &cell->bot;
     switch (floor) {
       case Button_Blue:
 	if (cr->state & CS_DEFERPUSH)
@@ -1609,21 +1729,21 @@ static void endmovement(creature *cr, int dir)
     }
 
     if (cr->id == Chip) {
-	if (iscreature(cell->bot.id)
-			 	&& creatureid(cell->bot.id) != Chip
-				&& creatureid(cell->bot.id) != Swimming_Chip) {
-	    chipstatus() = CHIP_COLLIDED;
+	if (goalpos() == cr->pos)
+	    cancelgoal();
+	if (chipstatus() != CHIP_OKAY)
 	    return;
-	} else if (cell->bot.id == Exit) {
+	if (cell->bot.id == Exit) {
 	    completed() = TRUE;
 	    return;
 	}
     } else {
 	if (iscreature(cell->bot.id)) {
-	    _assert(creatureid(cell->bot.id) == Chip
-			|| creatureid(cell->bot.id) == Swimming_Chip);
-	    chipstatus() = CHIP_COLLIDED;
-	    return;
+	    if (creatureid(cell->bot.id) == Chip
+			|| creatureid(cell->bot.id) == Swimming_Chip) {
+		chipstatus() = CHIP_COLLIDED;
+		return;
+	    }
 	}
     }
 
@@ -1635,9 +1755,11 @@ static void endmovement(creature *cr, int dir)
 	startfloormovement(cr, floor);
     else if (isslide(floor) && (cr->id != Chip || !possession(Boots_Slide)))
 	startfloormovement(cr, floor);
-    else if (floor == Beartrap && cr->id == Block && wasslipping)
+    else if (floor == Beartrap && cr->id == Block && wasslipping) {
 	startfloormovement(cr, floor);
-    else
+	if (cr->state & CS_MUTANT)
+	    cell->bot.state |= FS_HASMUTANT;
+    } else
 	cr->state &= ~(CS_SLIP | CS_SLIDE);
 
     if (!wasslipping && (cr->state & (CS_SLIP | CS_SLIDE)) && cr->id != Chip)
@@ -1658,6 +1780,7 @@ static int advancecreature(creature *cr, int dir)
 	if (cr->id == Chip) {
 	    addsoundeffect(SND_CANT_MOVE);
 	    resetbuttons();
+	    cancelgoal();
 	}
 	return FALSE;
     }
@@ -1673,13 +1796,13 @@ static int advancecreature(creature *cr, int dir)
  */
 static int checkforending(void)
 {
-    if (completed()) {
-	addsoundeffect(SND_CHIP_WINS);
-	return +1;
-    }
     if (chipstatus() != CHIP_OKAY) {
 	addsoundeffect(SND_CHIP_LOSES);
 	return -1;
+    }
+    if (completed()) {
+	addsoundeffect(SND_CHIP_WINS);
+	return +1;
     }
     return 0;
 }
@@ -1705,8 +1828,10 @@ static void floormovements(void)
 	if (slipdir == NIL)
 	    continue;
 	if (advancecreature(cr, slipdir)) {
-	    if (cr->id == Chip)
+	    if (cr->id == Chip) {
 		cr->state &= ~CS_HASMOVED;
+		lastslipdir() = slipdir;
+	    }
 	} else {
 	    floor = cellat(cr->pos)->bot.id;
 	    if (isice(floor) || (floor == Teleport && cr->id == Chip)) {
@@ -1775,12 +1900,16 @@ static void dumpmap(void)
 		break;
 	    }
 	}
-	fprintf(stderr, "%s%s%s%s%s",
+	fprintf(stderr, "%s%s%s%s%s%s%s%s%s",
 			cr->hidden ? " hidden" : "",
 			cr->state & CS_RELEASED ? " released" : "",
+			cr->state & CS_CLONING ? " cloning" : "",
 			cr->state & CS_HASMOVED ? " has-moved" : "",
+			cr->state & CS_TURNING ? " turning" : "",
 			cr->state & CS_SLIP ? " slipping" : "",
-			cr->state & CS_SLIDE ? " sliding" : "");
+			cr->state & CS_SLIDE ? " sliding" : "",
+			cr->state & CS_DEFERPUSH ? " deferred-push" : "",
+			cr->state & CS_MUTANT ? " mutant" : "");
 	if (x < slipcount)
 	    fprintf(stderr, " %c", "-^<?v?\?\?>"[(int)slips[x].dir]);
 	fputc('\n', stderr);
@@ -1796,12 +1925,16 @@ static void dumpmap(void)
 		break;
 	    }
 	}
-	fprintf(stderr, "%s%s%s%s%s",
+	fprintf(stderr, "%s%s%s%s%s%s%s%s%s",
 			cr->hidden ? " hidden" : "",
 			cr->state & CS_RELEASED ? " released" : "",
+			cr->state & CS_CLONING ? " cloning" : "",
 			cr->state & CS_HASMOVED ? " has-moved" : "",
+			cr->state & CS_TURNING ? " turning" : "",
 			cr->state & CS_SLIP ? " slipping" : "",
-			cr->state & CS_SLIDE ? " sliding" : "");
+			cr->state & CS_SLIDE ? " sliding" : "",
+			cr->state & CS_DEFERPUSH ? " deferred-push" : "",
+			cr->state & CS_MUTANT ? " mutant" : "");
 	if (x < slipcount)
 	    fprintf(stderr, " %c", "-^<?v?\?\?>"[(int)slips[x].dir]);
 	fputc('\n', stderr);
@@ -1888,7 +2021,7 @@ static void initialhousekeeping(void)
 	}
 	++chipwait();
 	if (chipwait() > 3) {
-	    chipwait() = 0;
+	    chipwait() = 3;
 	    getchip()->dir = SOUTH;
 	    updatecreature(getchip());
 	}
@@ -1906,7 +2039,7 @@ static void preparedisplay(void)
 {
     int	pos;
 
-    pos = getchip()->pos;
+    pos = chippos();
     if (cellat(pos)->bot.id == HintButton)
 	showhint();
     else
@@ -1920,124 +2053,6 @@ static void preparedisplay(void)
  * The functions provided by the gamelogic struct.
  */
 
-/* Translation table for the codes used by the data file to define the
- * initial state of a level.
- */
-static struct { unsigned char isfloor, id, dir; } const fileids[] = {
-/* 00 empty space		*/	{ TRUE,  Empty,		    NIL },
-/* 01 wall			*/	{ TRUE,  Wall,		    NIL },
-/* 02 chip			*/	{ TRUE,  ICChip,	    NIL },
-/* 03 water			*/	{ TRUE,  Water,		    NIL },
-/* 04 fire			*/	{ TRUE,  Fire,		    NIL },
-/* 05 invisible wall, perm.	*/	{ TRUE,  HiddenWall_Perm,   NIL },
-/* 06 blocked north		*/	{ TRUE,  Wall_North,	    NIL },
-/* 07 blocked west		*/	{ TRUE,  Wall_West,	    NIL },
-/* 08 blocked south		*/	{ TRUE,  Wall_South,	    NIL },
-/* 09 blocked east		*/	{ TRUE,  Wall_East,	    NIL },
-/* 0A block			*/	{ TRUE,  Block_Static,	    NIL },
-/* 0B dirt			*/	{ TRUE,  Dirt,		    NIL },
-/* 0C ice			*/	{ TRUE,  Ice,		    NIL },
-/* 0D force south		*/	{ TRUE,  Slide_South,	    NIL },
-/* 0E cloning block north	*/	{ FALSE, Block,		    NORTH },
-/* 0F cloning block west	*/	{ FALSE, Block,		    WEST },
-/* 10 cloning block south	*/	{ FALSE, Block,		    SOUTH },
-/* 11 cloning block east	*/	{ FALSE, Block,		    EAST },
-/* 12 force north		*/	{ TRUE,  Slide_North,	    NIL },
-/* 13 force east		*/	{ TRUE,  Slide_East,	    NIL },
-/* 14 force west		*/	{ TRUE,  Slide_West,	    NIL },
-/* 15 exit			*/	{ TRUE,  Exit,		    NIL },
-/* 16 blue door			*/	{ TRUE,  Door_Blue,	    NIL },
-/* 17 red door			*/	{ TRUE,  Door_Red,	    NIL },
-/* 18 green door		*/	{ TRUE,  Door_Green,	    NIL },
-/* 19 yellow door		*/	{ TRUE,  Door_Yellow,	    NIL },
-/* 1A SE ice slide		*/	{ TRUE,  IceWall_Southeast, NIL },
-/* 1B SW ice slide		*/	{ TRUE,  IceWall_Southwest, NIL },
-/* 1C NW ice slide		*/	{ TRUE,  IceWall_Northwest, NIL },
-/* 1D NE ice slide		*/	{ TRUE,  IceWall_Northeast, NIL },
-/* 1E blue block, tile		*/	{ TRUE,  BlueWall_Fake,	    NIL },
-/* 1F blue block, wall		*/	{ TRUE,  BlueWall_Real,	    NIL },
-/* 20 not used			*/	{ TRUE,  Overlay_Buffer,    NIL },
-/* 21 thief			*/	{ TRUE,  Burglar,	    NIL },
-/* 22 socket			*/	{ TRUE,  Socket,	    NIL },
-/* 23 green button		*/	{ TRUE,  Button_Green,	    NIL },
-/* 24 red button		*/	{ TRUE,  Button_Red,	    NIL },
-/* 25 switch block, closed	*/	{ TRUE,  SwitchWall_Closed, NIL },
-/* 26 switch block, open	*/	{ TRUE,  SwitchWall_Open,   NIL },
-/* 27 brown button		*/	{ TRUE,  Button_Brown,	    NIL },
-/* 28 blue button		*/	{ TRUE,  Button_Blue,	    NIL },
-/* 29 teleport			*/	{ TRUE,  Teleport,	    NIL },
-/* 2A bomb			*/	{ TRUE,  Bomb,		    NIL },
-/* 2B trap			*/	{ TRUE,  Beartrap,	    NIL },
-/* 2C invisible wall, temp.	*/	{ TRUE,  HiddenWall_Temp,   NIL },
-/* 2D gravel			*/	{ TRUE,  Gravel,	    NIL },
-/* 2E pass once			*/	{ TRUE,  PopupWall,	    NIL },
-/* 2F hint			*/	{ TRUE,  HintButton,	    NIL },
-/* 30 blocked SE		*/	{ TRUE,  Wall_Southeast,    NIL },
-/* 31 cloning machine		*/	{ TRUE,  CloneMachine,	    NIL },
-/* 32 force all directions	*/	{ TRUE,  Slide_Random,	    NIL },
-/* 33 drowning Chip		*/	{ TRUE,  Drowned_Chip,	    NIL },
-/* 34 burned Chip		*/	{ TRUE,  Burned_Chip,	    NIL },
-/* 35 burned Chip		*/	{ TRUE,  Bombed_Chip,	    NIL },
-/* 36 not used			*/	{ TRUE,  HiddenWall_Perm,   NIL },
-/* 37 not used			*/	{ TRUE,  HiddenWall_Perm,   NIL },
-/* 38 not used			*/	{ TRUE,  HiddenWall_Perm,   NIL },
-/* 39 Chip in exit		*/	{ TRUE,  Exited_Chip,	    NIL },
-/* 3A exit - end game		*/	{ TRUE,  Exit_Extra_1,	    NIL },
-/* 3B exit - end game		*/	{ TRUE,  Exit_Extra_2,	    NIL },
-/* 3C Chip swimming north	*/	{ FALSE, Swimming_Chip,	    NORTH },
-/* 3D Chip swimming west	*/	{ FALSE, Swimming_Chip,	    WEST },
-/* 3E Chip swimming south	*/	{ FALSE, Swimming_Chip,	    SOUTH },
-/* 3F Chip swimming east	*/	{ FALSE, Swimming_Chip,	    EAST },
-/* 40 Bug N			*/	{ FALSE, Bug,		    NORTH },
-/* 41 Bug W			*/	{ FALSE, Bug,		    WEST },
-/* 42 Bug S			*/	{ FALSE, Bug,		    SOUTH },
-/* 43 Bug E			*/	{ FALSE, Bug,		    EAST },
-/* 44 Fireball N		*/	{ FALSE, Fireball,	    NORTH },
-/* 45 Fireball W		*/	{ FALSE, Fireball,	    WEST },
-/* 46 Fireball S		*/	{ FALSE, Fireball,	    SOUTH },
-/* 47 Fireball E		*/	{ FALSE, Fireball,	    EAST },
-/* 48 Pink ball N		*/	{ FALSE, Ball,		    NORTH },
-/* 49 Pink ball W		*/	{ FALSE, Ball,		    WEST },
-/* 4A Pink ball S		*/	{ FALSE, Ball,		    SOUTH },
-/* 4B Pink ball E		*/	{ FALSE, Ball,		    EAST },
-/* 4C Tank N			*/	{ FALSE, Tank,		    NORTH },
-/* 4D Tank W			*/	{ FALSE, Tank,		    WEST },
-/* 4E Tank S			*/	{ FALSE, Tank,		    SOUTH },
-/* 4F Tank E			*/	{ FALSE, Tank,		    EAST },
-/* 50 Glider N			*/	{ FALSE, Glider,	    NORTH },
-/* 51 Glider W			*/	{ FALSE, Glider,	    WEST },
-/* 52 Glider S			*/	{ FALSE, Glider,	    SOUTH },
-/* 53 Glider E			*/	{ FALSE, Glider,	    EAST },
-/* 54 Teeth N			*/	{ FALSE, Teeth,		    NORTH },
-/* 55 Teeth W			*/	{ FALSE, Teeth,		    WEST },
-/* 56 Teeth S			*/	{ FALSE, Teeth,		    SOUTH },
-/* 57 Teeth E			*/	{ FALSE, Teeth,		    EAST },
-/* 58 Walker N			*/	{ FALSE, Walker,	    NORTH },
-/* 59 Walker W			*/	{ FALSE, Walker,	    WEST },
-/* 5A Walker S			*/	{ FALSE, Walker,	    SOUTH },
-/* 5B Walker E			*/	{ FALSE, Walker,	    EAST },
-/* 5C Blob N			*/	{ FALSE, Blob,		    NORTH },
-/* 5D Blob W			*/	{ FALSE, Blob,		    WEST },
-/* 5E Blob S			*/	{ FALSE, Blob,		    SOUTH },
-/* 5F Blob E			*/	{ FALSE, Blob,		    EAST },
-/* 60 Paramecium N		*/	{ FALSE, Paramecium,	    NORTH },
-/* 61 Paramecium W		*/	{ FALSE, Paramecium,	    WEST },
-/* 62 Paramecium S		*/	{ FALSE, Paramecium,	    SOUTH },
-/* 63 Paramecium E		*/	{ FALSE, Paramecium,	    EAST },
-/* 64 Blue key			*/	{ TRUE,  Key_Blue,	    NIL },
-/* 65 Red key			*/	{ TRUE,  Key_Red,	    NIL },
-/* 66 Green key			*/	{ TRUE,  Key_Green,	    NIL },
-/* 67 Yellow key		*/	{ TRUE,  Key_Yellow,	    NIL },
-/* 68 Flippers			*/	{ TRUE,  Boots_Water,	    NIL },
-/* 69 Fire boots		*/	{ TRUE,  Boots_Fire,	    NIL },
-/* 6A Ice skates		*/	{ TRUE,  Boots_Ice,	    NIL },
-/* 6B Suction boots		*/	{ TRUE,  Boots_Slide,	    NIL },
-/* 6C Chip N			*/	{ FALSE, Chip,		    NORTH },
-/* 6D Chip W			*/	{ FALSE, Chip,		    WEST },
-/* 6E Chip S			*/	{ FALSE, Chip,		    SOUTH },
-/* 6F Chip E			*/	{ FALSE, Chip,		    EAST }
-};
-
 /* Initialize the gamestate structure to the state at the beginning of
  * the level, using the data in the associated gamesetup structure.
  * The level map is decoded and assembled, the lists of beartraps,
@@ -2047,80 +2062,23 @@ static struct { unsigned char isfloor, id, dir; } const fileids[] = {
 static int initgame(gamelogic *logic)
 {
     static creature	dummycrlist;
-    unsigned char	layer1[CXGRID * CYGRID];
-    unsigned char	layer2[CXGRID * CYGRID];
     mapcell	       *cell;
-    xyconn	       *traps;
+    xyconn	       *xy;
     creature	       *cr;
     creature	       *chip;
-    gamesetup	       *game;
-    int			buried, pos, n;
+    int			pos, num, n;
 
     setstate(logic);
+    num = state->game->number;
+    state->statusflags &= ~SF_BADTILES;
+    state->statusflags |= SF_NOANIMATION;
 
-    game = state->game;
-
-    memset(layer1, 0, sizeof layer1);
-    memset(layer2, 0, sizeof layer2);
-    for (n = pos = 0 ; n < game->map1size && pos < CXGRID * CYGRID ; ++n) {
-	if (game->map1[n] == 0xFF) {
-	    if (pos + game->map1[n + 1] > CXGRID * CYGRID) {
-		memset(layer1 + pos, game->map1[n + 2], CXGRID * CYGRID - pos);
-		break;
-	    }
-	    memset(layer1 + pos, game->map1[n + 2], game->map1[n + 1]);
-	    pos += game->map1[n + 1];
-	    n += 2;
-	} else
-	    layer1[pos++] = game->map1[n];
-    }
-    if (n < game->map1size)
-	warn("Level %d: %d extra bytes in upper map layer",
-	     game->number, game->map1size - n);
-    for (n = pos = 0 ; n < game->map2size && pos < CXGRID * CYGRID ; ++n) {
-	if (game->map2[n] == 0xFF) {
-	    if (pos + game->map2[n + 1] > CXGRID * CYGRID) {
-		memset(layer2 + pos, game->map2[n + 2], CXGRID * CYGRID - pos);
-		break;
-	    }
-	    memset(layer2 + pos, game->map2[n + 2], game->map2[n + 1]);
-	    pos += game->map2[n + 1];
-	    n += 2;
-	} else
-	    layer2[pos++] = game->map2[n];
-    }
-    if (n < game->map2size)
-	warn("Level %d: %d extra bytes in lower map layer",
-	     game->number, game->map2size - n);
-
-    for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	if (layer1[pos] >= (int)(sizeof fileids / sizeof *fileids))
-	    layer1[pos] = 0x01;
-	if (layer2[pos] >= (int)(sizeof fileids / sizeof *fileids))
-	    layer2[pos] = 0x01;
-	cell = cellat(pos);
-	cell->top.state = 0;
-	if (fileids[layer1[pos]].isfloor) {
-	    cell->top.id = fileids[layer1[pos]].id;
-	    layer1[pos] = 0;
-	    buried = TRUE;
-	} else {
-	    cell->top.id = crtile(fileids[layer1[pos]].id,
-				  fileids[layer1[pos]].dir);
-	    buried = fileids[layer1[pos]].id == Chip
-		  || fileids[layer1[pos]].id == Block;
-	}
-	cell->bot.state = 0;
-	if (fileids[layer2[pos]].isfloor) {
-	    cell->bot.id = fileids[layer2[pos]].id;
-	    if (buried && (cell->bot.id == Teleport
-				|| cell->bot.id == SwitchWall_Closed
-				|| cell->bot.id == SwitchWall_Open))
+    for (pos = 0, cell = state->map ; pos < CXGRID * CYGRID ; ++pos, ++cell) {
+	if (isfloor(cell->top.id) || creatureid(cell->top.id) == Chip
+				  || creatureid(cell->top.id) == Block)
+	    if (cell->bot.id == Teleport || cell->bot.id == SwitchWall_Open
+					 || cell->bot.id == SwitchWall_Closed)
 		cell->bot.state |= FS_BROKEN;
-	} else {
-	    cell->bot.id = crtile(fileids[layer2[pos]].id,
-				  fileids[layer2[pos]].dir);
-	}
     }
 
     chip = allocatecreature();
@@ -2128,50 +2086,47 @@ static int initgame(gamelogic *logic)
     chip->id = Chip;
     chip->dir = SOUTH;
     addtocreaturelist(chip);
-    for (n = 0 ; n < game->creaturecount ; ++n) {
-	pos = game->creatures[n];
+    for (n = 0 ; n < state->crlistcount ; ++n) {
+	pos = state->crlist[n];
 	if (pos < 0 || pos >= CXGRID * CYGRID) {
-	    warn("Level %d: Invalid creature location (%d %d)",
-		 game->number, pos % CXGRID, pos / CXGRID);
+	    warn("level %d: invalid creature location (%d %d)",
+		 num, pos % CXGRID, pos / CXGRID);
 	    continue;
 	}
-	if (fileids[layer1[pos]].isfloor) {
-	    warn("Level %d: No creature at location (%d %d)",
-		 game->number, pos % CXGRID, pos / CXGRID);
+	cell = cellat(pos);
+	if (!iscreature(cell->top.id)) {
+	    warn("level %d: no creature at location (%d %d)",
+		 num, pos % CXGRID, pos / CXGRID);
 	    continue;
 	}
-	if (fileids[layer1[pos]].id != Block
-			&& cellat(pos)->bot.id != CloneMachine) {
+	if (creatureid(cell->top.id) != Block
+				&& cell->bot.id != CloneMachine) {
 	    cr = allocatecreature();
 	    cr->pos = pos;
-	    cr->id = fileids[layer1[pos]].id;
-	    cr->dir = fileids[layer1[pos]].dir;
+	    cr->id = creatureid(cell->top.id);
+	    cr->dir = creaturedirid(cell->top.id);
 	    addtocreaturelist(cr);
-	    if (!fileids[layer2[pos]].isfloor
-			&& fileids[layer2[pos]].id == Chip) {
+	    if (iscreature(cell->bot.id) && creatureid(cell->bot.id) == Chip) {
 		chip->pos = pos;
-		chip->dir = fileids[layer2[pos]].dir;
-		chipstatus() = CHIP_COLLIDED;
+		chip->dir = creaturedirid(cell->bot.id);
 	    }
 	}
-	layer1[pos] = 0;
+	cell->top.state |= FS_MARKER;
     }
-    for (pos = 0 ; pos < CXGRID * CYGRID ; ++pos) {
-	if (!layer1[pos])
-	    continue;
-	if (fileids[layer1[pos]].id == Chip) {
+    for (pos = 0, cell = state->map ; pos < CXGRID * CYGRID ; ++pos, ++cell) {
+	if (cell->top.state & FS_MARKER) {
+	    cell->top.state &= ~FS_MARKER;
+	} else if (iscreature(cell->top.id)
+				&& creatureid(cell->top.id) == Chip) {
 	    chip->pos = pos;
-	    chip->dir = fileids[layer1[pos]].dir;
-	    layer1[pos] = 0;
+	    chip->dir = creaturedirid(cell->bot.id);
 	}
     }
 
     dummycrlist.id = 0;
     state->creatures = &dummycrlist;
     state->initrndslidedir = NORTH;
-    state->statusflags |= SF_NOANIMATION;
 
-    chipsneeded() = game->chips;
     possession(Key_Red) = possession(Key_Blue)
 			= possession(Key_Yellow)
 			= possession(Key_Green) = 0;
@@ -2179,16 +2134,18 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Fire)
 			  = possession(Boots_Water) = 0;
 
-    traps = traplist();
-    for (n = traplistsize() ; n ; ++traps, --n)
-	if (istrapbuttondown(traps->from) || traps->to == chippos())
-	    springtrap(traps->from);
+    xy = traplist();
+    for (n = traplistsize(), xy = traplist() ; n ; --n, ++xy)
+	if (istrapbuttondown(xy->from) || xy->to == chippos())
+	    springtrap(xy->from);
 
     chipwait() = 0;
     completed() = FALSE;
     chipstatus() = CHIP_OKAY;
     controllerdir() = NIL;
+    lastslipdir() = NIL;
     stepping() = laststepping;
+    cancelgoal();
     xviewoffset() = 0;
     yviewoffset() = 0;
 
@@ -2211,9 +2168,9 @@ static int advancegame(gamelogic *logic)
 
     if (currenttime() && !(currenttime() & 1)) {
 	controllerdir() = NIL;
-	for (n = 1 ; n < creaturecount ; ++n) {
+	for (n = 0 ; n < creaturecount ; ++n) {
 	    cr = creatures[n];
-	    if (cr->hidden || (cr->state & CS_CLONING))
+	    if (cr->hidden || (cr->state & CS_CLONING) || cr->id == Chip)
 		continue;
 	    choosemove(cr);
 	    if (cr->tdir != NIL)

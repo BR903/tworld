@@ -61,19 +61,25 @@ static int		fullscreen = FALSE;
  */
 static int		screenw, screenh;
 static SDL_Rect		rinfoloc;
-static SDL_Rect		locrects[7];
+static SDL_Rect		locrects[8];
 
 #define	displayloc	(locrects[0])
 #define	titleloc	(locrects[1])
 #define	infoloc		(locrects[2])
 #define	invloc		(locrects[3])
 #define	hintloc		(locrects[4])
-#define	messageloc	(locrects[5])
-#define	promptloc	(locrects[6])
+#define	rscoreloc	(locrects[5])
+#define	messageloc	(locrects[6])
+#define	promptloc	(locrects[7])
 
 /* TRUE means that the screen is in need of a full update.
  */
 static int		fullredraw = TRUE;
+
+/* Coordinates of the NW corner of the visible part of the map
+ * (measured in quarter-tiles), or -1 if no map is currently visible.
+ */
+static int		mapvieworigin = -1;
 
 /*
  * Display initialization functions.
@@ -164,11 +170,12 @@ static int layoutscreen(void)
 {
     static char const  *scoretext = "888  DRAWN AND QUARTERED"
 				    "   88,888  8,888,888  8,888,888";
-    static char const  *hinttext = "Total Score  88888888";
+    static char const  *hinttext = "Total Score  ";
+    static char const  *rscoretext = "88888888";
     static char const  *chipstext = "Chips";
     static char const  *timertext = " 88888";
 
-    int			fullw, infow, texth;
+    int			fullw, infow, rscorew, texth;
 
     if (sdlg.wtile <= 0 || sdlg.htile <= 0)
 	return FALSE;
@@ -178,6 +185,9 @@ static int layoutscreen(void)
     texth = displayloc.h;
     puttext(&displayloc, hinttext, -1, PT_CALCSIZE);
     infow = displayloc.w;
+    puttext(&displayloc, rscoretext, -1, PT_CALCSIZE);
+    rscorew = displayloc.w;
+    infow += rscorew;
 
     displayloc.x = MARGINW;
     displayloc.y = MARGINH;
@@ -229,6 +239,11 @@ static int layoutscreen(void)
     if (hintloc.y + hintloc.h + MARGINH > promptloc.y)
 	hintloc.h = promptloc.y - MARGINH - hintloc.y;
 
+    rscoreloc.x = hintloc.x + hintloc.w - rscorew;
+    rscoreloc.y = hintloc.y + 2 * texth;
+    rscoreloc.w = rscorew;
+    rscoreloc.h = hintloc.h - 2 * texth;
+
     return TRUE;
 }
 
@@ -262,6 +277,7 @@ void cleardisplay(void)
 {
     SDL_FillRect(sdlg.screen, NULL, bkgndcolor(sdlg.textclr));
     fullredraw = TRUE;
+    mapvieworigin = -1;
 }
 
 /*
@@ -364,6 +380,52 @@ int setdisplaymsg(char const *msg, int msecs, int bold)
  * The main display functions.
  */
 
+/* Create a string representing a decimal number.
+ */
+static char const *decimal(long number, int places)
+{
+    static char		buf[32];
+    char	       *dest = buf + sizeof buf;
+    unsigned long	n;
+
+    n = number >= 0 ? (unsigned long)number : (unsigned long)-(number + 1) + 1;
+    *--dest = '\0';
+    do {
+	*--dest = CHAR_MZERO + n % 10;
+	n /= 10;
+    } while (n);
+    while (buf + sizeof buf - dest < places + 1)
+	*--dest = CHAR_MZERO;
+    if (number < 0)
+	*--dest = '-';
+    return dest;
+}
+
+/* Display an empty map view.
+ */
+static void displayshutter(void)
+{
+    SDL_Rect	rect;
+
+    rect = displayloc;
+    SDL_FillRect(sdlg.screen, &rect, halfcolor(sdlg.dimtextclr));
+    ++rect.x;
+    ++rect.y;
+    rect.w -= 2;
+    rect.h -= 2;
+    SDL_FillRect(sdlg.screen, &rect, textcolor(sdlg.dimtextclr));
+    ++rect.x;
+    ++rect.y;
+    rect.w -= 2;
+    rect.h -= 2;
+    SDL_FillRect(sdlg.screen, &rect, halfcolor(sdlg.dimtextclr));
+    ++rect.x;
+    ++rect.y;
+    rect.w -= 2;
+    rect.h -= 2;
+    SDL_FillRect(sdlg.screen, &rect, bkgndcolor(sdlg.dimtextclr));
+}
+
 /* Render the view of the visible area of the map to the display, with
  * the view position centered on the display as much as possible. The
  * gamestate's map and the list of creatures are consulted to
@@ -379,6 +441,11 @@ static void displaymapview(gamestate const *state)
     int			lmap, tmap, rmap, bmap;
     int			pos, x, y;
 
+    if (state->statusflags & SF_SHUTTERED) {
+	displayshutter();
+	return;
+    }
+
     xdisppos = state->xviewpos / 2 - (NXTILES / 2) * 4;
     ydisppos = state->yviewpos / 2 - (NYTILES / 2) * 4;
     if (xdisppos < 0)
@@ -391,6 +458,8 @@ static void displaymapview(gamestate const *state)
 	ydisppos = (CYGRID - NYTILES) * 4;
     xorigin = displayloc.x - (xdisppos * sdlg.wtile / 4);
     yorigin = displayloc.y - (ydisppos * sdlg.htile / 4);
+
+    mapvieworigin = ydisppos * CXGRID * 4 + xdisppos;
 
     lmap = xdisppos / 4;
     tmap = ydisppos / 4;
@@ -442,7 +511,7 @@ static void displaymapview(gamestate const *state)
 static void displayinfo(gamestate const *state, int timeleft, int besttime)
 {
     SDL_Rect	rect, rrect;
-    char	buf[32];
+    char	buf[512];
     int		n;
 
     puttext(&titleloc, state->game->name, -1, PT_CENTER);
@@ -469,13 +538,12 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
     rrect.h = rect.h;
     puttext(&rect, "Chips", 5, PT_UPDATERECT);
     puttext(&rect, "Time", 4, PT_UPDATERECT);
-    sprintf(buf, "%d", state->chipsneeded);
-    puttext(&rrect, buf, -1, PT_RIGHT | PT_UPDATERECT);
+    puttext(&rrect, decimal(state->chipsneeded, 0), -1,
+		    PT_RIGHT | PT_UPDATERECT);
     if (timeleft == TIME_NIL)
-	strcpy(buf, "---");
+	puttext(&rrect, "---", -1, PT_RIGHT);
     else
-	sprintf(buf, "%d", timeleft);
-    puttext(&rrect, buf, -1, PT_RIGHT);
+	puttext(&rrect, decimal(timeleft, 0), -1, PT_RIGHT);
     if (state->stepping) {
 	rrect.x += rrect.w;
 	rrect.w = infoloc.x + infoloc.w - rrect.x;
@@ -490,9 +558,9 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 
     if (besttime != TIME_NIL) {
 	if (timeleft == TIME_NIL)
-	    sprintf(buf, "(Best time: %d)", besttime);
+	    sprintf(buf, "(Best time: %s)", decimal(besttime, 0));
 	else
-	    sprintf(buf, "Best time: %d", besttime);
+	    sprintf(buf, "Best time: %s", decimal(besttime, 0));
 	n = (state->game->sgflags & SGF_REPLACEABLE) ? PT_DIM : 0;
 	puttext(&rect, buf, -1, PT_UPDATERECT | n);
     }
@@ -505,12 +573,22 @@ static void displayinfo(gamestate const *state, int timeleft, int besttime)
 		     gettileimage(state->boots[n] ? Boots_Ice + n : Empty));
     }
 
-    if (state->statusflags & SF_INVALID)
+    if (state->statusflags & SF_INVALID) {
 	puttext(&hintloc, "This level cannot be played.", -1, PT_MULTILINE);
-    else if (state->statusflags & SF_SHOWHINT)
-	puttext(&hintloc, state->game->hinttext, -1, PT_MULTILINE | PT_CENTER);
-    else
+    } else if (state->currenttime < 0 && state->game->unsolvable) {
+	if (*state->game->unsolvable) {
+	    sprintf(buf, "This level is reported to be unsolvable: %s.",
+			 state->game->unsolvable);
+	    puttext(&hintloc, buf, -1, PT_MULTILINE);
+	} else {
+	    puttext(&hintloc, "This level is reported to be unsolvable.", -1,
+			      PT_MULTILINE);
+	}
+    } else if (state->statusflags & SF_SHOWHINT) {
+	puttext(&hintloc, state->hinttext, -1, PT_MULTILINE | PT_CENTER);
+    } else {
 	fillrect(&hintloc);
+    }
 
     fillrect(&promptloc);
 }
@@ -537,6 +615,28 @@ static int displayprompticon(int completed)
 /*
  * The exported functions.
  */
+
+/* Given a pixel's coordinates, return the integer identifying the
+ * tile's position in the map, or -1 if the pixel is not on the map view.
+ */
+int _windowmappos(int x, int y)
+{
+    if (mapvieworigin < 0)
+	return -1;
+    if (x < displayloc.x || y < displayloc.y)
+	return -1;
+    x = (x - displayloc.x) * 4 / sdlg.wtile;
+    y = (y - displayloc.y) * 4 / sdlg.htile;
+    if (x >= NXTILES * 4 || y >= NYTILES * 4)
+	return -1;
+    x = (x + mapvieworigin % (CXGRID * 4)) / 4;
+    y = (y + mapvieworigin / (CXGRID * 4)) / 4;
+    if (x < 0 || x >= CXGRID || y < 0 || y >= CYGRID) {
+	warn("mouse moved off the map: (%d %d)", x, y);
+	return -1;
+    }	    
+    return y * CXGRID + x;
+}
 
 /* Set the four main colors used to render text on the display.
  */
@@ -599,23 +699,24 @@ int displaygame(void const *state, int timeleft, int besttime)
 int displayendmessage(int basescore, int timescore, long totalscore,
 		      int completed)
 {
-    char	buf[32];
     SDL_Rect	rect;
-    int		n;
+    int		fullscore;
 
     if (totalscore) {
+	fullscore = timescore + basescore;
 	rect = hintloc;
-	puttext(&rect, "Level Completed", -1, PT_CENTER | PT_UPDATERECT);
-	puttext(&rect, "", 0, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Time Bonus  %04d", timescore);
-	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Level Bonus  %05d", basescore);
-	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Level Score  %05d", timescore + basescore);
-	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	n = sprintf(buf, "Total Score  %07ld", totalscore);
-	puttext(&rect, buf, n, PT_CENTER | PT_UPDATERECT);
-	fillrect(&rect);
+	puttext(&rect, "Level Completed", -1, PT_CENTER);
+	rect.y = rscoreloc.y;
+	rect.h = rscoreloc.h;
+	puttext(&rect, "Time Bonus", -1, PT_UPDATERECT);
+	puttext(&rect, "Level Bonus", -1, PT_UPDATERECT);
+	puttext(&rect, "Level Score", -1, PT_UPDATERECT);
+	puttext(&rect, "Total Score", -1, PT_UPDATERECT);
+	rect = rscoreloc;
+	puttext(&rect, decimal(timescore, 4), -1, PT_RIGHT | PT_UPDATERECT);
+	puttext(&rect, decimal(basescore, 5), -1, PT_RIGHT | PT_UPDATERECT);
+	puttext(&rect, decimal(fullscore, 5), -1, PT_RIGHT | PT_UPDATERECT);
+	puttext(&rect, decimal(totalscore, 7), -1, PT_RIGHT | PT_UPDATERECT);
 	SDL_UpdateRect(sdlg.screen, hintloc.x, hintloc.y,
 				    hintloc.w, hintloc.h);
     }
@@ -880,7 +981,9 @@ int creategamedisplay(void)
  */
 int _sdloutputinitialize(int _fullscreen)
 {
+    sdlg.windowmapposfunc = _windowmappos;
     fullscreen = _fullscreen;
+
     screenw = 640;
     screenh = 480;
     promptloc.x = screenw - MARGINW - PROMPTICONW;

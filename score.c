@@ -13,24 +13,49 @@
 #include	"play.h"
 #include	"score.h"
 
-/* Translate a number into an ASCII string, complete with commas.
+/* Translate a number into a string. The second argument supplies the
+ * character value to use for the zero digit.
  */
-static char const *commify(unsigned long number)
+static char const *decimal(long number, char zero)
 {
-    static char	buf[32];
-    char       *dest = buf + sizeof buf;
-    int		n = 0;
+    static char		buf[32];
+    char	       *dest = buf + sizeof buf;
+    unsigned long	n;
 
+    n = number >= 0 ? (unsigned long)number : (unsigned long)-(number + 1) + 1;
     *--dest = '\0';
     do {
-	++n;
-	if (n % 4 == 0) {
+	*--dest = zero + n % 10;
+	n /= 10;
+    } while (n);
+    if (number < 0)
+	*--dest = '-';
+    return dest;
+}
+
+/* Translate a number into a string, complete with commas. The second
+ * argument supplies the character value to use for the zero digit.
+ */
+static char const *cdecimal(long number, char zero)
+{
+    static char		buf[32];
+    char	       *dest = buf + sizeof buf;
+    unsigned long	n;
+    int			i = 0;
+
+    n = number >= 0 ? (unsigned long)number : (unsigned long)-(number + 1) + 1;
+    *--dest = '\0';
+    do {
+	++i;
+	if (i % 4 == 0) {
 	    *--dest = ',';
-	    ++n;
+	    ++i;
 	}
-	*--dest = '0' + number % 10;
-	number /= 10;
-    } while (number);
+	*--dest = zero + n % 10;
+	n /= 10;
+    } while (n);
+    if (number < 0)
+	*--dest = '-';
     return dest;
 }
 
@@ -75,7 +100,7 @@ int getscoresforlevel(gameseries const *series, int level,
  * which the user doesn't know the password are in the table, but
  * without any information besides the level's number.
  */
-int createscorelist(gameseries const *series, int usepasswds,
+int createscorelist(gameseries const *series, int usepasswds, char zchar,
 		    int **plevellist, int *pcount, tablespec *table)
 {
     gamesetup  *game;
@@ -121,28 +146,35 @@ int createscorelist(gameseries const *series, int usepasswds,
 	    break;
 
 	ptrs[n++] = textheap + used;
-	used += 1 + sprintf(textheap + used, "1+%d", game->number);
+	used += 1 + sprintf(textheap + used, "1+%s",
+			    decimal(game->number, zchar));
 	if (hassolution(game)) {
 	    ptrs[n++] = textheap + used;
 	    used += 1 + sprintf(textheap + used, "1-%.64s", game->name);
-	    ptrs[n++] = textheap + used;
-	    levelscore = 500 * game->number;
-	    used += 1 + sprintf(textheap + used, "1+%s", commify(levelscore));
-	    ptrs[n++] = textheap + used;
-	    if (game->time) {
-		timescore = 10 * (game->time
-					- game->besttime / TICKS_PER_SECOND);
-		used += 1 + sprintf(textheap + used, "1+%s",
-				    commify(timescore));
+	    if (game->sgflags & SGF_REPLACEABLE) {
+		ptrs[n++] = textheap + used;
+		used += 1 + sprintf(textheap + used, "3.*BAD*");
 	    } else {
-		timescore = 0;
-		strcpy(textheap + used, "1+---");
-		used += 6;
+		levelscore = 500 * game->number;
+		ptrs[n++] = textheap + used;
+		used += 1 + sprintf(textheap + used, "1+%s",
+				    cdecimal(levelscore, zchar));
+		ptrs[n++] = textheap + used;
+		if (game->time) {
+		    timescore = 10 * (game->time
+					- game->besttime / TICKS_PER_SECOND);
+		    used += 1 + sprintf(textheap + used, "1+%s",
+					cdecimal(timescore, zchar));
+		} else {
+		    timescore = 0;
+		    strcpy(textheap + used, "1+---");
+		    used += 6;
+		}
+		ptrs[n++] = textheap + used;
+		used += 1 + sprintf(textheap + used, "1+%s",
+				    cdecimal(levelscore + timescore, zchar));
+		totalscore += levelscore + timescore;
 	    }
-	    ptrs[n++] = textheap + used;
-	    used += 1 + sprintf(textheap + used, "1+%s",
-				commify(levelscore + timescore));
-	    totalscore += levelscore + timescore;
 	    if (plevellist)
 		levellist[count] = j;
 	    ++count;
@@ -169,7 +201,7 @@ int createscorelist(gameseries const *series, int usepasswds,
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "2-Total Score");
     ptrs[n++] = textheap + used;
-    used += 1 + sprintf(textheap + used, "3+%s", commify(totalscore));
+    used += 1 + sprintf(textheap + used, "3+%s", cdecimal(totalscore, zchar));
     if (plevellist)
 	levellist[count] = -1;
     ++count;
@@ -189,17 +221,17 @@ int createscorelist(gameseries const *series, int usepasswds,
 }
 
 /* Produce a table that displays the user's best times for each level
- * that has a solution. If showfractions is FALSE, times are rounded
- * down to second precision.
+ * that has a solution. If showpartial is zero, times are rounded down
+ * to second precision, otherwise fractional values will be
+ * calculated.
  */
-int createtimelist(gameseries const *series, int showfractions,
+int createtimelist(gameseries const *series, int showpartial, char zchar,
 		   int **plevellist, int *pcount, tablespec *table)
 {
     gamesetup	       *game;
     char	      **ptrs;
     char	       *textheap;
     char	       *untimed;
-    char		tmp[16];
     int		       *levellist = NULL;
     long		leveltime;
     int			count;
@@ -236,26 +268,38 @@ int createtimelist(gameseries const *series, int showfractions,
 	if (!hassolution(game))
 	    continue;
 	ptrs[n++] = textheap + used;
-	used += 1 + sprintf(textheap + used, "1+%d", game->number);
+	used += 1 + sprintf(textheap + used, "1+%s",
+			    decimal(game->number, zchar));
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used, "1-%.64s", game->name);
 	if (game->time) {
 	    leveltime = game->time * TICKS_PER_SECOND - game->besttime;
 	    ptrs[n++] = textheap + used;
-	    used += 1 + sprintf(textheap + used, "1+%d", game->time);
+	    used += 1 + sprintf(textheap + used, "1+%s",
+				decimal(game->time, zchar));
 	} else {
 	    leveltime = 999 * TICKS_PER_SECOND - game->besttime;
 	    ptrs[n++] = untimed;
 	}
-	secs = (leveltime + TICKS_PER_SECOND - 1) / TICKS_PER_SECOND;
-	ptrs[n++] = textheap + used;
-	if (showfractions) {
-	    double i, f;
-	    f = modf((double)leveltime / TICKS_PER_SECOND, &i);
-	    sprintf(tmp, "%.*f", showfractions, (f < 0 ? -f : 1.0 - f));
-	    used += 1 + sprintf(textheap + used, "1+%d - %s", secs, tmp + 1);
+	if (game->sgflags & SGF_REPLACEABLE) {
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "1.*BAD*");
 	} else {
-	    used += 1 + sprintf(textheap + used, "1+%d", secs);
+	    if (leveltime < 0)
+		secs = -(-leveltime / TICKS_PER_SECOND);
+	    else
+		secs = (leveltime + TICKS_PER_SECOND - 1) / TICKS_PER_SECOND;
+	    ptrs[n++] = textheap + used;
+	    used += 1 + sprintf(textheap + used, "1+%s", decimal(secs, zchar));
+	    if (showpartial) {
+		double f, i;
+		f = modf((double)leveltime / TICKS_PER_SECOND, &i);
+		f = f <= 0 ? -f : 1.0 - f;
+		secs = (int)(f * showpartial + 0.49);
+		--used;
+		used += 1 + sprintf(textheap + used, " - .%s",
+				    decimal(showpartial + secs, zchar) + 1);
+	    }
 	}
 	if (plevellist)
 	    levellist[count] = j;

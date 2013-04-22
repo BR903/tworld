@@ -166,18 +166,6 @@ static tileidinfo const tileidmap[NTILES] = {
     { Fireball _WEST,		 4,  5,  7,  5, TILEIMG_IMPLICIT },
     { Fireball _SOUTH,		 4,  6,  7,  6, TILEIMG_IMPLICIT },
     { Fireball _EAST,		 4,  7,  7,  7, TILEIMG_IMPLICIT },
-    { Walker _NORTH,		 5,  8,  8,  8, TILEIMG_CREATURE },
-    { Walker _WEST,		 5,  9,  8,  9, TILEIMG_IMPLICIT },
-    { Walker _SOUTH,		 5, 10,  8, 10, TILEIMG_IMPLICIT },
-    { Walker _EAST,		 5, 11,  8, 11, TILEIMG_IMPLICIT },
-    { Blob _NORTH,		 5, 12,  8, 12, TILEIMG_CREATURE },
-    { Blob _WEST,		 5, 13,  8, 13, TILEIMG_IMPLICIT },
-    { Blob _SOUTH,		 5, 14,  8, 14, TILEIMG_IMPLICIT },
-    { Blob _EAST,		 5, 15,  8, 15, TILEIMG_IMPLICIT },
-    { Teeth _NORTH,		 5,  4,  8,  4, TILEIMG_CREATURE },
-    { Teeth _WEST,		 5,  5,  8,  5, TILEIMG_IMPLICIT },
-    { Teeth _SOUTH,		 5,  6,  8,  6, TILEIMG_IMPLICIT },
-    { Teeth _EAST,		 5,  7,  8,  7, TILEIMG_IMPLICIT },
     { Bug _NORTH,		 4,  0,  7,  0, TILEIMG_CREATURE },
     { Bug _WEST,		 4,  1,  7,  1, TILEIMG_IMPLICIT },
     { Bug _SOUTH,		 4,  2,  7,  2, TILEIMG_IMPLICIT },
@@ -186,6 +174,18 @@ static tileidinfo const tileidmap[NTILES] = {
     { Paramecium _WEST,		 6,  1,  9,  1, TILEIMG_IMPLICIT },
     { Paramecium _SOUTH,	 6,  2,  9,  2, TILEIMG_IMPLICIT },
     { Paramecium _EAST,		 6,  3,  9,  3, TILEIMG_IMPLICIT },
+    { Teeth _NORTH,		 5,  4,  8,  4, TILEIMG_CREATURE },
+    { Teeth _WEST,		 5,  5,  8,  5, TILEIMG_IMPLICIT },
+    { Teeth _SOUTH,		 5,  6,  8,  6, TILEIMG_IMPLICIT },
+    { Teeth _EAST,		 5,  7,  8,  7, TILEIMG_IMPLICIT },
+    { Blob _NORTH,		 5, 12,  8, 12, TILEIMG_CREATURE },
+    { Blob _WEST,		 5, 13,  8, 13, TILEIMG_IMPLICIT },
+    { Blob _SOUTH,		 5, 14,  8, 14, TILEIMG_IMPLICIT },
+    { Blob _EAST,		 5, 15,  8, 15, TILEIMG_IMPLICIT },
+    { Walker _NORTH,		 5,  8,  8,  8, TILEIMG_CREATURE },
+    { Walker _WEST,		 5,  9,  8,  9, TILEIMG_IMPLICIT },
+    { Walker _SOUTH,		 5, 10,  8, 10, TILEIMG_IMPLICIT },
+    { Walker _EAST,		 5, 11,  8, 11, TILEIMG_IMPLICIT },
     { Water_Splash,		 3,  3, -1, -1, TILEIMG_ANIMATION },
     { Bomb_Explosion,		 3,  6, -1, -1, TILEIMG_ANIMATION },
     { Entity_Explosion,		 3,  7, -1, -1, TILEIMG_ANIMATION }
@@ -776,6 +776,12 @@ static int extracttileimage(SDL_Surface *tiles, int x, int y, int w, int h,
 	}
 	extracttransptileseq(tiles, &rect, tileptr[id].celcount,
 			     tileptr[id].transp, transpclr);
+	if (tileptr[id].celcount < 12) {
+	    for (n = 11 ; n >= 0 ; --n)
+		tileptr[id].transp[n]
+			= tileptr[id].transp[(n * tileptr[id].celcount) / 12];
+	    tileptr[id].celcount = 12;
+	}
 	break;
 
       case TILEIMG_CREATURE:

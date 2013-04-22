@@ -8,6 +8,8 @@ cmdline.h
 configure
 configure.in
 defs.h
+encoding.c
+encoding.h
 err.c
 err.h
 fileio.c
@@ -34,6 +36,8 @@ solution.c
 solution.h
 state.h
 tworld.c
+unslist.c
+unslist.h
 ver.h
 data/intro.dat
 docs/tworld.6
@@ -79,6 +83,7 @@ res/tick.wav
 res/tiles.bmp
 res/ting.wav
 res/traphit.wav
+res/unslist.txt
 res/whisk.wav
 sets/CCLP2.dac
 sets/cc-lynx.dac

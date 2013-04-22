@@ -9,11 +9,13 @@
 #include	"defs.h"
 #include	"err.h"
 #include	"state.h"
+#include	"encoding.h"
 #include	"oshw.h"
 #include	"res.h"
 #include	"logic.h"
 #include	"random.h"
 #include	"solution.h"
+#include	"unslist.h"
 #include	"play.h"
 
 /* The current state of the current game.
@@ -24,17 +26,20 @@ static gamestate	state;
  */
 static gamelogic       *logic = NULL;
 
+/* TRUE if the program is running without a user interface.
+ */
+int			batchmode = FALSE;
+
 /* How much mud to make the timer suck (i.e., the slowdown factor).
  */
 static int		mudsucking = 1;
 
-/* Turn the pedantry mode on.
+/* Turn on the pedantry.
  */
 void setpedanticmode(void)
 {
     pedanticmode = TRUE;
 }
-
 
 /* Set the slowdown factor.
  */
@@ -81,9 +86,11 @@ static int setrulesetbehavior(int ruleset)
 	return FALSE;
     }
 
-    if (!loadgameresources(ruleset) || !creategamedisplay()) {
-	die("unable to proceed due to previous errors.");
-	return FALSE;
+    if (!batchmode) {
+	if (!loadgameresources(ruleset) || !creategamedisplay()) {
+	    die("unable to proceed due to previous errors.");
+	    return FALSE;
+	}
     }
 
     logic->state = &state;
@@ -99,8 +106,6 @@ int initgamestate(gamesetup *game, int ruleset)
 	die("unable to initialize the system for the requested ruleset");
 
     memset(state.map, 0, sizeof state.map);
-    memset(state.keys, 0, sizeof state.keys);
-    memset(state.boots, 0, sizeof state.boots);
     state.game = game;
     state.ruleset = ruleset;
     state.replay = -1;
@@ -116,6 +121,9 @@ int initgamestate(gamesetup *game, int ruleset)
     initmovelist(&state.moves);
     resetprng(&state.mainprng);
 
+    if (!expandleveldata(&state))
+	return FALSE;
+
     return (*logic->initgame)(logic);
 }
 
@@ -123,14 +131,21 @@ int initgamestate(gamesetup *game, int ruleset)
  */
 int prepareplayback(void)
 {
-    if (!state.game->savedsolution.count)
+    solutioninfo	solution;
+
+    if (!state.game->solutionsize)
+	return FALSE;
+    solution.moves.list = NULL;
+    solution.moves.allocated = 0;
+    if (!expandsolution(&solution, state.game) || !solution.moves.count)
 	return FALSE;
 
+    destroymovelist(&state.moves);
+    state.moves = solution.moves;
+    restartprng(&state.mainprng, solution.rndseed);
+    state.initrndslidedir = solution.rndslidedir;
+    state.stepping = solution.stepping;
     state.replay = 0;
-    copymovelist(&state.moves, &state.game->savedsolution);
-    state.initrndslidedir = state.game->savedrndslidedir;
-    state.stepping = state.game->savedstepping;
-    restartprng(&state.mainprng, state.game->savedrndseed);
     return TRUE;
 }
 
@@ -166,6 +181,9 @@ void setgameplaymode(int mode)
       case EndVerify:
 	settimer(-1);
 	break;
+      case SuspendPlayShuttered:
+	if (state.ruleset == Ruleset_MS)
+	    state.statusflags |= SF_SHUTTERED;
       case SuspendPlay:
 	setkeyboardrepeat(TRUE);
 	settimer(0);
@@ -175,6 +193,7 @@ void setgameplaymode(int mode)
 	setkeyboardrepeat(FALSE);
 	settimer(+1);
 	setsoundeffects(+1);
+	state.statusflags &= ~SF_SHUTTERED;
 	break;
     }
 }
@@ -226,8 +245,10 @@ int doturn(int cmd)
 
     state.soundeffects &= ~((1 << SND_ONESHOT_COUNT) - 1);
     state.currenttime = gettickcount();
-    if (state.currenttime >= 0x7FFFFFF) {
-	warn("timer reached its maximum size of 77.672 days -- quitting now");
+    if (state.currenttime >= MAXIMUM_TICK_COUNT) {
+	errmsg(NULL, "timer reached its maximum of %d.%d hours; quitting now",
+		     MAXIMUM_TICK_COUNT / (TICKS_PER_SECOND * 3600),
+		     (MAXIMUM_TICK_COUNT / (TICKS_PER_SECOND * 360)) % 10);
 	return -1;
     }
     if (state.replay < 0) {
@@ -285,10 +306,14 @@ int drawscreen(int showframe)
     else
 	besttime = TIME_NIL;
 
-    if (state.game->time)
+    timeleft = TIME_NIL;
+    if (state.game->time) {
 	timeleft = state.game->time - currenttime / TICKS_PER_SECOND;
-    else
-	timeleft = TIME_NIL;
+	if (timeleft <= 0) {
+	    timeleft = 0;
+	    setdisplaymsg("Out of time", 2, 2);
+	}
+    }
 
     return displaygame(&state, timeleft, besttime);
 }
@@ -318,11 +343,32 @@ void shutdowngamestate(void)
     destroymovelist(&state.moves);
 }
 
+/* Initialize the current game state to a small level used for display
+ * at the completion of a series.
+ */
+void setenddisplay(void)
+{
+    state.replay = -1;
+    state.timelimit = 0;
+    state.currenttime = -1;
+    state.timeoffset = 0;
+    state.chipsneeded = 0;
+    state.currentinput = NIL;
+    state.statusflags = 0;
+    state.soundeffects = 0;
+    getenddisplaysetup(&state);
+    (*logic->initgame)(logic);
+}
+
+/*
+ * Solution handling functions.
+ */
+
 /* Return TRUE if a solution exists for the given level.
  */
 int hassolution(gamesetup const *game)
 {
-    return game->savedsolution.count > 0;
+    return game->besttime != TIME_NIL;
 }
 
 /* Compare the most recent solution for the current game with the
@@ -332,7 +378,8 @@ int hassolution(gamesetup const *game)
  */
 int replacesolution(void)
 {
-    int	currenttime;
+    solutioninfo	solution;
+    int			currenttime;
 
     if (state.statusflags & SF_NOSAVING)
 	return FALSE;
@@ -343,10 +390,14 @@ int replacesolution(void)
 
     state.game->besttime = currenttime;
     state.game->sgflags &= ~SGF_REPLACEABLE;
-    state.game->savedrndslidedir = state.initrndslidedir;
-    state.game->savedstepping = state.stepping;
-    state.game->savedrndseed = getinitialseed(&state.mainprng);
-    copymovelist(&state.game->savedsolution, &state.moves);
+    solution.moves = state.moves;
+    solution.rndseed = getinitialseed(&state.mainprng);
+    solution.flags = 0;
+    solution.rndslidedir = state.initrndslidedir;
+    solution.stepping = state.stepping;
+    if (!contractsolution(&solution, state.game))
+	return FALSE;
+
     return TRUE;
 }
 
@@ -358,11 +409,10 @@ int deletesolution(void)
     if (!hassolution(state.game))
 	return FALSE;
     state.game->besttime = TIME_NIL;
-    state.game->sgflags = SGF_HASPASSWD;
-    state.game->savedrndslidedir = NIL;
-    state.game->savedstepping = 0;
-    state.game->savedrndseed = 0;
-    initmovelist(&state.game->savedsolution);
+    state.game->sgflags &= ~SGF_REPLACEABLE;
+    free(state.game->solutiondata);
+    state.game->solutionsize = 0;
+    state.game->solutiondata = NULL;
     return TRUE;
 }
 

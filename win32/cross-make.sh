@@ -1,5 +1,7 @@
 #!/bin/sh
 
-PATH=/usr/local/cross-tools/bin:/usr/local/cross-tools/i386-mingw32msvc/bin:$PATH \
-	make $*
-
+PREFIX=/usr/local/cross-tools
+TARGET=i386-mingw32msvc
+PATH="$PREFIX/bin:$PREFIX/$TARGET/bin:$PATH"
+export PATH
+exec make $*

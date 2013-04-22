@@ -1,9 +1,19 @@
 #!/bin/sh
 
-PATH=/usr/local/cross-tools/bin:/usr/local/cross-tools/i386-mingw32msvc/bin:$PATH \
-	./configure --cache-file=config.cross.cache \
-	--host=i386-mingw32msvc \
-	--target=i386-mingw32msvc \
-	--build=i386-linux \
+CONFIG_SHELL=/bin/sh
+export CONFIG_SHELL
+PREFIX=/usr/local/cross-tools
+TARGET=i386-mingw32msvc
+PATH="$PREFIX/bin:$PREFIX/$TARGET/bin:$PATH"
+export PATH
+if [ -f "$PREFIX/$TARGET/bin/$TARGET-sdl-config" ]; then
+    SDL_CONFIG="$PREFIX/$TARGET/bin/$TARGET-sdl-config"
+    export SDL_CONFIG
+fi
+cache=cross-config.cache
+sh configure --cache-file="$cache" \
+	--target=$TARGET --host=$TARGET --build=i386-linux \
 	$*
-
+status=$?
+rm -f "$cache"
+exit $status

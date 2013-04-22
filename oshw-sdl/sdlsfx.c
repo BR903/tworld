@@ -191,7 +191,7 @@ int setaudiosystem(int active)
     for (n = 1 ; n <= des.freq / TICKS_PER_SECOND ; n <<= 1) ;
     des.samples = (n << soundbufsize) >> 2;
     if (SDL_OpenAudio(&des, &spec) < 0) {
-	warn("can't access audio output: %s\n", SDL_GetError());
+	warn("can't access audio output: %s", SDL_GetError());
 	return FALSE;
     }
     hasaudio = TRUE;
@@ -223,14 +223,14 @@ int loadsfxfromfile(int index, char const *filename)
 	    return FALSE;
 
     if (!SDL_LoadWAV(filename, &specin, &wavein, &lengthin)) {
-	warn("can't load %s: %s\n", filename, SDL_GetError());
+	warn("can't load %s: %s", filename, SDL_GetError());
 	return FALSE;
     }
 
     if (SDL_BuildAudioCVT(&convert,
 			  specin.format, specin.channels, specin.freq,
 			  spec.format, spec.channels, spec.freq) < 0) {
-	warn("can't create converter for %s: %s\n", filename, SDL_GetError());
+	warn("can't create converter for %s: %s", filename, SDL_GetError());
 	return FALSE;
     }
     if (!(wavecvt = malloc(lengthin * convert.len_mult)))
@@ -240,7 +240,7 @@ int loadsfxfromfile(int index, char const *filename)
     convert.buf = wavecvt;
     convert.len = lengthin;
     if (SDL_ConvertAudio(&convert) < 0) {
-	warn("can't convert %s: %s\n", filename, SDL_GetError());
+	warn("can't convert %s: %s", filename, SDL_GetError());
 	return FALSE;
     }
 

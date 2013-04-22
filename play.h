@@ -1,4 +1,4 @@
-/* play.c: Functions to drive game-play and manage the game state.
+/* play.h: Functions to drive game-play and manage the game state.
  *
  * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
  * License. No warranty. See COPYING for details.
@@ -11,8 +11,15 @@
 
 /* The different modes of the program with respect to gameplay.
  */
-enum { BeginPlay, EndPlay, SuspendPlay, ResumePlay, BeginVerify, EndVerify,
-       BeginInput, EndInput };
+enum {
+    BeginPlay, EndPlay,
+    SuspendPlay, SuspendPlayShuttered, ResumePlay,
+    BeginInput, EndInput, BeginVerify, EndVerify
+};
+
+/* TRUE if the program is running without a user interface.
+ */
+extern int batchmode;
 
 /* Change the current gameplay mode. This affects the running of the
  * timer and the handling of the keyboard.
@@ -60,6 +67,11 @@ extern int endgamestate(void);
 /* Free all persistent resources in the module.
  */
 extern void shutdowngamestate(void);
+
+/* Initialize the current state to a small level used for display at
+ * the completion of a series.
+ */
+extern void setenddisplay(void);
 
 /* Return TRUE if a solution exists for the given level.
  */
