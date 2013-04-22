@@ -1,0 +1,3631 @@
+#!/usr/bin/perl -w
+
+#
+# c4: Chip's Challenge Combined Converter
+#
+# Use "perldoc c4" to read the documentation.
+#
+# Copyright (C) 2003-2006 Brian Raiter. This program is licensed under
+# an MIT-style license. Please see the documentation for details.
+#
+
+use strict;
+
+#
+# First, some global functions used across packages.
+#
+
+package main;
+
+# All the names of all the tiles.
+#
+my @tilenames;
+my %tilenames;
+foreach my $names
+       ([ "empty", "floor" ],
+	[ "wall" ],
+	[ "ic chip", "computer chip" ],
+	[ "water" ],
+	[ "fire" ],
+	[ "hidden wall", "invisible wall permanent", "inv wall permanent" ],
+	[ "wall north", "partition north", "blocked north" ],
+	[ "wall west", "partition west", "blocked west" ],
+	[ "wall south", "partition south", "blocked south" ],
+	[ "wall east", "partition east", "blocked east" ],
+	[ "block", "moveable block", "movable block" ],
+	[ "dirt" ],
+	[ "ice" ],
+	[ "force floor south", "force south", "slide south",
+					      "slide floor south" ],
+	[ "block north", "cloning block north" ],
+	[ "block west", "cloning block west" ],
+	[ "block south", "cloning block south" ],
+	[ "block east", "cloning block east" ],
+	[ "force floor north", "force north", "slide north",
+					      "slide floor north" ],
+	[ "force floor east", "force east", "slide east", "slide floor east" ],
+	[ "force floor west", "force west", "slide west", "slide floor west" ],
+	[ "exit" ],
+	[ "blue door", "door blue" ],
+	[ "red door", "door red" ],
+	[ "green door", "door green" ],
+	[ "yellow door", "door yellow" ],
+	[ "ice wall southeast", "ice wall se", "ice se",
+				"ice corner southeast", "ice corner se" ],
+	[ "ice wall southwest", "ice wall sw", "ice sw",
+				"ice corner southwest", "ice corner sw" ],
+	[ "ice wall northwest", "ice wall nw", "ice nw",
+				"ice corner northwest", "ice corner nw" ],
+	[ "ice wall northeast", "ice wall ne", "ice ne",
+				"ice corner northeast", "ice corner ne" ],
+	[ "blue block floor", "blue block fake", "blue wall fake" ],
+	[ "blue block wall", "blue block real", "blue wall real" ],
+	[ "(combination)" ],
+	[ "thief", "spy" ],
+	[ "socket" ],
+	[ "green button", "button green", "toggle button", "button toggle" ],
+	[ "red button", "button red", "clone button", "button clone" ],
+	[ "toggle closed", "toggle wall closed", "closed toggle wall",
+			   "toggle door closed", "closed toggle door" ],
+	[ "toggle open", "toggle wall open", "open toggle wall",
+			 "toggle door open", "open toggle door" ],
+	[ "brown button", "button brown", "trap button", "button trap" ],
+	[ "blue button", "button blue", "tank button", "button tank" ],
+	[ "teleport" ],
+	[ "bomb" ],
+	[ "trap", "beartrap", "bear trap" ],
+	[ "invisible wall", "invisible wall temporary", "inv wall temporary" ],
+	[ "gravel" ],
+	[ "popup wall", "pass once" ],
+	[ "hint button" ],
+	[ "wall southeast", "partition southeast", "blocked southeast",
+			    "wall se", "partition se", "blocked se" ],
+	[ "clone machine", "cloner", "cloning machine" ],
+	[ "force floor any", "force any", "slide any", "slide floor any",
+			     "force floor random", "force random",
+			     "slide random", "slide floor random",
+			     "random slide floor" ],
+	[ "(chip drowned)" ],
+	[ "(chip burned)" ],
+	[ "(chip bombed)" ],
+	[ "(unused 1)" ],
+	[ "(unused 2)" ],
+	[ "(unused 3)", "ice block" ],
+	[ "(exiting)" ],
+	[ "(exit 1)" ],
+	[ "(exit 2)" ],
+	[ "(chip swimming north)", "(chip swimming n)" ],
+	[ "(chip swimming west)", "(chip swimming w)" ],
+	[ "(chip swimming south)", "(chip swimming s)" ],
+	[ "(chip swimming east)", "(chip swimming e)" ],
+	[ "bug north", "bee north" ],
+	[ "bug west", "bee west" ],
+	[ "bug south", "bee south" ],
+	[ "bug east", "bee east" ],
+	[ "fireball north", "flame north" ],
+	[ "fireball west", "flame west" ],
+	[ "fireball south", "flame south" ],
+	[ "fireball east", "flame east" ],
+	[ "ball north" ],
+	[ "ball west" ],
+	[ "ball south" ],
+	[ "ball east" ],
+	[ "tank north" ],
+	[ "tank west" ],
+	[ "tank south" ],
+	[ "tank east" ],
+	[ "glider north", "ghost north" ],
+	[ "glider west", "ghost west" ],
+	[ "glider south", "ghost south" ],
+	[ "glider east", "ghost east" ],
+	[ "teeth north", "frog north" ],
+	[ "teeth west", "frog west" ],
+	[ "teeth south", "frog south" ],
+	[ "teeth east", "frog east" ],
+	[ "walker north", "dumbbell north" ],
+	[ "walker west", "dumbbell west" ],
+	[ "walker south", "dumbbell south" ],
+	[ "walker east", "dumbbell east" ],
+	[ "blob north" ],
+	[ "blob west" ],
+	[ "blob south" ],
+	[ "blob east" ],
+	[ "paramecium north", "centipede north" ],
+	[ "paramecium west", "centipede west" ],
+	[ "paramecium south", "centipede south" ],
+	[ "paramecium east", "centipede east" ],
+	[ "blue key", "key blue" ],
+	[ "red key", "key red" ],
+	[ "green key", "key green" ],
+	[ "yellow key", "key yellow" ],
+	[ "water boots", "boots water", "water shield", "flippers" ],
+	[ "fire boots", "boots fire", "fire shield" ],
+	[ "ice boots", "boots ice", "spike shoes", "spiked shoes",
+		       "ice skates", "skates" ],
+	[ "force boots", "boots force", "slide boots", "boots slide",
+			 "magnet", "suction boots" ],
+	[ "chip north" ],
+	[ "chip west" ],
+	[ "chip south" ],
+	[ "chip east" ])
+{
+    push @tilenames, $names->[0];
+    @tilenames{@$names} = ($#tilenames) x @$names;
+}
+
+# The original 150 passwords.
+#
+my @origpasswords = @{
+    [qw(BDHP	JXMJ	ECBQ	YMCJ	TQKB	WNLP	FXQO	NHAG
+	KCRE	VUWS	CNPE	WVHI	OCKS	BTDY	COZQ	SKKK
+	AJMG	HMJL	MRHR	KGFP	UGRW	WZIN	HUVE	UNIZ
+	PQGV	YVYJ	IGGZ	UJDD	QGOL	BQZP	RYMS	PEFS
+	BQSN	NQFI	VDTM	NXIS	VQNK	BIFA	ICXY	YWFH
+	GKWD	LMFU	UJDP	TXHL	OVPZ	HDQJ	LXPP	JYSF
+	PPXI	QBDH	IGGJ	PPHT	CGNX	ZMGC	SJES	FCJE
+	UBXU	YBLT	BLDM	ZYVI	RMOW	TIGW	GOHX	IJPQ
+	UPUN	ZIKZ	GGJA	RTDI	NLLY	GCCG	LAJM	EKFT
+	QCCR	MKNH	MJDV	NMRH	FHIC	GRMO	JINU	EVUG
+	SCWF	LLIO	OVPJ	UVEO	LEBX	FLHH	YJYS	WZYV
+	VCZO	OLLM	JPQG	DTMI	REKF	EWCS	BIFQ	WVHY
+	IOCS	TKWD	XUVU	QJXR	RPIR	VDDU	PTAC	KWNL
+	YNEG	NXYB	ECRE	LIOC	KZQR	XBAO	KRQJ	NJLA
+	PTAS	JWNL	EGRW	HXMF	FPZT	OSCW	PHTY	FLXP
+	BPYS	SJUM	YKZE	TASX	MYRT	QRLD	JMWZ	FTLA
+	HEAN	XHIZ	FIRD	ZYFA	TIGG	XPPH	LYWO	LUZL
+	HPPX	LUJT	VLHH	SJUK	MCJE	UCRY	OKOR	GVXQ
+	YBLI	JHEN	COZA	RGSK	DIGW	GNLP)]
+};
+
+# Return true if the given tile is one of the creatures, one of the
+# blocks, or Chip.
+#
+sub iscreature($) { $_[0] >= 0x40 && $_[0] < 0x64 }
+sub isblock($)    { $_[0] == 0x0A || ($_[0] >= 0x0E && $_[0] < 0x12) }
+sub ischip($)     { $_[0] >= 0x6C && $_[0] < 0x70 }
+
+my $filename = undef;
+my $filepos = undef;
+my $filelevel = undef;
+sub err(@)
+{
+    if (defined $filename) {
+	if (defined $filelevel) {
+	    print STDERR "$filename: level $filelevel: ";
+	} elsif (defined $filepos) {
+	    print STDERR "$filename, byte $filepos: ";
+	} elsif ($.) {
+	    print STDERR "$filename:$.: ";
+	} else {
+	    print STDERR "$filename: ";
+	}
+    } else {
+	if (defined $filelevel) {
+	    print STDERR "$filename: level $filelevel: ";
+	} elsif (defined $filepos) {
+	    print STDERR "byte $filepos: ";
+	} elsif ($.) {
+	    print STDERR "line $.: ";
+	}
+    }
+    print STDERR @_, "\n";
+    return;
+}
+
+# Given a pack template, return the size of the packed data in bytes.
+# The template is assumed to only contain the types a, C, v, and V.
+#
+sub packlen($)
+{
+    my $template = shift;
+    my $size = 0;
+    while (length $template) {
+	my $char = substr $template, 0, 1, "";
+	my $n = $char eq "V" ? 4 : $char eq "v" ? 2 : 1;
+	$n *= $1 if $template =~ s/\A(\d+)//;
+	$size += $n;
+    }
+    return $size;
+}
+
+# Read a sequence of bytes from a binary file, according to a pack
+# template. The unpacked values are returned.
+#
+sub fileread($$;\$@)
+{
+    my $input = shift;
+    my $template = shift;
+    my $levelsize = shift;
+    my ($buf, $len);
+    $len = ::packlen $template;
+    return ::err "invalid template given to fileread" unless $len > 0;
+    my $ret = sysread $input, $buf, $len;
+    return ::err $! unless defined $ret;
+    return ::err "unexpected EOF" unless $ret;
+    $filepos ||= 0;
+    $filepos += $ret;
+    if (ref $levelsize) {
+	return ::err "invalid metadata in data file",
+		     " (expecting $len bytes; found only $$levelsize)"
+	    unless $len <= $$levelsize;
+	$$levelsize -= $len;
+    }
+    my (@fields) = (unpack $template, $buf);
+    foreach my $field (@fields) {
+	last unless @_;
+	my $min = shift;
+	my $max = shift;
+	return ::err "invalid data in data file"
+	    if defined $min && $field < $min or defined $max && $field > $max;
+    }
+    return wantarray ? @fields : $fields[-1];
+}
+
+# Translate escape sequences in the given string.
+#
+sub unescape($)
+{
+    local $_ = shift;
+    s/\\([0-7][0-7][0-7])/chr oct$1/eg;
+    s/\\([\\\"])/$1/g;
+    return $_;
+}
+
+sub escape($)
+{
+    local $_ = shift;
+    s/([\\\"])/\\$1/g;
+    s/([^\020-\176])/sprintf"\\%03o",ord$1/eg;
+    return $_;
+}
+
+# Take a standard creature list from a dat file and augment it as
+# necessary for a Lynx-based file format. This involves adding entries
+# for Chip, blocks, immobile creatures, and creatures on clone
+# machines.
+#
+sub makelynxcrlist($$)
+{
+    my $map = shift;
+    my $datcreatures = shift;
+    my @crlist;
+    my @listed;
+
+    if (defined $datcreatures) {
+	foreach my $n (0 .. $#$datcreatures) {
+	    $listed[$datcreatures->[$n][0]][$datcreatures->[$n][1]] = $n;
+	}
+    }
+
+    my $chip = undef;
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    my $obj = $map->[$y][$x][0];
+	    next unless ::iscreature $obj || ::isblock $obj || ::ischip $obj;
+	    my ($seq, $ff, $mobile) = (0, 0, 1);
+	    if (::ischip $obj) {
+		return "multiple Chips present" if defined $chip;
+		$chip = @crlist;
+	    } elsif (::isblock $obj) {
+		$mobile = -1 if $map->[$y][$x][1] == $tilenames{"cloner"};
+	    } else {
+		if ($map->[$y][$x][1] == $tilenames{"cloner"}) {
+		    $mobile = -1;
+		} else {
+		    $mobile = defined $listed[$y][$x] ? 1 : 0;
+		}
+		$seq = $listed[$y][$x] + 1 if defined $listed[$y][$x];
+	    }
+	    push @crlist, [ $seq, $y, $x, $mobile ];
+	}
+    }
+    return "Chip absent" unless defined $chip;
+    return "over 128 creatures" if @crlist > 128;
+    ($crlist[$chip], $crlist[0]) = ($crlist[0], $crlist[$chip]);
+
+    my @sortlist;
+    foreach my $n (0 .. $#crlist) { push @sortlist, $n if $crlist[$n][0] }
+    @sortlist = sort { $crlist[$a][0] <=> $crlist[$b][0] } @sortlist;
+
+    my @lynxcreatures;
+    foreach my $n (0 .. $#crlist) {
+	my $creature = $crlist[$n];
+	$creature = $crlist[shift @sortlist] if $creature->[0];
+	push @lynxcreatures, [ $creature->[1],
+			       $creature->[2],
+			       $creature->[3] ];
+    }
+
+    return \@lynxcreatures;
+}
+
+# Translate a creature list from a lynx-based file format to one
+# appropriate for a dat-based file format.
+#
+sub makedatcrlist($$)
+{
+    my $map = shift;
+    my $lynxcreatures = shift;
+    my @crlist;
+
+    return undef unless defined $lynxcreatures;
+
+    foreach my $creature (@$lynxcreatures) {
+	next if $creature->[2] != 1;
+	next if ::ischip $map->[$creature->[0]][$creature->[1]][0];
+	next if ::isblock $map->[$creature->[0]][$creature->[1]][0];
+	push @crlist, [ $creature->[0], $creature->[1] ];
+    }
+
+    return \@crlist;
+}
+
+#
+# The textual source file format
+#
+
+package txtfile;
+
+# The list of default tile symbols.
+#
+my %tilesymbols = %{{
+    " "  => $tilenames{"empty"},
+    "#"  => $tilenames{"wall"},
+    "\$" => $tilenames{"ic chip"},
+    ","  => $tilenames{"water"},
+    "&"  => $tilenames{"fire"},
+    "~"  => $tilenames{"wall north"},
+    "|"  => $tilenames{"wall west"},
+    "_"  => $tilenames{"wall south"},
+    " |" => $tilenames{"wall east"},
+    "[]" => $tilenames{"block"},
+    "["  => $tilenames{"block"},
+    ";"  => $tilenames{"dirt"},
+    "="  => $tilenames{"ice"},
+    "v"  => $tilenames{"force south"},
+    "^"  => $tilenames{"force north"},
+    ">"  => $tilenames{"force east"},
+    "<"  => $tilenames{"force west"},
+    "E"  => $tilenames{"exit"},
+    "H"  => $tilenames{"socket"},
+    "6"  => $tilenames{"bomb"},
+    ":"  => $tilenames{"gravel"},
+    "?"  => $tilenames{"hint button"},
+    "_|" => $tilenames{"wall southeast"},
+    "<>" => $tilenames{"force any"},
+    "@"  => $tilenames{"chip south"},
+    "^]" => [ $tilenames{"cloning block north"}, $tilenames{"clone machine"} ],
+    "<]" => [ $tilenames{"cloning block west"},  $tilenames{"clone machine"} ],
+    "v]" => [ $tilenames{"cloning block south"}, $tilenames{"clone machine"} ],
+    ">]" => [ $tilenames{"cloning block east"},  $tilenames{"clone machine"} ]
+}};
+
+#
+#
+#
+
+# Error message display.
+#
+sub err(@) { warn "line $.: ", @_, "\n"; return; }
+
+# The list of incomplete tile names recognized. Each incomplete name
+# has a list of characters that complete them.
+#
+my %partialnames = %{{
+    "key"	=> { "blue key"		=> "b", "red key"	  => "r",
+		     "green key"	=> "g", "yellow key"	  => "y" },
+    "door"	=> { "blue door"	=> "b", "red door"	  => "r",
+		     "green door"	=> "g", "yellow door"	  => "y" },
+    "bug"	=> { "bug north"	=> "n", "bug west"	  => "w",
+		     "bug south"	=> "s", "bug east"	  => "e" },
+    "bee"	=> { "bee north"	=> "n", "bee west"	  => "w",
+		     "bee south"	=> "s", "bee east"	  => "e" },
+    "fireball"	=> { "fireball north"	=> "n", "fireball west"	  => "w",
+		     "fireball south"	=> "s", "fireball east"	  => "e" },
+    "flame"	=> { "flame north"	=> "n", "flame west"	  => "w",
+		     "flame south"	=> "s", "flame east"	  => "e" },
+    "ball"	=> { "ball north"	=> "n", "ball west"	  => "w",
+		     "ball south"	=> "s", "ball east"	  => "e" },
+    "tank"	=> { "tank north"	=> "n", "tank west"	  => "w",
+		     "tank south"	=> "s", "tank east"	  => "e" },
+    "glider"	=> { "glider north"	=> "n", "glider west"	  => "w",
+		     "glider south"	=> "s", "glider east"	  => "e" },
+    "ghost"	=> { "ghost north"	=> "n", "ghost west"	  => "w",
+		     "ghost south"	=> "s", "ghost east"	  => "e" },
+    "teeth"	=> { "teeth north"	=> "n", "teeth west"	  => "w",
+		     "teeth south"	=> "s", "teeth east"	  => "e" },
+    "frog"	=> { "frog north"	=> "n", "frog west"	  => "w",
+		     "frog south"	=> "s", "frog east"	  => "e" },
+    "walker"	=> { "walker north"	=> "n", "walker west"	  => "w",
+		     "walker south"	=> "s", "walker east"	  => "e" },
+    "dumbbell"	=> { "dumbbell north"	=> "n", "dumbbell west"	  => "w",
+		     "dumbbell south"	=> "s", "dumbbell east"	  => "e" },
+    "blob"	=> { "blob north"	=> "n", "blob west"	  => "w",
+		     "blob south"	=> "s", "blob east"	  => "e" },
+    "paramecium"=> { "paramecium north"	=> "n", "paramecium west" => "w",
+		     "paramecium south"	=> "s", "paramecium east" => "e" },
+    "centipede"	=> { "centipede north"	=> "n", "centipede west"  => "w",
+		     "centipede south"	=> "s", "centipede east"  => "e" },
+    "chip"	=> { "chip north"	=> "n", "chip west"	  => "w",
+		     "chip south"	=> "s", "chip east"	  => "e" },
+    "(swimming chip)"
+		=> { "(swimming chip north)" => "n",
+		     "(swimming chip west)"  => "w",
+		     "(swimming chip south)" => "s",
+		     "(swimming chip east)"  => "e" }
+}};
+
+# The list of tile definitions that are defined throughout the set. A
+# number of definitions are made by default at startup.
+#
+my %globaltiles = %tilesymbols;
+
+# The list of tile definitions for a given level.
+#
+my %localtiles;
+
+# Add a list of tile definitions to a hash.
+#
+sub addtiledefs(\%@)
+{
+    my $tiledefs = shift;
+    while (my $def = shift) { $tiledefs->{$def->[0]} = $def->[1] }
+}
+
+# Given a string, return the tile with that name. If the name is not
+# recognized, undef is returned and a error message is displayed.
+#
+sub lookuptilename($)
+{
+    my $name = shift;
+    my $value = undef;
+
+    return $tilenames{$name} if exists $tilenames{$name};
+
+    if ($name =~ /^0x([0-9A-Fa-f][0-9A-Fa-f])$/) {
+	$value = hex $1;
+	return $value if $value >= 0 && $value <= 255;
+    }
+
+    my $n = length $name;
+    foreach my $key (keys %tilenames) {
+	if ($name eq substr $key, 0, $n) {
+	    return ::err "ambiguous object id \"$name\""
+		if defined $value && $value != $tilenames{$key};
+	    $value = $tilenames{$key};
+	}
+    }
+    return ::err "unknown object id \"$name\"" unless defined $value;
+    return $value;
+}
+
+# Given two characters, return the tile or pair of tiles which the
+# characters represent. The characters can stand for a pair of tiles
+# directly, or each character can independently represent one tile. In
+# either case, a pair of tiles is returned as an array ref. A single
+# tile is returned directly. If one or both characters are
+# unrecognized, undef is returned and an error message is displayed.
+#
+sub lookuptile($);
+sub lookuptile($)
+{
+    my $symbol = shift;
+    $symbol =~ s/\A(.) \Z/$1/;
+
+    return $localtiles{$symbol} if exists $localtiles{$symbol};
+    return $globaltiles{$symbol} if exists $globaltiles{$symbol};
+
+    if (length($symbol) == 2) {
+	my $top = lookuptile substr $symbol, 0, 1;
+	if (defined $top && ref $top && $top->[1] < 0) {
+	    return $top;
+	} elsif (defined $top && !ref $top) {
+	    my $bot = lookuptile substr $symbol, 1, 1;
+	    if (defined $bot && !ref $bot) {
+		return [ $top, $bot ];
+	    }
+	}
+    }
+
+    return ::err "unrecognized map tile \"$symbol\"";
+}
+
+# Return the number of chips present on the map.
+#
+sub getchipcount($)
+{
+    my $map = shift;
+    my $count = 0;
+
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    ++$count if $map->[$y][$x][0] == 0x02;
+	    ++$count if $map->[$y][$x][1] == 0x02;
+	}
+    }
+    return $count;
+}
+
+# Given a completed map, return the default list of traps connections
+# as an array ref. (The default list follows the original Lynx rules
+# of connecting buttons to the first subsequent trap in reading
+# order.)
+#
+sub buildtraplist($)
+{
+    my $map = shift;
+    my $firsttrap = undef;
+    my @traps;
+    my @buttons;
+
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    if ($map->[$y][$x][0] == 0x27 || $map->[$y][$x][1] == 0x27) {
+		push @buttons, [ $y, $x ];
+	    } elsif ($map->[$y][$x][0] == 0x2B || $map->[$y][$x][1] == 0x2B) {
+		push @traps, map { { from => $_, to => [ $y, $x ] } } @buttons;
+		undef @buttons;
+		$firsttrap = [ $y, $x ] unless defined $firsttrap;
+	    }
+	}
+    }
+    push @traps, map { { from => $_, to => $firsttrap } } @buttons
+	if @buttons && defined $firsttrap;
+    return \@traps;
+}
+
+# Given a completed map, return the default list of clone machine
+# connections as an array ref. (This function looks a lot like the
+# prior one.)
+#
+sub buildclonerlist($)
+{
+    my $map = shift;
+    my $firstcm = undef;
+    my @cms;
+    my @buttons;
+
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    if ($map->[$y][$x][0] == 0x24 || $map->[$y][$x][1] == 0x24) {
+		push @buttons, [ $y, $x ];
+	    } elsif ($map->[$y][$x][0] == 0x31 || $map->[$y][$x][1] == 0x31) {
+		push @cms, map { { from => $_, to => [ $y, $x ] } } @buttons;
+		undef @buttons;
+		$firstcm = [ $y, $x ] unless defined $firstcm;
+	    }
+	}
+    }
+    push @cms, map { { from => $_, to => $firstcm } } @buttons
+	if @buttons && defined $firstcm;
+    return \@cms;
+}
+
+# Given a completed map, return the default ordering of creatures as
+# an array ref. (The default ordering is to first list the creatures
+# in reading order, including Chip. Then, the first creature on the
+# list swaps positions with Chip, who is then removed from the list.)
+#
+sub buildcreaturelist($$)
+{
+    my $map = shift;
+    my $ruleset = shift;
+    my $chippos = undef;
+    my @crlist;
+
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    my $tile = $map->[$y][$x][0];
+	    if (::iscreature $tile) {
+		push @crlist, [ $y, $x ];
+	    } elsif (::isblock $tile) {
+		push @crlist, [ $y, $x, 0 ];
+	    } elsif (::ischip $tile) {
+		$chippos = @crlist;
+		push @crlist, [ $y, $x, 0 ];
+	    }
+	}
+    }
+    if ($ruleset eq "lynx") {
+	($crlist[0], $crlist[$chippos]) = ($crlist[$chippos], $crlist[0])
+	    if $chippos;
+	foreach my $item (@crlist) { $#$item = 1 }
+    } else {
+	if (defined $chippos && $chippos > 1) {
+	    my $cr = shift @crlist;
+	    $crlist[$chippos - 1] = $cr;
+	}
+	for (my $n = $#crlist ; $n >= 0 ; --$n) {
+	    splice @crlist, $n, 1 if $#{$crlist[$n]} > 1;
+	}
+    }
+
+    return \@crlist;
+}
+
+# Compare two arrays of lines of text. Wherever the same pair of
+# characters appears in same place in both arrays, the occurrence in
+# the first array is replaced with spaces.
+#
+sub subtracttext(\@\@)
+{
+    my $array = shift;
+    my $remove = shift;
+
+    for (my $n = 0 ; $n < @$array && $n < @$remove ; ++$n) {
+	my $m = 0;
+	while ($m < length $array->[$n] && $m < length $remove->[$n]) {
+	    my $a = substr $array->[$n], $m, 2;
+	    my $b = substr $remove->[$n], $m, 2;
+	    $a .= " " if length $a == 1;
+	    $b .= " " if length $b == 1;
+	    substr($array->[$n], $m, 2) = "  " if $a eq $b;
+	    $m += 2;
+	}
+    }
+}
+
+# Interpret a textual description of a section of the map. The
+# interpreted map data is added to the map array passed as the first
+# argument. The second and third arguments set the origin of the map
+# section. The remaining arguments are the lines from the text file
+# describing the map section. The return value is 1 if the
+# interpretation is successful. If any part of the map sections cannot
+# be understood, undef is returned and an error message is displayed.
+#
+sub parsemap($$$@)
+{
+    my $map = shift;
+    my $y0 = shift;
+    my $x0 = shift;
+    return ::err "map extends below the 32nd row" if $y0 + @_ > 32;
+    for (my $y = $y0 ; @_ ; ++$y) {
+	my $row = shift;
+	return ::err "map extends beyond the 32nd column"
+	    if $x0 + length($row) / 2 > 32;
+	for (my $x = $x0 ; length $row ; ++$x) {
+	    my $cell = lookuptile substr $row, 0, 2;
+	    return ::err "unrecognized tile at ($x $y)" unless defined $cell;
+	    return unless defined $cell;
+	    if (ref $cell) {
+		if ($cell->[1] < 0) {
+		    $map->[$y][$x] = [ $cell, 0x00 ];
+		} else {
+		    $map->[$y][$x] = $cell;
+		}
+	    } else {
+		$map->[$y][$x] = [ $cell, 0x00 ];
+	    }
+	    substr($row, 0, 2) = "";
+	}
+    }
+    return 1;
+}
+
+# Interpret a textual overlay section. The first argument is the
+# level's hash ref. The second and third arguments set the origin of
+# the overlay section. The remaining arguments are the lines from the
+# text file describing the overlay. The return value is 1 if the
+# interpretation is successful. If any part of the overlay section
+# cannot be understood, undef is returned and an error message is
+# displayed.
+#
+sub parsecon($$$@)
+{
+    my %symbols;
+    my $data = shift;
+    my $y0 = shift;
+    my $x0 = shift;
+    return ::err "overlay extends below the 32nd row" if $y0 + @_ > 32;
+    for (my $y = $y0 ; @_ ; ++$y) {
+	my $row = shift;
+	return ::err "overlay extends beyond the 32nd column"
+	    if $x0 + length($row) / 2 > 32;
+	for (my $x = $x0 ; length $row ; ++$x) {
+	    $_ = substr $row, 0, 1, "";
+	    push @{$symbols{$_}}, [ $y, $x ] unless $_ eq " " || $_ eq "";
+	    $_ = substr $row, 0, 1, "";
+	    push @{$symbols{$_}}, [ $y, $x ] unless $_ eq " " || $_ eq "";
+	}
+    }
+
+    foreach my $symbol (sort keys %symbols) {
+	my $list = $symbols{$symbol};
+	if (@$list == 1) {
+	    my ($y, $x) = ($list->[0][0], $list->[0][1]);
+	    my $cell = $data->{map}[$y][$x];
+	    return ::err "no creature under \"$symbol\" at ($x $y)"
+		unless defined $cell &&
+			(::iscreature $cell->[0] || ::iscreature $cell->[1]);
+	    push @{$data->{creatures}}, [ $y, $x ];
+	} else {
+	    my $linktype = undef;
+	    my $to = undef;
+	    my (@from, $type);
+	    foreach my $pos (@$list) {
+		my ($y, $x) = ($pos->[0], $pos->[1]);
+		my $cell = $data->{map}[$y][$x];
+		my $obj = $cell->[1] || $cell->[0];
+		if ($obj == $tilenames{"red button"}) {
+		    $type = "cloners";
+		    push @from, [ $y, $x ];
+		} elsif ($obj == $tilenames{"brown button"}) {
+		    $type = "traps";
+		    push @from, [ $y, $x ];
+		} elsif ($obj == $tilenames{"clone machine"}) {
+		    $type = "cloners";
+		    return ::err "clone machine under \"$symbol\" at ($x $y) ",
+				 "wired to non-button at ($to->[1] $to->[0])"
+			if defined $to;
+		    $to = [ $y, $x ];
+		} elsif ($obj == $tilenames{"beartrap"}) {
+		    $type = "traps";
+		    return ::err "beartrap under \"$symbol\" at ($x $y) ",
+				 "wired to non-button at ($to->[1] $to->[0])"
+			if defined $to;
+		    $to = [ $y, $x ];
+		} else {
+		    return ::err "no button/trap/clone machine ",
+				 "under \"$symbol\" at ($x $y)";
+		}
+		$linktype ||= $type;
+		return ::err "inconsistent connection ",
+			     "under \"$symbol\" at ($x $y)"
+		    unless $linktype eq $type;
+	    }
+	    push @{$data->{$linktype}},
+		 map { { from => $_, to => $to } } @from;
+	}
+    }
+    return 1;
+}
+
+# Interpret a tile definition. Given a line of text supplying the tile
+# definition, the function returns an array ref. Each element in the
+# array is a pair: the first element gives the character(s), and the
+# second element supplies the tile(s). If the definition is ambiguous
+# or invalid, undef is returned and an error message is displayed.
+#
+sub parsetiledef($)
+{
+    my $def = shift;
+    $def =~ s/^(\S\S?)\t//
+	or return ::err "syntax error in tile defintion \"$def\"";
+    my $symbol = $1;
+    $def = lc $def;
+    $def =~ s/^\s+//;
+    $def =~ s/\s+$//;
+
+    if ($def =~ /^([^\+]*[^\+\s])\s*\+\s*([^\+\s][^\+]*)$/) {
+	my ($def1, $def2) = ($1, $2);
+	my ($tile1, $tile2);
+	$tile1 = lookuptilename $def1;
+	return unless defined $tile1;
+	if (lc $def2 eq "pos") {
+	    return ::err "ordered tile definition \"$symbol\" ",
+			 "must be a single character"
+		unless length($symbol) == 1;
+	    $tile2 = -1;
+	} else {
+	    $tile2 = lookuptilename $def2;
+	    return unless defined $tile2;
+	}
+	return [ [ $symbol, [ $tile1, $tile2 ] ] ];
+    }
+
+    my @defs;
+    if (exists $partialnames{$def}) {
+	return ::err "incomplete tile definition \"$symbol\" ",
+		     "must be a single character"
+	    unless length($symbol) == 1;
+	foreach my $comp (keys %{$partialnames{$def}}) {
+	    push @defs, [ $symbol . $partialnames{$def}{$comp},
+			  $tilenames{$comp} ];
+	}
+	return \@defs;
+    }
+
+    my $tile = lookuptilename $def;
+    return [ [ $symbol, $tile ] ] if defined $tile;
+    return;
+}
+
+# Given a handle to a text file, read the introductory lines that
+# precede the first level definition, if any, and return a hash ref
+# for storing the level set. If an error occurs, undef is returned and
+# an error message is displayed.
+#
+sub parseheader($)
+{
+    my $input = shift;
+    my $data = { ruleset => "lynx" };
+    my $slurpingdefs = undef;
+    local $_;
+
+    while (<$input>) {
+	chomp;
+	if (defined $slurpingdefs) {
+	    if (/^\s*[Ee][Nn][Dd]\s*$/) {
+		undef $slurpingdefs;
+	    } else {
+		my $def = parsetiledef $_;
+		return unless $def;
+		addtiledefs %globaltiles, @$def;
+	    }
+	    next;
+	} elsif (/^\s*[Tt][Ii][Ll][Ee][Ss]\s*$/) {
+	    $slurpingdefs = 1;
+	    next;
+	}
+
+	last if /^%%%$/;
+	next if /^\s*$/ || /^%/;
+
+	/^\s*(\S+)\s+(\S(?:.*\S)?)\s*$/ or return ::err "syntax error";
+	my ($name, $value) = ($1, $2);
+	$name = lc $name;
+	if ($name eq "ruleset") {
+	    $value = lc $value;
+	    return ::err "invalid ruleset \"$value\""
+		unless $value =~ /^(lynx|ms|ms-pg)$/;
+	    $data->{ruleset} = $value;
+	} elsif ($name eq "maxlevel") {
+	    return ::err "invalid maximum level \"$value\""
+		unless $value =~ /\A\d+\Z/ && $value < 65536;
+	    $data->{maxlevel} = $value;
+	} else {
+	    return ::err "invalid statement \"$name\"";
+	}
+    }
+
+    return ::err "unclosed definition section" if $slurpingdefs;
+    return $data;
+}
+
+# Given a handle to a text file, positioned at the start of a level
+# description, parse the lines describing the level and return a hash
+# ref containing the level data. If the end of the file is encountered
+# before a level description is found, false is returned. If any
+# errors are encountered, undef is returned and an error message is
+# displayed.
+#
+sub parselevel($$$)
+{
+    my $input = shift;
+    my $ruleset = shift;
+    my $number = shift;
+    my %data = (number => $number, leveltime => 0);
+    my $seenanything = undef;
+    my $slurpingdefs = undef;
+    my $slurpingmap = undef;
+    my @maptext;
+    local $_;
+
+    $data{passwd} = $origpasswords[$number - 1]
+	if $number >= 1 && $number <= 150;
+
+    for my $y (0 .. 31) {
+	for my $x (0 .. 31) { $data{map}[$y][$x] = [ 0, 0 ] }
+    }
+    undef %localtiles;
+
+    while (<$input>) {
+	chomp;
+	if (defined $slurpingdefs) {
+	    if (/^\s*[Ee][Nn][Dd]\s*$/) {
+		undef $slurpingdefs;
+	    } else {
+		my $def = parsetiledef $_;
+		return unless $def;
+		addtiledefs %localtiles, @$def;
+	    }
+	    next;
+	} elsif (defined $slurpingmap) {
+	    if (/^\s*([AEae])[Nn][Dd]\s*$/) {
+		my $overlay = lc($1) eq "a";
+		if ($slurpingmap->[2] >= 0) {
+		    my @overlaytext = splice @maptext, $slurpingmap->[2];
+		    return ::err "overlay section is taller than map section"
+			if @overlaytext > @maptext;
+		    subtracttext @overlaytext, @maptext;
+		    return unless parsecon \%data,
+					   $slurpingmap->[0],
+					   $slurpingmap->[1],
+					   @overlaytext;
+		} else {
+		    $slurpingmap->[2] = @maptext;
+		    return unless parsemap $data{map},
+					   $slurpingmap->[0],
+					   $slurpingmap->[1],
+					   @maptext;
+		}
+		unless ($overlay) {
+		    undef $slurpingmap;
+		    undef @maptext;
+		}
+	    } else {
+		1 while s{^([^\t]*)\t}{$1 . (" " x (8 - length($1) % 8))}e;
+		push @maptext, $_;
+	    }
+	    next;
+	} elsif (/^\s*[Tt][Ii][Ll][Ee][Ss]\s*$/) {
+	    $slurpingdefs = 1;
+	    next;
+	} elsif (/^\s*[Mm][Aa][Pp]\s*(?:(\d+)\s+(\d+)\s*)?$/) {
+	    $slurpingmap = [ $2 || 0, $1 || 0, -1 ];
+	    next;
+	} elsif (/^\s*[Mm][Aa][Pp]/) {
+	    return ::err "invalid syntax following \"map\"";
+	} elsif (/^\s*[Tt][Rr][Aa][Pp][Ss]\s*$/) {
+	    $data{traps} ||= [ ];
+	    next;
+	} elsif (/^\s*[Cc][Ll][Oo][Nn][Ee][Rr][Ss]\s*$/) {
+	    $data{cloners} ||= [ ];
+	    next;
+	} elsif (/^\s*[Cc][Rr][Ee][Aa][Tt][Uu][Rr][Ee][Ss]\s*$/) {
+	    $data{creatures} ||= [ ];
+	    next;
+	}
+
+	last if /^%%%$/;
+	next if /^\s*$/ || /^%/;
+
+	$seenanything = 1;
+	/^\s*(\S+)\s+(\S(?:.*\S)?)\s*$/ or return ::err "syntax error";
+	my ($name, $value) = ($1, $2);
+	$name = lc $name;
+	if ($name eq "level") {
+	    return ::err "invalid level number \"$value\""
+		unless $value =~ /\A\d+\Z/ && $value < 65536;
+	    $data{number} = $value;
+	} elsif ($name eq "time") {
+	    return ::err "invalid level time \"$value\""
+		unless $value =~ /\A\d+\Z/ && $value < 65536;
+	    $data{leveltime} = $value;
+	} elsif ($name eq "chips") {
+	    return ::err "invalid chip count \"$value\""
+		unless $value =~ /\A\d+\Z/ && $value < 65536;
+	    $data{chips} = $value;
+	} elsif ($name eq "title" || $name eq "name") {
+	    $value = ::unescape $value if $value =~ s/\A\"(.*)\"\Z/$1/;
+	    $data{title} .= " " if defined $data{title};
+	    $data{title} .= $value;
+	} elsif ($name eq "password" || $name eq "passwd") {
+	    return ::err "invalid password \"$value\""
+		unless $value =~ /\A[A-Z][A-Z][A-Z][A-Z]\Z/;
+	    $data{passwd} = $value;
+	} elsif ($name eq "hint") {
+	    $value = ::unescape $value if $value =~ s/\A\"(.*)\"\Z/$1/;
+	    $data{hint} .= " " if defined $data{hint};
+	    $data{hint} .= $value;
+	} elsif ($name eq "traps") {
+	    $data{traps} ||= [ ];
+	    while ($value =~ s/\A\s* (\d+)\s+(\d+) \s*[-=]?>\s*
+				     (\d+)\s+(\d+) (?:\s*[,;])?//x) {
+		push @{$data{traps}}, { from => [ $2, $1 ],
+					to => [ $4, $3 ] };
+	    }
+	    return ::err "syntax error in trap list at \"$value\""
+		if $value && $value !~ /\A[,;]\Z/;
+	} elsif ($name eq "cloners") {
+	    $data{cloners} ||= [ ];
+	    while ($value =~ s/\A\s* (\d+)\s+(\d+) \s*[-=]?>\s*
+				     (\d+)\s+(\d+) (?:\s*[,;])?//x) {
+		push @{$data{cloners}}, { from => [ $2, $1 ],
+					  to => [ $4, $3 ] };
+	    }
+	    return ::err "syntax error in clone machine list at \"$value\""
+		if $value && $value !~ /\A[,;]\Z/;
+	} elsif ($name eq "creatures") {
+	    $data{creatures} ||= [ ];
+	    while ($value =~ s/\A\s* (\d+)\s+(\d+) (?:\s*[,;])?//x) {
+		push @{$data{creatures}}, [ $2, $1 ];
+	    }
+	    return ::err "syntax error in creature list at \"$value\""
+		if $value && $value !~ /\A[,;]\Z/;
+	} elsif ($name eq "border") {
+	    my $cell = lookuptile $value;
+	    return unless defined $cell;
+	    $cell = [ $cell, 0x00 ] unless ref $cell;
+	    foreach my $y (0 .. 31) { $data{map}[$y][0]  = [ @$cell ] }
+	    foreach my $y (0 .. 31) { $data{map}[$y][31] = [ @$cell ] }
+	    foreach my $x (1 .. 30) { $data{map}[0][$x]  = [ @$cell ] }
+	    foreach my $x (1 .. 30) { $data{map}[31][$x] = [ @$cell ] }
+	} elsif ($name eq "field") {
+	    return ::err "invalid field spec \"$value\""
+		unless $value =~ /^(\d+)\s+(\d+(?:\s+\d+)*)$/;
+	    my ($num, $data) = ($1, $2);
+	    return ::err "multiple specs for field $num"
+		if exists $data{fields}{$num};
+	    $data{fields}{$num} = join "", map { chr } split " ", $data;
+	} else {
+	    return ::err "invalid command \"$name\"";
+	}
+    }
+    return "" unless $seenanything;
+
+    return ::err "unclosed defs section" if $slurpingdefs;
+    return ::err "unclosed map section" if $slurpingmap;
+
+    return ::err "missing level title" unless exists $data{title};
+    return ::err "missing password" unless exists $data{passwd};
+    return ::err "missing level map" unless exists $data{map};
+
+    $data{chips} = getchipcount $data{map} unless exists $data{chips};
+    $data{traps} ||= buildtraplist $data{map};
+    $data{cloners} ||= buildclonerlist $data{map};
+    $data{creatures} ||= buildcreaturelist $data{map}, $ruleset;
+    $data{lynxcreatures} = ::makelynxcrlist $data{map}, $data{creatures};
+    $data{fields} ||= { };
+
+    return ::err "title too long (", length($data{title}), "); ",
+		 "254 is the maximum length allowed"
+	if length($data{title}) > 254;
+    return ::err "hint too long (", length($data{hint}), "); ",
+		 "254 is the maximum length allowed"
+	if exists $data{hint} && length($data{hint}) > 254;
+    return ::err "too many (", scalar(@{$data{traps}}), ") ",
+		 "trap connections; 25 is the maximum allowed"
+	if @{$data{traps}} > 25;
+    return ::err "too many (", scalar(@{$data{cloners}}), ") ",
+		 "clone machine connections; 31 is the maximum allowed"
+	if @{$data{cloners}} > 31;
+    return ::err "too many (", scalar(@{$data{creatures}}), ") ",
+		 "creatures; 127 is the maximum allowed"
+	if @{$data{creatures}} > 127;
+
+    return \%data;
+}
+
+# This function takes a handle to a text file and returns a hash ref
+# containing the described level set. If the file could not be
+# completely translated, undef is returned and one or more error
+# messages will be displayed.
+#
+sub read($)
+{
+    my $input = shift;
+    my $data;
+
+    $data = parseheader $input;
+    return unless $data;
+
+    my $lastnumber = 0;
+    for (;;) {
+	my $level = parselevel $input, $data->{ruleset}, $lastnumber + 1;
+	return unless defined $level;
+	last unless $level;
+	$lastnumber = $level->{number};
+	push @{$data->{levels}}, $level;
+	last if eof $input;
+    }
+
+    $#{$data->{levels}} = $data->{maxlevel} - 1
+	if exists $data->{maxlevel} && $data->{maxlevel} < @{$data->{levels}};
+
+    return $data;
+}
+
+#
+#
+#
+
+my %globalsymbols;
+my %localsymbols;
+
+$globalsymbols{"0"}[1] = " ";
+$globalsymbols{"0"}[2] = "  ";
+$globalsymbols{"0:0"}[1] = " ";
+$globalsymbols{"0:0"}[2] = "  ";
+foreach my $symbol (keys %tilesymbols) {
+    my $key;
+    if (ref $tilesymbols{$symbol}) {
+	$key = "$tilesymbols{$symbol}[0]:$tilesymbols{$symbol}[1]";
+    } else {
+	$key = $tilesymbols{$symbol};
+    }
+    $globalsymbols{$key}[length $symbol] ||= $symbol;
+}
+
+my @symbollist;
+my $newsym = -1;
+
+sub printwrap($$$)
+{
+    my $output = shift;
+    my $prefix = shift;
+    my @segments = split /(\S\s\S)/, ::escape shift;
+
+    push @segments, "" if @segments % 2 == 0;
+    for (my $n = 1 ; $n < $#segments; ++$n) {
+	$segments[$n - 1] .= substr($segments[$n], 0, 1);
+	$segments[$n] = substr($segments[$n], 2, 1) . $segments[$n + 1];
+	splice @segments, $n + 1, 1;
+    }
+
+    my $width = 75 - length $prefix;
+    my $line = shift @segments;
+    while (@segments) {
+	if (!$line || length($line) + length($segments[0]) < $width) {
+	    $line .= " " . shift @segments;
+	} else {
+	    $line = "\"$line\"" if $line =~ /\\/;
+	    print $output "$prefix $line\n";
+	    $line = shift @segments;
+	}
+    }
+    $line = "\"$line\"" if $line =~ /\\/ || $line =~ /^\s/ || $line =~ /\s$/;
+    print $output "$prefix $line\n";
+
+    return 1;
+}
+
+sub printlist($$@)
+{
+    my $output = shift;
+    my $prefix = shift;
+
+    while (@_) {
+	my $item = shift;
+	local $_ = "$prefix $item";
+	my $x = length $_;
+	print $output $_ or return;
+	while (@_) {
+	    $x += 3 + length $_[0];
+	    last if $x > 76;
+	    $item = shift;
+	    print $output " ; $item" or return;
+	}
+	print $output "\n" or return;
+    }
+    return 1;
+}
+
+sub tilesymbol($;$)
+{
+    my $tile = shift;
+    my $max = shift || 2;
+
+    return $globalsymbols{$tile}[$max] if defined $globalsymbols{$tile}[$max];
+    return $globalsymbols{$tile}[1] if defined $globalsymbols{$tile}[1];
+    return $localsymbols{$tile}[$max] if defined $localsymbols{$tile}[$max];
+    return $localsymbols{$tile}[1] if defined $localsymbols{$tile}[1];
+    return undef;
+}
+
+sub getnewsym() { shift @symbollist }
+
+sub resetnewsyms()
+{
+    @symbollist = split //,
+      "ABCDFGIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345789@*+.,'`-!";
+}
+
+sub cellsymbol($;$)
+{
+    my $top = shift;
+    my $bot = shift || 0;
+    my $tile;
+    my $symbol;
+
+    return "  " if $top == 0 && $bot == 0;
+
+    $tile = $bot ? "$top:$bot" : $top;
+    $symbol = tilesymbol $tile;
+    if (defined $symbol) {
+	$symbol = "$symbol " if length($symbol) == 1;
+	return $symbol;
+    }
+
+    if ($bot) {
+	if ($top == 0) {
+	    $symbol = tilesymbol $bot, 1;
+	    return " $symbol" if defined $symbol;
+	} else {
+	    my $st = tilesymbol $top, 1;
+	    if (defined $st) {
+		my $sb = tilesymbol $bot, 1;
+		return "$st$sb" if defined $sb;
+	    }
+	}
+    }
+
+    $symbol = getnewsym;
+    unless (defined $symbol) {
+	::err "too many unique tile combinations required";
+	$symbol = "\\";
+    }
+    $localsymbols{$tile}[length $symbol] = $symbol;
+
+    $symbol = "$symbol " if length($symbol) == 1;
+    return $symbol;
+}
+
+sub trimmap(\@)
+{
+    my $map = shift;
+    my @xs = (0) x 32;
+    my @ys = (0) x 32;
+
+    my $count = 0;
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    next if $map->[$y][$x][0] == 0 && $map->[$y][$x][1] == 0;
+	    ++$xs[$x];
+	    ++$ys[$y];
+	    ++$count;
+	}
+    }
+    return (0, 0, 0, 0, 0) unless $count;
+
+    my $border = 0;
+    if ($map->[0][0][0] != 0 && $map->[0][0][1] == 0) {
+	my $tile = $map->[0][0][0];
+	foreach my $n (1 .. 31) {
+	    goto noborder unless $map->[$n][0][0] == $tile
+			      && $map->[$n][31][0] == $tile
+			      && $map->[0][$n][0] == $tile
+			      && $map->[31][$n][0] == $tile
+			      && $map->[$n][0][1] == 0
+			      && $map->[$n][31][1] == 0
+			      && $map->[0][$n][1] == 0
+			      && $map->[31][$n][1] == 0;
+	}
+	$border = $tile;
+	$xs[0] = $xs[31] = $ys[0] = $ys[31] = 0;
+      noborder:
+    }
+
+    my ($left, $right, $top, $bottom) = (-1, 32, -1, 32);
+    1 until $xs[++$left];
+    1 until $xs[--$right];
+    1 until $ys[++$top];
+    1 until $ys[--$bottom];
+
+    return 0, 31, 0, 31, 0 if $border && $left == 1 && $right == 30
+				      && $top == 1 && $bottom == 30;
+
+    return ($left, $right, $top, $bottom, $border);
+}
+
+sub writeheader($\%)
+{
+    my $output = shift;
+    my $data = shift;
+
+	print $output "ruleset $data->{ruleset}\n"
+    and print $output "\n%%%\n";
+}
+
+sub writelevelheader($\%)
+{
+    my $output = shift;
+    my $level = shift;
+
+    printwrap $output, "title  ", $level->{title} or return;
+    print $output "passwd  $level->{passwd}\n" or return;
+    print $output "chips   $level->{chips}\n" or return
+	if exists $level->{chips} && $level->{chips};
+    print $output "time    $level->{leveltime}\n" or return
+	if exists $level->{leveltime} && $level->{leveltime};
+    printwrap $output, "hint   ", $level->{hint} or return
+	if exists $level->{hint};
+    print $output "\n";
+}
+
+sub writelevelmap($\@)
+{
+    my $output = shift;
+    my $map = shift;
+    my (@tiletext, @maptext);
+
+    undef %localsymbols;
+    resetnewsyms;
+
+    my ($left, $right, $top, $bottom, $border) = trimmap @$map;
+
+    $border = cellsymbol $border if $border;
+    foreach my $y ($top .. $bottom) {
+	my $mapline = "";
+	foreach my $x ($left .. $right) {
+	    $mapline .= cellsymbol $map->[$y][$x][0], $map->[$y][$x][1];
+	}
+	$mapline =~ s/\s+$//;
+	push @maptext, "$mapline\n";
+    }
+
+    foreach my $tiles (keys %localsymbols) {
+	foreach my $tile (@{$localsymbols{$tiles}}) {
+	    next unless defined $tile;
+	    my $line = "$tile\t";
+	    if ($tiles =~ /^(\d+):(\d+)$/) {
+		my ($top, $bot) = ($1, $2);
+		$line .= "$tilenames[$top] + $tilenames[$bot]\n";
+	    } else {
+		$line .= "$tilenames[$tiles]\n";
+	    }
+	    push @tiletext, $line;
+	}
+    }
+    @tiletext = sort @tiletext;
+
+    print $output "tiles\n", @tiletext, "end\n\n" or return if @tiletext;
+    print $output "border $border\n\n" or return if $border;
+
+    print $output ($left || $top ? "map $left $top\n" : "map\n"),
+		  @maptext,
+		  "end\n\n"
+	or return;
+}
+
+sub writelevelcloners($\%)
+{
+    my $output = shift;
+    my $level = shift;
+    my $n;
+
+    my $default = txtfile::buildclonerlist $level->{map};
+    if (!defined $level->{cloners}) {
+	return print $output "cloners\n\n" if @$default;
+	return 1;
+    }
+    $n = 0;
+    if (@$default == @{$level->{cloners}}) {
+	for ($n = 0 ; $n < @$default ; ++$n) {
+	    last if $default->[$n]{from}[0] != $level->{cloners}[$n]{from}[0]
+		 || $default->[$n]{from}[1] != $level->{cloners}[$n]{from}[1]
+		 || $default->[$n]{to}[0] != $level->{cloners}[$n]{to}[0]
+		 || $default->[$n]{to}[1] != $level->{cloners}[$n]{to}[1];
+	}
+    }
+    return 1 if $n == @$default;
+
+    printlist $output, "cloners",
+	      map { "$_->{from}[1] $_->{from}[0] -> $_->{to}[1] $_->{to}[0]" }
+		  @{$level->{cloners}}
+	or return;
+    print $output "\n";
+}
+
+sub writeleveltraps($\%)
+{
+    my $output = shift;
+    my $level = shift;
+    my $n;
+
+    my $default = txtfile::buildtraplist $level->{map};
+    if (!defined $level->{traps}) {
+	return print $output "traps\n\n" if @$default;
+	return 1;
+    }
+    $n = 0;
+    if (@$default == @{$level->{traps}}) {
+	for ($n = 0 ; $n < @$default ; ++$n) {
+	    last if $default->[$n]{from}[0] != $level->{traps}[$n]{from}[0]
+		 || $default->[$n]{from}[1] != $level->{traps}[$n]{from}[1]
+		 || $default->[$n]{to}[0] != $level->{traps}[$n]{to}[0]
+		 || $default->[$n]{to}[1] != $level->{traps}[$n]{to}[1];
+	}
+    }
+    return 1 if $n == @$default;
+
+    printlist $output, "traps",
+	      map { "$_->{from}[1] $_->{from}[0] -> $_->{to}[1] $_->{to}[0]" }
+		  @{$level->{traps}}
+	or return;
+    print $output "\n";
+}
+
+sub writelevelcrlist($\%$)
+{
+    my $output = shift;
+    my $level = shift;
+    my $ruleset = shift;
+    my $n;
+
+    my $default = txtfile::buildcreaturelist $level->{map}, $ruleset;
+    if (!defined $level->{creatures}) {
+	return print $output "creatures\n\n" if @$default;
+	return 1;
+    }
+
+    $n = 0;
+    if (@$default == @{$level->{creatures}}) {
+	for ($n = 0 ; $n < @$default ; ++$n) {
+	    last if $default->[$n][0] != $level->{creatures}[$n][0]
+		 || $default->[$n][1] != $level->{creatures}[$n][1];
+	}
+    }
+    return 1 if $n == @$default;
+
+    printlist $output, "creatures",
+	      map { "$_->[1] $_->[0]" } @{$level->{creatures}}
+	or return;
+    print $output "\n";
+}
+
+sub writelevel($\%$)
+{
+    my $output = shift;
+    my $level = shift;
+    my $ruleset = shift;
+
+    writelevelheader $output, %$level or return;
+    writelevelmap $output, @{$level->{map}} or return;
+    writeleveltraps $output, %$level or return;
+    writelevelcloners $output, %$level or return;
+    writelevelcrlist $output, %$level, $ruleset or return;
+
+    print $output "%%%\n";
+}
+
+sub write($$)
+{
+    my $output = shift;
+    my $data = shift;
+
+    $globalsymbols{$tilenames{"block north"}} =
+			[ @{$globalsymbols{$tilenames{"block"}}} ]
+	if $data->{ruleset} eq "lynx";
+
+    writeheader $output, %$data or return;
+
+    my $lastnumber = 0;
+    foreach my $level (@{$data->{levels}}) {
+	$filelevel = $level->{number};
+	++$lastnumber;
+	print $output "\n" or return;
+	print $output "level $level->{number}\n" or return
+	    unless $level->{number} == $lastnumber;
+	writelevel $output, %$level, $data->{ruleset} or return;
+	$lastnumber = $level->{number};
+    }
+
+    return 1;
+}
+
+#
+#
+#
+
+package datfile;
+
+# Given a string of run-length encoded data, return the original
+# uncompressed string.
+#
+sub rleuncompress($)
+{
+    local $_ = shift;
+    1 while s/\xFF(.)(.)/$2 x ord$1/se;
+    return $_;
+}
+
+sub parseheader($)
+{
+    my $input = shift;
+    my %data;
+
+    my ($sig, $maxlevel) = ::fileread $input, "Vv" or return;
+    if ($sig == 0x0002AAAC) {
+	$data{ruleset} = "ms";
+    } elsif ($sig == 0x0102AAAC) {
+	$data{ruleset} = "lynx";
+    } elsif ($sig == 0x0003AAAC) {
+	$data{ruleset} = "ms-pg";
+    } else {
+	return ::err "not a valid data file";
+    }
+    return ::err "file contains no maps" if $maxlevel <= 0;
+    $data{maxlevel} = $maxlevel;
+
+    return \%data;
+}
+
+sub parselevelmap($$)
+{
+    my $layer1 = shift;
+    my $layer2 = shift;
+    my @map;
+    if (length($layer1) > 1024) {
+	::err "warning: excess data in top layer of map";
+	substr($layer1, 1024) = "";
+    }
+    if (length($layer2) > 1024) {
+	::err "warning: excess data in bottom layer of map";
+	substr($layer2, 1024) = "";
+    }
+    return ::err "invalid map in data file"
+	unless length($layer1) == 1024 && length($layer2) == 1024;
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    $map[$y][$x][0] = ord substr $layer1, 0, 1, "";
+	    $map[$y][$x][1] = ord substr $layer2, 0, 1, "";
+	}
+    }
+    return \@map;
+}
+
+sub parselevel($)
+{
+    my $input = shift;
+    my %level;
+    my ($fieldnum, $fieldsize, $data);
+
+    my $levelsize = "";
+    return ::err $! unless defined sysread $input, $levelsize, 2;
+    return "" unless length($levelsize) == 2;
+    $levelsize = unpack "v", $levelsize;
+    return ::err "invalid metadata in file (only $levelsize bytes in level)"
+	unless $levelsize > 8;
+
+    @level{qw(number leveltime chips)} = ::fileread $input, "vvv", $levelsize
+	or return;
+
+    ($fieldnum, $fieldsize) = ::fileread $input, "vv", $levelsize,
+					 1, 1, 0, 1024
+	or return;
+    my $layer1 = ::fileread $input, "a$fieldsize", $levelsize or return;
+    $fieldsize = ::fileread $input, "v", $levelsize, 0, 1024 or return;
+    my $layer2 = ::fileread $input, "a$fieldsize", $levelsize or return;
+    ::fileread $input, "v", $levelsize or return;
+    $level{map} = parselevelmap rleuncompress $layer1, rleuncompress $layer2
+	or return;
+
+    while ($levelsize > 0) {
+	($fieldnum, $fieldsize) = ::fileread $input, "CC", $levelsize, 1, 10
+	    or last;
+	$data = ::fileread $input, "a$fieldsize", $levelsize or return;
+	if ($fieldnum == 1) {
+	    return ::err "invalid field" unless $fieldsize > 1;
+	    $level{leveltime} = unpack "v", $data;
+	    return ::err "invalid data in field 1"
+		unless $level{leveltime} >= 0 && $level{leveltime} <= 65535;
+	} elsif ($fieldnum == 2) {
+	    return ::err "invalid field" unless $fieldsize > 1;
+	    $level{chips} = unpack "v", $data;
+	    return ::err "invalid data in field 2"
+		unless $level{chips} >= 0 && $level{chips} <= 65535;
+	} elsif ($fieldnum == 3) {
+	    ($level{title} = $data) =~ s/\0\Z//;
+	} elsif ($fieldnum == 4) {
+	    $fieldsize /= 2;
+	    my @values = unpack "v$fieldsize", $data;
+	    for (my $i = 0 ; $i < $fieldsize / 5 ; ++$i) {
+		$level{traps}[$i]{from}[1] = shift @values;
+		$level{traps}[$i]{from}[0] = shift @values;
+		$level{traps}[$i]{to}[1] = shift @values;
+		$level{traps}[$i]{to}[0] = shift @values;
+		shift @values;
+	    }
+	} elsif ($fieldnum == 5) {
+	    $fieldsize /= 2;
+	    my @values = unpack "v$fieldsize", $data;
+	    for (my $i = 0 ; $i < $fieldsize / 4 ; ++$i) {
+		$level{cloners}[$i]{from}[1] = shift @values;
+		$level{cloners}[$i]{from}[0] = shift @values;
+		$level{cloners}[$i]{to}[1] = shift @values;
+		$level{cloners}[$i]{to}[0] = shift @values;
+	    }
+	} elsif ($fieldnum == 6) {
+	    ($level{passwd} = $data) =~ s/\0\Z//;
+	    $level{passwd} ^= "\x99" x length $level{passwd};
+	} elsif ($fieldnum == 7) {
+	    ($level{hint} = $data) =~ s/\0\Z//;
+	} elsif ($fieldnum == 8) {
+	    ::err "field 8 not yet supported; ignoring";
+	} elsif ($fieldnum == 9) {
+	    ::err "ignoring useless field 9 entry";
+	} elsif ($fieldnum == 10) {
+	    my @values = unpack "C$fieldsize", $data;
+	    for (my $i = 0 ; $i < $fieldsize / 2 ; ++$i) {
+		$level{creatures}[$i][1] = shift @values;
+		$level{creatures}[$i][0] = shift @values;
+	    }
+	}
+    }
+    return ::err "$levelsize bytes left over at end" if $levelsize;
+
+    $level{lynxcreatures} = ::makelynxcrlist $level{map}, $level{creatures};
+
+    return \%level;
+}
+
+sub read($)
+{
+    my $input = shift;
+    my $data;
+
+    $data = parseheader $input;
+    return unless $data;
+
+    for (;;) {
+	my $level = parselevel $input;
+	return unless defined $level;
+	last unless $level;
+	push @{$data->{levels}}, $level;
+    }
+
+    ::err "warning: number of levels incorrect in header ($data->{maxlevel}, ",
+		"should be ", scalar(@{$data->{levels}}), ")"
+	unless $data->{maxlevel} == @{$data->{levels}};
+
+    return $data;
+}
+
+#
+#
+#
+
+# Given a string of packed data, return a string containing the same
+# data run-length encoded.
+#
+sub rlecompress($)
+{
+    my $in = shift;
+    my $out = "";
+
+    while (length $in) {
+	my $byte = substr $in, 0, 1;
+	my $n = 1;
+	++$n while $n < length $in && $byte eq substr $in, $n, 1;
+	substr($in, 0, $n) = "";
+	while ($n >= 255) { $out .= "\xFF\xFF$byte"; $n -= 255; }
+	if ($n > 3) {
+	    $out .= "\xFF" . chr($n) . $byte;
+	} elsif ($n) {
+	    $out .= $byte x $n;
+	}
+    }
+    return $out;
+}
+
+# Given a level set definition, return the pack arguments for creating
+# the .dat file's header data.
+#
+sub mkdatfileheader(\%)
+{
+    my $data = shift;
+    my @fields;
+
+    if ($data->{ruleset} eq "ms") {
+	push @fields, 0x0002AAAC;
+    } elsif ($data->{ruleset} eq "ms-pg") {
+	push @fields, 0x0003AAAC;
+    } else {
+	push @fields, 0x0102AAAC;
+    }
+    push @fields, scalar @{$data->{levels}};
+    return ("Vv", @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's header data in the .dat file.
+#
+sub mkdatfilelevelheader(\%)
+{
+    my $data = shift;
+    my @fields;
+
+    push @fields, $data->{number};
+    push @fields, $data->{leveltime};
+    push @fields, $data->{chips};
+    return ("vvv", @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's map data in the .dat file.
+# 
+sub mkdatfilelevelmap(\%)
+{
+    my $data = shift;
+    my $map = $data->{map};
+    my ($layer1, $layer2);
+    my @fields;
+
+    for my $y (0 .. 31) {
+	for my $x (0 .. 31) {
+	    if (defined $map->[$y][$x]) {
+		if (defined $map->[$y][$x][0]) {
+		    $layer1 .= chr $map->[$y][$x][0];
+		} else {
+		    $layer1 .= "\0";
+		}
+		if (defined $map->[$y][$x][1]) {
+		    $layer2 .= chr $map->[$y][$x][1];
+		} else {
+		    $layer2 .= "\0";
+		}
+	    } else {
+		$layer1 .= "\0";
+		$layer2 .= "\0";
+	    }
+	}
+    }
+
+    $layer1 = rlecompress $layer1;
+    $layer2 = rlecompress $layer2;
+
+    push @fields, 1;
+    push @fields, length $layer1;
+    push @fields, $layer1;
+    push @fields, length $layer2;
+    push @fields, $layer2;
+
+    return ("vva$fields[1]va$fields[3]", @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's title field in the .dat file.
+#
+sub mkdatfileleveltitle(\%)
+{
+    my $data = shift;
+    my $n = length($data->{title}) + 1;
+    return ("CCa$n", 3, $n, $data->{title});
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's hint field in the .dat file.
+#
+sub mkdatfilelevelhint(\%)
+{
+    my $data = shift;
+    return ("") unless exists $data->{hint};
+    my $n = length($data->{hint}) + 1;
+    return ("CCa$n", 7, $n, $data->{hint});
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's password field in the .dat file.
+#
+sub mkdatfilelevelpasswd(\%)
+{
+    my $data = shift;
+    my $n = length($data->{passwd}) + 1;
+    return ("CCa$n", 6, $n, $data->{passwd} ^ "\x99\x99\x99\x99");
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's bear trap list field in the .dat file.
+#
+sub mkdatfileleveltraps(\%)
+{
+    my $data = shift;
+
+    return ("") unless exists $data->{traps};
+    my $list = $data->{traps};
+    my $n = @$list;
+    return ("") unless $n;
+    my @fields;
+
+    push @fields, 4;
+    push @fields, $n * 10;
+    foreach my $i (0 .. $#$list) {
+	push @fields, $list->[$i]{from}[1], $list->[$i]{from}[0];
+	push @fields, $list->[$i]{to}[1], $list->[$i]{to}[0];
+	push @fields, 0;
+    }
+    return (("CCv" . ($n * 5)), @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's clone machine list field in the .dat file.
+#
+sub mkdatfilelevelcloners(\%)
+{
+    my $data = shift;
+
+    return ("") unless exists $data->{cloners};
+    my $list = $data->{cloners};
+    my $n = @$list;
+    return ("") unless $n;
+    my @fields;
+
+    push @fields, 5;
+    push @fields, $n * 8;
+    foreach my $i (0 .. $#$list) {
+	push @fields, $list->[$i]{from}[1], $list->[$i]{from}[0];
+	push @fields, $list->[$i]{to}[1], $list->[$i]{to}[0];
+    }
+    return (("CCv" . ($n * 4)), @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's creature list field in the .dat file.
+#
+sub mkdatfilelevelcrlist(\%)
+{
+    my $data = shift;
+
+    return ("") unless exists $data->{creatures};
+    my $list = $data->{creatures};
+    return ("") unless $list && @$list;
+    my $n = @$list;
+    my @fields;
+
+    push @fields, 10;
+    push @fields, $n * 2;
+    foreach my $i (0 .. $#$list) {
+	push @fields, $list->[$i][1], $list->[$i][0];
+    }
+    return (("CCC" . ($n * 2)), @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level's miscellaneous fields, if any, in the .dat file.
+#
+sub mkdatfilelevelmisc(\%)
+{
+    my $data = shift;
+    my ($template, @fields) = ("");
+
+    return ("") unless exists $data->{fields};
+    foreach my $num (keys %{$data->{fields}}) {
+	my $n = length($data->{fields}{$num});
+	$template .= "CCa$n";
+	push @fields, $num, $n, $data->{fields}{$num};
+    }
+    return ($template, @fields);
+}
+
+# Given a level definition, return the pack arguments for creating the
+# level in the .dat file.
+#
+sub mkdatfilelevel(\%)
+{
+    my $data = shift;
+    my ($template, @fields);
+    my @p;
+
+    @p = mkdatfilelevelheader %$data;  $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelmap %$data;     $template .= shift @p; push @fields, @p;
+
+    my $data2pos = @fields;            $template .= "v";      push @fields, 0;
+    my $tmplt2pos = length $template;
+
+    @p = mkdatfileleveltitle %$data;   $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelhint %$data;    $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelpasswd %$data;  $template .= shift @p; push @fields, @p;
+    @p = mkdatfileleveltraps %$data;   $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelcloners %$data; $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelcrlist %$data;  $template .= shift @p; push @fields, @p;
+    @p = mkdatfilelevelmisc %$data;    $template .= shift @p; push @fields, @p;
+
+    $fields[$data2pos] = ::packlen substr $template, $tmplt2pos;
+
+    unshift @fields, ::packlen $template;
+    $template = "v$template";
+
+    return ($template, @fields);
+}
+
+# Given a level set definition, return the pack arguments for creating
+# the .dat file.
+#
+sub mkdatfile(\%)
+{
+    my $data = shift;
+    my ($template, @fields);
+    my @p;
+
+    @p = mkdatfileheader %$data;
+    $template = shift @p;
+    @fields = @p;
+
+    foreach my $level (@{$data->{levels}}) {
+	$filelevel = $level->{number};
+	@p = mkdatfilelevel %$level;
+	$template .= shift @p;
+	push @fields, @p;
+    }
+
+    return ($template, @fields);
+}
+
+# This function takes a handle to a binary file and a hash ref
+# defining a level set, and writes the level set to the binary file as
+# a .dat file. The return value is false if the file's contents could
+# not be completely created; otherwise a true value is returned.
+#
+sub write($$)
+{
+    my $file = shift;
+    my $data = shift;
+
+    my @args = mkdatfile %$data;
+    my $template = shift @args;
+    print $file pack $template, @args;
+}
+
+#
+#
+#
+
+package lynxfmt;
+
+my @objectkey = ($tilenames{"empty"},
+		 $tilenames{"wall"},
+		 $tilenames{"ice"},
+		 $tilenames{"dirt"},
+		 $tilenames{"blue block floor"},
+		 $tilenames{"force north"},
+		 $tilenames{"force east"},
+		 $tilenames{"force south"},
+		 $tilenames{"force west"},
+		 $tilenames{"force any"},
+		 $tilenames{"ice corner se"},
+		 $tilenames{"ice corner sw"},
+		 $tilenames{"ice corner nw"},
+		 $tilenames{"ice corner ne"},
+		 $tilenames{"teleport"},
+		 $tilenames{"ice boots"},
+		 $tilenames{"fire boots"},
+		 $tilenames{"force boots"},
+		 $tilenames{"water boots"},
+		 $tilenames{"fire"},
+		 $tilenames{"water"},
+		 $tilenames{"thief"},
+		 $tilenames{"popup wall"},
+		 $tilenames{"toggle open"},
+		 $tilenames{"toggle closed"},
+		 $tilenames{"green button"},
+		 $tilenames{"red door"},
+		 $tilenames{"blue door"},
+		 $tilenames{"yellow door"},
+		 $tilenames{"green door"},
+		 $tilenames{"red key"},
+		 $tilenames{"blue key"},
+		 $tilenames{"yellow key"},
+		 $tilenames{"green key"},
+		 $tilenames{"blue button"},
+		 $tilenames{"computer chip"},	# counted
+		 $tilenames{"socket"},
+		 $tilenames{"exit"},
+		 $tilenames{"invisible wall temporary"},
+		 $tilenames{"invisible wall permanent"},
+		 $tilenames{"gravel"},
+		 $tilenames{"wall east"},
+		 $tilenames{"wall south"},
+		 $tilenames{"wall southeast"},
+		 $tilenames{"bomb"},
+		 $tilenames{"bear trap"},
+		 $tilenames{"brown button"},
+		 $tilenames{"clone machine"},
+		 $tilenames{"red button"},
+		 $tilenames{"computer chip"},	# uncounted
+		 $tilenames{"blue block wall"},
+		 $tilenames{"hint button"});
+
+my @creaturekey = (0, 0, 0, 0,
+		   $tilenames{"chip north"},	  $tilenames{"chip east"},
+		   $tilenames{"chip south"},	  $tilenames{"chip west"},
+		   $tilenames{"bug north"},	  $tilenames{"bug east"},
+		   $tilenames{"bug south"},	  $tilenames{"bug west"},
+		   $tilenames{"centipede north"}, $tilenames{"centipede east"},
+		   $tilenames{"centipede south"}, $tilenames{"centipede west"},
+		   $tilenames{"fireball north"},  $tilenames{"fireball east"},
+		   $tilenames{"fireball south"},  $tilenames{"fireball west"},
+		   $tilenames{"glider north"},	  $tilenames{"glider east"},
+		   $tilenames{"glider south"},	  $tilenames{"glider west"},
+		   $tilenames{"ball north"},	  $tilenames{"ball east"},
+		   $tilenames{"ball south"},	  $tilenames{"ball west"},
+		   $tilenames{"block north"},	  $tilenames{"block east"},
+		   $tilenames{"block south"},	  $tilenames{"block west"},
+		   $tilenames{"tank north"},	  $tilenames{"tank east"},
+		   $tilenames{"tank south"},	  $tilenames{"tank west"},
+		   $tilenames{"walker north"},	  $tilenames{"walker east"},
+		   $tilenames{"walker south"},	  $tilenames{"walker west"},
+		   $tilenames{"blob north"},	  $tilenames{"blob east"},
+		   $tilenames{"blob south"},	  $tilenames{"blob west"},
+		   $tilenames{"teeth north"},	  $tilenames{"teeth east"},
+		   $tilenames{"teeth south"},	  $tilenames{"teeth west"});
+
+my @textkey = 
+    ("\n"," ","0","1","2","3","4","5","6","7","8","9","A","B","C","D",
+      "E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T",
+      "U","V","W","X","Y","Z","!",'"',"'","(",")",",","-",".",":",";",
+      "?", (("%") x 207));
+
+my @levelfilenames = @{
+    [qw(lesson_1.pak	lesson_2.pak	lesson_3.pak	lesson_4.pak
+	lesson_5.pak	lesson_6.pak	lesson_7.pak	lesson_8.pak
+	nuts_and.pak	brushfir.pak	trinity.pak	hunt.pak
+	southpol.pak	telebloc.pak	elementa.pak	cellbloc.pak
+	nice_day.pak	castle_m.pak	digger.pak	tossed_s.pak
+	iceberg.pak	forced_e.pak	blobnet.pak	oorto_ge.pak
+	blink.pak	chchchip.pak	go_with_.pak	ping_pon.pak
+	arcticfl.pak	mishmesh.pak	knot.pak	scavenge.pak
+	on_the_r.pak	cypher.pak	lemmings.pak	ladder.pak
+	seeing_s.pak	sampler.pak	glut.pak	floorgas.pak
+	i.pak		beware_o.pak	lock_blo.pak	refracti.pak
+	monster_.pak	three_do.pak	pier_sev.pak	mugger_s.pak
+	problems.pak	digdirt.pak	i_slide.pak	the_last.pak
+	traffic_.pak	grail.pak	potpourr.pak	deepfree.pak
+	mulligan.pak	loop_aro.pak	hidden_d.pak	scoundre.pak
+	rink.pak	slo_mo.pak	block_fa.pak	spooks.pak
+	amsterda.pak	victim.pak	chipmine.pak	eeny_min.pak
+	bounce_c.pak	nightmar.pak	corridor.pak	reverse_.pak
+	morton.pak	playtime.pak	steam.pak	four_ple.pak
+	invincib.pak	force_sq.pak	drawn_an.pak	vanishin.pak
+	writers_.pak	socialis.pak	up_the_b.pak	wars.pak
+	telenet.pak	suicide.pak	citybloc.pak	spirals.pak
+	block.pak	playhous.pak	jumping_.pak	vortex.pak
+	roadsign.pak	now_you_.pak	four_squ.pak	paranoia.pak
+	metastab.pak	shrinkin.pak	catacomb.pak	colony.pak
+	apartmen.pak	icehouse.pak	memory.pak	jailer.pak
+	short_ci.pak	kablam.pak	balls_o_.pak	block_ou.pak
+	torturec.pak	chiller.pak	time_lap.pak	fortune_.pak
+	open_que.pak	deceptio.pak	oversea_.pak	block_ii.pak
+	the_mars.pak	miss_dir.pak	slide_st.pak	alphabet.pak
+	perfect_.pak	t_fair.pak	the_pris.pak	firetrap.pak
+	mixed_nu.pak	block_n_.pak	skelzie.pak	all_full.pak
+	lobster_.pak	ice_cube.pak	totally_.pak	mix_up.pak
+	blobdanc.pak	pain.pak	trust_me.pak	doublema.pak
+	goldkey.pak	partial_.pak	yorkhous.pak	icedeath.pak
+	undergro.pak	pentagra.pak	stripes.pak	fireflie.pak
+	level145.pak	cake_wal.pak	force_fi.pak	mind_blo.pak
+	special.pak	level150.pak)]
+};
+
+my (%objectkey, %creaturekey, %textkey);
+for (0 .. $#objectkey) { $objectkey{$objectkey[$_]} = $_ }
+for (0 .. $#creaturekey) { $creaturekey{$creaturekey[$_]} = $_ }
+$creaturekey{$tilenames{"block"}} = $creaturekey{$tilenames{"block north"}};
+for (0 .. $#textkey) { $textkey{$textkey[$_]} = chr $_ }
+
+#
+#
+#
+
+sub longestmatch($$$)
+{
+    my $dictionary = shift;
+    my $data = shift;
+    my $pos = shift;
+
+    my ($longest, $longestlen) = ("", 0);
+    foreach my $entry (@$dictionary) {
+	my $len = length $entry->{text};
+	if ($len > $longestlen && $entry->{text} eq substr $data, $pos, $len) {
+	    ($longest, $longestlen) = ($entry, $len);
+	}
+    }
+    return $longest;
+}
+
+sub builddict($)
+{
+    my $data = shift;
+    my $dictionary = [ ];
+
+    my $pos = 0;
+    while ($pos < length $data) {
+	my $entry = { refcount => 0 };
+	my ($match, $len);
+	$match = longestmatch $dictionary, $data, $pos;
+	if ($match) {
+	    $entry->{left} = $match;
+	    $len = length $match->{text};
+	} else {
+	    $len = 1;
+	}
+	$entry->{text} = substr $data, $pos, $len;
+	$pos += $len;
+	last if $pos >= length $data;
+	$match = longestmatch $dictionary, $data, $pos;
+	if ($match) {
+	    $entry->{right} = $match;
+	    $len = length $match->{text};
+	} else {
+	    $len = 1;
+	}
+	$entry->{text} .= substr $data, $pos, $len;
+	$pos += $len;
+	push @$dictionary, $entry;
+    }
+
+    return $dictionary;
+}
+
+sub refcountadd($$);
+sub refcountadd($$)
+{
+    my $entry = shift;
+    $entry->{refcount} += shift;
+    refcountadd $entry->{left}, $entry->{refcount} if exists $entry->{left};
+    refcountadd $entry->{right}, $entry->{refcount} if exists $entry->{right};
+}
+
+sub countuses($$)
+{
+    my $dictionary = shift;
+    my $data = shift;
+
+    my $pos = 0;
+    while ($pos < length $data) {
+	my $entry = longestmatch $dictionary, $data, $pos;
+	if ($entry) {
+	    ++$entry->{refcount};
+	    $pos += length $entry->{text};
+	} else {
+	    ++$pos;
+	}
+    }
+    foreach my $entry (@$dictionary) { refcountadd $entry, 0 }
+}
+
+sub assignkeys($$)
+{
+    my $dictionary = shift;
+    my $data = shift;
+    my @used;
+
+    while ($data =~ /(.)/gs) { $used[ord $1] = 1 }
+    my $n = 0;
+    foreach my $entry (@$dictionary) {
+	++$n while $used[$n];
+	die "too many dictionary entries; not enough keys" if $n >= 256;
+	$entry->{key} = chr $n;
+	$used[$n] = 1;
+    }
+}
+
+sub composedict($)
+{
+    my $dictionary = shift;
+    my ($out, $len) = ("", 0);
+
+    foreach my $entry (@$dictionary) {
+	$out .= $entry->{key};
+	if (exists $entry->{left}) {
+	    $out .= $entry->{left}{key};
+	} else {
+	    $out .= substr $entry->{text}, 0, 1;
+	}
+	if (exists $entry->{right}) {
+	    $out .= $entry->{right}{key};
+	} else {
+	    $out .= substr $entry->{text}, -1;
+	}
+	++$len;
+    }
+
+    return ($out, $len);
+}
+
+sub composedata($$)
+{
+    my $dictionary = shift;
+    my $data = shift;
+    my ($out, $len) = ("", 0);
+
+    my $pos = 0;
+    while ($pos < length $data) {
+	my $entry = longestmatch $dictionary, $data, $pos;
+	if ($entry) {
+	    $out .= $entry->{key};
+	    $pos += length $entry->{text};
+	} else {
+	    $out .= substr $data, $pos, 1;
+	    ++$pos;
+	}
+	++$len;
+    }
+
+    return ($out, $len);
+}
+
+sub compress($)
+{
+    my $data = shift;
+    my $dictionary = builddict $data;
+    countuses $dictionary, $data;
+    $dictionary = [ grep { $_->{refcount} > 3 } @$dictionary ];
+    assignkeys $dictionary, $data;
+    my ($cdict, $dictlen) = composedict $dictionary;
+    my ($cdata, $datalen) = composedata $dictionary, $data;
+    return pack("vv", $dictlen, $datalen) . $cdict . $cdata;
+}
+
+sub expand($)
+{
+    my $data = shift;
+
+    my $tablesize = unpack "v", substr $data, 0, 2, "";
+    my $datasize = unpack "v", substr $data, 0, 2, "";
+
+    my @data = map { ord } split //, $data;
+    my @table;
+
+    for (my $n = 0 ; $n < $tablesize ; ++$n) {
+	return ::err "@{[$tablesize - $n]} entries missing"
+	    unless @data;
+	my $key = shift @data;
+	my $val1 = shift @data;
+	my $val2 = shift @data;
+	if (defined $table[$val1]) {
+	    $val1 = $table[$val1];
+	} else {
+	    $val1 = chr $val1;
+	}
+	if (defined $table[$val2]) {
+	    $val2 = $table[$val2];
+	} else {
+	    $val2 = chr $val2;
+	}
+	$table[$key] = "$val1$val2";
+    }
+
+    $data = "";
+    foreach my $byte (@data) {
+	if (defined $table[$byte]) {
+	    $data .= $table[$byte];
+	} else {
+	    $data .= chr $byte;
+	}
+    }
+
+    return $data;
+}
+
+sub parsemap($$)
+{
+    my $level = shift;
+    my @data = map { ord } split //, shift;
+
+    return ::err "@{[1024 - @data]} bytes missing from map data"
+	unless @data == 1024;
+    $level->{chips} = 0;
+    foreach my $y (0 .. 31) {
+	foreach my $x (0 .. 31) {
+	    my $obj = shift @data;
+	    ::err "undefined object $obj at ($x $y)"
+		unless defined $objectkey[$obj];
+	    $level->{map}[$y][$x][0] = $objectkey[$obj];
+	    $level->{map}[$y][$x][1] = 0;
+	    ++$level->{chips} if $obj == 0x23;
+	}
+    }
+
+    return 1;
+}
+
+sub parsecrlist($$)
+{
+    my $level = shift;
+    my $data = shift;
+
+    my @t = map { ord } split //, substr $data, 0, 128, "";
+    my @x = map { ord } split //, substr $data, 0, 128, "";
+    my @y = map { ord } split //, substr $data, 0, 128, "";
+
+    foreach my $n (0 .. 127) {
+	next unless $t[$n];
+	my $x = $x[$n] >> 3;
+	my $y = $y[$n] >> 3;
+	my $t = $creaturekey[$t[$n] & 0x7F];
+	push @{$level->{creatures}}, [ $y, $x ]; # unless $t[$n] & 0x80;
+	$level->{map}[$y][$x][1] = $level->{map}[$y][$x][0];
+	$level->{map}[$y][$x][0] = $t;
+    }
+
+    return 1;
+}
+
+sub parselevel($)
+{
+    my $data = shift;
+    my $level = { };
+
+    $data = expand $data or return ::err "invalid data";
+
+    local $_;
+    $_ = substr $data, 0, 1024, "";
+    parsemap $level, $_
+	or return ::err "invalid map";
+    $_ = substr $data, 0, 384, "";
+    parsecrlist $level, $_
+	or return ::err "invalid creature list";
+    $level->{creatures} = ::makedatcrlist $level->{map},
+					  $level->{lynxcreatures};
+    $level->{traps} = txtfile::buildtraplist $level->{map};
+    $level->{cloners} = txtfile::buildclonerlist $level->{map};
+
+    $level->{leveltime} = unpack "v", substr $data, 0, 2, "";
+
+    $data = join "", map { $textkey[ord] } split //, $data;
+    $data =~ s/\A([^\n]+)\n//;
+    $level->{title} = $1;
+    $data =~ s/\n+\Z//;
+    if (length $data) {
+	$data =~ tr/\n/ /s;
+	$level->{hint} = $data;
+    }
+
+    return $level;
+}
+
+sub readmsdos($)
+{
+    my $dirname = shift;
+    my $data = { ruleset => "lynx" };
+
+    foreach my $n (0 .. $#levelfilenames) {
+	$filename = "$dirname/$levelfilenames[$n]";
+	$filelevel = $n + 1;
+	next unless -e $filename;
+	open FILE, "< $filename" or return ::err $!;
+	binmode FILE;
+	my $level = parselevel join "", <FILE>;
+	close FILE;
+	return unless defined $level;
+	$level->{number} = $n + 1;
+	$level->{passwd} = $origpasswords[$n];
+	push @{$data->{levels}}, $level;
+    }
+
+    return $data;
+}
+
+sub readrom($)
+{
+    my $input = shift;
+    my $data = { ruleset => "lynx" };
+
+    my $buf = ::fileread $input, "a20" or return;
+    return ::err "invalid ROM file"
+	unless $buf eq "LYNX\000\002\000\000\001\000chipchal.l";
+
+    my @levels;
+    sysseek $input, 0x02F0, 0 or return ::err $!;
+    for (my $n = 0 ; $n < 150 ; ++$n) {
+	my @rec = ::fileread $input, "C4vv" or return;
+	$levels[$n][0] = (($rec[0] << 9) | $rec[1]
+					 | (($rec[2] & 0x01) << 8)) + 0x40;
+	$levels[$n][1] = $rec[5];
+    }
+
+    for (my $n = 0 ; $n < 150 ; ++$n) {
+	$filelevel = $n + 1;
+	$buf = sysseek $input, $levels[$n][0], 0 or return ::err $!;
+	$buf = ::fileread $input, "a$levels[$n][1]" or return;
+	next if $levels[$n][1] == 5 && $buf eq "\000\000\001\000\377";
+	my $level = parselevel $buf;
+	return unless defined $level;
+	$level->{number} = $n + 1;
+	$level->{passwd} = $origpasswords[$n];
+	push @{$data->{levels}}, $level;
+    }
+
+    return $data;
+}
+
+#
+#
+#
+
+sub translatetext($;$)
+{
+    my $in = shift;
+    my $multiline = shift || 0;
+
+    my $out = "";
+    my ($x, $y) = (0, 0);
+    my $brk = [ undef ];
+
+    foreach my $char (split //, $in) {
+	if ($char eq "\n") {
+	    ++$y;
+	    $x = -1;
+	    $brk = [ undef ];
+	} elsif ($x >= 19) {
+	    if (!$multiline || $y >= 6) {
+		::err "truncated text";
+		substr($out, 17 - $x) = "" if $y >= 6 && $x >= 19;
+		last;
+	    }
+	    if ($brk->[0]) {
+		$x -= $brk->[0];
+		substr($out, $brk->[1], 1) = "\0";
+	    } else {
+		$x = -1;
+		$out .= "\0";
+	    }
+	    ++$y;
+	    $brk = [ undef ];
+	} elsif ($char eq " ") {
+	    $brk = [ $x, length $out ];
+	}
+	$out .= $textkey{uc $char};
+	++$x;
+    }
+
+    return $out;
+}
+
+sub mklevelmap($)
+{
+    my $level = shift;
+    my $out = "";
+    my $chips = 0;
+
+    for (my $y = 0 ; $y < 32 ; ++$y) {
+	for (my $x = 0 ; $x < 32 ; ++$x) {
+	    my $obj;
+	    my $top = $level->{map}[$y][$x][0];
+	    my $bot = $level->{map}[$y][$x][1];
+	    if (::iscreature $top || ::ischip $top || ::isblock $top) {
+		$obj = $bot;
+		if (::iscreature $obj || ::isblock $obj || ::ischip $obj) {
+		    ::err "ignoring buried creature";
+		    $obj = 0;
+		}
+	    } else {
+		::err "ignoring buried object" if $bot;
+		$obj = $top;
+	    }
+	    if ($obj == $tilenames{"computer chip"}) {
+		$obj = $chips < $level->{chips} ? 0x23 : 0x31;
+		++$chips;
+	    } else {
+		$obj = $objectkey{$obj};
+		unless (defined $obj) {
+		    ::err "ignoring non-Lynx object";
+		    $obj = 0;
+		}
+	    }
+	    $out .= chr $obj;
+	}
+    }
+
+    ::err "chips needed was reduced" if $chips < $level->{chips};
+
+    return $out;
+}
+
+sub mklevelcrlist($)
+{
+    my $level = shift;
+    my @listed;
+    my @crlist;
+
+    return ::err "invalid creature list: $level->{lynxcreatures}"
+	unless ref $level->{lynxcreatures};
+
+    my ($types, $xs, $ys) = ("", "", "");
+    foreach my $creature (@{$level->{lynxcreatures}}) {
+	my $y = $creature->[0];
+	my $x = $creature->[1];
+	my $type = $level->{map}[$y][$x][0];
+	$type = $creaturekey{$type};
+	unless (defined $type) {
+	    ::err "ignoring non-Lynx creature in creature list";
+	    next;
+	}
+	$type |= 0x80 if $creature->[2] < 0;
+	$y <<= 3;
+	$x <<= 3;
+	++$y, ++$x if $creature->[2] == 0;
+	$types .= chr $type;
+	$xs .= chr $x;
+	$ys .= chr $y;
+    }
+
+    return pack "a128 a128 a128", $types, $xs, $ys;
+}
+
+sub mkleveldata($)
+{
+    my $level = shift;
+    my $out = "";
+    my $part;
+
+    $part = mklevelmap $level;
+    return unless defined $part;
+    $out .= $part;
+
+    $part = mklevelcrlist $level;
+    return unless defined $part;
+    $out .= $part;
+
+    $out .= pack "v", $level->{leveltime};
+
+    $part = translatetext $level->{title};
+    return unless defined $part;
+    $out .= "$part\0";
+
+    if (exists $level->{hint}) {
+	$part = translatetext $level->{hint}, 1;
+	return unless defined $part;
+	$out .= "$part\0";
+    }
+
+    $out .= "\0";
+
+    return compress $out;
+}
+
+sub writemsdos($$)
+{
+    my $dirname = shift;
+    my $data = shift;
+
+    ::err "warning: storing an MS-ruleset level set in a Lynx-only file format"
+	unless $data->{ruleset} eq "lynx";
+
+    foreach my $level (@{$data->{levels}}) {
+	$filename = $dirname;
+	$filelevel = undef;
+	if ($level->{number} >= @levelfilenames) {
+	    ::err "ignoring level $level->{number}, number too high";
+	    next;
+	} elsif ($level->{number} < 1) {
+	    ::err "ignoring level $level->{number}, number invalid";
+	    next;
+	}
+	$filename = "$dirname/$levelfilenames[$level->{number} - 1]";
+	$filelevel = $level->{number};
+	::err "ignoring password"
+	    if $level->{passwd} ne $origpasswords[$level->{number} - 1];
+	open FILE, "> $filename" or return ::err $!;
+	binmode FILE;
+	my $out = mkleveldata $level or return;
+	print FILE $out or return ::err $!;
+	close FILE or return ::err $!;
+    }
+
+    return 1;
+}
+
+sub writerom($$)
+{
+    my $file = shift;
+    my $data = shift;
+
+    ::err "warning: storing an MS-ruleset level set in a Lynx-only file format"
+	unless $data->{ruleset} eq "lynx";
+
+    my $buf = ::fileread $file, "a22" or return;
+    return ::err "invalid ROM file"
+	unless $buf eq "LYNX\000\002\000\000\001\000chipchal.lyx";
+
+    sysseek $file, 0x02F0, 0 or return ::err $!;
+    my @ptr = ::fileread $file, "C4" or return ::err $!;
+    my $startpos = (($ptr[0] << 9) | $ptr[1] | (($ptr[2] & 0x01) << 8));
+
+    my @levellist;
+    my $dropped;
+    foreach my $level (@{$data->{levels}}) {
+	my $n = $level->{number};
+	$filelevel = $n;
+	if ($n < 1) {
+	    ::err "ignoring invalid-numbered level $n";
+	} elsif ($n > 149) {
+	    ++$dropped;
+	} elsif (defined $levellist[$n]) {
+	    ::err "ignoring duplicate level $n";
+	} else {
+	    ::err "ignoring password"
+		if $level->{passwd} ne $origpasswords[$n - 1];
+	    $levellist[$n] = mkleveldata $level;
+	    return unless defined $levellist[$n];
+	}
+    }
+    ::err "ignored $dropped level(s) above level 149" if $dropped;
+
+    my $levels = "";
+    my $index = "";
+    my $ptr = $startpos;
+    for (my $n = 1 ; $n <= 149 ; ++$n) {
+	my $size;
+	if ($levellist[$n]) {
+	    $levels .= $levellist[$n];
+	    $size = length $levellist[$n];
+	} else {
+	    $levels .= "\000\000\001\000\377";
+	    $size = 5;
+	}
+	$index .= pack "C4vv", ($ptr >> 9), ($ptr & 0xFF),
+			       (($ptr >> 8) & 0x01), 0, 0, $size;
+	$ptr += $size;
+    }
+    $levels .= "\000\000\001\000\377";
+    $index .= pack "C4vv", ($ptr >> 9), ($ptr & 0xFF),
+			   (($ptr >> 8) & 0x01), 0, 0, 5;
+
+    return ::err "too much data; cannot fit inside the ROM file"
+	if length $levels > 0x11D00;
+
+    sysseek $file, 0x02F0, 0 or return ::err $!;
+    syswrite $file, $index or return ::err $!;
+    sysseek $file, $startpos + 0x40, 0 or return ::err $!;
+    syswrite $file, $levels or return ::err $!;
+
+    return 1;
+}
+
+#
+#
+#
+
+package cudfile;
+
+# The terse names used by the universal-dump file format.
+#
+my @shortnames = ("empty",		# 0x00
+		  "wall",		# 0x01
+		  "ic_chip",		# 0x02
+		  "water",		# 0x03
+		  "fire",		# 0x04
+		  "inv_wall_per",	# 0x05
+		  "wall_N",		# 0x06
+		  "wall_W",		# 0x07
+		  "wall_S",		# 0x08
+		  "wall_E",		# 0x09
+		  "block",		# 0x0A
+		  "dirt",		# 0x0B
+		  "ice",		# 0x0C
+		  "force_S",		# 0x0D
+		  "block_N",		# 0x0E
+		  "block_W",		# 0x0F
+		  "block_S",		# 0x10
+		  "block_E",		# 0x11
+		  "force_N",		# 0x12
+		  "force_E",		# 0x13
+		  "force_W",		# 0x14
+		  "exit",		# 0x15
+		  "blue_door",		# 0x16
+		  "red_door",		# 0x17
+		  "green_door",		# 0x18
+		  "yellow_door",	# 0x19
+		  "ice_turn_SE",	# 0x1A
+		  "ice_turn_SW",	# 0x1B
+		  "ice_turn_NW",	# 0x1C
+		  "ice_turn_NE",	# 0x1D
+		  "blue_floor",		# 0x1E
+		  "blue_wall",		# 0x1F
+		  "overlay",		# 0x20
+		  "thief",		# 0x21
+		  "socket",		# 0x22
+		  "green_button",	# 0x23
+		  "red_button",		# 0x24
+		  "toggle_close",	# 0x25
+		  "toggle_open",	# 0x26
+		  "brown_button",	# 0x27
+		  "blue_button",	# 0x28
+		  "teleport",		# 0x29
+		  "bomb",		# 0x2A
+		  "trap",		# 0x2B
+		  "inv_wall_tmp",	# 0x2C
+		  "gravel",		# 0x2D
+		  "popup_wall",		# 0x2E
+		  "hint_button",	# 0x2F
+		  "wall_SE",		# 0x30
+		  "cloner",		# 0x31
+		  "force_any",		# 0x32
+		  "chip_drowned",	# 0x33
+		  "chip_burned",	# 0x34
+		  "chip_bombed",	# 0x35
+		  "unused_1",		# 0x36
+		  "unused_2",		# 0x37
+		  "unused_3",		# 0x38
+		  "chip_exiting",	# 0x39
+		  "exit_1",		# 0x3A
+		  "exit_2",		# 0x3B
+		  "chip_swim_N",	# 0x3C
+		  "chip_swim_W",	# 0x3D
+		  "chip_swim_S",	# 0x3E
+		  "chip_swim_E",	# 0x3F
+		  "bug_N",		# 0x40
+		  "bug_W",		# 0x41
+		  "bug_S",		# 0x42
+		  "bug_E",		# 0x43
+		  "fireball_N",		# 0x44
+		  "fireball_W",		# 0x45
+		  "fireball_S",		# 0x46
+		  "fireball_E",		# 0x47
+		  "ball_N",		# 0x48
+		  "ball_W",		# 0x49
+		  "ball_S",		# 0x4A
+		  "ball_E",		# 0x4B
+		  "tank_N",		# 0x4C
+		  "tank_W",		# 0x4D
+		  "tank_S",		# 0x4E
+		  "tank_E",		# 0x4F
+		  "glider_N",		# 0x50
+		  "glider_W",		# 0x51
+		  "glider_S",		# 0x52
+		  "glider_E",		# 0x53
+		  "teeth_N",		# 0x54
+		  "teeth_W",		# 0x55
+		  "teeth_S",		# 0x56
+		  "teeth_E",		# 0x57
+		  "walker_N",		# 0x58
+		  "walker_W",		# 0x59
+		  "walker_S",		# 0x5A
+		  "walker_E",		# 0x5B
+		  "blob_N",		# 0x5C
+		  "blob_W",		# 0x5D
+		  "blob_S",		# 0x5E
+		  "blob_E",		# 0x5F
+		  "centipede_N",	# 0x60
+		  "centipede_W",	# 0x61
+		  "centipede_S",	# 0x62
+		  "centipede_E",	# 0x63
+		  "blue_key",		# 0x64
+		  "red_key",		# 0x65
+		  "green_key",		# 0x66
+		  "yellow_key",		# 0x67
+		  "water_boots",	# 0x68
+		  "fire_boots",		# 0x69
+		  "ice_boots",		# 0x6A
+		  "force_boots",	# 0x6B
+		  "chip_N",		# 0x6C
+		  "chip_W",		# 0x6D
+		  "chip_S",		# 0x6E
+		  "chip_E"		# 0x6F
+);
+for (0x70 .. 0xFF) { $shortnames[$_] = sprintf "tile_%02X", $_ }
+
+sub write($$)
+{
+    my $output = shift;
+    my $data = shift;
+    my $list;
+
+    print $output "BEGIN CUD 1 ruleset $data->{ruleset}\n\n" or return;
+
+    foreach my $level (@{$data->{levels}}) {
+	printf $output "%03d chips %d\n", $level->{number}, $level->{chips}
+	    or return;
+	printf $output "%03d time %d\n", $level->{number}, $level->{leveltime}
+	    or return;
+	printf $output "%03d passwd %s\n", $level->{number}, $level->{passwd}
+	    or return;
+	printf $output "%03d title:%s\n", $level->{number},
+					  ::escape $level->{title}
+	    or return;
+	printf $output "%03d hint", $level->{number} or return;
+	print $output ":", ::escape $level->{hint} or return
+	    if exists $level->{hint};
+	print $output "\n" or return;
+
+	my @notes;
+	$list = $level->{traps};
+	foreach my $i (0 .. $#$list) {
+	    $notes[$list->[$i]{from}[0]][$list->[$i]{from}[1]]{tfr} = $i + 1;
+	    $notes[$list->[$i]{to}[0]][$list->[$i]{to}[1]]{tto} = $i + 1;
+	}
+	$list = $level->{cloners};
+	foreach my $i (0 .. $#$list) {
+	    $notes[$list->[$i]{from}[0]][$list->[$i]{from}[1]]{cfr} = $i + 1;
+	    $notes[$list->[$i]{to}[0]][$list->[$i]{to}[1]]{cto} = $i + 1;
+	}
+	$list = $level->{creatures};
+	foreach my $i (0 .. $#$list) {
+	    $notes[$list->[$i][0]][$list->[$i][1]]{crl} = $i + 1;
+	}
+
+	foreach my $y (0 .. 31) {
+	    foreach my $x (0 .. 31) {
+		next if $level->{map}[$y][$x][0] == 0
+		     && $level->{map}[$y][$x][1] == 0
+		     && !defined $notes[$y][$x];
+		printf $output "%03d (%02d %02d) ", $level->{number}, $x, $y
+		    or return;
+		printf $output "%-12.12s %-12.12s ",
+			       $shortnames[$level->{map}[$y][$x][0]],
+			       $shortnames[$level->{map}[$y][$x][1]]
+		    or return;
+		printf $output " Tfr=%-2.2s", $notes[$y][$x]{tfr} or return
+		    if exists $notes[$y][$x]{tfr};
+		printf $output " Tto=%-2.2s", $notes[$y][$x]{tto} or return
+		    if exists $notes[$y][$x]{tto};
+		printf $output " Cfr=%-2.2s", $notes[$y][$x]{cfr} or return
+		    if exists $notes[$y][$x]{cfr};
+		printf $output " Cto=%-2.2s", $notes[$y][$x]{cto} or return
+		    if exists $notes[$y][$x]{cto};
+		printf $output " CL=%-3.3s", $notes[$y][$x]{crl} or return
+		    if exists $notes[$y][$x]{crl};
+		printf $output "\n" or return;
+	    }
+	}
+	printf $output "\n" or return;
+    }
+
+    print $output "END\n" or return;
+
+    return 1;
+}
+
+#
+#
+#
+
+package main;
+
+use constant yowzitch => <<EOT;
+Usage: c4 [-INTYPE] INFILE [-OUTTYPE] OUTFILE
+
+The type switches can be omitted if the file's type can be inferred
+directly. Available types:
+
+    -D     Microsoft data file (*.dat)
+    -T     textual source file (*.txt)
+    -R     Lynx ROM file (*.lnx, *.lyx)
+    -P     MS-DOS fileset (directory of *.pak files)
+    -U     Chip's universal dump file (*.cud) [write-only]
+EOT
+use constant vourzhon => "1.0\n";
+
+my ($infile, $outfile);
+my ($intype, $outtype);
+
+sub deducetype($)
+{
+    local $_ = shift;
+    if (-d $_) {
+	return "P";
+    } elsif (/\.dat$/) {
+	return "D";
+    } elsif (/\.txt$/ || /^-$/) {
+	return "T";
+    } elsif (/\.lnx$/ || /\.lyx$/) {
+	return "R";
+    } elsif (/\.cud$/) {
+	return "U";
+    }
+    return;
+}
+
+sub findfiletype($)
+{
+    open FILE, shift or return;
+    local $_;
+    sysread FILE, $_, 16 or return;
+    close FILE;
+    return "D" if /\A\xAC\xAA\x02/;
+    return "R" if /\ALYNX\0/;
+    return "T" if /\A\s*(rul|til|max|%%%)/;
+    return;
+}
+
+die yowzitch unless @ARGV;
+print yowzitch and exit if $ARGV[0] =~ /^--?(h(elp)?|\?)$/;
+print vourzhon and exit if $ARGV[0] =~ /^--?[Vv](ersion)?$/;
+
+$infile = shift;
+if ($infile =~ /^-([A-Za-z])$/) {
+    $intype = uc $1;
+    $infile = shift;
+}
+die yowzitch unless @ARGV;
+$outfile = shift;
+if ($outfile =~ /^-([A-Za-z])$/) {
+    $outtype = uc $1;
+    $outfile = shift;
+}
+die yowzitch unless defined $infile && defined $outfile && @ARGV == 0;
+
+$intype ||= deducetype $infile;
+$outtype ||= deducetype $outfile;
+die "$outfile: file type unspecified\n" unless $outtype;
+$intype = findfiletype $infile if !defined $intype && -f $infile;
+die "$infile: file type unspecified\n" unless $intype;
+
+my $data;
+
+$filename = $infile;
+if ($intype eq "D") {
+    open FILE, "< $infile" or die "$infile: $!\n";
+    binmode FILE;
+    $data = datfile::read \*FILE or exit 1;
+    close FILE;
+} elsif ($intype eq "T") {
+    open FILE, "< $infile" or die "$infile: $!\n";
+    $data = txtfile::read \*FILE or exit 1;
+    close FILE;
+} elsif ($intype eq "P") {
+    $data = lynxfmt::readmsdos $infile or exit 1;
+} elsif ($intype eq "R") {
+    open FILE, "< $infile" or die "$infile: $!\n";
+    binmode FILE;
+    $data = lynxfmt::readrom \*FILE or exit 1;
+    close FILE;
+} elsif ($intype eq "U") {
+    die "File type -U is a write-only file format.\n";
+} else {
+    die "Unknown file type option -$intype.\n";
+}
+
+undef $filename;
+undef $filelevel;
+undef $filepos;
+
+$filename = $outfile;
+
+if ($outtype eq "D") {
+    open FILE, "> $outfile" or die "$outfile: $!\n";
+    binmode FILE;
+    datfile::write \*FILE, $data or die "$outfile: $!\n";
+    close FILE or die "$outfile: $!\n";
+} elsif ($outtype eq "T") {
+    open FILE, "> $outfile" or die "$outfile: $!\n";
+    txtfile::write \*FILE, $data or die "$outfile: $!\n";
+    close FILE or die "$outfile: $!\n";
+} elsif ($outtype eq "P") {
+    lynxfmt::writemsdos $outfile, $data or exit 1;
+} elsif ($outtype eq "R") {
+    open FILE, "+< $outfile" or die "$outfile: $!\n";
+    binmode FILE;
+    lynxfmt::writerom \*FILE, $data or die "$outfile: $!\n";
+    close FILE or die "$outfile: $!\n";
+} elsif ($outtype eq "U") {
+    open FILE, "> $outfile" or die "$outfile: $!\n";
+    cudfile::write \*FILE, $data or die "$outfile: $!\n";
+    close FILE or die "$outfile: $!\n";
+} else {
+    die "Unknown file type option -$outtype.\n";
+}
+
+#
+# The documentation
+#
+
+=head1 NAME
+
+c4 - Chip's Challenge combined converter
+
+=head1 SYNOPSIS
+
+    c4 [-INTYPE] INFILENAME [-OUTTYPE] OUTFILENAME
+
+c4 allows one to translate between the several different types of
+files used to represent level sets for the game Chip's Challenge.
+
+c4 expects there to be two files named on the command-line. c4 reads
+the levels stored in the first file, and then writes the levels out to
+the second file. The format to use with each file usually can be
+inferred by c4 by examining the filenames. If not, then it may be
+necessary to use switches before one or both filenames to indicate
+their type.
+
+There are four different types of files that c4 understands.
+
+    -D     MS data file (*.dat).
+
+This is the file type used by Chip's Challenge for Microsoft Windows
+3.x. It is the file type used by most other programs, such as ChipEdit
+and Tile World.
+
+    -R     Lynx ROM file (*.lnx, *.lyx)
+
+This "file type" is actually just a ROM image of the original Chip's
+Challenge for the Atari Lynx handheld. It is used by Lynx emulators
+such as Handy.
+
+    -P     MS-DOS fileset (directory of *.pak files)
+
+This is the format used by the MS-DOS port of Chip's Challenge. In
+this case, the filename given on the command line actually names a
+directory, containing *.pak files.
+
+    -T     textual source file (*.txt)
+
+This file type is native to c4. It is a plain text file, which allows
+levels to be defined pictorially using a simple text editor. A
+complete description of the syntax of these files is provided below.
+
+=head1 EXAMPLES
+
+    c4 mylevels.txt mylevels.dat
+
+Create a .dat file from a textual source file.
+
+    c4 -P levels -D doslevels.dat
+
+"levels" is a directory of MS-DOS *.pak files. c4 translates the
+directory contents into a single .dat file. Note that the switches in
+this example are optional, as c4 would be able to infer the desired
+formats.
+
+    c4 mylevels.dat chipsch.lnx
+
+Embed the levels from the .dat file into a Lynx ROM file. Note that c4
+does NOT create chipsch.lnx. You must provide the ROM image file,
+which c4 then alters to contain your levels. (Obviously, you should
+not use this command on your master copy of the ROM file.)
+
+    c4 chipsch.lnx -T out
+
+Output the levels in the .dat file as a text file. Here the -T switch
+is needed to indicate that a text file is the desired output format.
+
+When producing a text file, c4 will attempt to produce legible source,
+but the results will often not be as good as what a human being would
+produce. (In particular, c4 cannot draw overlays.)
+
+=head1 NOTES
+
+Be aware that there can be various problems when translating a set of
+levels using the MS ruleset to one of the Lynx-only file formats.
+There are numerous objects and configurations in the MS ruleset which
+cannot be represented in the Lynx ruleset. Usually c4 will display a
+warning when some aspect of the data could not be transferred intact
+because of this.
+
+The remainder of this documentation describes the syntax of the
+textual source file format.
+
+=head1 LAYOUT OF THE INPUT FILE
+
+The source file is broken up into subsections. Each subsection defines
+a separate level in the set.
+
+The subsections are separated from each other by a line containing
+three percent signs:
+
+    %%%
+
+A line of three percent signs also comes before the first level and
+after the last level, at the end of the source file.
+
+Any other line that begins with a percent sign is treated as a
+comment, and its contents are ignored.
+
+Beyond these things, the source file consists of statements.
+Statements generally appear as a single line of text. Some statements,
+however, require multiple lines. These multi-line statements are
+terminated with the word B<end> appearing alone on a line.
+
+=head1 INPUT FILE HEADER STATEMENTS
+
+There are a couple of statements that can appear at the very top of
+the source file, before the first level subsection.
+
+    ruleset [ lynx | ms ]
+
+The B<ruleset> statement is the most important of these. It defines
+the ruleset for the level set. If the B<ruleset> statment is absent,
+it defaults to B<lynx>.
+
+    maxlevel NNN
+
+The B<maxlevel> statement specifies the number of the last level in
+the .dat file. By default, this value is provided automatically and
+does not need to be specified.
+
+In addition to the above, a set of tile definitions can appear in the
+header area. See below for a full description of the B<tiles>
+multi-line statement. Any tile definitions provided here remain in
+force throughout the file.
+
+=head1 INPUT FILE LEVEL STATEMENTS
+
+Within each level's subsection, the following two statments will
+usually appear at the top.
+
+    title STRING
+    password PASS
+
+The B<title> statement supplies the level's title, or name. The title
+string can be surrounded by double quotes, or unadorned. The
+B<password> statement supplies the level's password. This password
+must consist of exactly four uppercase alphabetic characters.
+
+If the level's number is 150 or less, the B<password> statement may be
+omitted. In that case the level's password will default to match that
+level in the original Lynx set. (N.B.: The Lynx ROM file format does
+not provide a mechanism for setting passwords, so in that case the
+default password will be used regardless.)
+
+The following statements may also appear in a level subsection.
+
+    chips NNN
+
+The B<chips> statement defines how many chips are required on this
+level to open the chip socket. The default value is zero.
+
+    time NNN
+
+The B<time> statement defines how many seconds are on the level's
+clock. The default value is zero (i.e., no time limit).
+
+    hint STRING
+
+The B<hint> statement defines the level's hint text. As with the
+B<title> statement, the string can either be unadorned or delimited
+with double quotes. If a section contains multiple B<hint> statements,
+the texts are appended together, e.g.:
+
+    hint This is a relatively long hint, and so it
+    hint is helpful to be able to break it up across
+    hint several lines.
+
+Note that the same can be done with B<title> statements.
+
+    tiles
+    DEF1
+    DEF2
+    ...
+    end
+
+The B<tiles> multi-line statement introduces one or more tile
+definitions. The definitions appear one per line, until a line
+containing B<end> is found. Note that the tile definitions given here
+only apply to the current level. A complete description of tile
+definitions is given below.
+
+    map [ X Y ]    map [ X Y ]
+    LINE1	   LINE1
+    LINE2	   LINE2
+    ...		   ...
+    and		   end
+    OVER1
+    OVER2
+    ...
+    end
+
+The B<map> statement defines the actual contents of (part of) the
+level's map. The line containing the B<map> statement can optionally
+include a pair of coordinates; these coordinates indicate where the
+the section will be located on the level's map. If coordinates are
+omitted, the defined section will be located at (0 0) -- i.e., the
+upper-left corner of the level. The lines inside the B<map> statement
+pictorially define the contents of the map section, until a line
+containing B<and> or B<end> is encountered. When the map is terminated
+by B<and>, then the lines defining the map section are immediately
+followed by lines defining an overlay. The overlay uses the same
+origin as the map section (though it is permissible for the overlay to
+be smaller than the map section it is paired with). A complete
+description of the map and overlay sections is given below.
+
+    border TL
+
+The B<border> statement specifies a tile. The edges of the map are
+then changed to contain this tile. Typically this is used to enclose
+the level in walls.
+
+The following statements are also available, though they are usually
+not needed. They provide means for explicitly defining level data, for
+the occasional situation where the usual methods are more cumbersome.
+
+    creatures X1 Y1 ; X2 Y2 ...
+
+The B<creatures> statements permits explicit naming of the coordinates
+in the creature list. Pairs of coordinates are separated from each
+other by semicolons; any number of coordinate pairs can be specified.
+There can be multiple B<creatures> statements in a level's subsection.
+
+    traps P1 Q1 -> R1 S1 ; P2 Q2 -> R2 S2 ...
+
+The B<traps> statement permits explicit naming of the coordinates for
+elements in the bear trap list. Coordinates are given in one or more
+groups of four, separated by semicolons. Each group consists of the x-
+and y-coordinates of the brown button, an arrow (->), and then the x-
+and y-coordinates of the bear trap. Any number of B<traps> statements
+can appear in a level's subsection.
+
+    cloners P1 Q1 -> R1 S1 ; P2 Q2 -> R2 S2 ...
+
+The B<cloners> statement permits explicit naming of elements in the
+clone machine list. It uses the same syntax as the B<traps> statment,
+with the red button's coordinates preceding the coordinates of the
+clone machine.
+
+    level NNN
+
+The B<level> statement defines the level's number. By default it is
+one more than the number of the prior level.
+
+    field NN B01 B02 ...
+
+The B<field> statement allows fields to be directly specified and
+embedded in the .dat file. The first argument specifies the field
+number; the remaining arguments provide the byte values for the actual
+field data. These statements are only meaningful in conjunction with
+producing a .dat file.
+
+=head1 DEFINING TILES
+
+A tile definition consists of two parts. The first part is either one
+or two characters. The characters can be letters, numbers, punctuation
+-- anything except spaces. The second part is the name of a tile or a
+pair of tiles. The characters then become that tile's representation.
+
+Here is an example of some tile definitions:
+
+    tiles
+    #       wall
+    *       teleport
+    rb      red button
+    @       chip south
+    end
+
+(Note that a single tab character comes after the characters and
+before the tile names.) Once these definitions have been provided, the
+newly-defined characters can then be used in a map.
+
+The above definitions all use singular tiles. To define a pair of
+tiles, combine the two names with a plus sign, like so:
+
+    tiles
+    X       block + bomb
+    G       glider north + clone machine
+    end
+
+Notice that the top tile is named first, then the bottom tile.
+
+The B<tiles> statement is the only statement that can appear in the
+header, as well as in a level's subsection. Tile definitions in the
+header are global, and can be used in every subsection. Tile
+definitions inside a subsection are local, and apply only to that
+level.
+
+A number of tile definitions are pre-set ahead of time, supplying
+standard representations for some of the most common tiles. (If these
+representations are not desired, the characters can always be
+redefined.) Here are some of the built-in definitions:
+
+    #       wall                  $       computer chip
+    ,       water                 H       socket
+    =       ice                   E       exit
+    &       fire                  []      block
+    6       bomb                  ?       hint button
+
+See below for the complete list of tile names and built-in
+definitions.
+
+A few groups tiles allow one to specify multiple definitions in a
+single line. For example:
+
+    tiles
+    G       glider
+    end
+
+This one definition is equivalent to the following:
+
+    tiles
+    Gn      glider north
+    Gs      glider south
+    Ge      glider east
+    Gw      glider west
+    end
+
+(Note that "G" by itself is still undefined.) All creatures, including
+Chip, can be defined using this abbreviated form.
+
+Doors and keys are the other groups that have this feature; the
+following definition:
+
+    tiles
+    D       door
+    end
+
+is equivalent to:
+
+    tiles
+    Dr      red door
+    Db      blue door
+    Dy      yellow door
+    Dg      green door
+    end
+
+=head1 MAP SECTIONS
+
+Once all the needed tiles have defined representations, using the map
+statement is a simple matter. Here is an example:
+
+    map
+    # # # # # #
+    # &     & # # #
+        []    H E #
+    # &     $ # # #
+    # # # # # #
+    end
+
+This is a map of a small room. A block stands in the way of the
+entrance. Three of the four corners contain fire; the fourth contains
+a chip. On the east wall is an exit guarded by a chip socket.
+
+Note that each cell in the map is two characters wide. (Thus, for
+example, the octothorpes describe a solid wall around the room.)
+
+Here is a larger example, which presents the map from LESSON 2:
+
+    tiles
+    B       bug north
+    C       chip south
+    end
+
+    map 7 7
+        # # # # # # #
+        #     $     #
+        #           #
+        #     #     # # # # # # # # # #
+    # # #     # B     , ,           $ #
+    # E H     # # B   , ,   [][]C ?   #
+    # # #     # B     , ,           $ #
+        #     #     # # # # # # # # # #
+        #           #
+        #     $     #
+        # # # # # # #
+    end
+
+There are a couple of different ways to fill a cell with two tiles.
+The first way is to simply use tile definitions which contains two
+tiles:
+
+    tiles
+    X       block + bomb
+    G       glider east + clone machine
+    end
+
+    map 12 14
+            # #
+          6 E #
+            # # X
+    G
+    end
+
+The second way is to squeeze two representations into a single cell.
+Obviously, this can only be done with both representations are a
+single character.
+
+    tiles
+    [       block
+    G       glider east
+    +       clone machine
+    end
+
+    map 12 14
+            # #
+          6 E #
+            # # [6
+    G+
+    end
+
+In both cases, the top tile always comes before the bottom tile. Note
+that you can "bury" a tile by placing it to the right of a space:
+
+    map
+    # # # # # #
+       6 6 6E #
+    # # # # # #
+    end
+
+Any number of map statements can appear in a level's subsection. The
+map statements will be combined together to make the complete map.
+
+=head1 OVERLAY SECTIONS
+
+Every map statement can optionally include an overlay section. This
+overlay permits button connections and monster ordering to be defined.
+
+The overlay is applied to the same position as the map section it
+accompanies. The overlay can duplicate parts of the map section it
+covers, and any such duplication will be ignored. The only characters
+in the overlay that are significant are the ones that differ from the
+map section it covers. These characters are treated as labels. Labels
+are always a single character; two non-space characters in a cell
+always indicates two separate labels. Any non-space characters can be
+used as labels, as long as they don't match up with the map.
+
+An overlay section defines a button connection by using the same label
+in two (or more) cells. One of the labelled cells will contain either
+a bear trap or a clone machine, and the other will contain the
+appropriate button. If there are more than two cells with the same
+label, all but one should contain a button.
+
+Characters that only appear once in an overlay, on the other hand,
+indicate creatures. The characters then indicate the ordering of the
+creatures in the creature list with respect to each other. The
+ordering of characters is the usual ASCII sequence (e.g., numbers
+first, then capital letters, then lowercase letters).
+
+For example, here is a map with an overlay that demonstrates all three
+of these uses:
+
+    tiles
+    G       glider east
+    +       clone machine
+    r       red button
+    *       beartrap
+    b       brown button
+    end
+
+    map
+    G                           v #
+    G+      *   r   * G+    b &   # r
+    G+    *     r     #           # r
+    # >   b b G             < #   #
+    and
+    2                           v #
+    A       c   C   d C     d &   # A
+    B     a     C     #           # B
+    # >   a c 1             < #   #
+    end
+
+In this example, capitals are used for the clone machine connections,
+lowercase for the bear trap connections, and numbers are used for the
+creature ordering.
+
+(Note that the gliders atop clone machines are not numbered. While it
+is not an error to include clone machine creatures in the ordering,
+they are ignored under the MS ruleset.)
+
+It is not necessary to reproduce any of the map section's text in the
+overlay section. Blanks can be used instead. The ignoring of matching
+text is simply a feature designed to assist the user in keeping the
+overlay's contents properly aligned.
+
+The B<traps>, B<cloners>, and B<creatures> statements can be used in
+lieu of, or in conjunction with, data from overlay sections. In the
+case of the creature list, items are added to the list in the order
+that they are encountered in the source text.
+
+If a level contains no overlay information and none of the above three
+statements, then this information will be filled in automatically. The
+data will be determined by following the original Lynx-based rules --
+viz., buttons are connected to the next beartrap/clone machine in
+reading order, wrapping around to the top if necessary. (Likewise, the
+creature ordering is just the order of the creatures in their initial
+placement, modified by swapping the first creature with Chip.) Thus,
+if you actually want to force an empty bear trap list, clone machine
+list, or creature list, you must include an empty B<traps>,
+B<cloners>, and/or B<creatures> statement.
+
+=head1 TILE NAMES
+
+Here is the complete list of tiles as they are named in definitions.
+Two or more names appearing on the same line indicates that they are
+two different names for the same tile. Note that the tile names are
+not case-sensitive; capitalization is ignored.
+
+    empty
+    wall
+    water
+    fire
+    dirt
+    ice
+    gravel
+    computer chip          ic chip
+    socket
+    exit
+    ice corner southeast   ice se
+    ice corner southwest   ice sw
+    ice corner northwest   ice nw
+    ice corner northeast   ice ne
+    force floor north      force north
+    force floor south      force south
+    force floor east	   force east
+    force floor west	   force west
+    force floor random	   force random		     force any
+    hidden wall permanent  invisible wall permanent
+    hidden wall temporary  invisible wall temporary
+    wall north             partition north
+    wall south		   partition south
+    wall east		   partition east
+    wall west		   partition west
+    wall southeast         partition southeast	     wall se
+    closed toggle wall	   closed toggle door	     toggle closed
+    open toggle wall	   open toggle door	     toggle open
+    blue door		   door blue
+    red door		   door red
+    green door		   door green
+    yellow door		   door yellow
+    blue key		   key blue
+    red key		   key red
+    green key		   key green
+    yellow key		   key yellow
+    blue button		   button blue		     tank button
+    red button		   button red		     clone button
+    green button	   button green		     toggle button
+    brown button	   button brown		     trap button
+    blue block floor	   blue wall fake
+    blue block wall	   blue wall real
+    thief
+    teleport
+    bomb
+    beartrap		   trap
+    popup wall
+    hint button
+    clone machine	   cloner
+    water boots		   water shield		     flippers
+    fire boots		   fire shield
+    ice boots		   spiked shoes		     skates
+    force boots		   magnet		     suction boots
+    block		   moveable block
+    cloning block north	   block north
+    cloning block south	   block south
+    cloning block east	   block east
+    cloning block west	   block west
+    chip north
+    chip south
+    chip east
+    chip west
+    ball north
+    tank north
+    bug north		   bee north
+    paramecium north	   centipede north
+    fireball north	   flame north
+    glider north	   ghost north
+    blob north
+    walker north	   dumbbell north
+    teeth north		   frog north
+
+(The last nine lines, listing the creatures, only show the
+north-facing versions. The remaining 27 names, for the south-, east-,
+and west-facing versions, follow the obvious patttern.)
+
+Note that tile names may be abbreviated to any unique prefix. In
+particular, this permits one to write names like "glider north" as
+simply "glider n".
+
+There are also tile names for the "extra" MS tiles. These tiles are
+listed in parentheses, as an indicator that they were not originally
+intended to be used in maps.
+
+    (combination)
+    (chip drowned)
+    (chip burned)
+    (chip bombed)
+    (unused 1)
+    (unused 2)
+    (unused 3)
+    (exiting)
+    (exit 1)
+    (exit 2)
+    (chip swimming north)  (chip swimming n)
+    (chip swimming west)   (chip swimming w)
+    (chip swimming south)  (chip swimming s)
+    (chip swimming east)   (chip swimming e)
+
+Finally, note that one can also explicitly refer to tiles by their
+hexadecimal byte value under the MS rules by using the "0x" prefix.
+Thus, the names "0x2A" and "bomb" are equivalent.
+
+=head1 PREDEFINED TILE DEFINITIONS
+
+The following is the complete list of built-in tile definitions:
+
+    #       wall                  E       exit
+    $       ic chip               H       socket
+    ,       water                 =       ice
+    &       fire                  6       bomb
+    ;       dirt                  :       gravel
+    ~       wall north            ^       force floor north
+    _       wall south            v       force floor south
+    |       wall west             <       force floor west
+     |      wall east             >       force floor east
+    _|      wall southeast        <>      force floor random
+    ?       hint button           @       chip south
+    []      block                 [       block
+    ^]      cloning block north + clone machine
+    <]      cloning block west + clone machine 
+    v]      cloning block south + clone machine 
+    >]      cloning block east + clone machine
+
+=head1 LICENSE
+
+c4, Copyright (C) 2003-2006 Brian Raiter <breadbox@muppetlabs.com>
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and documentation (the "Software"), to deal in
+the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+=cut
