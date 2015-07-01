@@ -874,15 +874,17 @@ static struct { unsigned char chip, block, creature; } const movelaws[] = {
  * function. CMM_TELEPORTPUSH indicates to the block-pushing logic
  * that Chip is teleporting. This prevents a stack of two blocks from
  * being treated as a single block, and allows Chip to push a slipping
- * block away from him. Finally, CMM_NODEFERBUTTONS causes buttons
- * pressed by pushed blocks to take effect immediately.
+ * block away from him. CMM_NOFIRECHECK causes bugs and walkers to not
+ * avoid fire. Finally, CMM_NODEFERBUTTONS causes buttons pressed by
+ * pushed blocks to take effect immediately.
  */
 #define	CMM_NOLEAVECHECK	0x0001
 #define	CMM_NOEXPOSEWALLS	0x0002
 #define	CMM_CLONECANTBLOCK	0x0004
 #define	CMM_NOPUSHING		0x0008
 #define	CMM_TELEPORTPUSH	0x0010
-#define	CMM_NODEFERBUTTONS	0x0020
+#define	CMM_NOFIRECHECK		0x0020
+#define	CMM_NODEFERBUTTONS	0x0040
 
 /* Move a block at the given position forward in the given direction.
  * FALSE is returned if the block cannot be pushed.
@@ -1024,7 +1026,8 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	if (!(movelaws[floor].creature & dir))
 	    return FALSE;
 	if (floor == Fire && (cr->id == Bug || cr->id == Walker))
-	    return FALSE;
+	    if (!(flags & CMM_NOFIRECHECK))
+		return FALSE;
     }
 
     if (cellat(to)->bot.id == CloneMachine)
@@ -1335,6 +1338,7 @@ static int teleportcreature(creature *cr, int start)
 	cr->pos = dest;
 	f = canmakemove(cr, cr->dir, CMM_NOLEAVECHECK | CMM_NOEXPOSEWALLS
 						      | CMM_NODEFERBUTTONS
+						      | CMM_NOFIRECHECK
 						      | CMM_TELEPORTPUSH);
 	cr->pos = origpos;
 	if (f)
@@ -1811,7 +1815,9 @@ static int checkforending(void)
  * Automatic activities.
  */
 
-/* Execute all forced moves for creatures on the slip list.
+/* Execute all forced moves for creatures on the slip list. (Note the
+ * use of the savedcount variable, which is how slide delay is
+ * implemented.)
  */
 static void floormovements(void)
 {
