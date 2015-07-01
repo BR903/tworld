@@ -271,9 +271,9 @@ int filereadint16(fileinfo *file, unsigned short *val16, char const *msg)
 
     errno = 0;
     if ((byte = fgetc(file->fp)) != EOF) {
-	*val16 = (unsigned char)byte;
+	*val16 = byte & 0xFFU;
 	if ((byte = fgetc(file->fp)) != EOF) {
-	    *val16 |= (unsigned char)byte << 8;
+	    *val16 |= (byte & 0xFFU) << 8;
 	    return TRUE;
 	}
     }
@@ -299,13 +299,13 @@ int filereadint32(fileinfo *file, unsigned long *val32, char const *msg)
 
     errno = 0;
     if ((byte = fgetc(file->fp)) != EOF) {
-	*val32 = (unsigned char)byte;
+	*val32 = byte & 0xFFUL;
 	if ((byte = fgetc(file->fp)) != EOF) {
-	    *val32 |= (unsigned char)byte << 8;
+	    *val32 |= (byte & 0xFFUL) << 8;
 	    if ((byte = fgetc(file->fp)) != EOF) {
-		*val32 |= (unsigned char)byte << 16;
+		*val32 |= (byte & 0xFFUL) << 16;
 		if ((byte = fgetc(file->fp)) != EOF) {
-		    *val32 |= (unsigned char)byte << 24;
+		    *val32 |= (byte & 0xFFUL) << 24;
 		    return TRUE;
 		}
 	    }
