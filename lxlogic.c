@@ -1869,6 +1869,7 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Water) = 0;
 
     resetendgametimer();
+    togglestate() = 0;
     couldntmove() = FALSE;
     chippushing() = FALSE;
     chipstuck() = FALSE;
