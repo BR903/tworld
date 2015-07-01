@@ -107,7 +107,7 @@ end
 % Lynx result: Block alternates between teleports. If Chip walks to a
 % teleport, block will get pushed every time. If Chip walks north of a
 % teleport, Chip and block collide. With delicacy, it is possible to
-% diagonally push the block off a teleport.
+% diagonally push the block off the teleport.
 % TW result: Block slides off of teleport immediately (similar to the
 % behavior of a block starting on an open beartrap).
 

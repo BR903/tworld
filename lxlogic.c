@@ -731,7 +731,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 {
     creature   *other;
     int		leavingmap = FALSE;
-    int		floorfrom, floorto;
+    int		floorfrom, floor;
     int		to, y, x;
 
     _assert(cr);
@@ -751,7 +751,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
     }
 
     floorfrom = floorat(cr->pos);
-    floorto = floorat(to);
+    floor = floorat(to);
 
     if ((floorfrom == Beartrap || floorfrom == CloneMachine)
 					&& !(flags & CMM_RELEASING))
@@ -761,8 +761,8 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	if (getslidedir(floorfrom, FALSE) == back(dir))
 	    return FALSE;
 
-    if (floorto == SwitchWall_Open || floorto == SwitchWall_Closed)
-	floorto ^= togglestate();
+    if (floor == SwitchWall_Open || floor == SwitchWall_Closed)
+	floor ^= togglestate();
 
     if (cr->id == Chip) {
 	if (!(movelaws[floorfrom].chip & DIR_OUT(dir)))
@@ -772,11 +772,11 @@ static int canmakemove(creature const *cr, int dir, int flags)
 		mapbreached() = TRUE;
 	    return TRUE;
 	}
-	if (!(movelaws[floorto].chip & DIR_IN(dir)))
+	if (!(movelaws[floor].chip & DIR_IN(dir)))
 	    return FALSE;
-	if (floorto == Socket && chipsneeded() > 0)
+	if (floor == Socket && chipsneeded() > 0)
 	    return FALSE;
-	if (isdoor(floorto) && !possession(floorto))
+	if (isdoor(floor) && !possession(floor))
 	    return FALSE;
 	if (ismarkedanimated(to))
 	    return FALSE;
@@ -785,7 +785,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    if (!canpushblock(other, dir, flags & ~CMM_RELEASING))
 		return FALSE;
 	}
-	if (floorto == HiddenWall_Temp || floorto == BlueWall_Real) {
+	if (floor == HiddenWall_Temp || floor == BlueWall_Real) {
 	    if (flags & CMM_STARTMOVEMENT)
 		floorat(to) = Wall;
 	    return FALSE;
@@ -800,7 +800,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 		mapbreached() = TRUE;
 	    return TRUE;
 	}
-	if (!(movelaws[floorto].block & DIR_IN(dir)))
+	if (!(movelaws[floor].block & DIR_IN(dir)))
 	    return FALSE;
 	if (islocationclaimed(to))
 	    return FALSE;
@@ -815,11 +815,11 @@ static int canmakemove(creature const *cr, int dir, int flags)
 		mapbreached() = TRUE;
 	    return TRUE;
 	}
-	if (!(movelaws[floorto].creature & DIR_IN(dir)))
+	if (!(movelaws[floor].creature & DIR_IN(dir)))
 	    return FALSE;
 	if (islocationclaimed(to))
 	    return FALSE;
-	if (floorto == Fire && cr->id != Fireball)
+	if (floor == Fire && cr->id != Fireball)
 	    return FALSE;
 	if (flags & CMM_CLEARANIMATIONS)
 	    if (ismarkedanimated(to))
