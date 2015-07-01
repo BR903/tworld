@@ -67,18 +67,30 @@ static void _eventupdate(int wait)
     }
 }
 
-/* Alter the window decoration.
+/* Alter the window decoration, translating the subtitle to UTF-8 as
+ * necessary.
  */
 void setsubtitle(char const *subtitle)
 {
-    char	buf[270];
+    char	buf[512] = "Tile World";
+    char       *p;
 
     if (subtitle && *subtitle) {
-	sprintf(buf, "Tile World - %.255s", subtitle);
-	SDL_WM_SetCaption(buf, "Tile World");
-    } else {
-	SDL_WM_SetCaption("Tile World", "Tile World");
+	p = buf + strlen(buf);
+	*p++ = ' ';
+	*p++ = '-';
+	*p++ = ' ';
+	for ( ; *subtitle ; ++subtitle) {
+	    if (*subtitle & 0x80) {
+		*p++ = 0xC0 | ((*subtitle >> 6) & 0x03);
+		*p++ = 0x80 | (*subtitle & 0x3F);
+	    } else {
+		*p++ = *subtitle;
+	    }
+	}
+	*p = '\0';
     }
+    SDL_WM_SetCaption(buf, "Tile World");
 }
 
 /* Shut down SDL.
