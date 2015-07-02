@@ -362,7 +362,7 @@ int contractsolution(solutioninfo const *solution, gamesetup *game)
 {
     action const       *move;
     unsigned char      *data;
-    int			size, est, delta, when, i;
+    int			size, delta, when, i;
 
     free(game->solutiondata);
     game->solutionsize = 0;
@@ -382,7 +382,6 @@ int contractsolution(solutioninfo const *solution, gamesetup *game)
 		     " out of memory", game->number);
 	return FALSE;
     }
-    est = size;
 
     data[0] = game->number & 0xFF;
     data[1] = (game->number >> 8) & 0xFF;

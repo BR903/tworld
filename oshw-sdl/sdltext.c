@@ -23,8 +23,8 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
     unsigned char      *dest;
     Uint8		foregnd, bkgnd;
     int			pitch, wsum;
-    int			count, ch;
     int			x, y, x0, y0, w;
+    int			ch;
 
     if (surface->format->BytesPerPixel != 1)
 	return FALSE;
@@ -65,7 +65,6 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
 	brk[ch] = 1;
     }
 
-    count = ch;
     if (!(pf->memory = calloc(wsum, pf->h)))
 	memerrexit();
 

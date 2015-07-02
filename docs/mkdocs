@@ -211,7 +211,7 @@ sub mkgrid($$)
 sub tohtml($)
 {
     my $htmltop =
-	"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 3.0//EN\">\n"
+	"<!DOCTYPE html>\n"
       . "<html>\n<head>\n<title>\@title\@</title>\n</head>\n"
       . "<body bgcolor=\"#FFFFFF\" text=\"#000000\">\n"
       . "<p align=center>\n<center>\n<h1>\@title\@</h1>\n</center>\n<p>\n";

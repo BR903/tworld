@@ -5,8 +5,8 @@ dnl
 AC_INIT(tworld.c)
 
 test -z "$CC" && CC="gcc"
-test -z "$CFLAGS" && CFLAGS=" -Wall -W -O2 -fomit-frame-pointer -DNDEBUG"
-test -z "$LDFLAGS" && LDFLAGS=" -Wall -W -s"
+test -z "$CFLAGS" && CFLAGS=" -Wall -Wextra -Wno-strict-aliasing -O2 -fomit-frame-pointer -DNDEBUG"
+test -z "$LDFLAGS" && LDFLAGS=" -Wall -Wextra -s"
 
 dnl
 dnl	--with-debug turns on debugging options

@@ -399,7 +399,7 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 	}
 	for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	if (!strcmp(name, "name")) {
-	    sprintf(series->name, "%.*s", sizeof series->name - 1,
+	    sprintf(series->name, "%.*s", (int)(sizeof series->name - 1),
 					  skippathname(value));
 	} else if (!strcmp(name, "lastlevel")) {
 	    n = (int)strtol(value, &p, 10);
@@ -487,8 +487,9 @@ static int getseriesfile(char *filename, void *data)
     series->final = 0;
     series->ruleset = Ruleset_None;
     series->games = NULL;
-    sprintf(series->filebase, "%.*s", sizeof series->filebase - 1, filename);
-    sprintf(series->name, "%.*s", sizeof series->name - 1,
+    sprintf(series->filebase, "%.*s", (int)(sizeof series->filebase - 1),
+				      filename);
+    sprintf(series->name, "%.*s", (int)(sizeof series->name - 1),
 				  skippathname(filename));
 
     f = FALSE;
