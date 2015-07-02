@@ -579,9 +579,7 @@ static creature *lookupcreature(int pos, int includechip)
 }
 
 /* Return the block located at pos. If the block in question is not
- * currently "active", then it is automatically added to the block
- * list. (Why is a block on a beartrap automatically released? Or
- * rather, why is this done in this function? I don't know.)
+ * currently "active", it is automatically added to the block list.
  */
 static creature *lookupblock(int pos)
 {
@@ -604,15 +602,6 @@ static creature *lookupblock(int pos)
 	cr->dir = creaturedirid(id);
     else
 	_assert(!"lookupblock() called on blockless location");
-
-    if (cellat(pos)->bot.id == Beartrap) {
-	for (n = 0 ; n < traplistsize() ; ++n) {
-	    if (traplist()[n].to == cr->pos) {
-		cr->state |= CS_RELEASED;
-		break;
-	    }
-	}
-    }
 
     return addtoblocklist(cr);
 }
@@ -909,9 +898,6 @@ static int pushblock(int pos, int dir, int flags)
 		return FALSE;
     }
 
-    if (flags & CMM_NOPUSHING)
-	return FALSE;
-
     if (!(flags & CMM_TELEPORTPUSH) && cellat(pos)->bot.id == Block_Static)
 	cellat(pos)->bot.id = Empty;
     if (!(flags & CMM_NODEFERBUTTONS))
@@ -951,23 +937,13 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	  case Wall_West: 	if (dir == WEST)  return FALSE;		break;
 	  case Wall_South: 	if (dir == SOUTH) return FALSE;		break;
 	  case Wall_East: 	if (dir == EAST)  return FALSE;		break;
-	  case Wall_Southeast:
-	    if (dir == SOUTH || dir == EAST)
-		return FALSE;
-	    break;
+	  case Wall_Southeast:	if (dir & (SOUTH | EAST)) return FALSE;	break;
 	  case Beartrap:
 	    if (!(cr->state & CS_RELEASED))
 		return FALSE;
 	    break;
 	}
     }
-
-    floor = floorat(to);
-    if (isanimation(floor))
-	warn("What the hell is going on here? animation %02X at (%d %d)",
-	     floor, to % CXGRID, to / CXGRID);
-    if (isanimation(floor))
-	return FALSE;
 
     if (cr->id == Chip) {
 	floor = floorat(to);
@@ -991,7 +967,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    if (!pushblock(to, dir, flags))
 		return FALSE;
 	    else if (flags & CMM_NOPUSHING)
-		return TRUE;
+		return FALSE;
 	    if ((flags & CMM_TELEPORTPUSH) && floorat(to) == Block_Static
 					   && cellat(to)->bot.id == Empty)
 		return TRUE;
@@ -1525,7 +1501,7 @@ static void endmovement(creature *cr, int dir)
     int		dead = FALSE;
     int		wasslipping;
     int		oldpos, newpos;
-    int		floor, i;
+    int		id, floor, i;
 
     oldpos = cr->pos;
     newpos = cr->pos + delta[dir];
@@ -1627,6 +1603,9 @@ static void endmovement(creature *cr, int dir)
 		newpos = teleportcreature(cr, newpos);
 	    break;
 	}
+	id = cellat(oldpos)->top.id;
+	if (iscreature(id) && creatureid(id) == Chip)
+	    cr->state |= CS_MUTANT;
     } else {
 	if (iscreature(cell->top.id)) {
 	    tile = &cell->bot;
@@ -1670,7 +1649,6 @@ static void endmovement(creature *cr, int dir)
 	    if (floorat(newpos) == Block_Static) {
 		if (lastslipdir() == NIL) {
 		    cr->dir = NORTH;
-		    lookupblock(newpos)->state |= CS_MUTANT;
 		    cellat(newpos)->top.id = crtile(Chip, NORTH);
 		    floor = Empty;
 		} else {
@@ -1830,25 +1808,32 @@ static void floormovements(void)
 	cr = slips[n].cr;
 	if (!(slips[n].cr->state & (CS_SLIP | CS_SLIDE)))
 	    continue;
-	slipdir = getslipdir(cr);
+	slipdir = slips[n].dir;
 	if (slipdir == NIL)
 	    continue;
+	if (cr->id == Chip)
+	    lastslipdir() = slipdir;
 	if (advancecreature(cr, slipdir)) {
-	    if (cr->id == Chip) {
+	    if (cr->id == Chip)
 		cr->state &= ~CS_HASMOVED;
-		lastslipdir() = slipdir;
-	    }
 	} else {
 	    floor = cellat(cr->pos)->bot.id;
-	    if (isice(floor) || (floor == Teleport && cr->id == Chip)) {
-		slipdir = icewallturn(floor, back(slipdir));
-		if (advancecreature(cr, slipdir)) {
-		    if (cr->id == Chip)
-			cr->state &= ~CS_HASMOVED;
-		}
-	    } else if (isslide(floor)) {
+	    if (isslide(floor)) {
 		if (cr->id == Chip)
 		    cr->state &= ~CS_HASMOVED;
+	    } else if (isice(floor)) {
+		slipdir = icewallturn(floor, back(slipdir));
+		if (cr->id == Chip)
+		    lastslipdir() = slipdir;
+		if (advancecreature(cr, slipdir))
+		    if (cr->id == Chip)
+			cr->state &= ~CS_HASMOVED;
+	    } else if (cr->id == Chip) {
+		if (floor == Teleport || floor == Block_Static) {
+		    lastslipdir() = slipdir = back(slipdir);
+		    if (advancecreature(cr, slipdir))
+			cr->state &= ~CS_HASMOVED;
+		}
 	    }
 	    if (cr->state & (CS_SLIP | CS_SLIDE)) {
 		endfloormovement(cr);
@@ -2141,9 +2126,11 @@ static int initgame(gamelogic *logic)
 			  = possession(Boots_Water) = 0;
 
     xy = traplist();
-    for (n = traplistsize(), xy = traplist() ; n ; --n, ++xy)
-	if (istrapbuttondown(xy->from) || xy->to == chippos())
+    for (n = traplistsize(), xy = traplist() ; n ; --n, ++xy) {
+	if (xy->to == chippos() || cellat(xy->to)->top.id == Block_Static
+				|| istrapbuttondown(xy->from))
 	    springtrap(xy->from);
+    }
 
     chipwait() = 0;
     completed() = FALSE;
