@@ -509,175 +509,87 @@ static void removechip(int reason, creature *also)
  * The laws of movement across the various floors.
  *
  * Chip, blocks, and other creatures all have slightly different rules
- * about what sort of tiles they are permitted to move into and out
- * of. The following lookup table encapsulates these rules. Note that
- * these rules are only the first check; a creature may be generally
- * permitted a particular type of move but still prevented in a
- * specific situation.
+ * about what sort of tiles they are permitted to cross. The following
+ * lookup table encapsulates these rules. These rules are only a first
+ * check; a creature may be generally permitted a particular type of
+ * move but still be prevented in a specific situation.
  */
 
-#define	DIR_IN(dir)	(dir)
-#define	DIR_OUT(dir)	((dir) << 4)
-
-#define	NORTH_IN	DIR_IN(NORTH)
-#define	WEST_IN		DIR_IN(WEST)
-#define	SOUTH_IN	DIR_IN(SOUTH)
-#define	EAST_IN		DIR_IN(EAST)
-#define	NORTH_OUT	DIR_OUT(NORTH)
-#define	WEST_OUT	DIR_OUT(WEST)
-#define	SOUTH_OUT	DIR_OUT(SOUTH)
-#define	EAST_OUT	DIR_OUT(EAST)
-#define	ALL_IN		(NORTH_IN | WEST_IN | SOUTH_IN | EAST_IN)
-#define	ALL_OUT		(NORTH_OUT | WEST_OUT | SOUTH_OUT | EAST_OUT)
-#define	ALL_IN_OUT	(ALL_IN | ALL_OUT)
+#define NWSE	(NORTH | WEST | SOUTH | EAST)
 
 static struct { unsigned char chip, block, creature; } const movelaws[] = {
-    /* Nothing */
-    { 0, 0, 0 },
-    /* Empty */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Slide_North */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Slide_West */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Slide_South */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Slide_East */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Slide_Random */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Ice */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* IceWall_Northwest */
-    { NORTH_OUT | WEST_OUT | SOUTH_IN | EAST_IN,
-      NORTH_OUT | WEST_OUT | SOUTH_IN | EAST_IN,
-      NORTH_OUT | WEST_OUT | SOUTH_IN | EAST_IN },
-    /* IceWall_Northeast */
-    { NORTH_OUT | EAST_OUT | SOUTH_IN | WEST_IN,
-      NORTH_OUT | EAST_OUT | SOUTH_IN | WEST_IN,
-      NORTH_OUT | EAST_OUT | SOUTH_IN | WEST_IN },
-    /* IceWall_Southwest */
-    { SOUTH_OUT | WEST_OUT | NORTH_IN | EAST_IN,
-      SOUTH_OUT | WEST_OUT | NORTH_IN | EAST_IN,
-      SOUTH_OUT | WEST_OUT | NORTH_IN | EAST_IN },
-    /* IceWall_Southeast */
-    { SOUTH_OUT | EAST_OUT | NORTH_IN | WEST_IN,
-      SOUTH_OUT | EAST_OUT | NORTH_IN | WEST_IN,
-      SOUTH_OUT | EAST_OUT | NORTH_IN | WEST_IN },
-    /* Gravel */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_OUT },
-    /* Dirt */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Water */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Fire */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Bomb */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Beartrap */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Burglar */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* HintButton */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Button_Blue */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Button_Green */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Button_Red */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Button_Brown */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Teleport */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Wall */
-    { ALL_OUT, ALL_OUT, ALL_OUT },
-    /* Wall_North */
-    { NORTH_IN | WEST_IN | EAST_IN | WEST_OUT | SOUTH_OUT | EAST_OUT,
-      NORTH_IN | WEST_IN | EAST_IN | WEST_OUT | SOUTH_OUT | EAST_OUT,
-      NORTH_IN | WEST_IN | EAST_IN | WEST_OUT | SOUTH_OUT | EAST_OUT },
-    /* Wall_West */
-    { NORTH_IN | WEST_IN | SOUTH_IN | NORTH_OUT | SOUTH_OUT | EAST_OUT,
-      NORTH_IN | WEST_IN | SOUTH_IN | NORTH_OUT | SOUTH_OUT | EAST_OUT,
-      NORTH_IN | WEST_IN | SOUTH_IN | NORTH_OUT | SOUTH_OUT | EAST_OUT },
-    /* Wall_South */
-    { WEST_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | EAST_OUT,
-      WEST_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | EAST_OUT,
-      WEST_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | EAST_OUT },
-    /* Wall_East */
-    { NORTH_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | SOUTH_OUT,
-      NORTH_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | SOUTH_OUT,
-      NORTH_IN | SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT | SOUTH_OUT },
-    /* Wall_Southeast */
-    { SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT,
-      SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT,
-      SOUTH_IN | EAST_IN | NORTH_OUT | WEST_OUT },
-    /* HiddenWall_Perm */
-    { ALL_OUT, ALL_OUT, ALL_OUT },
-    /* HiddenWall_Temp */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* BlueWall_Real */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* BlueWall_Fake */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* SwitchWall_Open */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* SwitchWall_Closed */
-    { ALL_OUT, ALL_OUT, ALL_OUT },
-    /* PopupWall */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* CloneMachine */
-    { ALL_OUT, ALL_OUT, ALL_OUT },
-    /* Door_Red */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Door_Blue */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Door_Yellow */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Door_Green */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Socket */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Exit */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* ICChip */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Key_Red */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Key_Blue */
-    { ALL_IN_OUT, ALL_IN_OUT, ALL_IN_OUT },
-    /* Key_Yellow */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Key_Green */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Boots_Slide */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Boots_Ice */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Boots_Water */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Boots_Fire */
-    { ALL_IN_OUT, ALL_OUT, ALL_OUT },
-    /* Block_Static */
-    { 0, 0, 0 },
-    /* Drowned_Chip */
-    { 0, 0, 0 },
-    /* Burned_Chip */
-    { 0, 0, 0 },
-    /* Bombed_Chip */
-    { 0, 0, 0 },
-    /* Exited_Chip */
-    { 0, 0, 0 },
-    /* Exit_Extra_1 */
-    { 0, 0, 0 },
-    /* Exit_Extra_2 */
-    { 0, 0, 0 },
-    /* Overlay_Buffer */
-    { 0, 0, 0 },
-    /* Floor_Reserved2 */
-    { 0, 0, 0 },
-    /* Floor_Reserved1 */
-    { 0, 0, 0 }
+    /* Nothing */		{ 0, 0, 0 },
+    /* Empty */			{ NWSE, NWSE, NWSE },
+    /* Slide_North */		{ NWSE, NWSE, NWSE },
+    /* Slide_West */		{ NWSE, NWSE, NWSE },
+    /* Slide_South */		{ NWSE, NWSE, NWSE },
+    /* Slide_East */		{ NWSE, NWSE, NWSE },
+    /* Slide_Random */		{ NWSE, NWSE, NWSE },
+    /* Ice */			{ NWSE, NWSE, NWSE },
+    /* IceWall_Northwest */	{ SOUTH | EAST, SOUTH | EAST, SOUTH | EAST },
+    /* IceWall_Northeast */	{ SOUTH | WEST, SOUTH | WEST, SOUTH | WEST },
+    /* IceWall_Southwest */	{ NORTH | EAST, NORTH | EAST, NORTH | EAST },
+    /* IceWall_Southeast */	{ NORTH | WEST, NORTH | WEST, NORTH | WEST },
+    /* Gravel */		{ NWSE, NWSE, 0 },
+    /* Dirt */			{ NWSE, 0, 0 },
+    /* Water */			{ NWSE, NWSE, NWSE },
+    /* Fire */			{ NWSE, NWSE, NWSE },
+    /* Bomb */			{ NWSE, NWSE, NWSE },
+    /* Beartrap */		{ NWSE, NWSE, NWSE },
+    /* Burglar */		{ NWSE, 0, 0 },
+    /* HintButton */		{ NWSE, 0, 0 },
+    /* Button_Blue */		{ NWSE, NWSE, NWSE },
+    /* Button_Green */		{ NWSE, NWSE, NWSE },
+    /* Button_Red */		{ NWSE, NWSE, NWSE },
+    /* Button_Brown */		{ NWSE, NWSE, NWSE },
+    /* Teleport */		{ NWSE, NWSE, NWSE },
+    /* Wall */			{ 0, 0, 0 },
+    /* Wall_North */		{ NORTH | WEST | EAST,
+				  NORTH | WEST | EAST,
+				  NORTH | WEST | EAST },
+    /* Wall_West */		{ NORTH | WEST | SOUTH,
+				  NORTH | WEST | SOUTH,
+				  NORTH | WEST | SOUTH },
+    /* Wall_South */		{ WEST | SOUTH | EAST,
+				  WEST | SOUTH | EAST,
+				  WEST | SOUTH | EAST },
+    /* Wall_East */		{ NORTH | SOUTH | EAST,
+				  NORTH | SOUTH | EAST,
+				  NORTH | SOUTH | EAST },
+    /* Wall_Southeast */	{ SOUTH | EAST, SOUTH | EAST, SOUTH | EAST },
+    /* HiddenWall_Perm */	{ 0, 0, 0 },
+    /* HiddenWall_Temp */	{ NWSE, 0, 0 },
+    /* BlueWall_Real */		{ NWSE, 0, 0 },
+    /* BlueWall_Fake */		{ NWSE, 0, 0 },
+    /* SwitchWall_Open */	{ NWSE, NWSE, NWSE },
+    /* SwitchWall_Closed */	{ 0, 0, 0 },
+    /* PopupWall */		{ NWSE, 0, 0 },
+    /* CloneMachine */		{ 0, 0, 0 },
+    /* Door_Red */		{ NWSE, 0, 0 },
+    /* Door_Blue */		{ NWSE, 0, 0 },
+    /* Door_Yellow */		{ NWSE, 0, 0 },
+    /* Door_Green */		{ NWSE, 0, 0 },
+    /* Socket */		{ NWSE, 0, 0 },
+    /* Exit */			{ NWSE, 0, 0 },
+    /* ICChip */		{ NWSE, 0, 0 },
+    /* Key_Red */		{ NWSE, NWSE, NWSE },
+    /* Key_Blue */		{ NWSE, NWSE, NWSE },
+    /* Key_Yellow */		{ NWSE, 0, 0 },
+    /* Key_Green */		{ NWSE, 0, 0 },
+    /* Boots_Slide */		{ NWSE, 0, 0 },
+    /* Boots_Ice */		{ NWSE, 0, 0 },
+    /* Boots_Water */		{ NWSE, 0, 0 },
+    /* Boots_Fire */		{ NWSE, 0, 0 },
+    /* Block_Static */		{ 0, 0, 0 },
+    /* Drowned_Chip */		{ 0, 0, 0 },
+    /* Burned_Chip */		{ 0, 0, 0 },
+    /* Bombed_Chip */		{ 0, 0, 0 },
+    /* Exited_Chip */		{ 0, 0, 0 },
+    /* Exit_Extra_1 */		{ 0, 0, 0 },
+    /* Exit_Extra_2 */		{ 0, 0, 0 },
+    /* Overlay_Buffer */	{ 0, 0, 0 },
+    /* Floor_Reserved2 */	{ 0, 0, 0 },
+    /* Floor_Reserved1 */	{ 0, 0, 0 }
 };
 
 /* Including the flag CMM_RELEASING in a call to canmakemove()
@@ -730,12 +642,32 @@ static int canpushblock(creature *block, int dir, int flags)
 static int canmakemove(creature const *cr, int dir, int flags)
 {
     creature   *other;
-    int		leavingmap = FALSE;
-    int		floorfrom, floor;
+    int		floor;
     int		to, y, x;
 
     _assert(cr);
     _assert(dir != NIL);
+
+    floor = floorat(cr->pos);
+    switch (floor) {
+      case Wall_North:         if (dir & NORTH) return FALSE;            break;
+      case Wall_West:          if (dir & WEST) return FALSE;             break;
+      case Wall_South:         if (dir & SOUTH) return FALSE;            break;
+      case Wall_East:          if (dir & EAST) return FALSE;             break;
+      case Wall_Southeast:     if (dir & (SOUTH | EAST)) return FALSE;   break;
+      case IceWall_Northwest:  if (dir & (SOUTH | EAST)) return FALSE;   break;
+      case IceWall_Northeast:  if (dir & (SOUTH | WEST)) return FALSE;   break;
+      case IceWall_Southwest:  if (dir & (NORTH | EAST)) return FALSE;   break;
+      case IceWall_Southeast:  if (dir & (NORTH | WEST)) return FALSE;   break;
+      case Beartrap:
+      case CloneMachine:
+	if (!(flags & CMM_RELEASING))
+	    return FALSE;
+	break;
+    }
+    if (isslide(floor) && (cr->id != Chip || !possession(Boots_Slide))
+		       && getslidedir(floor, FALSE) == back(dir))
+	return FALSE;
 
     y = cr->pos / CXGRID;
     x = cr->pos % CXGRID;
@@ -744,35 +676,21 @@ static int canmakemove(creature const *cr, int dir, int flags)
     to = y * CXGRID + x;
 
     if (y < 0 || y >= CYGRID || x < 0 || x >= CXGRID) {
-	if (!pedanticmode)
-	    return FALSE;
-	leavingmap = TRUE;
-	to = cr->pos;
+	if (pedanticmode) {
+	    if (flags & CMM_STARTMOVEMENT) {
+		mapbreached() = y < 0 || y >= CYGRID;
+		warn("map breach in pedantic mode at (%d %d)", x, y);
+	    }
+	}
+	return FALSE;
     }
 
-    floorfrom = floorat(cr->pos);
     floor = floorat(to);
-
-    if ((floorfrom == Beartrap || floorfrom == CloneMachine)
-					&& !(flags & CMM_RELEASING))
-	return FALSE;
-
-    if (isslide(floorfrom) && (cr->id != Chip || !possession(Boots_Slide)))
-	if (getslidedir(floorfrom, FALSE) == back(dir))
-	    return FALSE;
-
     if (floor == SwitchWall_Open || floor == SwitchWall_Closed)
 	floor ^= togglestate();
 
     if (cr->id == Chip) {
-	if (!(movelaws[floorfrom].chip & DIR_OUT(dir)))
-	    return FALSE;
-	if (leavingmap) {
-	    if (flags & CMM_STARTMOVEMENT)
-		mapbreached() = TRUE;
-	    return TRUE;
-	}
-	if (!(movelaws[floor].chip & DIR_IN(dir)))
+	if (!(movelaws[floor].chip & dir))
 	    return FALSE;
 	if (floor == Socket && chipsneeded() > 0)
 	    return FALSE;
@@ -793,14 +711,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
     } else if (cr->id == Block) {
 	if (cr->moving > 0)
 	    return FALSE;
-	if (!(movelaws[floorfrom].block & DIR_OUT(dir)))
-	    return FALSE;
-	if (leavingmap) {
-	    if (flags & (CMM_STARTMOVEMENT | CMM_PUSHBLOCKSNOW))
-		mapbreached() = TRUE;
-	    return TRUE;
-	}
-	if (!(movelaws[floor].block & DIR_IN(dir)))
+	if (!(movelaws[floor].block & dir))
 	    return FALSE;
 	if (islocationclaimed(to))
 	    return FALSE;
@@ -808,14 +719,7 @@ static int canmakemove(creature const *cr, int dir, int flags)
 	    if (ismarkedanimated(to))
 		stopanimationat(to);
     } else {
-	if (!(movelaws[floorfrom].creature & DIR_OUT(dir)))
-	    return FALSE;
-	if (leavingmap) {
-	    if (flags & CMM_STARTMOVEMENT)
-		mapbreached() = TRUE;
-	    return TRUE;
-	}
-	if (!(movelaws[floor].creature & DIR_IN(dir)))
+	if (!(movelaws[floor].creature & dir))
 	    return FALSE;
 	if (islocationclaimed(to))
 	    return FALSE;
