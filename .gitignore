@@ -1,4 +1,6 @@
 *.o
+*.a
+comptime.h
 tworld
 Makefile
 configure
@@ -8,4 +10,3 @@ docs/tworld.6
 docs/*.html
 oshw
 oshw-sdl/Makefile
-oshw-sdl/*.a
