@@ -818,10 +818,9 @@ int displaytiletable(char const *title,
  * leave. The row selected when the function returns is returned to
  * the caller through idx.
  */
-int displaylist(char const *title, void const *tab, int *idx,
+int displaylist(char const *title, tablespec const *table, int *idx,
 		int (*inputcallback)(int*))
 {
-    tablespec const    *table = tab;
     SDL_Rect		area;
     SDL_Rect	       *cols;
     SDL_Rect	       *colstmp;

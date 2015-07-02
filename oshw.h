@@ -189,7 +189,7 @@ extern int setdisplaymsg(char const *msg, int msecs, int bold);
  * returns FALSE, the table is removed from the display, and the value
  * stored in the integer will become displaylist()'s return value.
  */
-extern int displaylist(char const *title, void const *table, int *index,
+extern int displaylist(char const *title, tablespec const *table, int *index,
 		       int (*inputcallback)(int*));
 
 /* Symbolic values for requesting relative movement of the selection.
