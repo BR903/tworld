@@ -1,0 +1,170 @@
+<html>
+<head>
+<title>
+Chip's Challenge: Differences between the Lynx and Windows versions
+</title>
+</head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align=center>
+<center>
+<h1>
+Chip's Challenge: Differences between the Lynx and Windows versions
+</h1>
+</center>
+<p>
+<h2>
+Introduction
+</h2>
+<p>
+Chip's Challenge 2 has finally been released. This is great news for
+lots of reasons, but among other things this means that we have yet
+<i>another</i> version of Chip's Challenge 1 to analyze!
+<p>
+For the most part, the new Chip's Challenge 1 appears to adhere quite
+closely to the original Lynx game. (In fact it adheres even more
+closely to the MS-DOS port, and possibly to some or all of the other
+pre-Windows ports. These earlier ports were done by Epyx, and probably
+involved some of the same people who had developed the original game.
+The Windows port was done internally by Microsoft, and it's not always
+obvious that the people who worked on it were terribly familiar with
+the original.) However, there are nonetheless some differences. I hope
+to document those differences here.
+<p>
+(An aside: For the time being I'm calling the new version the Windows
+version. This has the potential to be confused with the version for
+16-bit Windows, which until recently was what anybody would have been
+referring to by "the Windows version". However, I myself have always
+called that "the MS version", reflecting the fact that that version
+was actually written by Microsoft. So hopefully this name isn't
+actually confusing.)
+<p>
+<h2>
+Game Logic
+</h2>
+<p>
+One of the first things that most people notice is that the animations
+for splashes and explosions are only 2 ticks (4 frames) long, as
+opposed to the 6 ticks of the original Lynx game. This actually
+matches the MS-DOS version of the game. Certainly this change makes
+the heavy block-pushing levels slightly less aggravating.
+<p>
+On the original Lynx, a creature on ice hitting an obstacle would
+would spend that frame turning around, and would only start moving in
+the opposite direction on the next frame. On the Windows version, this
+no longer happens, and creatures rebounding on ice are constantly in
+motion. (This has the side effect of making BLOCK BUSTER significantly
+harder than it was before &mdash; maybe even harder than the Windows
+version.)
+<p>
+On the original Lynx, when a creature caught in a bear trap was
+released, the creature would start moving immediately in its current
+direction. If that direction was blocked, then the creature would not
+be able to leave the bear trap. (Tanks are the exception to this rule,
+as they can still turn around when a blue button is pressed.) Under
+the Windows version of the game, an open bear trap acts much like a
+normal floor, and the creature is free to turn about normally.
+<p>
+<h2>
+Metadata
+</h2>
+<p>
+There is really only one major difference to the metadata, and that is
+that passwords are completely gone. Level 34 (CYPHER) has completely
+lost it reason for existing, and is no doubt confusing the heck out of
+new CC players.
+<p>
+Actually, there are a few other major differences in the level
+metadata, but it's only visible to people making new levels. The
+important one is that it's no longer possible to specify the initial
+ordering of creatures. The original Lynx game allowed for creatures to
+be listed in arbitrary order, even though all of the levels in CC1
+stuck to the standard ordering. (Namely, list the creatures as they
+appear on the map in reading order, and then if the creature at the
+head of the list is not Chip, have it swap places with Chip.) The
+Windows game has no way to give an alternative ordering to the
+creatures.
+<p>
+<h2>
+The Original Level Set
+</h2>
+<p>
+There are a small but significant number of differences in the actual
+data for the original set of levels.
+<p>
+A few of the hints have had cosmetic alterations. For example, the
+hint to level 16 (CELLBLOCKED) has been changed from "PRESS OPTION 1
+TO RESTART ANY LEVEL" to "PRESS ESC TO RESTART ANY LEVEL." The hint to
+level 3 (LESSON 3) has had its references to the magnet, fire shield,
+and water shield replaced with magno shoes, fire boots, and flippers.
+The hint to 131 (TOTALLY UNFAIR) has been rewritten from "REMEMBER
+SJUM" to "REMEMBER TOTALLY FAIR", since passwords are no longer a
+feature of the game. A number of the original hints were missing the
+final period, and these has been fixed. And my favorite: the word
+"eighth" in the hint for level 113 (OPEN QUESTION) is <i>finally</i>
+spelled correctly. That fix has been a long time coming.
+<p>
+In level 61 (RINK), Chip is now initially facing south, instead of
+initially facing north. No other level has Chip's initial direction
+modified. Shrug.
+<p>
+Okay, on to the interesting changes.
+<p>
+Of course, the biggest change to the original set is that the MS level
+145 has been adopted, lock stock and barrel. Even the hint, with its
+reference to WEP4, has been preserved. (Of course, TONY Krueger got
+ripped off here, since the passwords are gone.) I'm actually a little
+annoyed by this level's presence. Setting aside the fact that it isn't
+a particularly interesting level to play, I've never liked the fact
+that this level calls out a bunch of MS people for thanking, while
+completely ignoring Chuck Sommerville, Bill Darrah, and all the other
+people who actually created the CC1 levels. (Especially when you
+consider the hash that MS made of the game mechanics). So why was it
+added? I'm guessing it was mainly done to avoid having a break in the
+level numbering.
+<p>
+In level 48 (MUGGER SQUARE), the northeastern glider has been advanced
+one position, presumably done specifically to avoid the collision that
+strands one of the gliders on the force floors.
+<p>
+In level 70 (NIGHTMARE), there is a small area along the right edge of
+the map containing ball in a trap. When the ball is released it
+triggers a fireball clone machine. In the new level set, a water tile
+has been added to that area. Under the original Lynx ruleset, after
+the ball returned to the beartrap it could never escape again. That is
+not the case in the Windows version, due to the new beartrap behavior.
+So presumably the water tile was added to destroy the ball after it
+has pressed the red button once.
+<p>
+In level 102 (ICEHOUSE), the ball that triggers the fireball clone
+machine (at the spot where Chip lands after his initial ice slide) has
+been moved north one spot. Presumably this was done to permit you to
+survive the initial slide even if you start the level by moving right?
+<p>
+In level 120 (ALPHABET SOUP), in the lowercase-d room, you may recall
+that one of the three blocks has a bomb underneath it. In CC1, this
+has been changed to a block covering a ... water tile. I have no idea
+why this change was made. It seems a strange combination of tiles to
+permit. My best guess is that, since it is possible to get the
+flippers before you need the yellow key in that room, this gives you
+another way to solve this level. (But getting the yellow key without
+touching the block is hardly that difficult a puzzle, so I dunno.)
+Also, I just want to point out that in the process they changed the
+block to face south instead of north. I know it hardly matters, as
+initial block direction is only significant when blocks are on clone
+machines. But the fact remains that this is the only non-north-facing
+block outside of a clone machine in the entire level set. It freaks me
+out.
+<p>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/tworld/">
+Tile World</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/">Software
+</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/">Brian
+Raiter</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/">Muppetlabs</a></font>
+</body>
+</html>
