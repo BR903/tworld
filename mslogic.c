@@ -1278,7 +1278,7 @@ static void choosechipmove(creature *cr, int discard)
 	lastmove() = dir;
     }
 
-    if (dir == NIL && hasgoal() && currenttime() && !(currenttime() & 1))
+    if (dir == NIL && hasgoal() && (currenttime() & 3) == 2)
 	dir = chipmovetogoalpos();
 
     cr->tdir = dir;
