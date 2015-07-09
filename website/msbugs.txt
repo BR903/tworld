@@ -90,6 +90,28 @@ end
 
 %%%
 
+title	Mouse Power
+
+map 10 10
+          E
+, , , , , , , ,
+, , , , ,   , ,
+# # # # # ^ # #
+# = = = = []@ #
+# # # # # ^ # #
+        # ^ #
+        #   #
+end
+
+% Action: Use the mouse to click on the bottom force floor square.
+% MS result: Chip pushes the block north when it rebounds back.
+% TW result: Chip is hit by the block.
+% Note: I'm assuming that this move is impossible without using the
+% mouse, but of course I can't be sure.
+
+
+%%%
+
 title	Simultaneous Teleporting
 
 tiles
