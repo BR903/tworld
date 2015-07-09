@@ -2253,6 +2253,7 @@ gamelogic *mslogicstartup(void)
     static gamelogic	logic;
 
     logic.ruleset = Ruleset_MS;
+    logic.localstateinfosize = sizeof(struct msstate);
     logic.initgame = initgame;
     logic.advancegame = advancegame;
     logic.endgame = endgame;

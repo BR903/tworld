@@ -15,6 +15,7 @@ typedef	struct gamelogic gamelogic;
 struct gamelogic {
     int		ruleset;		  /* the ruleset */
     gamestate  *state;			  /* ptr to the current game state */
+    int		localstateinfosize;	  /* how big to make localstateinfo */
     int	      (*initgame)(gamelogic*);	  /* prepare to play a game */
     int	      (*advancegame)(gamelogic*); /* advance the game one tick */
     int	      (*endgame)(gamelogic*);	  /* clean up after the game is done */

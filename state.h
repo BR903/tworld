@@ -225,7 +225,7 @@ typedef struct gamestate {
     short		crlist[256];		/* list of creatures */
     char		hinttext[256];		/* text of the hint */
     mapcell		map[CXGRID * CYGRID];	/* the game's map */
-    unsigned char	localstateinfo[256];	/* rule-specific state data */
+    void	       *localstateinfo;		/* rule-specific state data */
 } gamestate;
 
 /* General status flags.

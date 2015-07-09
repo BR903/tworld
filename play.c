@@ -62,6 +62,8 @@ static int setrulesetbehavior(int ruleset)
 	    return TRUE;
 	(*logic->shutdown)(logic);
 	logic = NULL;
+	free(state.localstateinfo);
+	state.localstateinfo = NULL;
     }
     if (ruleset == Ruleset_None)
 	return TRUE;
@@ -93,6 +95,7 @@ static int setrulesetbehavior(int ruleset)
 	}
     }
 
+    state.localstateinfo = calloc(logic->localstateinfosize, 1);
     logic->state = &state;
     return TRUE;
 }

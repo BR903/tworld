@@ -1889,6 +1889,7 @@ gamelogic *lynxlogicstartup(void)
     laststepping = 0;
 
     logic.ruleset = Ruleset_Lynx;
+    logic.localstateinfosize = sizeof(struct lxstate);
     logic.initgame = initgame;
     logic.advancegame = advancegame;
     logic.endgame = endgame;

@@ -5,7 +5,7 @@ dnl
 AC_INIT(tworld.c)
 
 test -z "$CC" && CC="gcc"
-test -z "$CFLAGS" && CFLAGS=" -Wall -Wextra -Wno-strict-aliasing -O2 -fomit-frame-pointer -DNDEBUG"
+test -z "$CFLAGS" && CFLAGS=" -Wall -Wextra -O2 -fomit-frame-pointer -DNDEBUG"
 test -z "$LDFLAGS" && LDFLAGS=" -Wall -Wextra -s"
 
 dnl
@@ -15,8 +15,8 @@ dnl
 AC_ARG_WITH(debug,
 	    [  --with-debug            Build with debugging info],
 	    [if test $withval = yes ; then
-	       CFLAGS=" -Wall -W -ggdb"
-	       LDFLAGS=" -Wall -W -ggdb"
+	       CFLAGS=" -Wall -Wextra -ggdb"
+	       LDFLAGS=" -Wall -Wextra -ggdb"
 	     fi])
 
 LOADLIBES=""
