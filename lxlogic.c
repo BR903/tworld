@@ -675,10 +675,12 @@ static int canmakemove(creature const *cr, int dir, int flags)
     x += dir == WEST ? -1 : dir == EAST ? +1 : 0;
     to = y * CXGRID + x;
 
-    if (y < 0 || y >= CYGRID || x < 0 || x >= CXGRID) {
+    if (x < 0 || x >= CXGRID)
+	return FALSE;
+    if (y < 0 || y >= CYGRID) {
 	if (pedanticmode) {
 	    if (flags & CMM_STARTMOVEMENT) {
-		mapbreached() = y < 0 || y >= CYGRID;
+		mapbreached() = TRUE;
 		warn("map breach in pedantic mode at (%d %d)", x, y);
 	    }
 	}
