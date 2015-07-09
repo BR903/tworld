@@ -144,6 +144,21 @@ static short *_possession(int obj)
  * Memory allocation functions for the various arenas.
  */
 
+/* The creature pool is a linked list of lumps, each lump holding this
+ * many creatures.
+ */
+#define	crpoollumpsize	256
+
+/* The data that makes up one lump of the creature pool.
+ */
+typedef struct crpoollump crpoollump;
+struct crpoollump {
+    int		count;			/* number of unused creatures */
+    crpoollump *prev;			/* the previously allocated lump */
+    crpoollump *next;			/* the next lump after this one */
+    creature	lump[crpoollumpsize];	/* the lump proper */
+};
+
 /* The data associated with a sliding object.
  */
 typedef	struct slipper {
@@ -153,9 +168,7 @@ typedef	struct slipper {
 
 /* The linked list of creature pools, forming the creature arena.
  */
-static creature	       *creaturepool = NULL;
-static void	       *creaturepoolend = NULL;
-static int const	creaturepoolchunk = 256;
+static crpoollump      *currentcrpoollump = NULL;
 
 /* The list of active creatures.
  */
@@ -179,29 +192,22 @@ static int		slipsallocated = 0;
  */
 static void resetcreaturepool(void)
 {
-    if (!creaturepoolend)
-	return;
-    while (creaturepoolend) {
-	creaturepool = creaturepoolend;
-	creaturepoolend = ((creature**)creaturepoolend)[0];
-    }
-    creaturepoolend = creaturepool;
-    creaturepool = (creature*)creaturepoolend - creaturepoolchunk + 1;
+    if (currentcrpoollump)
+	while (currentcrpoollump->prev)
+	    currentcrpoollump = currentcrpoollump->prev;
 }
 
 /* Destroy the creature arena.
  */
 static void freecreaturepool(void)
 {
-    if (!creaturepoolend)
-	return;
-    for (;;) {
-	creaturepoolend = ((creature**)creaturepoolend)[1];
-	free(creaturepool);
-	creaturepool = creaturepoolend;
-	if (!creaturepool)
-	    break;
-	creaturepoolend = creaturepool + creaturepoolchunk - 1;
+    crpoollump *next;
+
+    resetcreaturepool();
+    while (currentcrpoollump) {
+	next = currentcrpoollump->next;
+	free(currentcrpoollump);
+	currentcrpoollump = next;
     }
 }
 
@@ -209,26 +215,28 @@ static void freecreaturepool(void)
  */
 static creature *allocatecreature(void)
 {
+    crpoollump *next;
     creature   *cr;
 
-    if (creaturepool == creaturepoolend) {
-	if (creaturepoolend && ((creature**)creaturepoolend)[1]) {
-	    creaturepool = ((creature**)creaturepoolend)[1];
-	    creaturepoolend = creaturepool + creaturepoolchunk - 1;
+    if (!currentcrpoollump || currentcrpoollump->count == 0) {
+	if (currentcrpoollump && currentcrpoollump->next) {
+	    currentcrpoollump = currentcrpoollump->next;
+	    currentcrpoollump->count = crpoollumpsize;
 	} else {
-	    cr = creaturepoolend;
-	    creaturepool = malloc(creaturepoolchunk * sizeof *creaturepool);
-	    if (!creaturepool)
+	    next = malloc(sizeof *next);
+	    if (!next)
 		memerrexit();
-	    if (cr)
-		((creature**)cr)[1] = creaturepool;
-	    creaturepoolend = creaturepool + creaturepoolchunk - 1;
-	    ((creature**)creaturepoolend)[0] = cr;
-	    ((creature**)creaturepoolend)[1] = NULL;
+	    next->count = crpoollumpsize;
+	    next->prev = currentcrpoollump;
+	    next->next = NULL;
+	    if (currentcrpoollump)
+		currentcrpoollump->next = next;
+	    currentcrpoollump = next;
 	}
     }
 
-    cr = creaturepool++;
+    --currentcrpoollump->count;
+    cr = currentcrpoollump->lump + currentcrpoollump->count;
     cr->id = Nothing;
     cr->pos = -1;
     cr->dir = NIL;
@@ -2239,10 +2247,7 @@ static void shutdown(gamelogic *logic)
     slipcount = 0;
     slipsallocated = 0;
 
-    resetcreaturepool();
     freecreaturepool();
-    creaturepool = NULL;
-    creaturepoolend = NULL;
 }
 
 /* The exported function: Initialize and return the module's gamelogic
