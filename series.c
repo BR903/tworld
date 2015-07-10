@@ -420,6 +420,8 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 		series->gsflags |= GSF_IGNOREPASSWDS;
 	    else
 		series->gsflags &= ~GSF_IGNOREPASSWDS;
+	} else if (!strcmp(name, "messages")) {
+	    /* strcpy(series->messagefile, value); */
 	} else if (!strcmp(name, "fixlynx")) {
 	    if (tolower(*value) == 'n')
 		series->gsflags &= ~GSF_LYNXFIXES;
@@ -623,7 +625,7 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
 
     rulesetname[Ruleset_Lynx] = "Lynx";
     rulesetname[Ruleset_MS] = "MS";
-    ptrs = malloc((listsize + 1) * 3 * sizeof *ptrs);
+    ptrs = malloc((listsize + 1) * 2 * sizeof *ptrs);
     textheap = malloc((listsize + 1) * (col + 32));
     if (!ptrs || !textheap)
 	memerrexit();
@@ -633,16 +635,11 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1-Filename");
     ptrs[n++] = textheap + used;
-    used += 1 + sprintf(textheap + used, "1+Levels");
-    ptrs[n++] = textheap + used;
     used += 1 + sprintf(textheap + used, "1.Ruleset");
     for (y = 0 ; y < listsize ; ++y) {
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used,
 			    "1-%-*s", col, serieslist[y].name);
-	ptrs[n++] = textheap + used;
-	used += 1 + sprintf(textheap + used,
-			    "1+%d", serieslist[y].count);
 	ptrs[n++] = textheap + used;
 	used += 1 + sprintf(textheap + used,
 			    "1.%s", rulesetname[serieslist[y].ruleset]);
@@ -651,8 +648,8 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     *pserieslist = serieslist;
     *pcount = listsize;
     table->rows = listsize + 1;
-    table->cols = 3;
-    table->sep = 2;
+    table->cols = 2;
+    table->sep = 4;
     table->collapse = 0;
     table->items = ptrs;
     return TRUE;
