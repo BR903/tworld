@@ -42,14 +42,19 @@ typedef	struct gamespec {
 /* Structure used to hold data collected by initoptionswithcmdline().
  */
 typedef	struct startupdata {
-    char       *filename;	/* which data file to use */
-    char       *savefilename;	/* an alternate solution file */
-    int		levelnum;	/* a selected initial level */ 
-    int		listdirs;	/* TRUE if directories should be listed */
-    int		listseries;	/* TRUE if the files should be listed */
-    int		listscores;	/* TRUE if the scores should be listed */
-    int		listtimes;	/* TRUE if the times should be listed */
-    int		batchverify;	/* TRUE to enter batch verification */
+    char	       *filename;	/* which data file to use */
+    char	       *savefilename;	/* an alternate solution file */
+    int			levelnum;	/* a selected initial level */ 
+    char const	       *resdir;		/* where the resources are */
+    char const	       *seriesdir;	/* where the series files are */
+    char const	       *seriesdatdir;	/* where the series data files are */
+    char const	       *savedir;	/* where the solution files are */
+    unsigned char	listdirs;	/* TRUE to list directories */
+    unsigned char	listseries;	/* TRUE to list files */
+    unsigned char	listscores;	/* TRUE to list scores */
+    unsigned char	listtimes;	/* TRUE to list times */
+    unsigned char	batchverify;	/* TRUE to do batch verification */
+    unsigned char	pedantic;	/* TRUE to set pedantic mode */
 } startupdata;
 
 /* Structure used to hold the complete list of available series.
@@ -1467,96 +1472,126 @@ static void initdirs(char const *series, char const *seriesdat,
     }
 }
 
+/* Handle one option or argument from the command-line.
+ */
+static int processoption(int opt, char const *val, void *data)
+{
+    startupdata	       *start = data;
+    char	       *p;
+    int			n;
+
+    switch (opt) {
+      case 0:
+	if (start->savefilename && start->levelnum) {
+	    fprintf(stderr, "too many arguments: %s\n", val);
+	    return 1;
+	}
+	if (!start->levelnum && (n = (int)strtol(val, &p, 10)) > 0
+			     && *p == '\0') {
+	    start->levelnum = n;
+	} else if (*start->filename) {
+	    start->savefilename = getpathbuffer();
+	    sprintf(start->savefilename, "%.*s", getpathbufferlen(), val);
+	} else {
+	    sprintf(start->filename, "%.*s", getpathbufferlen(), val);
+	}
+	break;
+      case 'D':	    start->seriesdatdir = val;			    break;
+      case 'L':	    start->seriesdir = val;			    break;
+      case 'R':	    start->resdir = val;			    break;
+      case 'S':	    start->savedir = val;			    break;
+      case 'H':	    showhistogram = !showhistogram;		    break;
+      case 'f':	    noframeskip = !noframeskip;			    break;
+      case 'F':	    fullscreen = !fullscreen;			    break;
+      case 'p':	    usepasswds = !usepasswds;			    break;
+      case 'q':	    silence = !silence;				    break;
+      case 'r':	    readonly = !readonly;			    break;
+      case 'P':	    start->pedantic = !start->pedantic;		    break;
+      case 'a':	    soundbufsize = atoi(val);			    break;
+      case 'd':	    start->listdirs = TRUE;			    break;
+      case 'l':	    start->listseries = TRUE;			    break;
+      case 's':	    start->listscores = TRUE;			    break;
+      case 't':	    start->listtimes = TRUE;			    break;
+      case 'b':	    start->batchverify = TRUE;			    break;
+      case 'm':	    mudsucking = atoi(val);			    break;
+      case 'n':	    volumelevel = atoi(val);			    break;
+      case 'h':	    printtable(stdout, yowzitch);      exit(EXIT_SUCCESS);
+      case 'V':	    printtable(stdout, vourzhon);      exit(EXIT_SUCCESS);
+      case 'v':	    puts(VERSION);		       exit(EXIT_SUCCESS);
+      case ':':
+	fprintf(stderr, "option requires an argument: %s\n", val);
+	return 1;
+      case '=':
+	fprintf(stderr, "option does not take an argument: %s\n", val);
+	return 1;
+      default:
+	fprintf(stderr, "unrecognized option: %s\n", val);
+	return 1;
+    }
+    return 0;
+}
+
 /* Parse the command-line options and arguments, and initialize the
  * user-controlled options.
  */
 static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 {
-    cmdlineinfo	opts;
-    char const *optresdir = NULL;
-    char const *optseriesdir = NULL;
-    char const *optseriesdatdir = NULL;
-    char const *optsavedir = NULL;
+    static option const optlist[] = {
+	{ "audio-buffer",	'a', 'a', 1 },
+	{ "batch-verify",	'b', 'b', 0 },
+	{ "data-dir",		'D', 'D', 1 },
+	{ "list-dirs",		'd', 'd', 0 },
+	{ "full-screen",	'F', 'F', 0 },
+	{ "no-frame-skip",	 0 , 'f', 0 },
+	{ "histogram",		 0 , 'H', 0 },
+	{ "help",		'h', 'h', 0 },
+	{ "levelset-dir",	'L', 'L', 1 },
+	{ "list-levelsets",	'l', 'l', 0 },
+	{ "mud-sucking",	 0 , 'm', 1 },
+	{ "volume",		'n', 'n', 1 },
+	{ "pedantic",		'P', 'P', 0 },
+	{ "no-passwords",	'p', 'p', 0 },
+	{ "quiet",		'q', 'q', 0 },
+	{ "resource-dir",	'R', 'R', 1 },
+	{ "read-only",		'r', 'r', 0 },
+	{ "save-dir",		'S', 'S', 1 },
+	{ "list-scores",	's', 's', 0 },
+	{ "list-times",		't', 't', 0 },
+	{ "version",		'V', 'V', 0 },
+	{ "version-number",	'v', 'v', 0 },
+	{ 0, 0, 0, 0 }
+    };
+
     char	buf[256];
-    int		listdirs, pedantic;
-    int		ch, n;
-    char       *p;
 
     start->filename = getpathbuffer();
     *start->filename = '\0';
     start->savefilename = NULL;
     start->levelnum = 0;
+    start->resdir = NULL;
+    start->seriesdir = NULL;
+    start->seriesdatdir = NULL;
+    start->savedir = NULL;
+    start->listdirs = FALSE;
     start->listseries = FALSE;
     start->listscores = FALSE;
     start->listtimes = FALSE;
     start->batchverify = FALSE;
-    listdirs = FALSE;
-    pedantic = FALSE;
+    start->pedantic = FALSE;
     mudsucking = 1;
     soundbufsize = 0;
     volumelevel = -1;
 
-    initoptions(&opts, argc - 1, argv + 1, "abD:dFfHhL:lm:n:PpqR:rS:stVv");
-    while ((ch = readoption(&opts)) >= 0) {
-	switch (ch) {
-	  case 0:
-	    if (start->savefilename && start->levelnum) {
-		fprintf(stderr, "too many arguments: %s\n", opts.val);
-		printtable(stderr, yowzitch);
-		return FALSE;
-	    }
-	    if (!start->levelnum && (n = (int)strtol(opts.val, &p, 10)) > 0
-				 && *p == '\0') {
-		start->levelnum = n;
-	    } else if (*start->filename) {
-		start->savefilename = getpathbuffer();
-		sprintf(start->savefilename, "%.*s", getpathbufferlen(),
-						     opts.val);
-	    } else {
-		sprintf(start->filename, "%.*s", getpathbufferlen(), opts.val);
-	    }
-	    break;
-	  case 'D':	optseriesdatdir = opts.val;			break;
-	  case 'L':	optseriesdir = opts.val;			break;
-	  case 'R':	optresdir = opts.val;				break;
-	  case 'S':	optsavedir = opts.val;				break;
-	  case 'H':	showhistogram = !showhistogram;			break;
-	  case 'f':	noframeskip = !noframeskip;			break;
-	  case 'F':	fullscreen = !fullscreen;			break;
-	  case 'p':	usepasswds = !usepasswds;			break;
-	  case 'q':	silence = !silence;				break;
-	  case 'r':	readonly = !readonly;				break;
-	  case 'P':	pedantic = !pedantic;				break;
-	  case 'a':	++soundbufsize;					break;
-	  case 'd':	listdirs = TRUE;				break;
-	  case 'l':	start->listseries = TRUE;			break;
-	  case 's':	start->listscores = TRUE;			break;
-	  case 't':	start->listtimes = TRUE;			break;
-	  case 'b':	start->batchverify = TRUE;			break;
-	  case 'm':	mudsucking = atoi(opts.val);			break;
-	  case 'n':	volumelevel = atoi(opts.val);			break;
-	  case 'h':	printtable(stdout, yowzitch); 	   exit(EXIT_SUCCESS);
-	  case 'v':	puts(VERSION);		 	   exit(EXIT_SUCCESS);
-	  case 'V':	printtable(stdout, vourzhon); 	   exit(EXIT_SUCCESS);
-	  case ':':
-	    fprintf(stderr, "option requires an argument: -%c\n", opts.opt);
-	    printtable(stderr, yowzitch);
-	    return FALSE;
-	  case '?':
-	    fprintf(stderr, "unrecognized option: -%c\n", opts.opt);
-	    printtable(stderr, yowzitch);
-	    return FALSE;
-	  default:
-	    printtable(stderr, yowzitch);
-	    return FALSE;
-	}
+    if (readoptions(optlist, argc, argv, processoption, start)) {
+	fprintf(stderr, "Try --help for more information.\n");
+	return FALSE;
     }
-
-    if (pedantic)
+    if (start->pedantic)
 	setpedanticmode();
 
-    initdirs(optseriesdir, optseriesdatdir, optresdir, optsavedir);
-    if (listdirs) {
+    initdirs(start->seriesdir, start->seriesdatdir,
+	     start->resdir, start->savedir);
+    if (start->listdirs) {
 	printdirectories();
 	exit(EXIT_SUCCESS);
     }

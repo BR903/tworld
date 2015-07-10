@@ -289,10 +289,12 @@ information on standard output actually go to a file named
 <stdout.txt> instead.)
 
 .table
-. <-a>
-. Double the size of the audio buffer. This option can be repeated, so
-for example <-aaa> would increase the audio buffer size eightfold.
-. <-b>
+. <-a>,_<--audio-buffer=>%N%
+. Set the size of the audio buffer. %N% can be a value from 1 (the
+default) to 6. Each higher value doubles the amount of buffering. This
+option can reduce static or distortion in the sound playback, at the
+cost of increased latency.
+. <-b>,_<--batch-verify>
 . Do a batch-mode verification of the existing solutions and exit.
 Levels with invalid solutions are displayed on standard output. If
 used with <-q>, then nothing is displayed, and the program's exit code
@@ -300,58 +302,58 @@ is the number of invalid solutions. Can also be used with <-s> or <-t>
 to have solutions verified before the other option is applied. Note
 that this options requires a level set file and/or a solution file be
 named on the command line.
-. <-D>_%DIR%
+. <-D>,_<--data-dir=>%DIR%
 . Read level data files from %DIR% instead of the default directory.
-. <-d>
+. <-d>,_<--list-dirs>
 . Display the default directories used by the program on standard
 output, and exit.
-. <-F>
+. <-F>,_<--full-screen>
 . Run in full-screen mode.
-. <-H>
+. <-H>,_<--histogram>
 . Upon exit, display a histogram of idle time on standard output. (This
 option is used for evaluating optimization efforts.)
-. <-h>
+. <--h>,_<--help>
 . Display a summary of the command-line syntax on standard output and
 exit.
-. <-L>_%DIR%
-. Look for level sets in %DIR% instead of the default directory.
-. <-l>
+. <-L>,_<--levelset-dir=>%DIR%
+. Load level sets from %DIR% instead of the default directory.
+. <-l>,_<--list-levelsets>
 . Write a list of available level sets to standard output and exit.
-. <-n>_%N%
+. <-n>,_<--volume=>%N%
 . Set the initial volume level to %N%, 0 being silence and 10 being
 full volume. The default level is 10.
-. <-P>
+. <-P>,_<--pedantic>
 . Turn on pedantic mode, forcing the Lynx ruleset to emulate the
 original game as closely as possible. (See the Tile World website for
 more information on emulation of the Lynx ruleset.)
-. <-p>
+. <-p>,_<--no-passwords>
 . Turn off all password-checking. This option allows the normal sequence
 of levels to be bypassed.
-. <-q>
-. Run quietly. All sounds, including the ringing of the terminal bell,
+. <-q>,_<--quiet>
+. Run quietly. All sounds, including the ringing of the system bell,
 are suppressed.
-. <-r>
+. <-r>,_<--read-only>
 . Run in read-only mode. This guarantees that no changes will be made
 to the solution files.
-. <-R>_%DIR%
+. <-R>,_<--resource-dir=>%DIR%
 . Read resource data from %DIR% instead of the default directory.
-. <-S>_%DIR%
+. <-S>,_<--save-dir=>%DIR%
 . Read and write solution files under %DIR% instead of the default
 directory.
-. <-s>
+. <-s>,_<--list-scores>
 . Display the current scores for the selected level set on standard
 output and exit. A level set must be named on the command line. If
 used with <-b>, the solutions are verified beforehand, and invalid
 solutions are indicated.
-. <-t>
+. <-t>,_<--list-times>
 . Display the best times for the selected level set on standard output
 and exit. A level set must be named on the command line. If used with
-<-b>, the solutions are verified beforehand, and invalid solutions are
-indicated.
-. <-V>
+<--batch-verify>, the solutions are verified beforehand, and invalid
+solutions are indicated.
+. <-V>,_<--version>
 . Display the program's version and license information on standard
 output and exit.
-. <-v>
+. <-v>,_<--version-number>
 . Display the program's version number on standard output and exit.
 
 Besides the above options, <tworld> can accept up to three

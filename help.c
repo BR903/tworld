@@ -18,50 +18,68 @@
 /* Help for command-line options.
  */
 static char *yowzitch_items[] = {
-    "1-Usage:", "1!tworld [-hvVdlsbtpqrPFa] [-n N] [-DLRS DIR] "
-		"[NAME] [SNAME] [LEVEL]",
-    "1-   -D", "1!Read data files from DIR instead of the default.",
-    "1-   -L", "1!Read level sets from DIR instead of the default.",
-    "1-   -R", "1!Read resource files from DIR instead of the default.",
-    "1-   -S", "1!Save games in DIR instead of the default.",
-    "1-   -p", "1!Disable password checking.",
-    "1-   -F", "1!Run in fullscreen mode.",
-    "1-   -q", "1!Run quietly.",
-    "1-   -r", "1!Run in read-only mode; solutions will not be saved.",
-    "1-   -P", "1!Put Lynx ruleset emulation in pedantic mode.",
-    "1-   -n", "1!Set initial volume level to N.",
-    "1-   -a", "1!Double the size of the sound buffer (can be repeated).",
-    "1-   -l", "1!Display the list of available data files and exit.",
-    "1-   -s", "1!Display scores for the selected data file and exit.",
-    "1-   -t", "1!Display times for the selected data file and exit.",
-    "1-   -b", "1!Batch-verify solutions for the selected data file and exit.",
-    "1-   -h", "1!Display this help and exit.",
-    "1-   -d", "1!Display default directories and exit.",
-    "1-   -v", "1!Display version number and exit.",
-    "1-   -V", "1!Display version and license information and exit.",
-    "2!NAME specifies which data file to use.",
-    "2!LEVEL specifies which level to start at.",
-    "2!SNAME specifies an alternate solution file."
+    "3-Usage: tworld [OPTIONS] [LEVELSET] [SAVEFILE] [LEVEL]",
+    "1+ -D,", "1---data-dir=DIR ",
+	      "1!Read data files from DIR instead of the default.",
+    "1+ -L,", "1---levelset-dir=DIR ",
+	      "1!Read level sets from DIR instead of the default.",
+    "1+ -R,", "1---resource-dir=DIR ",
+	      "1!Read resource files from DIR instead of the default.",
+    "1+ -S,", "1---save-dir=DIR ",
+	      "1!Save solutions to DIR instead of the default.",
+    "1+ -p,", "1---no-passwords ",
+	      "1!Disable password checking.",
+    "1+ -F,", "1---full-screen ",
+	      "1!Run in full-screen mode.",
+    "1+ -q,", "1---quiet ",
+	      "1!Disable all audio output.",
+    "1+ -r,", "1---read-only ",
+	      "1!Run in read-only mode; no solutions will be saved.",
+    "1+ -P,", "1---pedantic ",
+	      "1!Put Lynx ruleset emulation in pedantic mode.",
+    "1+ -n,", "1---volume=N ",
+	      "1!Set initial volume to N (between 0 and 10).",
+    "1+ -a,", "1---audio-buffer=N ",
+	      "1!Set audio buffer size (between 1 and 6).",
+    "1+ -l,", "1---list-sets ",
+	      "1!Display the list of available level sets and exit.",
+    "1+ -s,", "1---list-scores ",
+	      "1!Display scores for the selected data file and exit.",
+    "1+ -t,", "1---list-times ",
+	      "1!Display times for the selected data file and exit.",
+    "1+ -b,", "1---batch-verify ",
+	      "1!Verify solutions for the selected level set and exit.",
+    "1+ -d,", "1---list-dirs ",
+	      "1!Display default directories and exit.",
+    "1+ -h,", "1---help ",
+	      "1!Display this help and exit.",
+    "1+ -V,", "1---version ",
+	      "1!Display version information and exit.",
+    "1+ -v,", "1---version-number ",
+	      "1!Display version number and exit.",
+    "3!LEVELSET specifies the filename of a level set to start with.",
+    "3!LEVEL specifies the level number to start at.",
+    "3!SAVEFILE specifies an alternate solution file."
 };
-static tablespec const yowzitch_table = { 23, 2, 2, -1, yowzitch_items };
+static tablespec const yowzitch_table = { 23, 3, 1, -1, yowzitch_items };
 tablespec const *yowzitch = &yowzitch_table;
 
 /* Version and license information.
  */
 static char *vourzhon_items[] = {
-    "1+\267", "1-Tile World: version " VERSION,
-    "1+",     "1-Copyright \251 2001-2006 by Brian Raiter",
-    "1+",     "1-compiled " COMPILE_TIME,
-    "1+\267", "1!This program is free software; you can redistribute it and/or"
-	      " modify it under the terms of the GNU General Public License as"
-	      " published by the Free Software Foundation; either version 2 of"
-	      " the License, or (at your option) any later version.",
-    "1+\267", "1!This program is distributed in the hope that it will be"
-	      " useful, but WITHOUT ANY WARRANTY; without even the implied"
-	      " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR"
-	      " PURPOSE. See the GNU General Public License for more details.",
-    "1+\267", "1!Bug reports are appreciated, and can be sent to"
-	      " breadbox@muppetlabs.com."
+    "1+*", "1-Tile World: version " VERSION,
+    "1+",  "1-Copyright (C) 2001-2015 by Brian Raiter",
+    "1+",  "1-compiled " COMPILE_TIME,
+    "1+*", "1!This program is free software; you can redistribute it and/or"
+	   " modify it under the terms of the GNU General Public License as"
+	   " published by the Free Software Foundation; either version 2 of"
+	   " the License, or (at your option) any later version.",
+    "1+*", "1!This program is distributed in the hope that it will be"
+	   " useful, but WITHOUT ANY WARRANTY; without even the implied"
+	   " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR"
+	   " PURPOSE. See the GNU General Public License for more details.",
+    "1+*", "1!Bug reports are appreciated, and can be sent to"
+	   " breadbox@muppetlabs.com."
 };
 static tablespec const vourzhon_table = { 6, 2, 1, -1, vourzhon_items };
 tablespec const *vourzhon = &vourzhon_table;
