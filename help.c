@@ -67,21 +67,24 @@ tablespec const *yowzitch = &yowzitch_table;
 /* Version and license information.
  */
 static char *vourzhon_items[] = {
-    "1+*", "1-Tile World: version " VERSION,
-    "1+",  "1-Copyright (C) 2001-2015 by Brian Raiter",
-    "1+",  "1-compiled " COMPILE_TIME,
-    "1+*", "1!This program is free software; you can redistribute it and/or"
-	   " modify it under the terms of the GNU General Public License as"
-	   " published by the Free Software Foundation; either version 2 of"
-	   " the License, or (at your option) any later version.",
-    "1+*", "1!This program is distributed in the hope that it will be"
-	   " useful, but WITHOUT ANY WARRANTY; without even the implied"
-	   " warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR"
-	   " PURPOSE. See the GNU General Public License for more details.",
-    "1+*", "1!Bug reports are appreciated, and can be sent to"
-	   " breadbox@muppetlabs.com."
+    "1-Tile World: version " VERSION,
+    "1-Copyright (C) 2001-2015 by Brian Raiter",
+    "1-compiled " COMPILE_TIME,
+    "1- ",
+    "1!This program is free software; you can redistribute it and/or modify it"
+    " under the terms of the GNU General Public License as published by the"
+    " Free Software Foundation; either version 2 of the License, or (at your"
+    " option) any later version.",
+    "1- ",
+    "1!This program is distributed in the hope that it will be useful, but"
+    " WITHOUT ANY WARRANTY; without even the implied warranty of"
+    " MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General"
+    " Public License for more details.",
+    "1- ",
+    "1!Bug reports are appreciated, and can be sent to"
+    " breadbox@muppetlabs.com."
 };
-static tablespec const vourzhon_table = { 6, 2, 1, -1, vourzhon_items };
+static tablespec const vourzhon_table = { 9, 1, 0, -1, vourzhon_items };
 tablespec const *vourzhon = &vourzhon_table;
 
 /* Descriptions of the different surfaces of the levels.
