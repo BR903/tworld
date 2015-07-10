@@ -186,9 +186,10 @@ static int readsolutions(char const *infilename, solutions *ss)
 	if (!fileread(&file, s->bytes, s->size, "invalid .tws file"))
 	    return FALSE;
 	s->number = s->bytes[0] | (s->bytes[1] << 8);
-	if (!s->number && !s->bytes[2]) {
-	    if (size > 20 && size - 20 < 256)
-		strcpy(ss->setname, (char*)s->bytes + 20);
+	if (!s->number && !s->bytes[2] && !s->bytes[3]
+		       && !s->bytes[4] && !s->bytes[5]) {
+	    if (size > 16 && size - 16 < 256)
+		strcpy(ss->setname, (char*)s->bytes + 16);
 	    free(s->bytes);
 	    --ss->count;
 	}
