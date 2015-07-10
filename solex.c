@@ -273,6 +273,8 @@ static void displaysolutioninfo(solutions *ss)
 	return;
     }
 
+    if (ss->setname[0])
+	printf("%s: ", ss->setname);
     first = -1;
     last = -1;
     for (n = 0 ; n < ss->count ; ++n) {
