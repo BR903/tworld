@@ -73,13 +73,6 @@ extern void *filereadbuf(fileinfo *file, unsigned long size, char const *msg);
  */
 extern int filegetline(fileinfo *file, char *buf, int *len, char const *msg);
 
-/* Read a config-style line from a file, looking for the pattern
- * "name=value". FALSE is returned if the end of the file is found
- * first.
- */
-extern int filegetconfigline(fileinfo *file, char **name, char **value,
-			     char const *msg);
-
 /* Return the maximum size of a legal pathname.
  */
 extern int getpathbufferlen(void);
