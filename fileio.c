@@ -299,13 +299,13 @@ int filereadint32(fileinfo *file, unsigned long *val32, char const *msg)
 
     errno = 0;
     if ((byte = fgetc(file->fp)) != EOF) {
-	*val32 = (unsigned char)byte;
+	*val32 = (unsigned long)byte;
 	if ((byte = fgetc(file->fp)) != EOF) {
-	    *val32 |= (unsigned char)byte << 8;
+	    *val32 |= (unsigned long)byte << 8;
 	    if ((byte = fgetc(file->fp)) != EOF) {
-		*val32 |= (unsigned char)byte << 16;
+		*val32 |= (unsigned long)byte << 16;
 		if ((byte = fgetc(file->fp)) != EOF) {
-		    *val32 |= (unsigned char)byte << 24;
+		    *val32 |= (unsigned long)byte << 24;
 		    return TRUE;
 		}
 	    }
