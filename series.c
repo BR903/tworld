@@ -420,8 +420,6 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 		series->gsflags |= GSF_IGNOREPASSWDS;
 	    else
 		series->gsflags &= ~GSF_IGNOREPASSWDS;
-	} else if (!strcmp(name, "messages")) {
-	    /* strcpy(series->messagefile, value); */
 	} else if (!strcmp(name, "fixlynx")) {
 	    if (tolower(*value) == 'n')
 		series->gsflags &= ~GSF_LYNXFIXES;
