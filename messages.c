@@ -1,6 +1,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	"gen.h"
+#include	"defs.h"
 #include	"err.h"
 #include	"fileio.h"
 #include	"messages.h"
@@ -84,7 +85,7 @@ labelledtext *readlabelledtextfile(char const *filename)
 
 int gettextforlevel(labelledtext const *lts, int number, tablespec *table)
 {
-    char const **items = NULL;
+    char **items = NULL;
     labelledtext const *lt;
     int i;
 
