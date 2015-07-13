@@ -658,7 +658,7 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     *pcount = listsize;
     table->rows = listsize + 1;
     table->cols = 2;
-    table->sep = 4;
+    table->sep = 2;
     table->collapse = 0;
     table->items = ptrs;
     return TRUE;

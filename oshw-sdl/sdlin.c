@@ -498,7 +498,7 @@ tablespec const *keyboardhelp(int which)
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_twixtgame = { 18, 2, 4, 1,
+    static tablespec const keyhelp_twixtgame = { 18, 2, 2, 1,
 						 twixtgame_items };
 
     static char *scorelist_items[] = {
@@ -510,7 +510,7 @@ tablespec const *keyboardhelp(int which)
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_scorelist = { 7, 2, 4, 1, scorelist_items };
+    static tablespec const keyhelp_scorelist = { 7, 2, 2, 1, scorelist_items };
 
     static char *scroll_items[] = {
 	"1-up down", "1-move selection",
@@ -520,7 +520,7 @@ tablespec const *keyboardhelp(int which)
 	"1-Ctrl-C", "1-exit the program",
 	"1-Alt-F4", "1-exit the program"
     };
-    static tablespec const keyhelp_scroll = { 6, 2, 4, 1, scroll_items };
+    static tablespec const keyhelp_scroll = { 6, 2, 2, 1, scroll_items };
 
     switch (which) {
       case KEYHELP_INGAME:	return &keyhelp_ingame;
