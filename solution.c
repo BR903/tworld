@@ -604,8 +604,11 @@ int readsolutions(gameseries *series)
 
     if (!readsolutionheader(&series->savefile, series->ruleset,
 			    &series->solheaderflags,
-			    &series->solheadersize, series->solheader))
+			    &series->solheadersize, series->solheader)) {
+	series->solheaderflags = 0;
+	series->solheadersize = 0;
 	return FALSE;
+    }
 
     memset(&gametmp, 0, sizeof gametmp);
     for (;;) {
