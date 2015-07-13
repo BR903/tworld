@@ -27,7 +27,8 @@ LOADLIBES :=@LOADLIBES@
 
 OBJS = \
 tworld.o series.o play.o encoding.o solution.o res.o lxlogic.o mslogic.o \
-unslist.o help.o score.o random.o cmdline.o fileio.o err.o liboshw.a
+unslist.o messages.o help.o score.o random.o cmdline.o fileio.o err.o \
+liboshw.a
 
 RESOURCES = tworldres.o
 
@@ -54,6 +55,7 @@ series.o   : series.c series.h defs.h gen.h err.h fileio.h solution.h
 play.o     : play.c play.h defs.h gen.h err.h state.h random.h oshw.h res.h \
              logic.h solution.h fileio.h
 encoding.o : encoding.c encoding.h defs.h gen.h err.h state.h
+messages.o : messages.c messages.h gen.h fileio.h err.h
 solution.o : solution.c solution.h defs.h gen.h err.h fileio.h
 res.o      : res.c res.h defs.h gen.h fileio.h err.h oshw.h
 lxlogic.o  : lxlogic.c logic.h defs.h gen.h err.h state.h random.h

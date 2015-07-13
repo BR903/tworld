@@ -16,6 +16,7 @@
 #include	"score.h"
 #include	"solution.h"
 #include	"unslist.h"
+#include	"messages.h"
 #include	"help.h"
 #include	"oshw.h"
 #include	"cmdline.h"
@@ -722,6 +723,34 @@ static int showscores(gamespec *gs)
     return setcurrentgame(gs, n) || ret;
 }
 
+static void showstarttext(gamespec const *gs)
+{
+    tablespec table;
+
+    if (gs->currentgame == 0 && !issolved(gs, 0)) {
+	if (gettextforlevel(gs->series.endmessages, 0, &table)) {
+	    displaytable(" ", &table, +1);
+	    anykey();
+	    cleardisplay();
+	    free(table.items);
+	}
+    }
+}
+
+static void showendtext(gamespec const *gs)
+{
+    tablespec table;
+    int number;
+
+    number = gs->series.games[gs->currentgame].number;
+    if (gettextforlevel(gs->series.endmessages, number, &table)) {
+	displaytable(" ", &table, +1);
+	anykey();
+	cleardisplay();
+	free(table.items);
+    }
+}
+
 /* Obtain a password from the user and move to the requested level.
  */
 static int selectlevelbypassword(gamespec *gs)
@@ -892,6 +921,7 @@ static int endinput(gamespec *gs)
 	  case CmdCheckSolution:
 	  case CmdProceed:
 	    if (gs->status > 0) {
+		showendtext(gs);
 		if (islastinseries(gs, gs->currentgame))
 		    gs->enddisplay = TRUE;
 		else
@@ -1744,6 +1774,7 @@ int tworld(int argc, char *argv[])
 
     do {
 	pushsubtitle(NULL);
+	showstarttext(&spec);
 	while (runcurrentlevel(&spec)) ;
 	popsubtitle();
 	cleardisplay();

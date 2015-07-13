@@ -433,7 +433,7 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
 	}
     }
 
-    sep = sdlg.font.w[' '] * table->sep;
+    sep = sdlg.font.w['x'] * table->sep;
     w = -sep;
     for (i = 0 ; i < table->cols ; ++i)
 	w += colsizes[i].w + sep;
@@ -441,7 +441,7 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
     if (diff < 0 && table->collapse >= 0) {
 	w = -diff;
 	if (colsizes[table->collapse].w < w)
-	    w = colsizes[table->collapse].w - sdlg.font.w[' '];
+	    w = colsizes[table->collapse].w - sdlg.font.w['x'];
 	colsizes[table->collapse].w -= w;
 	diff += w;
     }

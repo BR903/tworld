@@ -13,6 +13,7 @@
 #include	"fileio.h"
 #include	"solution.h"
 #include	"unslist.h"
+#include	"messages.h"
 #include	"series.h"
 
 /* The signature bytes of the data files.
@@ -325,6 +326,8 @@ int readseriesfile(gameseries *series)
 	undomschanges(series);
     markunsolvablelevels(series);
     readsolutions(series);
+    if (series->msgfilename)
+	series->endmessages = readlabelledtextfile(series->msgfilename);
     return TRUE;
 }
 
@@ -343,6 +346,10 @@ void freeseriesdata(gameseries *series)
     series->mapfilename = NULL;
     free(series->savefilename);
     series->savefilename = NULL;
+    free(series->msgfilename);
+    series->msgfilename = NULL;
+    freelabelledtext(series->endmessages);
+    series->endmessages = NULL;
     series->gsflags = 0;
     series->solheaderflags = 0;
 
@@ -421,7 +428,7 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 	    else
 		series->gsflags &= ~GSF_IGNOREPASSWDS;
 	} else if (!strcmp(name, "messages")) {
-	    /* strcpy(series->messagefile, value); */
+	    series->msgfilename = getpathforfileindir(seriesdatdir, value);
 	} else if (!strcmp(name, "fixlynx")) {
 	    if (tolower(*value) == 'n')
 		series->gsflags &= ~GSF_LYNXFIXES;
@@ -482,6 +489,8 @@ static int getseriesfile(char *filename, void *data)
     series->mapfilename = NULL;
     clearfileinfo(&series->savefile);
     series->savefilename = NULL;
+    series->msgfilename = NULL;
+    series->endmessages = NULL;
     series->gsflags = 0;
     series->solheaderflags = 0;
     series->allocated = 0;

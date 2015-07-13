@@ -208,6 +208,14 @@ typedef	struct gamesetup {
 #define	SGF_REPLACEABLE		0x0002	/* solution is marked as replaceable */
 #define	SGF_SETNAME		0x0004	/* internal to solution.c */
 
+/* A structure for storing a level-end message text.
+ */
+typedef struct labelledtext {
+    int		label;
+    int		linecount;
+    char      **lines;
+} labelledtext;
+
 /* The collection of data maintained for each series.
  */
 typedef	struct gameseries {
@@ -221,6 +229,8 @@ typedef	struct gameseries {
     char	       *mapfilename;	/* the name of said file */
     fileinfo		savefile;	/* the file holding the solutions */
     char	       *savefilename;	/* non-default name for said file */
+    labelledtext       *endmessages;	/* the array of level-end messages */
+    char	       *msgfilename;	/* the file providing the messages */
     int			solheaderflags;	/* solution flags (none defined yet) */
     int			solheadersize;	/* size of extra solution header */
     char		filebase[256];	/* the level set's filename */
