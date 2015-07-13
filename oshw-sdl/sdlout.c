@@ -727,7 +727,7 @@ int displayendmessage(int basescore, int timescore, long totalscore,
  * user know what they're looking at. completed determines the prompt
  * icon that will be displayed in the lower right-hand corner.
  */
-int displaytable(char const *title, tablespec const *table, int completed)
+int displaysmalltable(char const *title, tablespec const *table, int completed)
 {
     SDL_Rect	area;
     SDL_Rect   *cols;
@@ -751,6 +751,77 @@ int displaytable(char const *title, tablespec const *table, int completed)
     displayprompticon(completed);
     SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
     return TRUE;
+}
+
+/* Render a table on the display. title is a short string to let the
+ * user know what they're looking at. completed determines the prompt
+ * icon that will be displayed in the lower right-hand corner. The
+ * callback function inputcallback is called repeatedly to determine
+ * how to scroll and when to exit. The final value returned by the
+ * callback will be the return value of the function.
+ */
+int displaytable(char const *title, tablespec const *table, int completed,
+		 int (*inputcallback)(int*))
+{
+    SDL_Rect	area;
+    SDL_Rect   *cols, *colstmp;
+    int		topline, maxtop;
+    int		j, n;
+
+    cleardisplay();
+
+    area.x = MARGINW;
+    area.y = screenh - MARGINH - sdlg.font.h;
+    area.w = screenw - 2 * MARGINW;
+    area.h = sdlg.font.h;
+    puttext(&area, title, -1, 0);
+    displayprompticon(completed);
+    area.h = area.y - MARGINH;
+    area.y = MARGINH;
+
+    cols = measuretable(&area, table);
+    if (!(colstmp = malloc(table->cols * sizeof *colstmp)))
+	memerrexit();
+    maxtop = area.h - sdlg.font.h;
+
+    topline = 0;
+    n = SCROLL_NOP;
+    do {
+	switch (n) {
+	  case SCROLL_NOP:						break;
+	  case SCROLL_UP:		topline -= sdlg.font.h;		break;
+	  case SCROLL_DN:		topline += sdlg.font.h;		break;
+	  case SCROLL_HALFPAGE_UP:	topline -= area.h / 2;		break;
+	  case SCROLL_HALFPAGE_DN:	topline += area.h / 2;		break;
+	  case SCROLL_PAGE_UP:		topline -= area.h-sdlg.font.h;	break;
+	  case SCROLL_PAGE_DN:		topline += area.h-sdlg.font.h;	break;
+	  case SCROLL_ALLTHEWAY_UP:	topline = 0;			break;
+	  case SCROLL_ALLTHEWAY_DN:	topline = maxtop;		break;
+	  default:			topline = n;			break;
+	}
+	if (topline < 0)
+	    topline = 0;
+	else if (topline > maxtop)
+	    topline = maxtop;
+	SDL_FillRect(sdlg.screen, &area, bkgndcolor(sdlg.textclr));
+	memcpy(colstmp, cols, table->cols * sizeof *colstmp);
+	if (topline)
+	    for (j = 0 ; j < table->cols ; ++j)
+		colstmp[j].y -= topline;
+	n = 0;
+	for (j = 0 ; j < maxtop ; ++j) {
+	    drawtablerow(table, colstmp, &n, 0);
+	    if (colstmp[0].y >= area.y + area.h)
+		break;
+	}
+	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
+	n = SCROLL_NOP;
+    } while ((*inputcallback)(&n));
+ 
+    free(cols);
+    free(colstmp);
+    cleardisplay();
+    return n;
 }
 
 /* Render a table with embedded illustrations on the display. title is

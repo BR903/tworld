@@ -733,8 +733,7 @@ static void showstarttext(gamespec const *gs)
 
     if (gs->currentgame == 0 && !issolved(gs, 0)) {
 	if (gettextforlevel(gs->series.endmessages, 0, &table)) {
-	    displaytable(gs->series.name, &table, +1);
-	    anykey();
+	    displaytable(gs->series.name, &table, +1, scrollinputcallback);
 	    cleardisplay();
 	    free(table.items);
 	}
@@ -751,8 +750,7 @@ static void showendtext(gamespec const *gs)
 
     number = gs->series.games[gs->currentgame].number;
     if (gettextforlevel(gs->series.endmessages, number, &table)) {
-	displaytable(" ", &table, +1);
-	anykey();
+	displaytable(gs->series.name, &table, +1, scrollinputcallback);
 	cleardisplay();
 	free(table.items);
     }
