@@ -723,13 +723,17 @@ static int showscores(gamespec *gs)
     return setcurrentgame(gs, n) || ret;
 }
 
+/* If the current level set includes introductory text, and if the
+ * player is starting at the first level (which is unsolved), then
+ * display the introductory text.
+ */
 static void showstarttext(gamespec const *gs)
 {
     tablespec table;
 
     if (gs->currentgame == 0 && !issolved(gs, 0)) {
 	if (gettextforlevel(gs->series.endmessages, 0, &table)) {
-	    displaytable(" ", &table, +1);
+	    displaytable(gs->series.name, &table, +1);
 	    anykey();
 	    cleardisplay();
 	    free(table.items);
@@ -737,6 +741,9 @@ static void showstarttext(gamespec const *gs)
     }
 }
 
+/* Render the message (if any) configured to be displayed at the
+ * completion of the current level.
+ */
 static void showendtext(gamespec const *gs)
 {
     tablespec table;
