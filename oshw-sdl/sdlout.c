@@ -765,7 +765,7 @@ int displaytable(char const *title, tablespec const *table, int completed,
 {
     SDL_Rect	area;
     SDL_Rect   *cols, *colstmp;
-    int		topline, maxtop;
+    int		topline, maxtop, linecount;
     int		j, n;
 
     cleardisplay();
@@ -782,19 +782,20 @@ int displaytable(char const *title, tablespec const *table, int completed,
     cols = measuretable(&area, table);
     if (!(colstmp = malloc(table->cols * sizeof *colstmp)))
 	memerrexit();
-    maxtop = area.h - sdlg.font.h;
+    maxtop = 999;
+    linecount = area.h / sdlg.font.h;
 
     topline = 0;
     n = SCROLL_NOP;
     do {
 	switch (n) {
 	  case SCROLL_NOP:						break;
-	  case SCROLL_UP:		topline -= sdlg.font.h;		break;
-	  case SCROLL_DN:		topline += sdlg.font.h;		break;
-	  case SCROLL_HALFPAGE_UP:	topline -= area.h / 2;		break;
-	  case SCROLL_HALFPAGE_DN:	topline += area.h / 2;		break;
-	  case SCROLL_PAGE_UP:		topline -= area.h-sdlg.font.h;	break;
-	  case SCROLL_PAGE_DN:		topline += area.h-sdlg.font.h;	break;
+	  case SCROLL_UP:		--topline;			break;
+	  case SCROLL_DN:		++topline;			break;
+	  case SCROLL_HALFPAGE_UP:	topline -= linecount / 2;	break;
+	  case SCROLL_HALFPAGE_DN:	topline += linecount / 2;	break;
+	  case SCROLL_PAGE_UP:		topline -= linecount;		break;
+	  case SCROLL_PAGE_DN:		topline += linecount;		break;
 	  case SCROLL_ALLTHEWAY_UP:	topline = 0;			break;
 	  case SCROLL_ALLTHEWAY_DN:	topline = maxtop;		break;
 	  default:			topline = n;			break;
@@ -805,15 +806,21 @@ int displaytable(char const *title, tablespec const *table, int completed,
 	    topline = maxtop;
 	SDL_FillRect(sdlg.screen, &area, bkgndcolor(sdlg.textclr));
 	memcpy(colstmp, cols, table->cols * sizeof *colstmp);
-	if (topline)
-	    for (j = 0 ; j < table->cols ; ++j)
-		colstmp[j].y -= topline;
+	if (topline) {
+	    for (j = 0 ; j < table->cols ; ++j) {
+		colstmp[j].y -= topline * sdlg.font.h;
+		colstmp[j].h += topline * sdlg.font.h;
+	    }
+	}
 	n = 0;
-	for (j = 0 ; j < maxtop ; ++j) {
+	for (j = 0 ; j < table->rows ; ++j) {
 	    drawtablerow(table, colstmp, &n, 0);
 	    if (colstmp[0].y >= area.y + area.h)
 		break;
 	}
+	n = area.y + area.h - colstmp[0].y;
+	if (n > 0)
+	    maxtop = topline;
 	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
 	n = SCROLL_NOP;
     } while ((*inputcallback)(&n));

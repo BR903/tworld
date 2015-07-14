@@ -254,6 +254,13 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
 	rect->w = w;
 	return;
     }
+    if (rect->y <= -sdlg.font.h) {
+	if (flags & PT_UPDATERECT) {
+	    rect->y += sdlg.font.h;
+	    rect->h -= sdlg.font.h;
+	}
+	return;
+    }
     if (w >= rect->w) {
 	w = rect->w;
 	l = r = 0;
@@ -277,8 +284,19 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
 
     pitch = sdlg.screen->pitch;
     bpp = sdlg.screen->format->BytesPerPixel;
-    p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch + rect->x * bpp;
-    for (y = 0 ; y < sdlg.font.h && y < rect->h ; ++y) {
+    if (rect->y < 0) {
+	y = -rect->y;
+	p = sdlg.screen->pixels;
+    } else {
+	y = 0;
+	p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch;
+    }
+    p = (unsigned char*)p + rect->x * bpp;
+    for ( ; y < sdlg.font.h && y < rect->h ; ++y) {
+	if (p < sdlg.screen->pixels) {
+	    p = (unsigned char*)p + pitch;
+	    continue;
+	}
 	switch (bpp) {
 	  case 1:
 	    q = drawtextscanline8(p, l, y, clr, NULL, 0);
