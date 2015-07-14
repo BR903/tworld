@@ -6,7 +6,7 @@ Makefile
 configure
 autom4te.cache
 config.*
-docs/tworld.6
+docs/*.6
 docs/*.html
 oshw
 oshw-sdl/Makefile
