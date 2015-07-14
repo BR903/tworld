@@ -21,11 +21,11 @@ AC_ARG_WITH(debug,
 
 LOADLIBES=""
 OSHWCFLAGS=$CFLAGS
-sharedir='${datadir}/tworld'
+sharedir='${datarootdir}/tworld'
 otherobjs=""
 
 dnl
-dnl	--with-sharedir=DIR overrides default value of $datadir/tworld
+dnl	--with-sharedir=DIR overrides default value of $datarootdir/tworld
 dnl	for the shared data directory.
 dnl
 

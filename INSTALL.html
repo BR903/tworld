@@ -10,9 +10,9 @@ Installing Tile World for Linux
 Installing Tile World for Linux
 </h1></center>
 <p>
-Before proceeding, ensure that you have SDL installed on your
+Before proceeding, ensure that you have SDL 1.2 installed on your
 machine. (If you don't have SDL, you can get it by visiting
-<a href="http://www.libsdl.org/download-1.2.html">http://www.libsdl.org/download-1.2.html</a>.
+<a href="http://www.libsdl.org/download-1.2.php">http://www.libsdl.org/download-1.2.php</a>.
 If you download a precompiled version -- i.e., an .rpm or .deb file --
 note that you will need the development runtime, as opposed to the
 binary runtime.)
@@ -26,11 +26,12 @@ Installing Tile World involves the usual three-part incantation:
 By default, the program is set up so that it will keep its shared
 files under <tt>/usr/local/share/tworld</tt>. If you would prefer the
 <tt>tworld</tt> directory to be somewhere besides
-<tt>/usr/local/share</tt>, use the <tt>--datadir</tt> option to change
-it when you run <tt>./configure</tt>. Alternately, you can use the
-<tt>--with-sharedir=DIR</tt> option to explicitly specify a completely
-different path. (This value can also be changed at runtime, either via
-the <tt>TWORLDDIR</tt> environment variable or via the command line.)
+<tt>/usr/local/share</tt>, use the <tt>--datarootdir</tt> option to
+change it when you run <tt>./configure</tt>. Alternately, you can use
+the <tt>--with-sharedir=DIR</tt> option to explicitly specify a
+completely different path. (This value can also be changed at runtime,
+either via the <tt>TWORLDDIR</tt> environment variable or via the
+command line.)
 <p>
 <h3>
 make

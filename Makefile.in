@@ -4,14 +4,13 @@
 # --prefix=PREFIX
 # --exec_prefix=EXEC_PREFIX
 # --bindir=BINDIR
-# --datadir=DATADIR
 # --mandir=MANDIR
 # --with-sharedir=SHAREDIR
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
-datadir = @datadir@
+datarootdir = @datarootdir@
 sharedir = @sharedir@
 mandir = @mandir@
 

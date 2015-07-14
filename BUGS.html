@@ -12,10 +12,6 @@ Bugs in the MS game logic emulation
 Bugs in the Lynx game logic emulation
 <li>
 Other bugs and misfeatures
-<!--
-<li>
-TODO: Missing features
--->
 </ul>
 <p>
 <hr>
@@ -25,8 +21,9 @@ Bugs in the MS game logic emulation
 <ol>
 <li>
 There are numerous situations in the MS game that cause a moused goal
-to be cancelled for which TW will keep trying. A clearer understanding
-of those situations is needed.
+to be cancelled for which TW will keep trying, or vice versa. A
+clearer understanding of how the MS game handles moused goals is
+needed.
 <li>
 The MS game checks for input more than once per tick. Probably this
 was done to catch last-minute keyboard events, but it has the effect
@@ -46,9 +43,9 @@ just does it once. I do not believe that this optimization has a real
 effect on the gameplay. It does, however, make it easier to examine
 the screen when pushing against a force floor.
 <li>
-There are a number of miscellaneous emulation bugs, mostly involving
-"illegal" tile combinations. These are documented more thoroughly in
-the <a href="msbugs.txt">msbugs.txt</a> file on the website.
+There are a number of miscellaneous emulation bugs. These are
+documented more thoroughly in the <a href="msbugs.txt">msbugs.txt</a>
+file on the website.
 </ol>
 <p>
 <hr>
@@ -85,23 +82,11 @@ five bytes long. In this case, it simply ignores the field 6 password.
 The MS game will remember both passwords and allow either one to be
 used (although if both are present it will only show the field 8
 password).
-</ol>
-<!--
-<p>
-<hr>
-<p>
-TODO: Missing features
-<p>
-<ol>
 <li>
-Improve emulation of MS's mouse-goal cancellation (i.e. Chip deciding
-when to stop trying to reach a mouse-selected tile).
-<li>
-Add an rc file under the save directory for storing settings: volume
-level, current series, current level, etc. These become the new
-default when values are not specified on the cmdline, and are written
-back out at every (normal) shutdown.
+Tile World does not properly imitate the original game in deciding
+when to allow the player the option to skip past a level. The criteria
+for this circumstance has not be properly elucidated, for either
+ruleset.
 </ol>
--->
 </body>
 </html>

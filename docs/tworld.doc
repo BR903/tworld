@@ -626,9 +626,8 @@ made available for the Lynx.
 MS-DOS, Microsoft Windows (16-bit), Amiga, ZX Spectrum, Atari ST, and
 the Commodore 64. (A NES port was also planned, but never completed.)
 
-The Windows port was different from most (perhaps all?) of the others
-in that it was not done by the original team at Epyx. Instead it was
-done by Microsoft and sold as part of Windows Entertainment Pack 4
+The Windows port was not done by the original team at Epyx. Instead it
+was done by Microsoft and sold as part of Windows Entertainment Pack 4
 (and later as part of Best of Windows Entertainment Pack). In the
 process of recreating the game for the 16-bit Windows platform,
 Microsoft introduced a surprising number of changes to the mechanics
@@ -647,15 +646,14 @@ game and all freely available.
 Atari discontinued support for the Lynx in 1994. When Epyx went under,
 the rights to their games were purchased by Bridgestone Multimedia.
 Responding to the success of "Chip's Challenge", Chuck Sommerville
-created a sequel ("Chip's Challenge 2"). The sequel included the
+created a sequel, called "Chip's Challenge 2". The sequel included the
 original game as a proper subset, and the company held the rights to
-both games. Bridgestone Multimedia, who has now become Alpha Omega
-Publications, unfortunately did not see fit to actually release
-"Chip's Challenge 2", and by now it is highly unlikely that it ever
-will be released. Since Chuck Sommerville no longer has rights to
-either game, and Microsoft no longer sells either of the Entertainment
-Packs, the original "Chip's Challenge" is no longer available except
-by purchasing a used copy of one of the aforementioned Entertainment
+both games. Bridgestone Multimedia was not interested in publishing
+computer games, however, and so made no effort to release it.
+
+Microsoft no longer sells the Entertainment Packs, so the older
+Windows version of "Chip's Challenge" is no longer available except by
+purchasing a used copy of one of the aforementioned Entertainment
 Packs (or by downloading an illegal copy).
 
 In 2001, the author began writing "Tile World" with the intention of
@@ -663,6 +661,12 @@ recreating a version of the MS game for the Linux platform. At the
 encouragement of Chuck Sommerville, this project was expanded to
 include the goals of recreating the original Lynx game as well, and
 also making the program work under MS Windows in addition to Linux.
+
+In 2015 Chuck Sommerville finally managed to strike a deal with
+Bridgestone Multimedia and get Chips Challenge 2 distributed on Steam.
+Since this version also makes available the original levels, under the
+name "Chip's Challenge 1", there is now yet another variation of the
+original ruleset.
 
 .Section Appendix: Notes on Nomenclature
 
@@ -673,7 +677,8 @@ the MS version of the game were known as fire boots, flippers (for
 water), skates (for ice), and suction boots (for force floors). In the
 original Lynx version, however, they were not even boots -- the four
 tools were fire shields, water shields, cleats, and magnets,
-respectively.
+respectively. With the CC2 release, the objects have returned to being
+boots, but with "magno boots" in place of suction boots.
 
 Several of the creatures have seen a variety of names. The list of
 creatures given in #Overview of the Game# corresponds to the MS
