@@ -1,0 +1,574 @@
+<html>
+<head>
+<title>The CC2M File Format</title>
+</head>
+<body bgcolor="#FFFFFC" text="#000000">
+<p align=center>
+<center>
+<h1>The CC2M File Format</h1>
+</center>
+</p>
+
+<p>This document describes the basic format of the CC2M file format. The
+name "CC2M" is short for "Chip's Challenge 2 Map", and this is the
+native format used for CC2 levels. However, it is also used for the
+CC1 levels that accompany the CC2 release, and this is what is
+documented below. Please note that this document <em>only</em> covers those
+aspects of the file format as used by the CC1 ruleset; CC2-specific
+features are documented elsewhere.</p>
+
+<p>Please also note that this is a work in progress. There are still
+several aspects of the CC2M file format that are unexplained below.</p>
+
+<h3>The Basic Layout</h3>
+
+<p>The file header is ten bytes in size, and consists of the following
+three fields:</p>
+
+<table>
+<tr><td align="center">0-3</td><td>&nbsp;</td>
+    <td>signature bytes: <code>"CC2M"</code></td></tr>
+<tr><td align="center">4-7</td><td>&nbsp;</td>
+    <td>signature value: 2</td></tr>
+<tr><td align="center">8-9</td><td>&nbsp;</td>
+    <td>file subtype: a value between 0x33 and 0x37</td></tr>
+</table>
+
+<p>It is not fully known what the file subtype indicates. The assumption
+is that it is a version number that allows the software to be
+backwards-compatible with previous file versions. Note that the
+observed values map to the ASCII digits <code>"3"</code> through <code>"7"</code>. It is
+assumed that this is not coincidental, and the rest of this text will
+refer to subtypes 3 through 7.</p>
+
+<p>The file header is followed by a list of one or more blocks. These
+blocks comprise the file's contents.</p>
+
+<p>Each block begins with an eight-byte header:</p>
+
+<table>
+<tr><td align="center">0-3</td><td>&nbsp;</td>
+    <td>block type, e.g. <code>"LOCK"</code>, <code>"TITL"</code></td></tr>
+<tr><td align="center">4-7</td><td>&nbsp;</td>
+    <td>size of block contents (not including this header)</td></tr>
+</table>
+
+<p>The block type signature is always four ASCII characters. Type names
+which are only three characters long are space-padded, such as with
+<code>"KEY "</code> and <code>"END "</code>.</p>
+
+<p>The header is followed by the block contents, the details of which
+depend on the block type.</p>
+
+<p>Many blocks consist of a single string. Strings are always terminated
+with a NUL byte. An empty string block is encoded as a single NUL
+byte.</p>
+
+<h3>The Block Types</h3>
+
+<p>The following list covers the details of each block type.</p>
+
+<blockquote>
+  <p><code>TITL</code> block <em>(required)</em></p>
+</blockquote>
+
+<p>A string containing the level's name.</p>
+
+<blockquote>
+  <p><code>LOCK</code> block <em>(optional)</em></p>
+</blockquote>
+
+<p>A string describing the level's provenance, or something similar. In
+the CC1 levels this block either names Chuck Sommerville, John K.
+Elion, or Alice Voith.</p>
+
+<blockquote>
+  <p><code>CLUE</code> block <em>(optional)</em></p>
+</blockquote>
+
+<p>A string containing the hint text. Line breaks are marked with a CR LF
+pair (though the CC1 game will wrap text with long lines). Levels with
+no hints typically have a single line break as the complete text
+instead of an empty string (or just being omitted, which is what they
+original Lynx levels did).</p>
+
+<blockquote>
+  <p><code>AUTH</code> block <em>(required?)</em></p>
+</blockquote>
+
+<p>A string typically providing the name of the level's author.</p>
+
+<blockquote>
+  <p><code>NOTE</code> block <em>(optional)</em></p>
+</blockquote>
+
+<p>An optional string value, presumably with no explicit requirements as
+to its contents. Typical usage in CC1 is to name the person who
+recorded the accompanying solution. (Given the frequency of typos in
+the existing NOTE blocks, this data is not meant to be displayed to
+the player.) In CC2 it often contains extra hint texts.</p>
+
+<blockquote>
+  <p><code>VERS</code> block <em>(optional)</em></p>
+</blockquote>
+
+<p>A string value, presumably indicating a version number for the map.
+This block is not used with any CC1 levels, and only appears in a
+handful of CC2 levels.</p>
+
+<blockquote>
+  <p><code>OPTN</code> block <em>(required?)</em></p>
+</blockquote>
+
+<p>A short string of bytes indicating various global settings. The first
+two bytes gives the level's time (with zero indicating no time limit).
+The third byte is always one in CC1. Levels of subtype 3, 4, and 5
+always have only three bytes in this block. Levels of subtype 6 and 7
+have up to 25 bytes. The next three bytes, if present, are all low
+integers, with zero being the most common (only two CC1 have a single
+one value). The remaining bytes, if present, show no obvious pattern.</p>
+
+<blockquote>
+  <p><code>PACK</code> block <em>(required)</em></p>
+</blockquote>
+
+<p>This block defines the level's map and the placement of its initial
+contents. As the name suggests, the data in this block has been
+"packed", or compressed. Descriptions of both the data in this
+block and the unpacking algorithm are given below.</p>
+
+<blockquote>
+  <p><code>KEY</code> block <em>(optional)</em></p>
+</blockquote>
+
+<p>This block is always 16 bytes long. No obvious pattern is present in
+the values. Its purpose is unknown. Perhaps it is a checksum of some
+kind? Only one level in the CC1 set lacks a <code>KEY</code> block; presumably this
+is due to an oversight rather than that level being actually unique in
+some way.</p>
+
+<blockquote>
+  <p><code>REPL</code> / <code>PRPL</code> block <em>(optional?)</em></p>
+</blockquote>
+
+<p>This block (whichever one is present) contains a solution replay.
+Files of subtype 3 and 4 use <code>REPL</code> blocks; file of the later subtypes
+use <code>PRPL</code> blocks. The replay data in each is the same, but the data
+in the <code>PRPL</code> blocks has been packed. See below for descriptions of
+the replay data and of the unpacking algorithm.</p>
+
+<blockquote>
+  <p><code>END</code> block <em>(required)</em></p>
+</blockquote>
+
+<p>No content; the <code>END</code> block always marks the end of the block list.</p>
+
+<h3>How to Decompress Packed Block Data</h3>
+
+<p>Both the <code>PACK</code> blocks and the <code>PRPL</code> blocks are "packed", or
+compressed, using a simple scheme. The decompression algorithm works
+as follows.</p>
+
+<p>The first two bytes of the packed data block give the full size of the
+data after unpacking.</p>
+
+<p>The next byte specifies the number of unpacked bytes at the beginning
+of the data. This value cannot be greater than 127. (This value also
+cannot be zero, since packed bytes must be able to refer to bytes that
+appear earlier in the data stream.)</p>
+
+<p>Unpacked bytes are copied to the output stream without modification.</p>
+
+<p>After a sequence of unpacked bytes comes a sequence of repeated bytes
+&mdash; typically three or more bytes that matches a sequence
+appearing earlier in the stream. This repeated sequence is encoded by
+a pair of bytes in the packed data stream.</p>
+
+<p>The first byte of the pair always has the high bit (0x80) set. The
+other seven bits specify the length of the repeated sequence. The
+second byte in the pair specifies how many bytes back from the current
+position that the sequence begins.</p>
+
+<p>(Note that the two instances of the repeated sequence can actually
+overlap, in which case the bytes before the overlap are repeated
+throughout the overlapping region &mdash; much like using overlap in
+C's memcpy() function to lay down a repeating sequence. For example,
+the stream 0x41&nbsp;0x42&nbsp;0x88&nbsp;0x02 will repeat the pair
+0x41&nbsp;0x42 for 10 bytes.)</p>
+
+<p>If the byte immediately after the pair defining the repeated sequence
+has its high bit set, then it is assumed to be the start of another
+pair defining another repeated sequence. Otherwise, the third byte
+instead provides the number of unpacked bytes that follow the triplet.</p>
+
+<p>If, on the other hand, the first byte of a repeated sequence
+specification does NOT have the high bit set, then it represents a
+null sequence, expanding to an empty byte string. There is no second
+or third byte in the specification in this case, and the one byte that
+is present provides the number of unpacked bytes that follow. This
+null-specification is used for when there is more than 127 consecutive
+unpacked bytes in the data stream.</p>
+
+<p>This alternation between unpacked data and strings of repeated
+sequences continues until the end of the block is reached. The block
+will always end with an extra NUL byte, which the last encoded
+repeated sequence points to. (Note that this final NUL byte simply
+marks the end of the compressed data, and is not copied to the output
+stream.)</p>
+
+<h3>Description of the Map Data</h3>
+
+<p>The <code>PACK</code> block contains the data that (after being unpacked) defines
+the level's map, including all of its contents and their initial
+placement.</p>
+
+<p>The map data begins with the first two bytes giving the width and
+height of the map respectively. The bytes following this pair define
+the contents of each cell of the map in reading order (left-to-right,
+top-to-bottom).</p>
+
+<p>Most map cells contain a single object or feature, which is specified
+by a single byte. Some cell contents require a second byte to fully
+specify them, however. Also, some contents implicitly allow other
+objects to share the same cell, which appear in the data stream
+immediately following. The reader of the map data needs to know which
+values have these features in order to know when to advance to the
+next cell.</p>
+
+<p>In the following table, the first column gives the byte value,
+followed by the name of the object that value represents. If the third
+column contains a <code>+</code>, then that object takes a second byte that
+further defines it (see below for details). The fourth column contains
+a <code>*</code> for objects that can coexist with another object, and so will
+always be followed by at least one more byte. In the case when there
+is nothing else in the cell, then the following byte will be 0x01 for
+empty.</p>
+
+<table>
+<tr>
+  <td align="center">01</td><td>empty</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">26</td><td>red key</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">02</td><td>wall</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">27</td><td>blue key</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">03</td><td>ice</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">28</td><td>yellow key</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">04</td><td>ice corner NE</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">29</td><td>green key</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">05</td><td>ice corner SE</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2A</td><td>ic chip (required)</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">06</td><td>ice corner SW</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2B</td><td>ic chip (extra)</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">07</td><td>ice corner NW</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2C</td><td>chip socket</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">08</td><td>water</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2D</td><td>popup wall</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">09</td><td>fire</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2E</td><td>invisible wall</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">0A</td><td>force floor north</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">2F</td><td>invisible wall, temporary</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">0B</td><td>force floor east</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">30</td><td>blue block wall</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">0C</td><td>force floor south</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">31</td><td>blue block floor</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">0D</td><td>force floor west</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">32</td><td>dirt</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">0E</td><td>toggle wall, closed</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">33</td><td>bug</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">0F</td><td>toggle wall, open</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">34</td><td>paramecium</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">11</td><td>teleport</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">35</td><td>ball</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">14</td><td>exit</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">36</td><td>blob</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">16</td><td>Chip</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">37</td><td>teeth</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">17</td><td>block</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">38</td><td>fireball</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">18</td><td>walker</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3A</td><td>red button</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">19</td><td>glider</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3A</td><td>brown button</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">1B</td><td>partition wall south</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3B</td><td>ice skates</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">1C</td><td>partition wall east</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3C</td><td>magnet boots</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">1D</td><td>partition wall SE</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3D</td><td>fire boots</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">1E</td><td>gravel</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3E</td><td>flippers</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">1F</td><td>green button</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">3F</td><td>thief</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">20</td><td>blue button</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">40</td><td>bomb</td>
+  <td>&nbsp;</td><td><code>*</code></td>
+</tr>
+<tr>
+  <td align="center">21</td><td>tank</td>
+  <td><code>+</code></td><td><code>*</code></td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">42</td><td>trap</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">22</td><td>red door</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">43</td><td>clone machine</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">23</td><td>blue door</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">45</td><td>hint button</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">24</td><td>yellow door</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">46</td><td>force floor all</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td align="center">25</td><td>green door</td>
+  <td>&nbsp;</td><td>&nbsp;</td>
+  <td>&nbsp;&nbsp;&nbsp;</td>
+  <td align="center">46</td><td>partition wall</td>
+  <td><code>+</code></td><td><code>*</code></td>
+</tr>
+</table>
+
+<p>Most contents with an extra byte are creatures, and the second byte
+indicates the creature's orientation, i.e. which way the creature is
+initially facing. The orientation byte will be 0x00 for north, 0x01
+for east, 0x02 for south, or 0x03 for west.</p>
+
+<p>A different type of byte is used with 0x6D, a generic partition wall
+value. For this, the following byte indicates which edges have walls.
+The byte will have one or more bits set, where 0x01 indicates north,
+0x02 east, 0x04 south, and 0x08 west. Note that this value is partly
+redundant with the content values 0x1B, 0x1C, and 0x1D. It is not
+known why this is. (It is also not know if the CC1 game will actually
+permit a partition wall to the north or west.)</p>
+
+<p>All creatures permit a second set of contents to occupy the same map
+cell. (This is consistent with the original Lynx game, which actually
+stored creatures separately from the basic map data.)</p>
+
+<p>The remaining contents that permit other contents are all objects that
+can be removed from the cell, i.e. keys, boots, chips, and bombs. (Not
+fake walls or doors, though.) In the original Lynx game these
+objects could only share a cell with a creature (usually a block).
+It's not clear if CC1 would actually handle such combinations as a key
+atop ice, or a bomb sharing a spot with a toggle wall, but the file
+format seems to permit such.</p>
+
+<p>The file format also seems to permit an unlimited stacking of contents
+in a single cell, but presumably this is just for the sake of
+consistency. In practice the third set of contents in a map cell is
+always 0x01 for empty.</p>
+
+<p>Note that no metadata is present in this block (other than the map
+size). This seems to indicate that not only are red and brown buttons
+implicitly connected via Lynx's reading-order rule, but that it is
+also impossible to change the ordering of the creature list to differ
+from the order implied by the map. (This is different from the
+original Lynx game, which could set an arbitrary monster order, though
+this possibility was not exercised in the original levels.)</p>
+
+<h3>Description of the Replay Data</h3>
+
+<p>This data contains a recording of a solution for the level. The data
+begins with a four-byte value. Its purpose is unknown. By far the most
+common value is all-bits zero. For levels with a nonzero value in this
+field, often only one of the four bytes is nonzero, so this "field"
+may actually be four separate byte values.</p>
+
+<p>The remainder of the block is a stream of two-byte entries. The first
+byte value of an entry identifies the command being input. Possible
+base values are:</p>
+
+<table>
+<tr><td align="center">00</td><td>&nbsp;</td><td>none</td></tr>
+<tr><td align="center">02</td><td>&nbsp;</td><td>down</td></tr>
+<tr><td align="center">04</td><td>&nbsp;</td><td>left</td></tr>
+<tr><td align="center">08</td><td>&nbsp;</td><td>right</td></tr>
+<tr><td align="center">10</td><td>&nbsp;</td><td>up</td></tr>
+<tr><td align="center">80</td><td>&nbsp;</td><td>special</td></tr>
+</table>
+
+<p>A horizontal and vertical value pair can also be bitwise-combined to
+indicate a "diagonal" move. The zero value "none" is used to record
+periods when no commands are selected.</p>
+
+<p>The second byte value indicates how long the command is selected.
+(That is, how long the key is held down.) The time unit for this value
+appears to be 1/3 of a frame (or 1/6 of a tick), which would be equal
+to 1/60 of a second.</p>
+
+<p>The maximum possible value for the time field appears to be 0xFC
+(equal to 42 ticks). If a key is held down for longer than this, then
+the entry will have a time value of 0xFC, the next entry in the stream
+will be the special value 0x80_0x00, and then this will be followed by a
+second entry with the same command value. Its time will be added to
+the 0xFC of the initial entry to give the full amount. Presumably,
+multiple fields could be chained together in this fashion to record a
+suitable long period of time.</p>
+
+<p>(For many solutions, the stream is a sequence alternating between one
+key down and no keys down. For many other solutions, the stream
+alternates between entries for one key down and for two keys down,
+depending on the user's keying habits.)</p>
+
+<p>The end of the stream is marked with at least one entry that contains
+the values 0x00&nbsp;0xFF. Sometimes there is more than one such
+entry. There is often also a trailing 0x00 byte, but not always. Not
+sure why.</p>
+
+<p>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/tworld/">
+Tile World</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/">Software
+</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/">Brian
+Raiter</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/">Muppetlabs</a></font>
+</body>
+</html>
