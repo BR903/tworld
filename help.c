@@ -270,10 +270,12 @@ void onlinemainhelp(int topic)
 	  case 0:
 	    displaytable("KEYS - DURING THE GAME",
 			 keyboardhelp(KEYHELP_INGAME), -1);
+	    anykey();
 	    break;
 	  case 1:
 	    displaytable("KEYS - INBETWEEN GAMES",
 			 keyboardhelp(KEYHELP_TWIXTGAMES), -1);
+	    anykey();
 	    break;
 	  case 2:
 	    (void)(helptilescreen("FLOORS", array(help_floors), +1)
@@ -284,9 +286,11 @@ void onlinemainhelp(int topic)
 	    break;
 	  case 3:
 	    displaytable("COMMAND-LINE OPTIONS", &yowzitch_table, -1);
+	    anykey();
 	    break;
 	  case 4:
 	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
+	    anykey();
 	    break;
 	}
     }
