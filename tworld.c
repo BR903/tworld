@@ -15,7 +15,6 @@
 #include	"play.h"
 #include	"score.h"
 #include	"solution.h"
-#include	"unslist.h"
 #include	"help.h"
 #include	"oshw.h"
 #include	"cmdline.h"
