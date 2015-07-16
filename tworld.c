@@ -723,37 +723,29 @@ static int showscores(gamespec *gs)
     return setcurrentgame(gs, n) || ret;
 }
 
-/* If the current level set includes introductory text, and if the
- * player is starting at the first level (which is unsolved), then
- * display the introductory text.
- */
-static void showstarttext(gamespec const *gs)
-{
-    tablespec table;
-
-    if (gs->currentgame == 0 && !issolved(gs, 0)) {
-	if (gettextforlevel(gs->series.endmessages, 0, &table)) {
-	    displaytable(gs->series.name, &table, +1, scrollinputcallback);
-	    cleardisplay();
-	    free(table.items);
-	}
-    }
-}
-
 /* Render the message (if any) configured to be displayed at the
- * completion of the current level.
+ * completion of the given level. If n is negative (and if the first
+ * level is still unsolved), then render the introductory messages
+ * instead.
  */
-static void showendtext(gamespec const *gs)
+static void showlevelmessage(gamespec const *gs, int index)
 {
-    tablespec table;
+    char const **pparray;
+    int ppcount;
     int number;
 
-    number = gs->series.games[gs->currentgame].number;
-    if (gettextforlevel(gs->series.endmessages, number, &table)) {
-	displaytable(gs->series.name, &table, +1, scrollinputcallback);
-	cleardisplay();
-	free(table.items);
+    if (index < 0) {
+	if (gs->currentgame != 0 || issolved(gs, 0))
+	    return;
+	number = 0;
+    } else {
+	if (!issolved(gs, index))
+	    return;
+	number = gs->series.games[index].number;
     }
+    pparray = getlevelmessage(gs->series.endmessages, number, &ppcount);
+    if (pparray)
+	displaytextscroll(" ", pparray, ppcount, +1, scrollinputcallback);
 }
 
 /* Obtain a password from the user and move to the requested level.
@@ -926,7 +918,7 @@ static int endinput(gamespec *gs)
 	  case CmdCheckSolution:
 	  case CmdProceed:
 	    if (gs->status > 0) {
-		showendtext(gs);
+		showlevelmessage(gs, gs->currentgame);
 		if (islastinseries(gs, gs->currentgame))
 		    gs->enddisplay = TRUE;
 		else
@@ -1779,7 +1771,7 @@ int tworld(int argc, char *argv[])
 
     do {
 	pushsubtitle(NULL);
-	showstarttext(&spec);
+	showlevelmessage(&spec, -1);
 	while (runcurrentlevel(&spec)) ;
 	popsubtitle();
 	cleardisplay();

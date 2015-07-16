@@ -20,6 +20,9 @@ extern labelledtext *readlabelledtextfile(char const *filename);
 extern int gettextforlevel(labelledtext const *lts, int number,
 			   tablespec *table);
 
+extern char const **getlevelmessage(labelledtext const *lts, int number,
+				    int *pcount);
+
 /* Free all memory associated with the given array of labelled texts.
  */
 extern void freelabelledtext(labelledtext *lts);

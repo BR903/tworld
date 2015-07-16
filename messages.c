@@ -53,12 +53,6 @@ labelledtext *readlabelledtextfile(char const *filename)
 	    lt.linecount = 0;
 	    lt.lines = NULL;
 	} else {
-	    if (!line) {
-		xalloc(line, 2);
-		line[0] = '1';
-		line[1] = '!';
-		linelen = 2;
-	    }
 	    xalloc(line, linelen + buflen + 1);
 	    memcpy(line + linelen, buf, buflen);
 	    linelen += buflen;
@@ -81,6 +75,21 @@ labelledtext *readlabelledtextfile(char const *filename)
     lts[labelcount - 1].lines = NULL;
 
     return lts;
+}
+
+char const **getlevelmessage(labelledtext const *lts, int number, int *pcount)
+{
+    labelledtext const *lt;
+
+    if (!lts)
+	return NULL;
+    for (lt = lts ; lt->lines ; ++lt)
+	if (lt->label == number)
+	    break;
+    if (!lt->lines)
+	return NULL;
+    *pcount = lt->linecount;
+    return (char const**)lt->lines;
 }
 
 int gettextforlevel(labelledtext const *lts, int number, tablespec *table)

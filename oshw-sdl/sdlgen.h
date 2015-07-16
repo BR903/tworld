@@ -30,13 +30,14 @@ typedef	struct fontcolors { Uint32 c[3]; } fontcolors;
 
 /* Flags to the puttext function.
  */
-#define	PT_CENTER	0x0001		/* center the text horizontally */
-#define	PT_RIGHT	0x0002		/* right-align the text */
-#define	PT_MULTILINE	0x0004		/* span lines & break at whitespace */
-#define	PT_UPDATERECT	0x0008		/* return the unused area in rect */
-#define	PT_CALCSIZE	0x0010		/* determine area needed for text */
-#define	PT_DIM		0x0020		/* draw using the dim text color */
-#define	PT_HILIGHT	0x0040		/* draw using the bold text color */
+#define	PT_CENTER	0x0100		/* center the text horizontally */
+#define	PT_RIGHT	0x0200		/* right-align the text */
+#define	PT_MULTILINE	0x0400		/* span lines & break at whitespace */
+#define	PT_UPDATERECT	0x0800		/* return the unused area in rect */
+#define	PT_CALCSIZE	0x1000		/* determine area needed for text */
+#define	PT_DIM		0x2000		/* draw using the dim text color */
+#define	PT_HILIGHT	0x4000		/* draw using the bold text color */
+#define PT_SKIPLINES(n)	((n) & 0x00FF)	/* don't render the first n lines */
 
 /*
  * Values global to this module. All the globals are placed in here,

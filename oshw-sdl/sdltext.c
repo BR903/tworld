@@ -93,8 +93,8 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
     return TRUE;
 }
 
-/* Given a text and a maximum horizontal space to occupy, return
- * the amount of vertial space needed to render the entire text with
+/* Given a text and a maximum horizontal space to occupy, return the
+ * amount of vertical space needed to render the entire text with
  * word-wrapping.
  */
 static int measuremltext(unsigned char const *text, int len, int maxwidth)
@@ -284,19 +284,8 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
 
     pitch = sdlg.screen->pitch;
     bpp = sdlg.screen->format->BytesPerPixel;
-    if (rect->y < 0) {
-	y = -rect->y;
-	p = sdlg.screen->pixels;
-    } else {
-	y = 0;
-	p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch;
-    }
-    p = (unsigned char*)p + rect->x * bpp;
-    for ( ; y < sdlg.font.h && y < rect->h ; ++y) {
-	if (p < sdlg.screen->pixels) {
-	    p = (unsigned char*)p + pitch;
-	    continue;
-	}
+    p = (unsigned char*)sdlg.screen->pixels + rect->y * pitch + rect->x * bpp;
+    for (y = 0 ; y < sdlg.font.h && y < rect->h ; ++y) {
 	switch (bpp) {
 	  case 1:
 	    q = drawtextscanline8(p, l, y, clr, NULL, 0);
@@ -335,6 +324,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 			      int len, int flags)
 {
     SDL_Rect	area;
+    int		skip;
     int		index, brkw, brkn;
     int		w, n;
 
@@ -347,6 +337,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	len = strlen((char const*)text);
 
     area = *rect;
+    skip = flags & PT_SKIPLINES(0xFF);
     brkw = brkn = 0;
     index = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
@@ -356,13 +347,19 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	    brkw = w;
 	} else if (w > rect->w) {
 	    if (brkw) {
-		drawtext(&area, text + index, brkn - index,
-				 flags | PT_UPDATERECT);
+		if (skip)
+		    --skip;
+		else
+		    drawtext(&area, text + index, brkn - index,
+			     flags | PT_UPDATERECT);
 		index = brkn + 1;
 		w -= brkw;
 	    } else {
-		drawtext(&area, text + index, n - index,
-				 flags | PT_UPDATERECT);
+		if (skip)
+		    --skip;
+		else
+		    drawtext(&area, text + index, n - index,
+			     flags | PT_UPDATERECT);
 		index = n;
 		w = sdlg.font.w[text[n]];
 	    }
