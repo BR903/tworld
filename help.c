@@ -269,13 +269,11 @@ void onlinemainhelp(int topic)
 	switch (n) {
 	  case 0:
 	    displaytable("KEYS - DURING THE GAME",
-			 keyboardhelp(KEYHELP_INGAME), -1,
-			 scrollinputcallback);
+			 keyboardhelp(KEYHELP_INGAME), -1);
 	    break;
 	  case 1:
 	    displaytable("KEYS - INBETWEEN GAMES",
-			 keyboardhelp(KEYHELP_TWIXTGAMES), -1,
-			 scrollinputcallback);
+			 keyboardhelp(KEYHELP_TWIXTGAMES), -1);
 	    break;
 	  case 2:
 	    (void)(helptilescreen("FLOORS", array(help_floors), +1)
@@ -285,12 +283,10 @@ void onlinemainhelp(int topic)
 		&& helptilescreen("MONSTERS", array(help_monsters), 0));
 	    break;
 	  case 3:
-	    displaytable("COMMAND-LINE OPTIONS", &yowzitch_table, -1,
-			 scrollinputcallback);
+	    displaytable("COMMAND-LINE OPTIONS", &yowzitch_table, -1);
 	    break;
 	  case 4:
-	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1,
-			 scrollinputcallback);
+	    displaytable("ABOUT TILE WORLD", &vourzhon_table, -1);
 	    break;
 	}
     }
@@ -329,28 +325,25 @@ void onlinecontexthelp(int topic)
 
     switch (topic) {
       case Help_First:
-	displaytable("HELP", &firsthelp_table, -1, scrollinputcallback);
+	displaytable("HELP", &firsthelp_table, -1);
 	break;
       case Help_KeysDuringGame:
 	displaytable("KEYS - DURING THE GAME",
-		     keyboardhelp(KEYHELP_INGAME), -1,
-		     scrollinputcallback);
+		     keyboardhelp(KEYHELP_INGAME), -1);
 	break;
       case Help_KeysBetweenGames:
 	displaytable("KEYS - INBETWEEN GAMES",
-		     keyboardhelp(KEYHELP_TWIXTGAMES), -1,
-		     scrollinputcallback);
+		     keyboardhelp(KEYHELP_TWIXTGAMES), -1);
 	break;
       case Help_FileListKeys:
 	displaytable("KEYS - FILE LIST",
-		     keyboardhelp(KEYHELP_FILELIST), -1,
-		     scrollinputcallback);
+		     keyboardhelp(KEYHELP_FILELIST), -1);
 	break;
       case Help_ScoreListKeys:
 	displaytable("KEYS - SCORE LIST",
-		     keyboardhelp(KEYHELP_SCORELIST), -1,
-		     scrollinputcallback);
+		     keyboardhelp(KEYHELP_SCORELIST), -1);
 	break;
     }
+    anykey();
     cleardisplay();
 }

@@ -349,12 +349,7 @@ extern int displaytiletable(char const *title, tiletablerow const *rows,
  * the user sees at the bottom of the display, as per
  * displaytextscroll().
  */
-extern int displaysmalltable(char const *title, tablespec const *table,
-			     int completed);
-
-/*
- */
 extern int displaytable(char const *title, tablespec const *table,
-			int completed, int (*inputcallback)(int*));
+			int completed);
 
 #endif

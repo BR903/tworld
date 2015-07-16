@@ -820,7 +820,7 @@ int displaytextscroll(char const *title, char const **paragraphs,
  * user know what they're looking at. completed determines the prompt
  * icon that will be displayed in the lower right-hand corner.
  */
-int displaysmalltable(char const *title, tablespec const *table, int completed)
+int displaytable(char const *title, tablespec const *table, int completed)
 {
     SDL_Rect	area;
     SDL_Rect   *cols;
@@ -853,7 +853,7 @@ int displaysmalltable(char const *title, tablespec const *table, int completed)
  * how to scroll and when to exit. The final value returned by the
  * callback will be the return value of the function.
  */
-int displaytable(char const *title, tablespec const *table, int completed,
+int displaytablemess(char const *title, tablespec const *table, int completed,
 		 int (*inputcallback)(int*))
 {
     SDL_Rect	area;
