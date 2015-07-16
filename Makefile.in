@@ -48,9 +48,10 @@ mklynxcc: mklynxcc.c
 # Object files
 #
 
-tworld.o   : tworld.c defs.h gen.h err.h series.h res.h play.h score.h \
-             solution.h fileio.h help.h oshw.h cmdline.h ver.h
-series.o   : series.c series.h defs.h gen.h err.h fileio.h solution.h
+tworld.o   : tworld.c defs.h gen.h err.h oshw.h play.h score.h fileio.h res.h \
+             series.h solution.h messages.h fileio.h help.h cmdline.h ver.h
+series.o   : series.c series.h defs.h gen.h err.h fileio.h solution.h \
+             messages.h
 play.o     : play.c play.h defs.h gen.h err.h state.h random.h oshw.h res.h \
              logic.h solution.h fileio.h
 encoding.o : encoding.c encoding.h defs.h gen.h err.h state.h
@@ -59,6 +60,7 @@ solution.o : solution.c solution.h defs.h gen.h err.h fileio.h
 res.o      : res.c res.h defs.h gen.h fileio.h err.h oshw.h
 lxlogic.o  : lxlogic.c logic.h defs.h gen.h err.h state.h random.h
 mslogic.o  : mslogic.c logic.h defs.h gen.h err.h state.h random.h
+messages.o : messages.c messages.h defs.h gen.h err.h fileio.h
 unslist.o  : unslist.c unslist.h gen.h err.h fileio.h
 help.o     : help.c help.h defs.h gen.h state.h oshw.h ver.h comptime.h
 score.o    : score.c score.h defs.h gen.h err.h play.h
