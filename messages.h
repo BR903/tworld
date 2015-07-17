@@ -20,6 +20,11 @@ extern labelledtext *readlabelledtextfile(char const *filename);
 extern int gettextforlevel(labelledtext const *lts, int number,
 			   tablespec *table);
 
+/* Look up the given number in the array of labelled texts, and if a
+ * text exists for that number, return it. pcount receives the number
+ * of strings making up the returned text. The return value is NULL if
+ * no such text is present in the given array.
+ */
 extern char const **getlevelmessage(labelledtext const *lts, int number,
 				    int *pcount);
 
