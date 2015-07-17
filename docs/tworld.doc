@@ -599,7 +599,7 @@ the resource, level set, and data file directories.
 
 .Section License
 
-Tile World is copyright (C) 2001-2006 by Brian Raiter.
+Tile World is copyright (C) 2001-2015 by Brian Raiter.
 
 This program is free software; you can redistribute it and/or  
 modify it under the terms of the GNU General Public License as 
@@ -640,8 +640,8 @@ community of adherents to the game connected via a MSN chatroom (and
 later through the internet). A few members of this community managed
 to decipher the format of the MS game's data file, and John K. Elion
 subsequently created a freeware level editor, called ChipEdit. As a
-result there are now dozens of new level sets, created by fans of the
-game and all freely available.
+result there are now hundreds of new level sets, created by fans of
+the game and all freely available.
 
 Atari discontinued support for the Lynx in 1994. When Epyx went under,
 the rights to their games were purchased by Bridgestone Multimedia.
@@ -649,24 +649,24 @@ Responding to the success of "Chip's Challenge", Chuck Sommerville
 created a sequel, called "Chip's Challenge 2". The sequel included the
 original game as a proper subset, and the company held the rights to
 both games. Bridgestone Multimedia was not interested in publishing
-computer games, however, and so made no effort to release it.
+the game, however, and so made no effort to release it.
 
-Microsoft no longer sells the Entertainment Packs, so the older
-Windows version of "Chip's Challenge" is no longer available except by
-purchasing a used copy of one of the aforementioned Entertainment
-Packs (or by downloading an illegal copy).
+Microsoft no longer sells any of the Entertainment Packs, so the older
+Windows version of "Chip's Challenge" is no longer (legally) available
+to newcomers except by finding used copies for sale.
 
 In 2001, the author began writing "Tile World" with the intention of
 recreating a version of the MS game for the Linux platform. At the
 encouragement of Chuck Sommerville, this project was expanded to
 include the goals of recreating the original Lynx game as well, and
 also making the program work under MS Windows in addition to Linux.
+Version 1.0 was released in 2002. Version 1.3 was released in 2006.
 
 In 2015 Chuck Sommerville finally managed to strike a deal with
-Bridgestone Multimedia and get Chips Challenge 2 distributed on Steam.
-Since this version also makes available the original levels, under the
-name "Chip's Challenge 1", there is now yet another variation of the
-original ruleset.
+Bridgestone Multimedia and get Chips Challenge 2 published on Steam.
+Since this release also includes the original levels, with the name
+officially being "Chip's Challenge 1", there is now yet another
+variation of the original ruleset.
 
 .Section Appendix: Notes on Nomenclature
 
@@ -678,7 +678,7 @@ water), skates (for ice), and suction boots (for force floors). In the
 original Lynx version, however, they were not even boots -- the four
 tools were fire shields, water shields, cleats, and magnets,
 respectively. With the CC2 release, the objects have returned to being
-boots, but with "magno boots" in place of suction boots.
+boots, but the suction boots are now called magno boots.
 
 Several of the creatures have seen a variety of names. The list of
 creatures given in #Overview of the Game# corresponds to the MS
