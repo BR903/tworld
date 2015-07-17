@@ -41,7 +41,7 @@ tworld.exe: $(OBJS) $(RESOURCES)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
 mklynxcc: mklynxcc.c
-	$(CC) -Wall -W -O -o $@ $^
+	$(CC) -Wall -Wextra -O -o $@ $^
 
 #
 # Object files
