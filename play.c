@@ -15,7 +15,6 @@
 #include	"logic.h"
 #include	"random.h"
 #include	"solution.h"
-#include	"unslist.h"
 #include	"play.h"
 
 /* The current state of the current game.

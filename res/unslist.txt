@@ -9,11 +9,14 @@
 052: 02E0 BD9CA0B7: no exit
 
 [Chipster3534.dat]
-079: 03C5 956F6BA7: bug room is impassible
+079: 03C5 956F6BA7: bug room is impassable
 083: 0341 F2FF8970: no exit
 
 [DanM1.dat]
 115: 04E6 83DB1DB4: not enough chips
+
+[DaveB2.dat]
+015: 0356 FA57533B: not enough chips
 
 [DrakeW1.dat]
 001: 0117 CC4F988E: no exit
@@ -22,6 +25,7 @@
 [EvanD1.dat]
 034: 03E0 21444BAE: not enough time
 044: 026F 020096B2: not enough time
+094: 0148 3809D8FA: it is solvable in the original game but not in Tile World
 124: 02E3 C697D84E: not enough time
 
 [HarrisonD1.dat]
@@ -51,6 +55,9 @@
 [JoeP2.dat]
 002: 0380 DFD6631E: exit is blocked
 
+[JohnL2.dat]
+013: 06D3 2C14E1B6: can't enter the southeast room
+
 [JulianD4.dat]
 001: 0112 D97E4663: red key is inaccessible
 
@@ -74,6 +81,30 @@
 086: 04BF FF2CE3A1: fire boots are inaccessible
 097: 02D5 13D49C66: not enough chips
 102: 02CF 9AA22E70: no exit
+
+[MikeH1.dat]
+017: 0342 04F83630: can't push the block to the water
+021: 0359 3987993B: can't retrieve the red key
+
+[MikeH2.dat]
+002: 01BF 065EA32A: not enough chips
+045: 03D4 ED55C16F: not enough chips
+
+[PaulRM4.dat]
+002: 044F 2ABD793D: can't pass ball with skates
+024: 03CC 18E50A1D: too many walkers
+066: 03BD 1807269C: gliders block the exit
+075: 047C CE74C83B: can't retrieve the blue key
+
+[pi.dat]
+041: 041F 67EDE7C9: it is solvable in the original game but not in Tile World
+
+[Sabu.dat]
+013: 033E A82A7BF7: not enough chips
+
+[TimS1.dat]
+008: 0495 E22489A0: not enough chips
+012: 02F2 A7BAA1CC: not enough chips
 
 [TomP1.dat]
 001: 0113 4358436E: not enough chips
