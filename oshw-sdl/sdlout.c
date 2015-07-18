@@ -735,9 +735,9 @@ int displaytextscroll(char const *title, char const **paragraphs,
 		      int ppcount, int completed,
 		      int (*inputcallback)(int*))
 {
-    SDL_Rect	area, rect;
+    SDL_Rect	area, thumb, rect;
     int	       *linecounts;
-    int		arealines, topline, maxtop;
+    int		arealines, totallines, topline, maxtop;
     int		i, n;
 
     cleardisplay();
@@ -757,17 +757,26 @@ int displaytextscroll(char const *title, char const **paragraphs,
 
     if (!(linecounts = malloc(ppcount * sizeof *linecounts)))
 	memerrexit();
-    n = 0;
+    totallines = 0;
     for (i = 0 ; i < ppcount ; ++i) {
 	rect = area;
 	puttext(&rect, paragraphs[i], -1, PT_MULTILINE | PT_CALCSIZE);
 	linecounts[i] = rect.h / sdlg.font.h;
-	n += linecounts[i] + 1;
+	totallines += linecounts[i] + 1;
+    }
+    maxtop = totallines - arealines;
+    if (maxtop > 0) {
+	thumb.x = promptloc.x;
+	thumb.y = area.y;
+	thumb.w = MARGINW;
+	thumb.h = area.h * arealines / totallines;
+	if (thumb.h < MARGINH)
+	    thumb.h = MARGINH;
+    } else {
+	maxtop = 0;
+	thumb.h = 0;
     }
 
-    maxtop = n - arealines;
-    if (maxtop < 0)
-	maxtop = 0;
     topline = 0;
     n = SCROLL_NOP;
     do {
@@ -807,6 +816,11 @@ int displaytextscroll(char const *title, char const **paragraphs,
 		rect.h -= sdlg.font.h;
 	    }
 	}
+	if (maxtop > 0) {
+	    SDL_FillRect(sdlg.screen, &thumb, bkgndcolor(sdlg.textclr));
+	    thumb.y = area.y + topline * (area.h - thumb.h) / maxtop;
+	    SDL_FillRect(sdlg.screen, &thumb, halfcolor(sdlg.textclr));
+	}
 	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
 	n = SCROLL_NOP;
     } while ((*inputcallback)(&n));
@@ -844,84 +858,6 @@ int displaytable(char const *title, tablespec const *table, int completed)
     displayprompticon(completed);
     SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
     return TRUE;
-}
-
-/* Render a table on the display. title is a short string to let the
- * user know what they're looking at. completed determines the prompt
- * icon that will be displayed in the lower right-hand corner. The
- * callback function inputcallback is called repeatedly to determine
- * how to scroll and when to exit. The final value returned by the
- * callback will be the return value of the function.
- */
-int displaytablemess(char const *title, tablespec const *table, int completed,
-		 int (*inputcallback)(int*))
-{
-    SDL_Rect	area;
-    SDL_Rect   *cols, *colstmp;
-    int		topline, maxtop, linecount;
-    int		j, n;
-
-    cleardisplay();
-
-    area.x = MARGINW;
-    area.y = screenh - MARGINH - sdlg.font.h;
-    area.w = screenw - 2 * MARGINW;
-    area.h = sdlg.font.h;
-    puttext(&area, title, -1, 0);
-    displayprompticon(completed);
-    area.h = area.y - MARGINH;
-    area.y = MARGINH;
-
-    cols = measuretable(&area, table);
-    if (!(colstmp = malloc(table->cols * sizeof *colstmp)))
-	memerrexit();
-    maxtop = 999;
-    linecount = area.h / sdlg.font.h;
-
-    topline = 0;
-    n = SCROLL_NOP;
-    do {
-	switch (n) {
-	  case SCROLL_NOP:						break;
-	  case SCROLL_UP:		--topline;			break;
-	  case SCROLL_DN:		++topline;			break;
-	  case SCROLL_HALFPAGE_UP:	topline -= linecount / 2;	break;
-	  case SCROLL_HALFPAGE_DN:	topline += linecount / 2;	break;
-	  case SCROLL_PAGE_UP:		topline -= linecount;		break;
-	  case SCROLL_PAGE_DN:		topline += linecount;		break;
-	  case SCROLL_ALLTHEWAY_UP:	topline = 0;			break;
-	  case SCROLL_ALLTHEWAY_DN:	topline = maxtop;		break;
-	  default:			topline = n;			break;
-	}
-	if (topline < 0)
-	    topline = 0;
-	else if (topline > maxtop)
-	    topline = maxtop;
-	SDL_FillRect(sdlg.screen, &area, bkgndcolor(sdlg.textclr));
-	memcpy(colstmp, cols, table->cols * sizeof *colstmp);
-	if (topline) {
-	    for (j = 0 ; j < table->cols ; ++j) {
-		colstmp[j].y -= topline * sdlg.font.h;
-		colstmp[j].h += topline * sdlg.font.h;
-	    }
-	}
-	n = 0;
-	for (j = 0 ; j < table->rows ; ++j) {
-	    drawtablerow(table, colstmp, &n, 0);
-	    if (colstmp[0].y >= area.y + area.h)
-		break;
-	}
-	n = area.y + area.h - colstmp[0].y;
-	if (n > 0)
-	    maxtop = topline;
-	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
-	n = SCROLL_NOP;
-    } while ((*inputcallback)(&n));
- 
-    free(cols);
-    free(colstmp);
-    cleardisplay();
-    return n;
 }
 
 /* Render a table with embedded illustrations on the display. title is
