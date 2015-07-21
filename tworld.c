@@ -84,10 +84,6 @@ static int	showhistogram = FALSE;
  */
 static int	mudsucking = 1;
 
-/* Frame-skipping disable flag.
- */
-static int	noframeskip = FALSE;
-
 /* The sound buffer scaling factor.
  */
 static int	soundbufsize = -1;
@@ -963,7 +959,7 @@ static int playgame(gamespec *gs, int firstcmd)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick() || noframeskip;
+	render = waitfortick();
 	cmd = input(FALSE);
 	if (cmd == CmdQuitLevel) {
 	    quitgamestate();
@@ -1061,7 +1057,7 @@ static int playbackgame(gamespec *gs)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick() || noframeskip;
+	render = waitfortick();
 	switch (input(FALSE)) {
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
@@ -1500,7 +1496,6 @@ static int processoption(int opt, char const *val, void *data)
       case 'R':	    start->resdir = val;			    break;
       case 'S':	    start->savedir = val;			    break;
       case 'H':	    showhistogram = !showhistogram;		    break;
-      case 'f':	    noframeskip = !noframeskip;			    break;
       case 'F':	    fullscreen = !fullscreen;			    break;
       case 'p':	    usepasswds = !usepasswds;			    break;
       case 'q':	    silence = !silence;				    break;
@@ -1541,12 +1536,13 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	{ "data-dir",		'D', 'D', 1 },
 	{ "list-dirs",		'd', 'd', 0 },
 	{ "full-screen",	'F', 'F', 0 },
-	{ "no-frame-skip",	 0 , 'f', 0 },
 	{ "histogram",		 0 , 'H', 0 },
 	{ "help",		'h', 'h', 0 },
 	{ "levelset-dir",	'L', 'L', 1 },
 	{ "list-levelsets",	'l', 'l', 0 },
-	{ "mud-sucking",	 0 , 'm', 1 },
+#ifndef NDEBUG
+	{ "mud-sucking",	'm', 'm', 1 },
+#endif
 	{ "volume",		'n', 'n', 1 },
 	{ "pedantic",		'P', 'P', 0 },
 	{ "no-passwords",	'p', 'p', 0 },
@@ -1615,9 +1611,6 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
  */
 static int initializesystem(void)
 {
-#ifdef NDEBUG
-    mudsucking = 1;
-#endif
     setmudsuckingfactor(mudsucking);
     if (!oshwinitialize(silence, soundbufsize, showhistogram, fullscreen))
 	return FALSE;
