@@ -14,9 +14,9 @@
  */
 extern char    *savedir;
 
-/* No file modification will be done unless this variable is FALSE.
+/* No file modification will be done after this function is called.
  */
-extern int	readonly;
+extern void setreadonly(void);
 
 /* Initialize or reinitialize list as empty.
  */

@@ -362,13 +362,16 @@ static void shutdown(void)
 }
 
 /* Initialize the module. If silence is TRUE, then the program will
- * leave sound output disabled.
+ * leave sound output disabled. Increasing soundbufsize will increase
+ * the size of the sound buffer, which decreases noise in the sound
+ * effects at the cost of adding latency.
  */
 int _sdlsfxinitialize(int silence, int _soundbufsize)
 {
     atexit(shutdown);
     enabled = !silence;
-    soundbufsize = _soundbufsize;
+    if (_soundbufsize >= 0 && _soundbufsize < 6)
+	soundbufsize = _soundbufsize;
     initonomatopoeia();
     if (enabled)
 	setaudiosystem(TRUE);
