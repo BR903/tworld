@@ -320,6 +320,13 @@ void freesfx(int index)
     }
 }
 
+/* Return the current volume level.
+ */
+int getvolume(void)
+{
+    return (10 * volume) / SDL_MIX_MAXVOLUME;
+}
+
 /* Set the current volume level to v. If display is true, the
  * new volume level is displayed to the user.
  */
@@ -348,7 +355,7 @@ int setvolume(int v, int display)
  */
 int changevolume(int delta, int display)
 {
-    return setvolume(((10 * volume) / SDL_MIX_MAXVOLUME) + delta, display);
+    return setvolume(getvolume() + delta, display);
 }
 
 /* Shut down the sound system.

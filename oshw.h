@@ -270,6 +270,10 @@ extern int setvolume(int volume, int display);
  */
 extern int changevolume(int delta, int display);
 
+/* Return the current volume.
+ */
+extern int getvolume(void);
+
 /* Release all memory used for the given sound effect's wave data.
  */
 extern void freesfx(int index);
