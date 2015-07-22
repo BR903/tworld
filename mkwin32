@@ -15,7 +15,7 @@ mkdir res
 mkdir data
 mkdir sets
 mkdir docs
-for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done
+for f in `cat ../../MANIFEST` ; do cp -a ../../$f ./$f ; done 2> /dev/null
 for f in `cat ../BUILDFILES` ; do cp -a ../$f ./$f ; done
 
 #
@@ -42,7 +42,7 @@ mv -i docs/*.html .
 
 TXTFILES="README.txt INSTALL.txt Changelog.txt BUGS.txt COPYING.txt \
           README-SDL.txt tworld.html sets/*.dac res/rc res/*.txt"
-BINFILES="tworld.exe SDL.dll mklynxcc.com res/*.bmp res/*.wav data/intro.dat"
+BINFILES="tworld.exe SDL.dll res/*.bmp res/*.wav data/intro.dat"
 
 #
 # Get the current version ID.
