@@ -353,7 +353,6 @@ static int scrollinputcallback(int *move)
       case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdHelp:		*move = CmdHelp;		return FALSE;
       case CmdQuit:						exit(0);
-
     }
     return TRUE;
 }
@@ -399,6 +398,27 @@ static int solutionscrollinputcallback(int *move)
       case CmdSeeScores:	*move = CmdSeeScores;		return FALSE;
       case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdHelp:		*move = CmdHelp;		return FALSE;
+      case CmdQuit:						exit(0);
+    }
+    return TRUE;
+}
+
+/* An input callback used while displaying scrolling text.
+ */
+static int textscrollinputcallback(int *move)
+{
+    int cmd;
+    switch ((cmd = input(TRUE))) {
+      case CmdPrev10:		*move = SCROLL_PAGE_UP;		break;
+      case CmdNorth:		*move = SCROLL_UP;		break;
+      case CmdPrev:		*move = SCROLL_UP;		break;
+      case CmdPrevLevel:	*move = SCROLL_UP;		break;
+      case CmdSouth:		*move = SCROLL_DN;		break;
+      case CmdNext:		*move = SCROLL_DN;		break;
+      case CmdNextLevel:	*move = SCROLL_DN;		break;
+      case CmdNext10:		*move = SCROLL_PAGE_DN;		break;
+      case CmdProceed:		*move = CmdProceed;		return FALSE;
+      case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdQuit:						exit(0);
     }
     return TRUE;
@@ -744,7 +764,7 @@ static void showlevelmessage(gamespec const *gs, int index)
     }
     pparray = getlevelmessage(gs->series.endmessages, number, &ppcount);
     if (pparray)
-	displaytextscroll(" ", pparray, ppcount, +1, scrollinputcallback);
+	displaytextscroll(" ", pparray, ppcount, +1, textscrollinputcallback);
 }
 
 /* Obtain a password from the user and move to the requested level.
