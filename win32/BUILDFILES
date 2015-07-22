@@ -2,5 +2,4 @@ README-SDL.txt
 SDL.dll
 cross-configure.sh
 cross-make.sh
-mklynxcc.com
 tworld.ico

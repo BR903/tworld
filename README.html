@@ -82,9 +82,8 @@ the <tt>TWORLDDIR</tt> environment variable or via the command line.)
 <p>
 <h4>make</h4>
 <p>
-There shouldn't be any serious warnings from the compiler. Use "make
-mklynxcc" if you want to also build a copy of <tt>mklynxcc</tt> (see
-below).
+This will build the <tt>tworld</tt> binary. There shouldn't be any
+serious warnings from the compiler.
 <p>
 <h4>make install</h4>
 <p>
@@ -182,16 +181,17 @@ make a level set for the Lynx ruleset, you have a few options:
 <p>
 <ul>
 <li>
-A very simple command-line utility is included with Tile World, called
-<tt>mklynxcc</tt>. This program will change a normal <tt>.dat</tt>
-file to one that will use the Lynx ruleset instead of the MS ruleset.
-Running <tt>mklynxcc <samp>foo.dat</samp></tt> will change
-<tt><samp>foo.dat</samp></tt>'s ruleset from MS to Lynx.
-<li>
 You can use a configuration file to override the builtin ruleset. This
 method requires creating an extra file, but does allows you to avoid
 making changes to the <tt>.dat</tt> file. See the complete
 documentation for information on how to set up a configuration file.
+<li>
+A very simple command-line utility is available on the Tile World
+download page, called <tt>mklynxcc</tt>. This program will change a
+normal <tt>.dat</tt> file to one that will use the Lynx ruleset
+instead of the MS ruleset. Running <tt>mklynxcc
+<samp>foo.dat</samp></tt> will change <tt><samp>foo.dat</samp></tt>'s
+ruleset from MS to Lynx.
 <li>
 Finally, ChipEdit has an obscure feature which allows you to control
 the signature of the data file. This is done by adding a
@@ -202,10 +202,10 @@ file that uses the MS ruleset. If you set the <tt>SIGNATURE</tt> to be
 use the Lynx ruleset instead.
 </ul>
 <p>
-Another alternative is to use a program like <tt>c4</tt>, a script I
-wrote which allows you to design levels in a text source file and then
-compile the data file. <tt>c4</tt> can be obtained from the Tile World
-download page.
+Another alternative is to use a program like <tt>c4</tt>, a Perl
+program which allows you to design levels in a text source file and
+then compile the data file. <tt>c4</tt> can be obtained from the Tile
+World download page.
 <p>
 <h2>Resources on the Internet</h2>
 <p>

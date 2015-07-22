@@ -19,7 +19,6 @@ help.c
 help.h
 lxlogic.c
 logic.h
-mklynxcc.c
 mslogic.c
 oshw.h
 play.c
