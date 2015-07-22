@@ -43,6 +43,7 @@ gzip -9 tworld-$VER-noimgs.tar
 #
 
 echo Building tworld-$VER-CCLP2.tar.gz
+cp CCLP2/CCLP2.dac tworld-$VER/data/.
 cp CCLP2/CCLP2.dat tworld-$VER/data/.
 cp CCLP2/2.gif CCLP2/C.gif CCLP2/L.gif CCLP2/P.gif tworld-$VER/docs/.
 cp CCLP2/CCLP2.html CCLP2/CCLP2-disclaimer.txt tworld-$VER/docs/.
