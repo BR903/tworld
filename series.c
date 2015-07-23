@@ -351,7 +351,7 @@ void freeseriesdata(gameseries *series)
     freelabelledtext(series->endmessages);
     series->endmessages = NULL;
     series->gsflags = 0;
-    series->solheaderflags = 0;
+    series->currentlevel = 0;
 
     for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
 	free(game->leveldata);
@@ -492,7 +492,7 @@ static int getseriesfile(char *filename, void *data)
     series->msgfilename = NULL;
     series->endmessages = NULL;
     series->gsflags = 0;
-    series->solheaderflags = 0;
+    series->currentlevel = 0;
     series->allocated = 0;
     series->count = 0;
     series->final = 0;

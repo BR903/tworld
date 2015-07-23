@@ -104,8 +104,7 @@ A solution file begins with the following eight-byte header:
 c      l
  0-3   the 32-bit signature, always equal to <0x999B3335>.
   4    the ruleset of the solutions: 1 for Lynx, 2 for MS.
-  5    other options: currently always zero.
-  6    other options: currently always zero.
+ 5-6   the number of the most recently visited level.
   7    count of bytes in remainder of header (currently always zero).
 
 When reading a solution file, a program should always read byte 7 and

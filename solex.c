@@ -153,10 +153,10 @@ static int readsolutions(char const *infilename, solutions *ss)
     if (memcmp(ss->header, tws_sig, sizeof tws_sig))
 	return warnfile(&file, "not a .tws file");
 
-    /* The last two bytes of the header data indicate the size of the
+    /* The last byte of the header data indicates the size of the
      * remaining header, if any.
      */
-    size = ss->header[6] | (ss->header[7] << 8);
+    size = ss->header[7];
     if (size)
 	if (!fileskip(&file, size, "not a .tws file"))
 	    return FALSE;
