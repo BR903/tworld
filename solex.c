@@ -67,13 +67,13 @@ static int filereadint32(fileinfo *file, unsigned long *val, char const *msg)
     int	byte;
 
     if ((byte = fgetc(file->fp)) != EOF) {
-	*val = (unsigned char)byte;
+	*val = byte & 0xFFUL;
 	if ((byte = fgetc(file->fp)) != EOF) {
-	    *val |= (unsigned char)byte << 8;
+	    *val |= (byte & 0xFFUL) << 8;
 	    if ((byte = fgetc(file->fp)) != EOF) {
-		*val |= (unsigned char)byte << 16;
+		*val |= (byte & 0xFFUL) << 16;
 		if ((byte = fgetc(file->fp)) != EOF) {
-		    *val |= (unsigned char)byte << 24;
+		    *val |= (byte & 0xFFUL) << 24;
 		    return TRUE;
 		}
 	    }
