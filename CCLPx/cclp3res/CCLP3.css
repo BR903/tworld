@@ -1,0 +1,83 @@
+body
+{
+	background: #C0D0E0 url("ice.gif");
+	color: black;
+	font: 10pt Verdana, sans-serif;
+}
+
+
+p
+{
+	text-indent: 1.5em;
+	margin: 0.5em;
+}
+
+p.NoIndent
+{
+	text-indent: 0em;
+}
+
+.StoryLevelTitle
+{
+	margin-top: 100em;
+}
+
+.Dispatch
+{
+	margin: 1em 2em;
+}
+
+
+table
+{
+	font-size: 100%;
+}
+
+
+th
+{
+	/*
+	background: #B0B0B0 none;
+	color: black;
+	*/
+	background: black none;
+	color: cyan;
+	font: italic bold 12pt Arial, sans-serif;
+	padding: 0.5em;
+	border-style: solid;
+	border-width: 2px;
+	border-top-color: gray;
+	border-left-color: gray;
+	border-bottom-color: white;
+	border-right-color: white;
+}
+
+
+.LevelsTable tr, .LevelsTable tr a
+{
+	background: #404040 url("gravel.gif");
+	color: #FFFF80;
+}
+
+.LevelsTable td
+{
+	font: bold 11pt Verdana, sans-serif;
+	padding: 0.25em;
+	border-style: solid;
+	border-width: 1px;
+	border-top-color: black;
+	border-left-color: black;
+	border-bottom-color: white;
+	border-right-color: white;
+}
+
+
+.BannerImage
+{
+	border-style: solid;
+	border-width: 4px;
+	border-top-color: #F0F0F0;
+	border-left-color: #F0F0F0;
+	border-bottom-color: #909090;
+	border-right-color: #909090;
+}
