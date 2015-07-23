@@ -73,6 +73,12 @@ extern void clearsolutions(gameseries *series);
  */
 extern int loadsolutionsetname(char const *filename, char *buffer);
 
+/* Write out just the current level for the given series. TRUE is
+ * returned if the level number was successfully saved. No error is
+ * displayed if the value cannot be written.
+ */
+extern int savesolutionlevel(gameseries *series);
+
 /* Produce a list of available solution files associated with the
  * given series (i.e. that have the name of the series as their
  * prefix). An array of filenames is returned through pfilelist, the

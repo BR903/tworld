@@ -1204,6 +1204,11 @@ static int runcurrentlevel(gamespec *gs)
     return ret;
 }
 
+/* Quickly play back all of the user's solutions in the series without
+ * rendering or using the timer or the keyboard. If display is TRUE,
+ * the solutions that cannot be verified are reported to stdout. The
+ * return value is the number of invalid solutions found.
+ */
 static int batchverify(gameseries *series, int display)
 {
     gamesetup  *game;
@@ -1257,14 +1262,14 @@ static int batchverify(gameseries *series, int display)
  * one of the series in the array, then the scrolling list will be
  * initialized with that series selected. If defaultlevel is not zero,
  * and a level in the selected series that the user is permitted to
- * access matches it, then that level will be thhe initial current
+ * access matches it, then that level will be the initial current
  * level. The return value is zero if nothing was selected, negative
  * if an error occurred, or positive otherwise.
  */
 static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
 				char const *defaultseries, int defaultlevel)
 {
-    int	okay, f, n;
+    int	level, okay, f, n;
 
     if (series->count < 1) {
 	errmsg(NULL, "no level sets found");
@@ -1320,8 +1325,9 @@ static int selectseriesandlevel(gamespec *gs, seriesdata *series, int autosel,
     gs->currentgame = -1;
     gs->melindacount = 0;
 
-    if (defaultlevel) {
-	n = findlevelinseries(&gs->series, defaultlevel, NULL);
+    level = defaultlevel ? defaultlevel : gs->series.currentlevel;
+    if (level) {
+	n = findlevelinseries(&gs->series, level, NULL);
 	if (n >= 0) {
 	    gs->currentgame = n;
 	    if (gs->usepasswds &&
@@ -1354,6 +1360,17 @@ static int choosegame(gamespec *gs, char const *lastseries)
     if (!createserieslist(NULL, &s.list, &s.count, &s.table))
 	return -1;
     return selectseriesandlevel(gs, &s, FALSE, lastseries, 0);
+}
+
+/* Record the number of the level last visited in the solution file.
+ */
+static int rememberlastlevel(gamespec *gs)
+{
+    if (gs->currentgame < 0 || gs->currentgame >= gs->series.count)
+	gs->series.currentlevel = 0;
+    else
+	gs->series.currentlevel = gs->series.games[gs->currentgame].number;
+    return savesolutionlevel(&gs->series);
 }
 
 /*
@@ -1729,6 +1746,7 @@ int tworld(int argc, char *argv[])
     do {
 	pushsubtitle(NULL);
 	while (runcurrentlevel(&spec)) ;
+	rememberlastlevel(&spec);
 	popsubtitle();
 	cleardisplay();
 	strcpy(lastseries, spec.series.filebase);

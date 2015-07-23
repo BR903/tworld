@@ -25,8 +25,7 @@
  * HEADER
  *  0-3   signature bytes (35 33 9B 99)
  *   4    ruleset (1=Lynx, 2=MS)
- *   5    other options (currently always zero)
- *   6    other options (currently always zero)
+ *  5-6   most recently visited level number
  *   7    count of bytes in remainder of header (currently always zero)
  *
  * After the header are level solutions, usually but not necessarily
@@ -118,6 +117,10 @@
 /* The signature bytes of the solution files.
  */
 #define	CSSIG		0x999B3335UL
+
+/* The three different modes that solutions files are opened with.
+ */
+enum { F_READ, F_WRITE, F_MODIFY };
 
 /* Translate move directions between three-bit and four-bit
  * representations.
@@ -550,14 +553,14 @@ static int writesolution(fileinfo *file, gamesetup const *game)
 
 /* Locate the solution file for the given data file and open it.
  */
-static int opensolutionfile(fileinfo *file, char const *datname, int writable)
+static int opensolutionfile(fileinfo *file, char const *datname, int mode)
 {
     static int	savedirchecked = FALSE;
     char       *buf = NULL;
     char const *filename;
     int		n;
 
-    if (writable && readonly)
+    if (mode != F_READ && readonly)
 	return FALSE;
 
     if (file->name) {
@@ -574,7 +577,7 @@ static int opensolutionfile(fileinfo *file, char const *datname, int writable)
 	filename = buf;
     }
 
-    if (writable) {
+    if (mode != F_WRITE) {
 	if (!savedirchecked && savedir && *savedir && !haspathname(filename)) {
 	    savedirchecked = TRUE;
 	    if (!finddir(savedir)) {
@@ -585,8 +588,8 @@ static int opensolutionfile(fileinfo *file, char const *datname, int writable)
     }
 
     n = openfileindir(file, savedir, filename,
-		      writable ? "wb" : "rb",
-		      writable ? "can't access file" : NULL);
+		      mode == F_WRITE ? "wb" : mode == F_MODIFY ? "r+b" : "rb",
+		      mode == F_WRITE ? "can't access file" : NULL);
     if (buf)
 	free(buf);
     return n;
@@ -603,16 +606,16 @@ int readsolutions(gameseries *series)
 	series->savefile.name = series->savefilename;
     if ((!series->savefile.name && (series->gsflags & GSF_NODEFAULTSAVE))
 		|| !opensolutionfile(&series->savefile,
-				     series->filebase, FALSE)) {
-	series->solheaderflags = 0;
+				     series->filebase, F_READ)) {
+	series->currentlevel = 0;
 	series->solheadersize = 0;
 	return TRUE;
     }
 
     if (!readsolutionheader(&series->savefile, series->ruleset,
-			    &series->solheaderflags,
+			    &series->currentlevel,
 			    &series->solheadersize, series->solheader)) {
-	series->solheaderflags = 0;
+	series->currentlevel = 0;
 	series->solheadersize = 0;
 	return FALSE;
     }
@@ -668,11 +671,11 @@ int savesolutions(gameseries *series)
 	series->savefile.name = series->savefilename;
     if (!series->savefile.name && (series->gsflags & GSF_NODEFAULTSAVE))
 	return TRUE;
-    if (!opensolutionfile(&series->savefile, series->filebase, TRUE))
+    if (!opensolutionfile(&series->savefile, series->filebase, F_WRITE))
 	return FALSE;
 
     if (!writesolutionheader(&series->savefile, series->ruleset,
-			     series->solheaderflags,
+			     series->currentlevel,
 			     series->solheadersize, series->solheader))
 	return fileerr(&series->savefile,
 		       "saved-game file has become corrupted!");
@@ -687,6 +690,27 @@ int savesolutions(gameseries *series)
 
     fileclose(&series->savefile, NULL);
     return TRUE;
+}
+
+/* Write out just the current level number to the existing solution
+ * file.
+ */
+int savesolutionlevel(gameseries *series)
+{
+    int f;
+
+    if (readonly)
+	return FALSE;
+    if (!series->savefile.name)
+	series->savefile.name = series->savefilename;
+    if (!series->savefile.name && (series->gsflags & GSF_NODEFAULTSAVE))
+	return FALSE;
+    if (!opensolutionfile(&series->savefile, series->filebase, F_MODIFY))
+	return FALSE;
+    f = fileskip(&series->savefile, 5, NULL)
+	    && filewriteint16(&series->savefile, series->currentlevel, NULL);
+    fileclose(&series->savefile, NULL);
+    return f;
 }
 
 /* Free all memory allocated for storing the game's solutions, and mark
@@ -705,7 +729,7 @@ void clearsolutions(gameseries *series)
 	game->solutiondata = NULL;
     }
     series->solheadersize = 0;
-    series->solheaderflags = 0;
+    series->currentlevel = 0;
     fileclose(&series->savefile, NULL);
     clearfileinfo(&series->savefile);
 }

@@ -344,7 +344,7 @@ void freeseriesdata(gameseries *series)
     free(series->savefilename);
     series->savefilename = NULL;
     series->gsflags = 0;
-    series->solheaderflags = 0;
+    series->currentlevel = 0;
 
     for (n = 0, game = series->games ; n < series->count ; ++n, ++game) {
 	free(game->leveldata);
@@ -481,7 +481,7 @@ static int getseriesfile(char *filename, void *data)
     clearfileinfo(&series->savefile);
     series->savefilename = NULL;
     series->gsflags = 0;
-    series->solheaderflags = 0;
+    series->currentlevel = 0;
     series->allocated = 0;
     series->count = 0;
     series->final = 0;

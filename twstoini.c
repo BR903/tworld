@@ -83,14 +83,25 @@ static int fileread(fileinfo *file, void *buf, unsigned long size,
     return fread(buf, size, 1, file->fp) == 1 ? TRUE : warnfile(file, msg);
 }
 
-static int filereadint16(fileinfo *file, unsigned int *val, char const *msg)
+static int filereadint8(fileinfo *file, unsigned int *val, char const *msg)
 {
     int	byte;
 
     if ((byte = fgetc(file->fp)) != EOF) {
 	*val = (unsigned char)byte;
+	return TRUE;
+    }
+    return warnfile(file, msg);
+}
+
+static int filereadint16(fileinfo *file, unsigned int *val, char const *msg)
+{
+    int	byte;
+
+    if ((byte = fgetc(file->fp)) != EOF) {
+	*val = byte & 0xFFU;
 	if ((byte = fgetc(file->fp)) != EOF) {
-	    *val |= (unsigned char)byte << 8;
+	    *val |= (byte & 0xFFU) << 8;
 	    return TRUE;
 	}
     }
@@ -142,6 +153,7 @@ typedef	struct solution {
 typedef	struct solutions {
     int			count;		/* total number of solutions */
     solution	       *solutions;	/* all the solutions */
+    int			currentlevel;	/* most recently visited level */
     char		setname[256];	/* the name of the data file */
 } solutions;
 
@@ -152,10 +164,11 @@ static int readsolutions(char const *infilename, solutions *ss)
     fileinfo		file;
     solution	       *s;
     unsigned long	dword;
-    unsigned int	word;
+    unsigned int	word, byte;
 
     ss->count = 0;
     ss->solutions = NULL;
+    ss->currentlevel = 0;
     *ss->setname = '\0';
 
     if (!fileopen(&file, infilename, "rb", "couldn't open"))
@@ -168,22 +181,25 @@ static int readsolutions(char const *infilename, solutions *ss)
     if (dword != tws_sig)
 	return warnfile(&file, "not a .tws file");
 
-    /* The next two bytes contain the ruleset, and unused flags.
+    /* The next byte contains the ruleset.
      */
-    if (!filereadint16(&file, &word, "not a solution file"))
+    if (!filereadint8(&file, &byte, "not a solution file"))
 	return FALSE;
-    word &= 0x00FF;
-    if (word != 2)
+    if (byte != 2)
 	warnfile(&file, "does not use the MS ruleset");
 
-    /* The next two bytes contain more unused flags, and the size of
-     * the remaining header.
+    /* The next two bytes contain the current level number.
      */
     if (!filereadint16(&file, &word, "not a solution file"))
 	return FALSE;
-    word >>= 8;
-    if (word)
-	if (!fileskip(&file, word, "not a solution file"))
+    ss->currentlevel = word;
+
+    /* The next byte contains the size of the remaining header.
+     */
+    if (!filereadint8(&file, &byte, "not a solution file"))
+	return FALSE;
+    if (byte)
+	if (!fileskip(&file, byte, "not a solution file"))
 	    return FALSE;
 
     /* After that come the individual solutions. The first four bytes
@@ -450,6 +466,8 @@ static void displaysolutioninfo(solutions *ss, char const *infilename)
     if (infilename)
 	printf("; %s\n\n", infilename);
     printf("[Chip's Challenge]\n");
+    if (ss->currentlevel > 0)
+	printf("Current Level=%d\n", ss->currentlevel);
     total = 0;
     for (n = 0 ; n < ss->count ; ++n) {
 	printf("Level%u=%s",

@@ -221,7 +221,7 @@ typedef	struct gameseries {
     char	       *mapfilename;	/* the name of said file */
     fileinfo		savefile;	/* the file holding the solutions */
     char	       *savefilename;	/* non-default name for said file */
-    int			solheaderflags;	/* solution flags (none defined yet) */
+    int			currentlevel;	/* most recently visited level no. */
     int			solheadersize;	/* size of extra solution header */
     char		filebase[256];	/* the level set's filename */
     char		name[256];	/* the filename minus any path */
