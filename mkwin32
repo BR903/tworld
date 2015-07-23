@@ -100,3 +100,4 @@ mv tworld-$VER-win32-CCLPs.zip tworld-$VER-win32-CCLPs.exe ../..
 cd ..
 rm -rf build
 cd ..
+rm README BUGS INSTALL Changelog

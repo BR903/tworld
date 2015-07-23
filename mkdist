@@ -56,3 +56,4 @@ gzip -9 tworld-$VER-CCLPs.tar
 #
 
 rm -rf tworld-$VER
+rm README BUGS INSTALL Changelog
