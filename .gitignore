@@ -6,6 +6,10 @@ Makefile
 configure
 autom4te.cache
 config.*
+tworld-*.tar.gz
+tworld-*.zip
+tworld-*.exe
+*.html
 docs/*.6
 docs/*.html
 oshw
