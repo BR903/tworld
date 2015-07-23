@@ -71,7 +71,6 @@ AC_ARG_WITH(win32,
 	    [  --with-win32            Set defaults for a windows build],
 	    [if test $withval = yes ; then
 	       sharedir="."
-	       otherobjs=" tworldres.o"
 	     fi])
 
 dnl
@@ -84,6 +83,5 @@ AC_SUBST(OSHWCFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LOADLIBES)
 AC_SUBST(sharedir)
-AC_SUBST(otherobjs)
 
 AC_OUTPUT(Makefile oshw/Makefile)

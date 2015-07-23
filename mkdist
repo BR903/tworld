@@ -39,19 +39,21 @@ tar -cf tworld-$VER-noimgs.tar --exclude="tworld-$VER/res/*tiles*.bmp" \
 gzip -9 tworld-$VER-noimgs.tar
 
 #
-# Create the distribution with CCLP2.
+# Create the distribution with CCLPs.
 #
 
-echo Building tworld-$VER-CCLP2.tar.gz
-cp CCLP2/CCLP2.dat tworld-$VER/data/.
-cp CCLP2/2.gif CCLP2/C.gif CCLP2/L.gif CCLP2/P.gif tworld-$VER/docs/.
-cp CCLP2/CCLP2.html CCLP2/CCLP2-disclaimer.txt tworld-$VER/docs/.
-rm -f tworld-$VER-CCLP2.tar.gz
-tar -cf tworld-$VER-CCLP2.tar tworld-$VER
-gzip -9 tworld-$VER-CCLP2.tar
+echo Building tworld-$VER-CCLPs.tar.gz
+cp -a CCLPs tworld-$VER/CCLPs
+mv tworld-$VER/CCLPs/data/* tworld-$VER/data/.
+mv tworld-$VER/CCLPs/sets/* tworld-$VER/sets/.
+rmdir tworld-$VER/CCLPs/data tworld-$VER/CCLPs/sets
+rm -f tworld-$VER-CCLPs.tar.gz
+tar -cf tworld-$VER-CCLPs.tar tworld-$VER
+gzip -9 tworld-$VER-CCLPs.tar
 
 #
 # Done.
 #
 
 rm -rf tworld-$VER
+rm README BUGS INSTALL Changelog

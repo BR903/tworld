@@ -49,12 +49,18 @@ typedef	struct startupdata {
     char const	       *seriesdir;	/* where the series files are */
     char const	       *seriesdatdir;	/* where the series data files are */
     char const	       *savedir;	/* where the solution files are */
+    int			volumelevel;	/* the initial volume level */
+    int			soundbufsize;	/* the sound buffer scaling factor */
+    int			mudsucking;	/* slowdown factor (for debugging) */
     unsigned char	listdirs;	/* TRUE to list directories */
     unsigned char	listseries;	/* TRUE to list files */
     unsigned char	listscores;	/* TRUE to list scores */
     unsigned char	listtimes;	/* TRUE to list times */
     unsigned char	batchverify;	/* TRUE to do batch verification */
+    unsigned char	showhistogram;	/* TRUE to display idle histogram */
     unsigned char	pedantic;	/* TRUE to set pedantic mode */
+    unsigned char	fullscreen;	/* TRUE to run in full-screen mode */
+    unsigned char	readonly;	/* TRUE to suppress all file writes */
 } startupdata;
 
 /* Structure used to hold the complete list of available series.
@@ -69,33 +75,9 @@ typedef	struct seriesdata {
  */
 static int	silence = FALSE;
 
-/* TRUE means the program should attempt to run in fullscreen mode.
- */
-static int	fullscreen = FALSE;
-
 /* FALSE suppresses all password checking.
  */
 static int	usepasswds = TRUE;
-
-/* TRUE if the user requested an idle-time histogram.
- */
-static int	showhistogram = FALSE;
-
-/* Slowdown factor, used for debugging.
- */
-static int	mudsucking = 1;
-
-/* Frame-skipping disable flag.
- */
-static int	noframeskip = FALSE;
-
-/* The sound buffer scaling factor.
- */
-static int	soundbufsize = -1;
-
-/* The initial volume level.
- */
-static int	volumelevel = -1;
 
 /* The top of the stack of subtitles.
  */
@@ -1010,7 +992,7 @@ static int playgame(gamespec *gs, int firstcmd)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick() || noframeskip;
+	render = waitfortick();
 	cmd = input(FALSE);
 	if (cmd == CmdQuitLevel) {
 	    quitgamestate();
@@ -1108,7 +1090,7 @@ static int playbackgame(gamespec *gs)
 	lastrendered = render;
 	if (n)
 	    break;
-	render = waitfortick() || noframeskip;
+	render = waitfortick();
 	switch (input(FALSE)) {
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
@@ -1546,21 +1528,20 @@ static int processoption(int opt, char const *val, void *data)
       case 'L':	    start->seriesdir = val;			    break;
       case 'R':	    start->resdir = val;			    break;
       case 'S':	    start->savedir = val;			    break;
-      case 'H':	    showhistogram = !showhistogram;		    break;
-      case 'f':	    noframeskip = !noframeskip;			    break;
-      case 'F':	    fullscreen = !fullscreen;			    break;
+      case 'H':	    start->showhistogram = !start->showhistogram;   break;
+      case 'F':	    start->fullscreen = !start->fullscreen;	    break;
       case 'p':	    usepasswds = !usepasswds;			    break;
       case 'q':	    silence = !silence;				    break;
-      case 'r':	    readonly = !readonly;			    break;
+      case 'r':	    start->readonly = !start->readonly;		    break;
       case 'P':	    start->pedantic = !start->pedantic;		    break;
-      case 'a':	    soundbufsize = atoi(val);			    break;
+      case 'n':	    start->volumelevel = atoi(val);		    break;
+      case 'a':	    start->soundbufsize = atoi(val);		    break;
       case 'd':	    start->listdirs = TRUE;			    break;
       case 'l':	    start->listseries = TRUE;			    break;
       case 's':	    start->listscores = TRUE;			    break;
       case 't':	    start->listtimes = TRUE;			    break;
       case 'b':	    start->batchverify = TRUE;			    break;
-      case 'm':	    mudsucking = atoi(val);			    break;
-      case 'n':	    volumelevel = atoi(val);			    break;
+      case 'm':	    start->mudsucking = atoi(val);		    break;
       case 'h':	    printtable(stdout, yowzitch);      exit(EXIT_SUCCESS);
       case 'V':	    printtable(stdout, vourzhon);      exit(EXIT_SUCCESS);
       case 'v':	    puts(VERSION);		       exit(EXIT_SUCCESS);
@@ -1588,12 +1569,13 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	{ "data-dir",		'D', 'D', 1 },
 	{ "list-dirs",		'd', 'd', 0 },
 	{ "full-screen",	'F', 'F', 0 },
-	{ "no-frame-skip",	 0 , 'f', 0 },
 	{ "histogram",		 0 , 'H', 0 },
 	{ "help",		'h', 'h', 0 },
 	{ "levelset-dir",	'L', 'L', 1 },
 	{ "list-levelsets",	'l', 'l', 0 },
-	{ "mud-sucking",	 0 , 'm', 1 },
+#ifndef NDEBUG
+	{ "mud-sucking",	'm', 'm', 1 },
+#endif
 	{ "volume",		'n', 'n', 1 },
 	{ "pedantic",		'P', 'P', 0 },
 	{ "no-passwords",	'p', 'p', 0 },
@@ -1623,15 +1605,20 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
     start->listscores = FALSE;
     start->listtimes = FALSE;
     start->batchverify = FALSE;
+    start->showhistogram = FALSE;
     start->pedantic = FALSE;
-    mudsucking = 1;
-    soundbufsize = 0;
-    volumelevel = -1;
+    start->fullscreen = FALSE;
+    start->readonly = FALSE;
+    start->volumelevel = -1;
+    start->soundbufsize = -1;
+    start->mudsucking = 1;
 
     if (readoptions(optlist, argc, argv, processoption, start)) {
 	fprintf(stderr, "Try --help for more information.\n");
 	return FALSE;
     }
+    if (start->readonly)
+	setreadonly();
     if (start->pedantic)
 	setpedanticmode();
 
@@ -1660,19 +1647,17 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 
 /* Run the initialization routines of oshw and the resource module.
  */
-static int initializesystem(void)
+static int initializesystem(startupdata const *start)
 {
-#ifdef NDEBUG
-    mudsucking = 1;
-#endif
-    setmudsuckingfactor(mudsucking);
-    if (!oshwinitialize(silence, soundbufsize, showhistogram, fullscreen))
+    setmudsuckingfactor(start->mudsucking);
+    if (!oshwinitialize(silence, start->soundbufsize,
+			start->showhistogram, start->fullscreen))
 	return FALSE;
     if (!initresources())
 	return FALSE;
     setkeyboardrepeat(TRUE);
-    if (volumelevel >= 0)
-	setvolume(volumelevel, FALSE);
+    if (start->volumelevel >= 0)
+	setvolume(start->volumelevel, FALSE);
     return TRUE;
 }
 
@@ -1760,7 +1745,7 @@ static int choosegameatstartup(gamespec *gs, startupdata const *start)
 	}
     }
 
-    if (!initializesystem()) {
+    if (!initializesystem(start)) {
 	errmsg(NULL, "cannot initialize program due to previous errors");
 	return -1;
     }

@@ -41,9 +41,6 @@ tworld: $(OBJS)
 tworld.exe: $(OBJS) $(RESOURCES)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LOADLIBES)
 
-mklynxcc: mklynxcc.c
-	$(CC) -Wall -Wextra -O -o $@ $^
-
 #
 # Object files
 #
@@ -108,15 +105,15 @@ install: tworld
 	cp -i res/*.wav $(sharedir)/res/.
 	cp -i docs/tworld.6 $(mandir)/man6/.
 
-all: tworld mklynxcc
+all: tworld
 
 clean:
-	rm -f $(OBJS) tworld mklynxcc comptime.h config.*
-	rm -f tworldres.o tworld.exe mklynxcc.exe
+	rm -f $(OBJS) tworld comptime.h config.*
+	rm -f tworldres.o tworld.exe
 	(cd oshw && $(MAKE) clean)
 
 spotless:
-	rm -f $(OBJS) tworld mklynxcc comptime.h config.* configure
-	rm -f tworldres.o tworld.exe mklynxcc.exe
+	rm -f $(OBJS) tworld comptime.h config.* configure
+	rm -f tworldres.o tworld.exe
 	(cd oshw && $(MAKE) spotless)
 	rm -f Makefile

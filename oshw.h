@@ -161,10 +161,15 @@ extern void cleardisplay(void);
 extern int displaygame(void const *state, int timeleft, int besttime);
 
 /* Display a short message appropriate to the end of a level's game
- * play. If the level was completed successfully, completed is TRUE,
- * and the other three arguments define the base score and time bonus
- * for the level, and the user's total score for the series; these
- * scores will be displayed to the user.
+ * play. If the level was completed successfully, totalscore is
+ * nonzero, and the other three arguments define the base score and
+ * time bonus for the level, and the user's total score for the
+ * series; these scores will be displayed to the user. completed
+ * controls the prompt that the user sees at the bottom of the
+ * display. A positive value will indicate that more text follows. A
+ * negative value will indicate that leaving this screen will return
+ * to the prior display. A value of zero will indicate that the
+ * current display is the end of a sequence.
  */
 extern int displayendmessage(int basescore, int timescore, long totalscore,
 			     int completed);
@@ -264,6 +269,10 @@ extern int setvolume(int volume, int display);
 /* Alters the current volume level by delta.
  */
 extern int changevolume(int delta, int display);
+
+/* Return the current volume.
+ */
+extern int getvolume(void);
 
 /* Release all memory used for the given sound effect's wave data.
  */

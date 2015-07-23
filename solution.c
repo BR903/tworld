@@ -146,13 +146,20 @@ static int const idxdir8[8] = {
 #define	dirtoindex(dir)		(diridx8[dir])
 #define	indextodir(dir)		(idxdir8[dir])
 
-/* TRUE if file modification is prohibited.
- */
-int		readonly = FALSE;
-
 /* The path of the directory containing the user's solution files.
  */
 char	       *savedir = NULL;
+
+/* TRUE if file modification is prohibited.
+ */
+static int	readonly = FALSE;
+
+/* Put the system in read-only mode.
+ */
+void setreadonly(void)
+{
+    readonly = TRUE;
+}
 
 /*
  * Functions for manipulating move lists.

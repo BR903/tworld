@@ -320,6 +320,13 @@ void freesfx(int index)
     }
 }
 
+/* Return the current volume level.
+ */
+int getvolume(void)
+{
+    return (10 * volume) / SDL_MIX_MAXVOLUME;
+}
+
 /* Set the current volume level to v. If display is true, the
  * new volume level is displayed to the user.
  */
@@ -348,7 +355,7 @@ int setvolume(int v, int display)
  */
 int changevolume(int delta, int display)
 {
-    return setvolume(((10 * volume) / SDL_MIX_MAXVOLUME) + delta, display);
+    return setvolume(getvolume() + delta, display);
 }
 
 /* Shut down the sound system.
@@ -362,13 +369,16 @@ static void shutdown(void)
 }
 
 /* Initialize the module. If silence is TRUE, then the program will
- * leave sound output disabled.
+ * leave sound output disabled. Increasing soundbufsize will increase
+ * the size of the sound buffer, which decreases noise in the sound
+ * effects at the cost of adding latency.
  */
 int _sdlsfxinitialize(int silence, int _soundbufsize)
 {
     atexit(shutdown);
     enabled = !silence;
-    soundbufsize = _soundbufsize;
+    if (_soundbufsize >= 0 && _soundbufsize < 6)
+	soundbufsize = _soundbufsize;
     initonomatopoeia();
     if (enabled)
 	setaudiosystem(TRUE);
