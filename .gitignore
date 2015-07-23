@@ -14,3 +14,4 @@ docs/*.6
 docs/*.html
 oshw
 oshw-sdl/Makefile
+website/wav
