@@ -14,7 +14,7 @@ fi
 cache=cross-config.cache
 sh configure --cache-file="$cache" \
 	--target=$TARGET --host=$TARGET --build=i386-linux \
-	"$*"
+	"$@"
 status=$?
 rm -f "$cache"
 exit $status
