@@ -2844,7 +2844,7 @@ sub write($$)
 
 package main;
 
-use constant yowzitch => <<EOT;
+my $yowzitch = <<EOT;
 Usage: c4 [-INTYPE] INFILE [-OUTTYPE] OUTFILE
 
 The type switches can be omitted if the file's type can be inferred
@@ -2856,7 +2856,7 @@ directly. Available types:
     -P     MS-DOS fileset (directory of *.pak files)
     -U     Chip's universal dump file (*.cud) [write-only]
 EOT
-use constant vourzhon => "1.0\n";
+my $vourzhon = "1.0\n";
 
 my ($infile, $outfile);
 my ($intype, $outtype);
@@ -2890,22 +2890,22 @@ sub findfiletype($)
     return;
 }
 
-die yowzitch unless @ARGV;
-print yowzitch and exit if $ARGV[0] =~ /^--?(h(elp)?|\?)$/;
-print vourzhon and exit if $ARGV[0] =~ /^--?[Vv](ersion)?$/;
+die $yowzitch unless @ARGV;
+print $yowzitch and exit if $ARGV[0] =~ /^--?(h(elp)?|\?)$/;
+print $vourzhon and exit if $ARGV[0] =~ /^--?[Vv](ersion)?$/;
 
 $infile = shift;
 if ($infile =~ /^-([A-Za-z])$/) {
     $intype = uc $1;
     $infile = shift;
 }
-die yowzitch unless @ARGV;
+die $yowzitch unless @ARGV;
 $outfile = shift;
 if ($outfile =~ /^-([A-Za-z])$/) {
     $outtype = uc $1;
     $outfile = shift;
 }
-die yowzitch unless defined $infile && defined $outfile && @ARGV == 0;
+die $yowzitch unless defined $infile && defined $outfile && @ARGV == 0;
 
 $intype ||= deducetype $infile;
 $outtype ||= deducetype $outfile;
