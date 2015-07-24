@@ -724,25 +724,24 @@ static int showscores(gamespec *gs)
     return setcurrentgame(gs, n) || ret;
 }
 
-/* Render the message (if any) configured to be displayed at the
- * completion of the given level. If n is negative (and if the first
- * level is still unsolved), then render the introductory messages
- * instead.
+/* Render the message (if any) associated with the current level. If
+ * stage is negative, then display the prologue message; if stage is
+ * positive, then the epilogue message is displayed.
  */
-static void showlevelmessage(gamespec const *gs, int index)
+static void showlevelmessage(gamespec const *gs, int stage)
 {
     char const **pparray;
     int ppcount;
     int number;
 
-    if (index < 0) {
-	if (gs->currentgame != 0 || issolved(gs, 0))
+    if (stage < 0) {
+	if (issolved(gs, gs->currentgame))
 	    return;
-	number = 0;
+	number = -gs->series.games[gs->currentgame].number;
+    } else if (stage > 0) {
+	number = gs->series.games[gs->currentgame].number;
     } else {
-	if (!issolved(gs, index))
-	    return;
-	number = gs->series.games[index].number;
+	return;
     }
     pparray = getlevelmessage(gs->series.endmessages, number, &ppcount);
     if (pparray)
@@ -786,6 +785,7 @@ static int startinput(gamespec *gs)
     int		cmd, n;
 
     if (gs->currentgame != lastlevel) {
+	showlevelmessage(gs, -1);
 	lastlevel = gs->currentgame;
 	setstepping(0, FALSE);
     }
@@ -919,7 +919,8 @@ static int endinput(gamespec *gs)
 	  case CmdCheckSolution:
 	  case CmdProceed:
 	    if (gs->status > 0) {
-		showlevelmessage(gs, gs->currentgame);
+		if (gs->playmode == Play_Normal)
+		    showlevelmessage(gs, +1);
 		if (islastinseries(gs, gs->currentgame))
 		    gs->enddisplay = TRUE;
 		else
@@ -1792,7 +1793,6 @@ int tworld(int argc, char *argv[])
 
     do {
 	pushsubtitle(NULL);
-	showlevelmessage(&spec, -1);
 	while (runcurrentlevel(&spec)) ;
 	rememberlastlevel(&spec);
 	popsubtitle();

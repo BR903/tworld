@@ -82,12 +82,14 @@ Each message should be preceded by a line of the form
 
 <[>%N%<]>
 
-which indicates that the following paragraphs will be displayed at the
-successful completion of level number %N%, before proceeding to the
-next level. Messages can appear in any order in the messages file.
-
-A message preceeded by <[0]> defines an introductory message. This
-message will be displayed when the user first visits a level set.
+which associates the following paragraphs with that level number. If
+%N% is negative, i.e. preceded by a %-% character, then the message
+will be displayed before the level, when it is initially visited.
+Otherwise, when %N% is positive, the message will be displayed at the
+successful completion of the level, before proceeding to the next
+level. (Positive values can be prefixed with a %+% character, but this
+is not required.) Messages can appear in any order in the messages
+file.
 
 .Section The Solution File
 

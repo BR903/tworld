@@ -1,3 +1,9 @@
+/* messages.c: Functions for finding and reading the series files.
+ *
+ * Copyright (C) 2001-2006 by Brian Raiter, under the GNU General Public
+ * License. No warranty. See COPYING for details.
+ */
+
 #include	<stdlib.h>
 #include	<string.h>
 #include	"gen.h"
@@ -6,6 +12,17 @@
 #include	"fileio.h"
 #include	"messages.h"
 
+/* Parse a file into an array of messages. Each message consists of a
+ * numerical label and a sequence of paragraphs, the latter being
+ * stored as an array of strings, one paragraph per string. Paragraphs
+ * are separated by blank lines, i.e. two or more line break
+ * characters in a row. Single line breaks within a paragraph are
+ * replaced with spaces. (Line breaks at the beginning or end of a
+ * message are dropped.) Since this only runs when a level set is
+ * being loaded into memory, the code doesn't try to consolidate
+ * memory, but allocates each array separately, reallocating each as
+ * it grows.
+ */
 labelledtext *readlabelledtextfile(char const *filename)
 {
     fileinfo file;
@@ -77,6 +94,8 @@ labelledtext *readlabelledtextfile(char const *filename)
     return lts;
 }
 
+/* Search the given array of labelled texts for a specific label.
+ */
 char const **getlevelmessage(labelledtext const *lts, int number, int *pcount)
 {
     labelledtext const *lt;
@@ -92,38 +111,8 @@ char const **getlevelmessage(labelledtext const *lts, int number, int *pcount)
     return (char const**)lt->lines;
 }
 
-int gettextforlevel(labelledtext const *lts, int number, tablespec *table)
-{
-    char **items = NULL;
-    labelledtext const *lt;
-    int i;
-
-    if (!lts)
-	return FALSE;
-    for (lt = lts ; lt->lines ; ++lt)
-	if (lt->label == number)
-	    break;
-    if (!lt->lines)
-	return FALSE;
-
-    table->rows = 2 * lt->linecount;
-    table->cols = 3;
-    table->sep = 8;
-    table->collapse = -1;
-    table->items = NULL;
-    xalloc(table->items, 3 * 2 * lt->linecount * sizeof *items);
-    items = table->items;
-    for (i = 0 ; i < lt->linecount ; ++i) {
-	*items++ = "1- ";
-	*items++ = "1! ";
-	*items++ = "1+ ";
-	*items++ = "1- ";
-	*items++ = lt->lines[i];
-	*items++ = "1+ ";
-    }
-    return TRUE;
-}
-
+/* Free all memory associated with a labelled text array.
+ */
 void freelabelledtext(labelledtext *lts)
 {
     labelledtext *lt;
