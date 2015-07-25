@@ -13,29 +13,28 @@
 #include	"messages.h"
 
 /* Parse a file into an array of messages. Each message consists of a
- * numerical label and a sequence of paragraphs, the latter being
- * stored as an array of strings, one paragraph per string. Paragraphs
- * are separated by blank lines, i.e. two or more line break
- * characters in a row. Single line breaks within a paragraph are
- * replaced with spaces. (Line breaks at the beginning or end of a
- * message are dropped.) Since this only runs when a level set is
- * being loaded into memory, the code doesn't try to consolidate
- * memory, but allocates each array separately, reallocating each as
- * it grows.
+ * numerical tag and a sequence of paragraphs, the latter being stored
+ * as an array of strings, one paragraph per string. Paragraphs are
+ * separated by blank lines, i.e. two or more line break characters in
+ * a row. Single line breaks within a paragraph are replaced with
+ * spaces. (Line breaks at the beginning or end of a message are
+ * dropped.) Since this only runs when a level set is being loaded
+ * into memory, the code doesn't try to consolidate memory, but
+ * allocates each array separately, reallocating each as it grows.
  */
-labelledtext *readlabelledtextfile(char const *filename)
+taggedtext *readmessagesfile(char const *filename)
 {
     fileinfo file;
-    labelledtext lt, *lts;
+    taggedtext lt, *lts;
     char buf[256], *line;
-    int labelcount;
-    int buflen, linelen, label, eof;
+    int tagcount;
+    int buflen, linelen, tag, eof;
 
     clearfileinfo(&file);
     if (!fileopen(&file, filename, "r", "unknown error"))
 	return NULL;
 
-    labelcount = 0;
+    tagcount = 0;
     lts = NULL;
     lt.linecount = 0;
     lt.lines = NULL;
@@ -60,13 +59,13 @@ labelledtext *readlabelledtextfile(char const *filename)
 		line = NULL;
 		linelen = 0;
 	    }
-	} else if (linelen == 0 && sscanf(buf, "[%d]", &label) == 1) {
+	} else if (linelen == 0 && sscanf(buf, "[%d]", &tag) == 1) {
 	    if (lt.linecount) {
-		++labelcount;
-		xalloc(lts, labelcount * sizeof *lts);
-		lts[labelcount - 1] = lt;
+		++tagcount;
+		xalloc(lts, tagcount * sizeof *lts);
+		lts[tagcount - 1] = lt;
 	    }
-	    lt.label = label;
+	    lt.tag = tag;
 	    lt.linecount = 0;
 	    lt.lines = NULL;
 	} else {
@@ -80,30 +79,30 @@ labelledtext *readlabelledtextfile(char const *filename)
     fileclose(&file, NULL);
 
     if (lt.linecount) {
-	labelcount += 2;
-	xalloc(lts, labelcount * sizeof *lts);
-	lts[labelcount - 2] = lt;
+	tagcount += 2;
+	xalloc(lts, tagcount * sizeof *lts);
+	lts[tagcount - 2] = lt;
     } else {
-	++labelcount;
-	xalloc(lts, labelcount * sizeof *lts);
+	++tagcount;
+	xalloc(lts, tagcount * sizeof *lts);
     }
-    lts[labelcount - 1].label = 0;
-    lts[labelcount - 1].linecount = 0;
-    lts[labelcount - 1].lines = NULL;
+    lts[tagcount - 1].tag = 0;
+    lts[tagcount - 1].linecount = 0;
+    lts[tagcount - 1].lines = NULL;
 
     return lts;
 }
 
-/* Search the given array of labelled texts for a specific label.
+/* Search the given array of tagged texts for a specific tag.
  */
-char const **getlevelmessage(labelledtext const *lts, int number, int *pcount)
+char const **gettaggedmessage(taggedtext const *lts, int number, int *pcount)
 {
-    labelledtext const *lt;
+    taggedtext const *lt;
 
     if (!lts)
 	return NULL;
     for (lt = lts ; lt->lines ; ++lt)
-	if (lt->label == number)
+	if (lt->tag == number)
 	    break;
     if (!lt->lines)
 	return NULL;
@@ -111,11 +110,11 @@ char const **getlevelmessage(labelledtext const *lts, int number, int *pcount)
     return (char const**)lt->lines;
 }
 
-/* Free all memory associated with a labelled text array.
+/* Free all memory associated with a tagged text array.
  */
-void freelabelledtext(labelledtext *lts)
+void freetaggedtext(taggedtext *lts)
 {
-    labelledtext *lt;
+    taggedtext *lt;
     int i;
 
     if (!lts)

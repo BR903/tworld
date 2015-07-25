@@ -738,12 +738,10 @@ static void showlevelmessage(gamespec const *gs, int stage)
 	if (issolved(gs, gs->currentgame))
 	    return;
 	number = -gs->series.games[gs->currentgame].number;
-    } else if (stage > 0) {
-	number = gs->series.games[gs->currentgame].number;
     } else {
-	return;
+	number = gs->series.games[gs->currentgame].number;
     }
-    pparray = getlevelmessage(gs->series.endmessages, number, &ppcount);
+    pparray = gettaggedmessage(gs->series.messages, number, &ppcount);
     if (pparray)
 	displaytextscroll(" ", pparray, ppcount, +1, textscrollinputcallback);
 }

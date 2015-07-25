@@ -327,7 +327,7 @@ int readseriesfile(gameseries *series)
     markunsolvablelevels(series);
     readsolutions(series);
     if (series->msgfilename)
-	series->endmessages = readlabelledtextfile(series->msgfilename);
+	series->messages = readmessagesfile(series->msgfilename);
     return TRUE;
 }
 
@@ -348,8 +348,8 @@ void freeseriesdata(gameseries *series)
     series->savefilename = NULL;
     free(series->msgfilename);
     series->msgfilename = NULL;
-    freelabelledtext(series->endmessages);
-    series->endmessages = NULL;
+    freetaggedtext(series->messages);
+    series->messages = NULL;
     series->gsflags = 0;
     series->currentlevel = 0;
 
@@ -490,7 +490,7 @@ static int getseriesfile(char *filename, void *data)
     clearfileinfo(&series->savefile);
     series->savefilename = NULL;
     series->msgfilename = NULL;
-    series->endmessages = NULL;
+    series->messages = NULL;
     series->gsflags = 0;
     series->currentlevel = 0;
     series->allocated = 0;
