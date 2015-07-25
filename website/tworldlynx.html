@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<html>
+<head>
+<title>Tile World's Emulation of the Lynx Ruleset</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<p align=center>
+<center>
+<h1>Tile World's Emulation of the Lynx Ruleset</h1>
+</center>
+<p>
+Tile World's emulation of the Lynx ruleset intentionally diverges from
+the original Atari implementation in a few minor aspects. These
+differences are allowed to stand because:
+<ul>
+<li>
+they are not seen as important to the structure of the original
+ruleset, and/or they are clearly due to limitations of the hardware
+that the game was originally created for;
+<li>
+they are difficult or impossible to be observed in the original level
+set; and
+<li>
+retaining them would place limits the sorts of levels that can be
+created in the future, in return for little or no improvement in
+playability or aesthetic appeal.
+</ul>
+<p>
+Of course, these criteria are partly subjective, and while the author
+listens to the opinions of the general community, in the end he
+follows his own judgement.
+<p>
+(These criteria also reflect the different statuses of the MS and Lynx
+games. The MS game is widely played, and its odd ruleset is carefully
+examined for any advantage it can give in increasing scores. In
+contrast, the Lynx game was hardly played at all at the time Tile
+World was first conceived, and few people knew much about its
+internals or the inconsistencies in its ruleset. Because of this
+discrepancy, Tile World's emulation of the Lynx game was pursued
+mainly to revive a game that was on the verge of becoming moribund.
+Emulation of the MS game, on the other hand, was of little interest to
+the community unless it was as accurate as possible.)
+<p>
+The specific differences that exist between the original Atari Lynx
+implementation and Tile World's Lynx ruleset are as follows.
+<p>
+<ul>
+<li>
+On the Atari Lynx, no more than 128 creatures could exist at one time.
+Attempting to create a 129th creature with a clone machine would cause
+it to "run out". Tile World imposes no such limit.
+<li>
+On the Atari Lynx, Chip could hold no more than 255 of each type of
+key. If a 256th key was picked up, Chip's inventory for that key would
+reset to zero. Tile World imposes no such limit.
+<li>
+On the Atari Lynx, attempting to move off the edge of the map had
+unpredictable results. Sometimes it would allow you to wrap around,
+but it might also cause bizarre changes to the game's state. Tile
+World consistently prohibits movement beyond the map's edge.
+<li>
+Blobs have random movement which changes with each play of a level, in
+contrast with walkers, whose random movement is always the same. On
+the Atari Lynx, this was done by having the blobs' random numbers
+augmented with the current timer value, which meant that there were
+really only four possible random-number sequences for the blobs, and
+it could be controlled by controlling the stepping. (This also meant
+that a walker could become unpredictable in its movement if the level
+also contained a blob.) Tile World avoids having blobs become
+predictable by giving them a completely separate random-number
+sequence.
+<li>
+The Atari Lynx did not permit arbitrary wiring of buttons. Brown
+buttons were automatically connected to the next bear trap in reading
+order (scanning to the right, then along the next row going down, and
+restarting at the top if the bottom is reached, until a beartrap is
+found), and likewise with red buttons and clone machines. Tile World
+follows the explicit wiring information present in the data file.
+<li>
+On the Atari Lynx, there were no Wall North or Wall West tiles. These
+two tiles were introduced by the MS version, even though they do not
+appear in the original level set. Tile World nonetheless permits these
+tiles to be used in Lynx levels.
+<li>
+In a simliar vein, the MS data file format permits various kinds of
+"invalid" level sets that would be impossible to define for the Atari
+Lynx, due to using a completely different data format. Tile World
+nevertheless sometimes permits these levels to be played, if the
+divergence is minor enough.
+</ul>
+<p>
+Note that, with the exception of the blobs' random movement, all of
+the differences listed here can be suppressed by running Tile World in
+"pedantic mode". This is done by supply the <tt>-P</tt> option on the
+command line. When Tile World is running in pedantic mode, it will
+e.g. ignore the wiring information in the data file and connect
+buttons in reading order.
+<p>
+Note that solution files created under Lynx pedantic mode may very
+well not work in normal Lynx mode, and vice versa. Tile World does not
+keep track of which mode was used when a solution was created. (The
+main purpose of supplying pedantic mode is for those who wish to use
+Tile World to test levels that are ultimately meant to be played with
+the original game, either on actual Lynx hardware or on one of its
+emulators.)
+<p>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/tworld/">
+Tile World</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/software/">Software
+</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/~breadbox/">Brian
+Raiter</a></font>
+<br>
+<font size=-1><a href="http://www.muppetlabs.com/">Muppetlabs</a></font>
+</body>
+</html>
