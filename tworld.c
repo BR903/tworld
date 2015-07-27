@@ -1477,19 +1477,13 @@ static void initdirs(char const *series, char const *seriesdat,
  */
 static int nparse(char const *str, int min, int max)
 {
-    char *p;
-    long n;
+    int n;
 
-    n = strtol(str, &p, 10);
-    if (p == str || *p != '\0' || n < min)
-	return min;
-    else if (n > max)
-	return max;
-    else
-	return (int)n;
+    parseint(str, &n, min);
+    return n < min ? min : n > max ? max : n;
 }
 
-/* Handle one option or argument from the command-line.
+/* Handle one option/argument from the command line or init file.
  */
 static int processoption(int opt, char const *val, void *data)
 {
@@ -1510,6 +1504,9 @@ static int processoption(int opt, char const *val, void *data)
 	} else {
 	    sprintf(start->filename, "%.*s", getpathbufferlen(), val);
 	}
+	break;
+      case 'i':
+	sprintf(start->filename, "%.*s", getpathbufferlen(), val);
 	break;
       case 'D':	    start->seriesdatdir = val;			    break;
       case 'L':	    start->seriesdir = val;			    break;
@@ -1548,7 +1545,7 @@ static int processoption(int opt, char const *val, void *data)
 /* Parse the command-line options and arguments, and initialize the
  * user-controlled options.
  */
-static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
+static int getsettingsfromcmdline(int argc, char *argv[], startupdata *start)
 {
     static option const optlist[] = {
 	{ "audio-buffer",	'a', 'a', 1 },
@@ -1558,6 +1555,7 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	{ "full-screen",	'F', 'F', 0 },
 	{ "histogram",		 0 , 'H', 0 },
 	{ "help",		'h', 'h', 0 },
+	{ "initial-levelset",	 0 , 'i', 1 },
 	{ "levelset-dir",	'L', 'L', 1 },
 	{ "list-levelsets",	'l', 'l', 0 },
 #ifndef NDEBUG
@@ -1624,11 +1622,82 @@ static int initoptionswithcmdline(int argc, char *argv[], startupdata *start)
 	}
     }
 
-    if (start->listscores || start->listtimes || start->batchverify
-					      || start->levelnum)
-	if (!*start->filename)
-	    strcpy(start->filename, "chips.dat");
+    return TRUE;
+}
 
+/* Parse the user's initialization file, if it exists, and add its
+ * values to the startup data struct. (Note that any values provided
+ * on the command line take precedence over initialization file
+ * settings. But the initialization file needs to be read after the
+ * command-line options, in case a non-default savedir was specified.)
+ */
+static int getsettingsfrominitfile(startupdata *start)
+{
+    static option const optlist[] = {
+	{ "initial-levelset",	0, 'i', 1 },
+	{ "volume",		0, 'n', 1 },
+	{ 0, 0, 0, 0 }
+    };
+
+    startupdata		rcstart;
+    fileinfo		file;
+    int			f;
+
+    clearfileinfo(&file);
+    if (!openfileindir(&file, savedir, "rc", "r", NULL))
+	return TRUE;
+
+    rcstart.filename = getpathbuffer();
+    *rcstart.filename = '\0';
+    rcstart.volumelevel = -1;
+    if (readinitfile(optlist, &file, processoption, &rcstart) == 0) {
+	if (!*start->filename)
+	    strcpy(start->filename, rcstart.filename);
+	if (start->volumelevel < 0)
+	    start->volumelevel = rcstart.volumelevel;
+	f = TRUE;
+    } else {
+	fileerr(&file, "invalid initialization file syntax");
+	f = FALSE;
+    }
+    free(rcstart.filename);
+
+    fileclose(&file, NULL);
+    return f;
+}
+
+/* Write (or rewrite) the initialization file with the current values
+ * for the settings.
+ */
+static int writeinitfile(char const *lastseries)
+{
+    fileinfo file;
+
+    clearfileinfo(&file);
+    if (!openfileindir(&file, savedir, "rc", "w", "unknown error"))
+	return FALSE;
+    fprintf(file.fp, "initial-levelset=%s\n", lastseries);
+    fprintf(file.fp, "volume=%d\n", getvolume());
+    fileclose(&file, NULL);
+    return TRUE;
+}
+
+/* Read program settings from the initialization file and the
+ * command-line arguments.
+ */
+static int getsettings(int argc, char *argv[], startupdata *start)
+{
+    if (!getsettingsfromcmdline(argc, argv, start))
+	return FALSE;
+    if (!getsettingsfrominitfile(start))
+	return FALSE;
+    if (start->listscores || start->listtimes || start->batchverify
+					      || start->levelnum) {
+	if (!*start->filename) {
+	    errmsg(NULL, "no level set specified");
+	    return FALSE;
+	}
+    }
     return TRUE;
 }
 
@@ -1751,7 +1820,7 @@ int tworld(int argc, char *argv[])
     char	lastseries[sizeof spec.series.filebase];
     int		f;
 
-    if (!initoptionswithcmdline(argc, argv, &start))
+    if (!getsettings(argc, argv, &start))
 	return EXIT_FAILURE;
 
     f = choosegameatstartup(&spec, &start);
@@ -1771,6 +1840,7 @@ int tworld(int argc, char *argv[])
 	f = choosegame(&spec, lastseries);
     } while (f > 0);
 
+    writeinitfile(lastseries);
     shutdownsystem();
     return f == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

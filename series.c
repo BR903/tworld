@@ -11,6 +11,7 @@
 #include	"defs.h"
 #include	"err.h"
 #include	"fileio.h"
+#include	"cmdline.h"
 #include	"solution.h"
 #include	"unslist.h"
 #include	"series.h"
@@ -402,8 +403,7 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 	    sprintf(series->name, "%.*s", (int)(sizeof series->name - 1),
 					  skippathname(value));
 	} else if (!strcmp(name, "lastlevel")) {
-	    n = (int)strtol(value, &p, 10);
-	    if (*p || n <= 0) {
+	    if (!parseint(value, &n, 0) || n <= 0) {
 		fileerr(file, "invalid lastlevel in configuration file");
 		return NULL;
 	    }

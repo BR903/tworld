@@ -5,6 +5,8 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<ctype.h>
+#include	<limits.h>
+#include	"gen.h"
 #include	"fileio.h"
 #include	"cmdline.h"
 
@@ -114,10 +116,35 @@ int readoptions(option const* list, int argc, char **argv,
     return 0;
 }
 
+/* Verify that str points to a boolean value (optionally with
+ * whitespace) and return the value present, or -1 if str's contents
+ * are not recognized.
+ */
+static int readboolvalue(char const *str)
+{
+    char	d;
+
+    while (isspace(*str))
+	++str;
+    if (!*str)
+	return -1;
+    d = *str++;
+    while (isspace(*str))
+	++str;
+    if (*str)
+	return -1;
+    if (d == '0' || tolower(d) == 'n')
+	return 0;
+    else if (d == '1' || tolower(d) == 'y')
+	return 1;
+    else
+	return -1;
+}
+
 /* Parse a configuration file.
  */
-int readconfigfile(option const* list, fileinfo *file,
-		   int (*callback)(int, char const*, void*), void *data)
+int readinitfile(option const* list, fileinfo *file,
+		 int (*callback)(int, char const*, void*), void *data)
 {
     char		buf[256];
     option const       *opt;
@@ -166,4 +193,22 @@ int readconfigfile(option const* list, fileinfo *file,
 	}
     }
     return 0;
+}
+
+/* Get an integer value from a string. Check for all possible error
+ * conditions.
+ */
+int parseint(char const *str, int *value, int defaultvalue)
+{
+    char *p;
+    long n;
+
+    n = strtol(str, &p, 10);
+    if (p == str || *p != '\0' || n < INT_MIN || n > INT_MAX) {
+	*value = defaultvalue;
+	return FALSE;
+    } else {
+	*value = n;
+	return TRUE;
+    }
 }
