@@ -159,6 +159,9 @@ int readinitfile(option const* list, fileinfo *file,
 	len = sizeof buf - 1;
 	if (!filegetline(file, buf, &len, NULL))
 	    break;
+	while (len > 0 && isspace(buf[len - 1]))
+	    --len;
+	buf[len] = '\0';
 	for (p = buf ; isspace(*p) ; ++p) ;
 	if (!*p || *p == '#')
 	    continue;
