@@ -1494,7 +1494,6 @@ static int nparse(char const *str, int min, int max)
 static int processoption(int opt, char const *val, void *data)
 {
     startupdata	       *start = data;
-    char	       *p;
     int			n;
 
     switch (opt) {
