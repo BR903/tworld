@@ -5,6 +5,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<ctype.h>
+#include	"fileio.h"
 #include	"cmdline.h"
 
 #define	docallback(opt, val) \
@@ -113,104 +114,56 @@ int readoptions(option const* list, int argc, char **argv,
     return 0;
 }
 
-/* Turn a string containing a cmdline into an argc-argv pair.
+/* Parse a configuration file.
  */
-int makecmdline(char const *cmdline, int *argcp, char ***argvp)
+int readconfigfile(option const* list, fileinfo *file,
+		   int (*callback)(int, char const*, void*), void *data)
 {
-    char      **argv;
-    int		argc;
-    char const *s;
-    int		n, quoted;
+    char		buf[256];
+    option const       *opt;
+    char	       *name, *val, *p;
+    int			len, f, r;
 
-    if (!cmdline)
-	return 0;
+    for (;;)
+    {
+	/* Get a line from the file. If it's empty or it begins with a
+	 * hash sign, skip it entirely.
+	 */
+	len = sizeof buf - 1;
+	if (!filegetline(file, buf, &len, NULL))
+	    break;
+	for (p = buf ; isspace(*p) ; ++p) ;
+	if (!*p || *p == '#')
+	    continue;
 
-    /* Calcuate argc by counting the number of "clumps" of non-spaces.
-     */
-    for (s = cmdline ; isspace(*s) ; ++s) ;
-    if (!*s) {
-	*argcp = 1;
-	if (argvp) {
-	    *argvp = malloc(2 * sizeof(char*));
-	    if (!*argvp)
-		return 0;
-	    (*argvp)[0] = NULL;
-	    (*argvp)[1] = NULL;
-	}
-	return 1;
-    }
-    for (argc = 2, quoted = 0 ; *s ; ++s) {
-	if (quoted == '"') {
-	    if (*s == '"')
-		quoted = 0;
-	    else if (*s == '\\' && s[1])
-		++s;
-	} else if (quoted == '\'') {
-	    if (*s == '\'')
-		quoted = 0;
-	} else {
-	    if (isspace(*s)) {
-		for ( ; isspace(s[1]) ; ++s) ;
-		if (!s[1])
+	/* Find the end of the option's name and the beginning of the
+	 * parameter, if any.
+	 */
+	for (name = p ; *p && *p != '=' && !isspace(*p) ; ++p) ;
+	len = p - name;
+	for ( ; *p == '=' || isspace(*p) ; ++p) ;
+	val = p;
+
+	/* Is it on the list of valid options? Does it take a
+	 * full parameter, or just an optional boolean?
+	 */
+	for (opt = list ; opt->optval ; ++opt)
+	    if (opt->name && !strncmp(name, opt->name, len)
+			  && !opt->name[len])
 		    break;
-		++argc;
-	    } else if (*s == '"' || *s == '\'') {
-		quoted = *s;
-	    }
-	}
-    }
-
-    *argcp = argc;
-    if (!argvp)
-	return 1;
-
-    /* Allocate space for all the arguments and their pointers.
-     */
-    argv = malloc((argc + 1) * sizeof(char*) + strlen(cmdline) + 1);
-    *argvp = argv;
-    if (!argv)
-	return 0;
-    argv[0] = NULL;
-    argv[1] = (char*)(argv + argc + 1);
-
-    /* Copy the string into the allocated memory immediately after the
-     * argv array. Where spaces immediately follows a nonspace,
-     * replace it with a \0. Where a nonspace immediately follows
-     * spaces, store a pointer to it. (Except, of course, when the
-     * space-nonspace transitions occur within quotes.)
-     */
-    for (s = cmdline ; isspace(*s) ; ++s) ;
-    for (argc = 1, n = 0, quoted = 0 ; *s ; ++s) {
-	if (quoted == '"') {
-	    if (*s == '"') {
-		quoted = 0;
-	    } else {
-		if (*s == '\\' && s[1])
-		    ++s;
-		argv[argc][n++] = *s;
-	    }
-	} else if (quoted == '\'') {
-	    if (*s == '\'')
-		quoted = 0;
-	    else
-		argv[argc][n++] = *s;
+	if (!opt->optval) {
+	    docallback('?', name);
+	} else if (!*val && opt->arg == 1) {
+	    docallback(':', name);
+	} else if (*val && opt->arg == 0) {
+	    f = readboolvalue(val);
+	    if (f < 0)
+		docallback('=', name);
+	    else if (f == 1)
+		docallback(opt->optval, NULL);
 	} else {
-	    if (isspace(*s)) {
-		argv[argc][n] = '\0';
-		for ( ; isspace(s[1]) ; ++s) ;
-		if (!s[1])
-		    break;
-		argv[argc + 1] = argv[argc] + n + 1;
-		++argc;
-		n = 0;
-	    } else {
-		if (*s == '"' || *s == '\'')
-		    quoted = *s;
-		else
-		    argv[argc][n++] = *s;
-	    }
+	    docallback(opt->optval, val);
 	}
     }
-    argv[argc + 1] = NULL;
-    return 1;
+    return 0;
 }

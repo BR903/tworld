@@ -5,6 +5,8 @@
 #ifndef	_cmdline_h_
 #define	_cmdline_h_
 
+#include	"fileio.h"
+
 /* The information specifying a single cmdline option.
  */
 typedef struct option {
@@ -43,23 +45,5 @@ typedef struct option {
 extern int readoptions(option const* list, int argc, char **argv,
 		       int (*callback)(int opt, char const *val, void *data),
 		       void *data);
-
-/* Create an argc-argv pair from a string containing a command line.
- * cmdline is the string to be parsed. argcp points to the variable to
- * receive the argc value, and argvp points to the variable to receive
- * the argv value. argvp can be NULL if the caller just wants to get
- * argc. Zero is returned on failure. This function allocates memory
- * on behalf of the caller. The memory is allocated as a single block,
- * so it is sufficient to simply free() the pointer returned through
- * argvp. Note that argv[0] will always be initialized to NULL; the
- * first argument will be stored in argv[1]. The string is parsed by
- * separating arguments on whitespace boundaries. Space within
- * substrings enclosed in single-quotes is ignored. A substring
- * enclosed in double-quotes is treated the same, except that the
- * backslash is recognized as an escape character within such a
- * substring. Enclosing quotes and escaping backslashes are not copied
- * into the argv values.
- */
-extern int makecmdline(char const *cmdline, int *argcp, char ***argvp);
 
 #endif
