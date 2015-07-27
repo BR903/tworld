@@ -1470,6 +1470,25 @@ static void initdirs(char const *series, char const *seriesdat,
     }
 }
 
+/* Basic number-parsing function that silently clamps input to a valid
+ * value. Non-numeric string input will return min. (This function
+ * assumes that min and max constrained enough that they are not equal
+ * to LONG_MIN and/or LONG_MAX.)
+ */
+static int nparse(char const *str, int min, int max)
+{
+    char *p;
+    long n;
+
+    n = strtol(str, &p, 10);
+    if (p == str || *p != '\0' || n < min)
+	return min;
+    else if (n > max)
+	return max;
+    else
+	return (int)n;
+}
+
 /* Handle one option or argument from the command-line.
  */
 static int processoption(int opt, char const *val, void *data)
@@ -1484,8 +1503,7 @@ static int processoption(int opt, char const *val, void *data)
 	    fprintf(stderr, "too many arguments: %s\n", val);
 	    return 1;
 	}
-	if (!start->levelnum && (n = (int)strtol(val, &p, 10)) > 0
-			     && *p == '\0') {
+	if (!start->levelnum && (n = nparse(val, 0, 999)) > 0) {
 	    start->levelnum = n;
 	} else if (*start->filename) {
 	    start->savefilename = getpathbuffer();
@@ -1504,14 +1522,14 @@ static int processoption(int opt, char const *val, void *data)
       case 'q':	    silence = !silence;				    break;
       case 'r':	    start->readonly = !start->readonly;		    break;
       case 'P':	    start->pedantic = !start->pedantic;		    break;
-      case 'n':	    start->volumelevel = atoi(val);		    break;
-      case 'a':	    start->soundbufsize = atoi(val);		    break;
+      case 'n':	    start->volumelevel = nparse(val, 0, 10);	    break;
+      case 'a':	    start->soundbufsize = nparse(val, 0, 5);	    break;
       case 'd':	    start->listdirs = TRUE;			    break;
       case 'l':	    start->listseries = TRUE;			    break;
       case 's':	    start->listscores = TRUE;			    break;
       case 't':	    start->listtimes = TRUE;			    break;
       case 'b':	    start->batchverify = TRUE;			    break;
-      case 'm':	    start->mudsucking = atoi(val);		    break;
+      case 'm':	    start->mudsucking = nparse(val, 1, 10);	    break;
       case 'h':	    printtable(stdout, yowzitch);      exit(EXIT_SUCCESS);
       case 'V':	    printtable(stdout, vourzhon);      exit(EXIT_SUCCESS);
       case 'v':	    puts(VERSION);		       exit(EXIT_SUCCESS);
