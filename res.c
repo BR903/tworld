@@ -65,56 +65,46 @@
 
 #define	RES_COUNT		(RES_SND_LAST + 1)
 
-/* Structure for enumerating the resource names.
+/* Place for storing the resource values.
  */
-typedef	struct rcitem {
-    char const *name;
-    int		numeric;
-} rcitem;
-
-/* Union for storing the resource values.
- */
-typedef union resourceitem {
-    int		num;
-    char	str[256];
-} resourceitem;
+typedef	char	resourceitem[256];
 
 /* The complete list of resource names.
  */
-static rcitem rclist[] = {
-    { "tileimages",		FALSE },
-    { "font",			FALSE },
-    { "backgroundcolor",	FALSE },
-    { "textcolor",		FALSE },
-    { "boldtextcolor",		FALSE },
-    { "dimtextcolor",		FALSE },
-    { "unsolvablelist",		FALSE },
-    { "chipdeathsound",		FALSE },
-    { "levelcompletesound",	FALSE },
-    { "chipdeathbytimesound",	FALSE },
-    { "ticksound",		FALSE },
-    { "derezzsound",		FALSE },
-    { "blockedmovesound",	FALSE },
-    { "pickupchipsound",	FALSE },
-    { "pickuptoolsound",	FALSE },
-    { "thiefsound",		FALSE },
-    { "teleportsound",		FALSE },
-    { "opendoorsound",		FALSE },
-    { "socketsound",		FALSE },
-    { "switchsound",		FALSE },
-    { "tileemptiedsound",	FALSE },
-    { "wallcreatedsound",	FALSE },
-    { "trapenteredsound",	FALSE },
-    { "bombsound",		FALSE },
-    { "splashsound",		FALSE },
-    { "blockmovingsound",	FALSE },
-    { "skatingforwardsound",	FALSE },
-    { "skatingturnsound",	FALSE },
-    { "slidingsound",		FALSE },
-    { "slidewalkingsound",	FALSE },
-    { "icewalkingsound",	FALSE },
-    { "waterwalkingsound",	FALSE },
-    { "firewalkingsound",	FALSE }
+static char const *rclist[] = {
+    "tileimages",
+    "font",
+    "backgroundcolor",
+    "textcolor",
+    "boldtextcolor",
+    "dimtextcolor",
+    "unsolvablelist",
+    "chipdeathsound",
+    "levelcompletesound",
+    "chipdeathbytimesound",
+    "ticksound",
+    "derezzsound",
+    "blockedmovesound",
+    "pickupchipsound",
+    "pickuptoolsound",
+    "thiefsound",
+    "teleportsound",
+    "opendoorsound",
+    "socketsound",
+    "switchsound",
+    "tileemptiedsound",
+    "wallcreatedsound",
+    "trapenteredsound",
+    "bombsound",
+    "splashsound",
+    "blockmovingsound",
+    "skatingforwardsound",
+    "skatingturnsound",
+    "slidingsound",
+    "slidewalkingsound",
+    "icewalkingsound",
+    "waterwalkingsound",
+    "firewalkingsound",
 };
 
 /* The complete collection of resource values.
@@ -141,12 +131,12 @@ char		       *resdir = NULL;
  */
 static void initresourcedefaults(void)
 {
-    strcpy(allresources[Ruleset_None][RES_IMG_TILES].str, "tiles.bmp");
-    strcpy(allresources[Ruleset_None][RES_IMG_FONT].str, "font.bmp");
-    strcpy(allresources[Ruleset_None][RES_CLR_BKGND].str, "000000");
-    strcpy(allresources[Ruleset_None][RES_CLR_TEXT].str, "FFFFFF");
-    strcpy(allresources[Ruleset_None][RES_CLR_BOLD].str, "FFFF00");
-    strcpy(allresources[Ruleset_None][RES_CLR_DIM].str, "C0C0C0");
+    strcpy(allresources[Ruleset_None][RES_IMG_TILES], "tiles.bmp");
+    strcpy(allresources[Ruleset_None][RES_IMG_FONT], "font.bmp");
+    strcpy(allresources[Ruleset_None][RES_CLR_BKGND], "000000");
+    strcpy(allresources[Ruleset_None][RES_CLR_TEXT], "FFFFFF");
+    strcpy(allresources[Ruleset_None][RES_CLR_BOLD], "FFFF00");
+    strcpy(allresources[Ruleset_None][RES_CLR_DIM], "C0C0C0");
     memcpy(&allresources[Ruleset_MS], globalresources,
 				sizeof allresources[Ruleset_MS]);
     memcpy(&allresources[Ruleset_Lynx], globalresources,
@@ -195,26 +185,22 @@ static int readrcfile(void)
 		warn("rc:%d: syntax error", lineno);
 	    continue;
 	}
-	if (sscanf(buf, "%[^=]=%s", name, item.str) != 2) {
+	if (sscanf(buf, "%[^=]=%s", name, item) != 2) {
 	    warn("rc:%d: syntax error", lineno);
 	    continue;
 	}
 	for (p = name ; (*p = tolower(*p)) != '\0' ; ++p) ;
 	for (i = sizeof rclist / sizeof *rclist - 1 ; i >= 0 ; --i)
-	    if (!strcmp(name, rclist[i].name))
+	    if (!strcmp(name, rclist[i]))
 		break;
 	if (i < 0) {
 	    warn("rc:%d: illegal resource name \"%s\"", lineno, name);
 	    continue;
 	}
-	if (rclist[i].numeric) {
-	    i = atoi(item.str);
-	    item.num = i;
-	}
-	allresources[ruleset][i] = item;
+	strcpy(allresources[ruleset][i], item);
 	if (ruleset == Ruleset_None)
 	    for (j = Ruleset_None ; j < Ruleset_Count ; ++j)
-		allresources[j][i] = item;
+		strcpy(allresources[j][i], item);
     }
 
     fileclose(&file, NULL);
@@ -232,22 +218,22 @@ static int loadcolors(void)
     long	bkgnd, text, bold, dim;
     char       *end;
 
-    bkgnd = strtol(resources[RES_CLR_BKGND].str, &end, 16);
+    bkgnd = strtol(resources[RES_CLR_BKGND], &end, 16);
     if (*end || bkgnd < 0 || bkgnd > 0xFFFFFF) {
 	warn("rc: invalid color ID for background");
 	bkgnd = -1;
     }
-    text = strtol(resources[RES_CLR_TEXT].str, &end, 16);
+    text = strtol(resources[RES_CLR_TEXT], &end, 16);
     if (*end || text < 0 || text > 0xFFFFFF) {
 	warn("rc: invalid color ID for text");
 	text = -1;
     }
-    bold = strtol(resources[RES_CLR_BOLD].str, &end, 16);
+    bold = strtol(resources[RES_CLR_BOLD], &end, 16);
     if (*end || bold < 0 || bold > 0xFFFFFF) {
 	warn("rc: invalid color ID for bold text");
 	bold = -1;
     }
-    dim = strtol(resources[RES_CLR_DIM].str, &end, 16);
+    dim = strtol(resources[RES_CLR_DIM], &end, 16);
     if (*end || dim < 0 || dim > 0xFFFFFF) {
 	warn("rc: invalid color ID for dim text");
 	dim = -1;
@@ -266,13 +252,13 @@ static int loadimages(void)
 
     f = FALSE;
     path = getpathbuffer();
-    if (*resources[RES_IMG_TILES].str) {
-	combinepath(path, resdir, resources[RES_IMG_TILES].str);
+    if (*resources[RES_IMG_TILES]) {
+	combinepath(path, resdir, resources[RES_IMG_TILES]);
 	f = loadtileset(path, TRUE);
     }
     if (!f && resources != globalresources
-	   && *globalresources[RES_IMG_TILES].str) {
-	combinepath(path, resdir, globalresources[RES_IMG_TILES].str);
+	   && *globalresources[RES_IMG_TILES]) {
+	combinepath(path, resdir, globalresources[RES_IMG_TILES]);
 	f = loadtileset(path, TRUE);
     }
     free(path);
@@ -291,13 +277,13 @@ static int loadfont(void)
 
     f = FALSE;
     path = getpathbuffer();
-    if (*resources[RES_IMG_FONT].str) {
-	combinepath(path, resdir, resources[RES_IMG_FONT].str);
+    if (*resources[RES_IMG_FONT]) {
+	combinepath(path, resdir, resources[RES_IMG_FONT]);
 	f = loadfontfromfile(path, TRUE);
     }
     if (!f && resources != globalresources
-	   && *globalresources[RES_IMG_FONT].str) {
-	combinepath(path, resdir, globalresources[RES_IMG_FONT].str);
+	   && *globalresources[RES_IMG_FONT]) {
+	combinepath(path, resdir, globalresources[RES_IMG_FONT]);
 	f = loadfontfromfile(path, TRUE);
     }
     free(path);
@@ -313,11 +299,11 @@ static int loadunslist(void)
 {
     char const *filename;
 
-    if (*resources[RES_TXT_UNSLIST].str)
-	filename = resources[RES_TXT_UNSLIST].str;
+    if (*resources[RES_TXT_UNSLIST])
+	filename = resources[RES_TXT_UNSLIST];
     else if (resources != globalresources
-			&& *globalresources[RES_TXT_UNSLIST].str)
-	filename = globalresources[RES_TXT_UNSLIST].str;
+			&& *globalresources[RES_TXT_UNSLIST])
+	filename = globalresources[RES_TXT_UNSLIST];
     else
 	return FALSE;
 
@@ -336,13 +322,13 @@ static int loadsounds(void)
     count = 0;
     for (n = 0 ; n < SND_COUNT ; ++n) {
 	f = FALSE;
-	if (*resources[RES_SND_BASE + n].str) {
-	    combinepath(path, resdir, resources[RES_SND_BASE + n].str);
+	if (*resources[RES_SND_BASE + n]) {
+	    combinepath(path, resdir, resources[RES_SND_BASE + n]);
 	    f = loadsfxfromfile(n, path);
 	}
 	if (!f && resources != globalresources
-	       && *globalresources[RES_SND_BASE + n].str) {
-	    combinepath(path, resdir, globalresources[RES_SND_BASE + n].str);
+	       && *globalresources[RES_SND_BASE + n]) {
+	    combinepath(path, resdir, globalresources[RES_SND_BASE + n]);
 	    f = loadsfxfromfile(n, path);
 	}
 	if (f)
