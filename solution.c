@@ -852,7 +852,7 @@ int createsolutionfilelist(gameseries const *series, int morethanone,
 	memerrexit();
     table->rows = s.count + 1;
     table->cols = 2;
-    table->sep = 4;
+    table->sep = 1;
     table->collapse = 1;
     table->items[0] = "2-Select a solution file";
     offset = 0;

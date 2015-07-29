@@ -250,7 +250,7 @@ void onlinemainhelp(int topic)
 	"1+\267", "1-About Tile World",
 	"1+\267", "1-Return to the program"
     };
-    static tablespec const table = { 7, 2, 4, 1, items };
+    static tablespec const table = { 7, 2, 1, 1, items };
 
     int n;
 

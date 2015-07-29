@@ -15,6 +15,7 @@
 #include	"play.h"
 #include	"score.h"
 #include	"solution.h"
+#include	"messages.h"
 #include	"help.h"
 #include	"oshw.h"
 #include	"cmdline.h"
@@ -334,7 +335,6 @@ static int scrollinputcallback(int *move)
       case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdHelp:		*move = CmdHelp;		return FALSE;
       case CmdQuit:						exit(0);
-
     }
     return TRUE;
 }
@@ -380,6 +380,27 @@ static int solutionscrollinputcallback(int *move)
       case CmdSeeScores:	*move = CmdSeeScores;		return FALSE;
       case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdHelp:		*move = CmdHelp;		return FALSE;
+      case CmdQuit:						exit(0);
+    }
+    return TRUE;
+}
+
+/* An input callback used while displaying scrolling text.
+ */
+static int textscrollinputcallback(int *move)
+{
+    int cmd;
+    switch ((cmd = input(TRUE))) {
+      case CmdPrev10:		*move = SCROLL_PAGE_UP;		break;
+      case CmdNorth:		*move = SCROLL_UP;		break;
+      case CmdPrev:		*move = SCROLL_UP;		break;
+      case CmdPrevLevel:	*move = SCROLL_UP;		break;
+      case CmdSouth:		*move = SCROLL_DN;		break;
+      case CmdNext:		*move = SCROLL_DN;		break;
+      case CmdNextLevel:	*move = SCROLL_DN;		break;
+      case CmdNext10:		*move = SCROLL_PAGE_DN;		break;
+      case CmdProceed:		*move = CmdProceed;		return FALSE;
+      case CmdQuitLevel:	*move = CmdQuitLevel;		return FALSE;
       case CmdQuit:						exit(0);
     }
     return TRUE;
@@ -703,6 +724,28 @@ static int showscores(gamespec *gs)
     return setcurrentgame(gs, n) || ret;
 }
 
+/* Render the message (if any) associated with the current level. If
+ * stage is negative, then display the prologue message; if stage is
+ * positive, then the epilogue message is displayed.
+ */
+static void showlevelmessage(gamespec const *gs, int stage)
+{
+    char const **pparray;
+    int ppcount;
+    int number;
+
+    if (stage < 0) {
+	if (issolved(gs, gs->currentgame))
+	    return;
+	number = -gs->series.games[gs->currentgame].number;
+    } else {
+	number = gs->series.games[gs->currentgame].number;
+    }
+    pparray = gettaggedmessage(gs->series.messages, number, &ppcount);
+    if (pparray)
+	displaytextscroll(" ", pparray, ppcount, +1, textscrollinputcallback);
+}
+
 /* Obtain a password from the user and move to the requested level.
  */
 static int selectlevelbypassword(gamespec *gs)
@@ -740,6 +783,7 @@ static int startinput(gamespec *gs)
     int		cmd, n;
 
     if (gs->currentgame != lastlevel) {
+	showlevelmessage(gs, -1);
 	lastlevel = gs->currentgame;
 	setstepping(0, FALSE);
     }
@@ -873,6 +917,8 @@ static int endinput(gamespec *gs)
 	  case CmdCheckSolution:
 	  case CmdProceed:
 	    if (gs->status > 0) {
+		if (gs->playmode == Play_Normal)
+		    showlevelmessage(gs, +1);
 		if (islastinseries(gs, gs->currentgame))
 		    gs->enddisplay = TRUE;
 		else

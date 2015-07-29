@@ -93,8 +93,8 @@ static int makefontfromsurface(fontinfo *pf, SDL_Surface *surface)
     return TRUE;
 }
 
-/* Given a text and a maximum horizontal space to occupy, return
- * the amount of vertial space needed to render the entire text with
+/* Given a text and a maximum horizontal space to occupy, return the
+ * amount of vertical space needed to render the entire text with
  * word-wrapping.
  */
 static int measuremltext(unsigned char const *text, int len, int maxwidth)
@@ -254,6 +254,13 @@ static void drawtext(SDL_Rect *rect, unsigned char const *text,
 	rect->w = w;
 	return;
     }
+    if (rect->y <= -sdlg.font.h) {
+	if (flags & PT_UPDATERECT) {
+	    rect->y += sdlg.font.h;
+	    rect->h -= sdlg.font.h;
+	}
+	return;
+    }
     if (w >= rect->w) {
 	w = rect->w;
 	l = r = 0;
@@ -317,6 +324,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 			      int len, int flags)
 {
     SDL_Rect	area;
+    int		skip;
     int		index, brkw, brkn;
     int		w, n;
 
@@ -329,6 +337,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	len = strlen((char const*)text);
 
     area = *rect;
+    skip = flags & PT_SKIPLINES(0xFF);
     brkw = brkn = 0;
     index = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
@@ -338,13 +347,19 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 	    brkw = w;
 	} else if (w > rect->w) {
 	    if (brkw) {
-		drawtext(&area, text + index, brkn - index,
-				 flags | PT_UPDATERECT);
+		if (skip)
+		    --skip;
+		else
+		    drawtext(&area, text + index, brkn - index,
+			     flags | PT_UPDATERECT);
 		index = brkn + 1;
 		w -= brkw;
 	    } else {
-		drawtext(&area, text + index, n - index,
-				 flags | PT_UPDATERECT);
+		if (skip)
+		    --skip;
+		else
+		    drawtext(&area, text + index, n - index,
+			     flags | PT_UPDATERECT);
 		index = n;
 		w = sdlg.font.w[text[n]];
 	    }
@@ -433,7 +448,7 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
 	}
     }
 
-    sep = sdlg.font.w[' '] * table->sep;
+    sep = sdlg.font.w['x'] * table->sep;
     w = -sep;
     for (i = 0 ; i < table->cols ; ++i)
 	w += colsizes[i].w + sep;
@@ -441,7 +456,7 @@ static SDL_Rect *_measuretable(SDL_Rect const *area, tablespec const *table)
     if (diff < 0 && table->collapse >= 0) {
 	w = -diff;
 	if (colsizes[table->collapse].w < w)
-	    w = colsizes[table->collapse].w - sdlg.font.w[' '];
+	    w = colsizes[table->collapse].w - sdlg.font.w['x'];
 	colsizes[table->collapse].w -= w;
 	diff += w;
     }

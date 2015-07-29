@@ -14,6 +14,7 @@
 #include	"cmdline.h"
 #include	"solution.h"
 #include	"unslist.h"
+#include	"messages.h"
 #include	"series.h"
 
 /* The signature bytes of the data files.
@@ -326,6 +327,8 @@ int readseriesfile(gameseries *series)
 	undomschanges(series);
     markunsolvablelevels(series);
     readsolutions(series);
+    if (series->msgfilename)
+	series->messages = readmessagesfile(series->msgfilename);
     return TRUE;
 }
 
@@ -344,6 +347,10 @@ void freeseriesdata(gameseries *series)
     series->mapfilename = NULL;
     free(series->savefilename);
     series->savefilename = NULL;
+    free(series->msgfilename);
+    series->msgfilename = NULL;
+    freetaggedtext(series->messages);
+    series->messages = NULL;
     series->gsflags = 0;
     series->currentlevel = 0;
 
@@ -420,6 +427,8 @@ static char *readconfigfile(fileinfo *file, gameseries *series)
 		series->gsflags |= GSF_IGNOREPASSWDS;
 	    else
 		series->gsflags &= ~GSF_IGNOREPASSWDS;
+	} else if (!strcmp(name, "messages")) {
+	    series->msgfilename = getpathforfileindir(seriesdatdir, value);
 	} else if (!strcmp(name, "fixlynx")) {
 	    if (tolower(*value) == 'n')
 		series->gsflags &= ~GSF_LYNXFIXES;
@@ -480,6 +489,8 @@ static int getseriesfile(char *filename, void *data)
     series->mapfilename = NULL;
     clearfileinfo(&series->savefile);
     series->savefilename = NULL;
+    series->msgfilename = NULL;
+    series->messages = NULL;
     series->gsflags = 0;
     series->currentlevel = 0;
     series->allocated = 0;
@@ -647,7 +658,7 @@ int createserieslist(char const *preferredfile, gameseries **pserieslist,
     *pcount = listsize;
     table->rows = listsize + 1;
     table->cols = 2;
-    table->sep = 4;
+    table->sep = 2;
     table->collapse = 0;
     table->items = ptrs;
     return TRUE;
