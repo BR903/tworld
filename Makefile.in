@@ -26,7 +26,8 @@ LOADLIBES :=@LOADLIBES@
 
 OBJS = \
 tworld.o series.o play.o encoding.o solution.o res.o lxlogic.o mslogic.o \
-unslist.o help.o score.o random.o cmdline.o fileio.o err.o liboshw.a
+unslist.o messages.o help.o score.o random.o cmdline.o fileio.o err.o \
+liboshw.a
 
 RESOURCES = tworldres.o
 
@@ -45,9 +46,9 @@ tworld.exe: $(OBJS) $(RESOURCES)
 #
 
 tworld.o   : tworld.c defs.h gen.h err.h fileio.h series.h res.h play.h \
-             score.h solution.h help.h oshw.h cmdline.h ver.h
+             score.h solution.h messages.h help.h oshw.h cmdline.h ver.h
 series.o   : series.c series.h defs.h gen.h err.h fileio.h solution.h \
-             unslist.h
+             messages.h unslist.h
 play.o     : play.c play.h defs.h gen.h err.h state.h oshw.h fileio.h \
              res.h logic.h encoding.h solution.h random.h
 encoding.o : encoding.c encoding.h defs.h gen.h err.h state.h
@@ -55,6 +56,7 @@ solution.o : solution.c solution.h defs.h gen.h err.h fileio.h series.h
 res.o      : res.c res.h defs.h gen.h err.h oshw.h fileio.h unslist.h
 lxlogic.o  : lxlogic.c logic.h defs.h gen.h err.h state.h random.h
 mslogic.o  : mslogic.c logic.h defs.h gen.h err.h state.h random.h
+messages.o : messages.c messages.h defs.h gen.h err.h fileio.h
 unslist.o  : unslist.c unslist.h gen.h err.h fileio.h res.h solution.h
 help.o     : help.c help.h defs.h gen.h state.h oshw.h ver.h comptime.h
 score.o    : score.c score.h defs.h gen.h err.h play.h

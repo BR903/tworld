@@ -320,15 +320,34 @@ typedef	struct tiletablerow {
     char const *desc;		/* text */
 } tiletablerow;
 
+/* Display a sequence of one or more paragraphs, and (if the full text
+ * is larger than the screen) allow the user to scroll up and down.
+ * paragraphs is an array of string pointers, each string containing a
+ * paragraph of text. ppcount specifies the size of the paragraphs
+ * array. title provides a title displayed at lower right to let the
+ * user know what they're looking at. completed selects an icon
+ * displayed at lower right. A positive value for completed selects an
+ * icon indicating more text follows, a negative value selects an icon
+ * indicating that leaving the text will return to the previous
+ * display, and a zero value selects an icon indicating the text
+ * display is the end of a sequence. inputcallback points to a
+ * function that is called to retrieve input. The function is passed a
+ * pointer to an integer. If the callback returns TRUE, this integer
+ * should be set to one of the SCROLL_* enum values. If the callback
+ * returns FALSE, the table is removed from the display, and the value
+ * stored in the integer will become the return value for
+ * displaytextscroll().
+ */
+extern int displaytextscroll(char const *title, char const **paragraphs,
+			     int ppcount, int completed,
+			     int (*inputcallback)(int*));
+
 /* Displays a screenful of (hopefully) helpful information which
  * includes tile images. title provides the title of the display. rows
  * points to an array of tiletablerow structures. count specifies the
  * size of this array. The text of each row is displayed alongside one
  * or two tile images. completed controls the prompt that the user
- * sees at the bottom of the display. A positive value will indicate
- * that more text follows. A negative value will indicate that leaving
- * this screen will return to the prior display. A value of zero will
- * indicate that the current display is the end of a sequence.
+ * sees at the bottom of the display, as per displaytextscroll().
  */
 extern int displaytiletable(char const *title, tiletablerow const *rows,
 			    int count, int completed);
@@ -336,8 +355,8 @@ extern int displaytiletable(char const *title, tiletablerow const *rows,
 /* Displays a screenful of (hopefully) helpful information. title
  * provides the title of the display. table points to a table that
  * contains the body of the text. completed controls the prompt that
- * the user sees at the bottom of the display; see the description of
- * displaytiletable() for details.
+ * the user sees at the bottom of the display, as per
+ * displaytextscroll().
  */
 extern int displaytable(char const *title, tablespec const *table,
 			int completed);
