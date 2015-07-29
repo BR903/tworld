@@ -43,6 +43,7 @@ typedef	struct gamespec {
  */
 typedef	struct startupdata {
     char	       *filename;	/* which data file to use */
+    char	       *selectfilename;	/* which data file to select */
     char	       *savefilename;	/* an alternate solution file */
     int			levelnum;	/* a selected initial level */ 
     char const	       *resdir;		/* where the resources are */
@@ -1552,7 +1553,8 @@ static int processoption(int opt, char const *val, void *data)
 	}
 	break;
       case 'i':
-	sprintf(start->filename, "%.*s", getpathbufferlen(), val);
+	start->selectfilename = getpathbuffer();
+	sprintf(start->selectfilename, "%.*s", getpathbufferlen(), val);
 	break;
       case 'D':	    start->seriesdatdir = val;			    break;
       case 'L':	    start->seriesdir = val;			    break;
@@ -1625,6 +1627,7 @@ static int getsettingsfromcmdline(int argc, char *argv[], startupdata *start)
 
     start->filename = getpathbuffer();
     *start->filename = '\0';
+    start->selectfilename = NULL;
     start->savefilename = NULL;
     start->levelnum = 0;
     start->resdir = NULL;
@@ -1693,12 +1696,11 @@ static int getsettingsfrominitfile(startupdata *start)
     if (!openfileindir(&file, savedir, "rc", "r", NULL))
 	return TRUE;
 
-    rcstart.filename = getpathbuffer();
-    *rcstart.filename = '\0';
+    rcstart.selectfilename = NULL;
     rcstart.volumelevel = -1;
     if (readinitfile(optlist, &file, processoption, &rcstart) == 0) {
-	if (!*start->filename)
-	    strcpy(start->filename, rcstart.filename);
+	if (!start->selectfilename)
+	    start->selectfilename = rcstart.selectfilename;
 	if (start->volumelevel < 0)
 	    start->volumelevel = rcstart.volumelevel;
 	f = TRUE;
@@ -1706,19 +1708,21 @@ static int getsettingsfrominitfile(startupdata *start)
 	fileerr(&file, "invalid initialization file syntax");
 	f = FALSE;
     }
-    free(rcstart.filename);
 
     fileclose(&file, NULL);
     return f;
 }
 
 /* Write (or rewrite) the initialization file with the current values
- * for the settings.
+ * for the settings. If the current levelset was a one-off entered on
+ * the command line, then don't save it.
  */
 static int writeinitfile(char const *lastseries)
 {
     fileinfo file;
 
+    if (haspathname(lastseries))
+	return TRUE;
     clearfileinfo(&file);
     if (!openfileindir(&file, savedir, "rc", "w", "unknown error"))
 	return FALSE;
@@ -1852,7 +1856,8 @@ static int choosegameatstartup(gamespec *gs, startupdata const *start)
 	return -1;
     }
 
-    return selectseriesandlevel(gs, &series, TRUE, NULL, start->levelnum);
+    return selectseriesandlevel(gs, &series, TRUE,
+				start->selectfilename, start->levelnum);
 }
 
 /*
