@@ -36,8 +36,23 @@ extern int initgamestate(gamesetup *game, int ruleset);
  */
 extern int prepareplayback(void);
 
+/* Set the initial stepping value. stepping is a value between 0 and 7
+ * inclusive. (Under MS, the stepping can only be 0 or 4.) If display
+ * is true, a message is displayed to indicate the change.
+ */
 extern int setstepping(int stepping, int display);
+
+/* Change the initial stepping value by adding the given delta. If
+ * display is true, the new stepping value is displayed.
+ */
 extern int changestepping(int delta, int display);
+
+/* Modify the initial random slide direction by rotating it clockwise
+ * If display is true, the new direction is diplayed in a message.
+ * FALSE is returned if the current ruleset doesn't use the initial
+ * random slide direction.
+ */
+extern int rotaterndslidedir(int display);
 
 /* Return the amount of time passed in the current game, in seconds.
  */

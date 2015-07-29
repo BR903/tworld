@@ -807,6 +807,7 @@ static int startinput(gamespec *gs)
 	  case CmdNext10:	leveldelta(+10);		return CmdNone;
 	  case CmdStepping:	changestepping(4, TRUE);	break;
 	  case CmdSubStepping:	changestepping(1, TRUE);	break;
+	  case CmdRndSlideDir:	rotaterndslidedir(TRUE);	break;
 	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
 	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdHelp:		dohelp(Help_KeysBetweenGames);	break;

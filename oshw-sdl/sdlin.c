@@ -84,6 +84,7 @@ static keycmdmap const gamekeycmds[] = {
     { SDLK_F1,                   -1, -1,  0,   CmdHelp,               FALSE },
     { 'o',			  0,  0,  0,   CmdStepping,           FALSE },
     { 'o',			 +1,  0,  0,   CmdSubStepping,        FALSE },
+    { 'f',			  0,  0,  0,   CmdRndSlideDir,        FALSE },
     { '\t',                       0, -1,  0,   CmdPlayback,           FALSE },
     { '\t',                      +1, -1,  0,   CmdCheckSolution,      FALSE },
     { 'x',                        0, +1,  0,   CmdReplSolution,       FALSE },

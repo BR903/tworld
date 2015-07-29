@@ -200,8 +200,8 @@ void setgameplaymode(int mode)
     }
 }
 
-/* Alter the stepping. If display is true, update the screen to
- * reflect the change.
+/* Alter the stepping. If display is true, the new stepping value is
+ * reported to the user.
  */
 int setstepping(int stepping, int display)
 {
@@ -232,6 +232,33 @@ int changestepping(int delta, int display)
 	n &= ~3;
     if (state.stepping != n)
 	return setstepping(n, display);
+    return TRUE;
+}
+
+/* Rotate the initial random slide direction. Note that the stored
+ * value for initrndslidedir is actually to the left of the first
+ * direction that will actually be used, so the displayed message
+ * needs to reflect that.
+ */
+int rotaterndslidedir(int display)
+{
+    char	msg[32];
+    char const *dirname;
+
+    if (state.ruleset == Ruleset_MS)
+	return FALSE;
+    state.initrndslidedir = right(state.initrndslidedir);
+    if (display) {
+	switch (right(state.initrndslidedir)) {
+	  case NORTH:	dirname = "north";	break;
+	  case WEST:	dirname = "west";	break;
+	  case SOUTH:	dirname = "south";	break;
+	  case EAST:	dirname = "east";	break;
+	  default:	dirname = "(nil)";	break;
+	}
+	sprintf(msg, "Initial random slide = %s", dirname);
+	setdisplaymsg(msg, 500, 500);
+    }
     return TRUE;
 }
 
