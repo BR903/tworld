@@ -256,7 +256,7 @@ int rotaterndslidedir(int display)
 	  case EAST:	dirname = "east";	break;
 	  default:	dirname = "(nil)";	break;
 	}
-	sprintf(msg, "Initial random slide = %s", dirname);
+	sprintf(msg, "random slide: %s", dirname);
 	setdisplaymsg(msg, 500, 500);
     }
     return TRUE;
