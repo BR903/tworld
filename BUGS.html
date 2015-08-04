@@ -66,15 +66,16 @@ towards him. That is, a block starts moving into the square that Chip
 occupies, but in the same frame, Chip starts pushing the block in the
 opposite direction. This is impossible to do in TW.
 <li>
-Tile World fails to emulate several different scenarios where Chip
-starts out on top of something other than floor, and remains put for
-the initial move. In the original Lynx game, if Chip is atop water,
-footgear, a key, or an exit, then if Chip doesn't move the tile takes
-effect immediately (with Chip dying, winning, or collecting the
-object). But if Chip starts out on dirt, fire, a bomb, or a chip, then
-the tile does not take effect until Chip leaves and reenters. Tile
-World generally assumes that tiles do not take effect in this
-scenario.
+Tile World fails to emulate several situations where Chip starts out
+on top of something other than floor, and starts the level without
+moving. In the original Lynx game, if Chip is atop water, dirt, a blue
+wall, footgear, a key, or an exit, then if Chip doesn't move the tile
+takes effect immediately (with Chip dying, winning, or clearing or
+collecting the object). Tile World generally has tiles take effect
+when Chip enters them. (Note, however, that this is not a universal
+pattern: in the original game if Chip starts out on fire, a bomb, or a
+chip, then the tile does not take effect until Chip leaves and
+reenters.)
 <li>
 There are a number of miscellaneous emulation bugs, mostly involving
 Chip being stuck on teleports. These are documented more thoroughly in
