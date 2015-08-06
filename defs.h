@@ -120,6 +120,7 @@ enum {
     CmdVolumeDown,
     CmdStepping,
     CmdSubStepping,
+    CmdRndSlideDir,
     CmdProceed,
     CmdDebugCmd1,
     CmdDebugCmd2,
