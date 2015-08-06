@@ -72,13 +72,15 @@ are sometimes referred to as "decade messaegs"). These messages were
 not stored in the data file, however, so a separate file must be used
 to define them.
 
-The messages themselves are arranged in paragraphs, with each
-paragraph separated by a blank line. (Line breaks within a paragraph
-are converted to spaces; when the text is actually displayed to the
-user, it will be wrapped to fit the display.) A given message can
-contain any number of paragraphs.
+Each message text is a sequence of paragraphs, with paragraphs
+separated from each other by a blank line. Line breaks within a
+paragraph are converted to spaces, and when the text is actually
+displayed to the user, it will be wrapped to fit the display. (To
+embed an actual line break within a text, end a line with two spaces
+before the line break.) A given message can contain any number of
+paragraphs.
 
-Each message should be preceded by a line of the form
+Each message text should be preceded by a line of the form
 
 <[>%N%<]>
 
@@ -88,8 +90,9 @@ will be displayed before the level, when it is initially visited.
 Otherwise, when %N% is positive, the message will be displayed at the
 successful completion of the level, before proceeding to the next
 level. (Positive values can be prefixed with a %+% character, but this
-is not required.) Messages can appear in any order in the messages
-file.
+is not required.)
+
+Messages can appear in any order in the messages file.
 
 .Section The Solution File
 
