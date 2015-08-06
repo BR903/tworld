@@ -57,6 +57,8 @@ taggedtext *readmessagesfile(char const *filename)
 		linelen = 0;
 	    }
 	} else if (linelen == 0 && sscanf(buf, "[%d]", &tag) == 1) {
+	    if (tag == 0)
+		tag = -1;
 	    if (lt.linecount) {
 		++tagcount;
 		xalloc(lts, tagcount * sizeof *lts);
