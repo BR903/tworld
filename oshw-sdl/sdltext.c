@@ -107,7 +107,11 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
     brk = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
 	w += sdlg.font.w[text[n]];
-	if (isspace(text[n])) {
+	if (text[n] == '\n') {
+	    h += sdlg.font.h;
+	    w = 0;
+	    brk = 0;
+	} else if (isspace(text[n])) {
 	    brk = w;
 	} else if (w > maxwidth) {
 	    h += sdlg.font.h;
@@ -342,7 +346,16 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
     index = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
 	w += sdlg.font.w[text[n]];
-	if (isspace(text[n])) {
+	if (text[n] == '\n') {
+	    if (skip)
+		--skip;
+	    else
+		drawtext(&area, text + index, n - index,
+			 flags | PT_UPDATERECT);
+	    index = n + 1;
+	    w = 0;
+	    brkw = 0;
+	} else if (isspace(text[n])) {
 	    brkn = n;
 	    brkw = w;
 	} else if (w > rect->w) {

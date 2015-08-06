@@ -72,7 +72,13 @@ taggedtext *readmessagesfile(char const *filename)
 	    xalloc(line, linelen + buflen + 1);
 	    memcpy(line + linelen, buf, buflen);
 	    linelen += buflen;
-	    line[linelen++] = ' ';
+	    if (buflen > 2 && buf[buflen - 2] == ' '
+			   && buf[buflen - 1] == ' ') {
+		--linelen;
+		line[linelen - 1] = '\n';
+	    } else {
+		line[linelen++] = ' ';
+	    }
 	}
     }
 
