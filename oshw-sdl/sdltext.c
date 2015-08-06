@@ -107,7 +107,11 @@ static int measuremltext(unsigned char const *text, int len, int maxwidth)
     brk = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
 	w += sdlg.font.w[text[n]];
-	if (isspace(text[n])) {
+	if (text[n] == '\n') {
+	    h += sdlg.font.h;
+	    w = 0;
+	    brk = 0;
+	} else if (isspace(text[n])) {
 	    brk = w;
 	} else if (w > maxwidth) {
 	    h += sdlg.font.h;
@@ -325,7 +329,7 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
 {
     SDL_Rect	area;
     int		skip;
-    int		index, brkw, brkn;
+    int		index, newindex, brkw, brkn;
     int		w, n;
 
     if (flags & PT_CALCSIZE) {
@@ -339,30 +343,34 @@ static void drawmultilinetext(SDL_Rect *rect, unsigned char const *text,
     area = *rect;
     skip = flags & PT_SKIPLINES(0xFF);
     brkw = brkn = 0;
-    index = 0;
+    index = newindex = 0;
     for (n = 0, w = 0 ; n < len ; ++n) {
 	w += sdlg.font.w[text[n]];
-	if (isspace(text[n])) {
+	if (text[n] == '\n') {
+	    newindex = n + 1;
+	    brkn = n;
+	    w = 0;
+	} else if (isspace(text[n])) {
 	    brkn = n;
 	    brkw = w;
 	} else if (w > rect->w) {
 	    if (brkw) {
-		if (skip)
-		    --skip;
-		else
-		    drawtext(&area, text + index, brkn - index,
-			     flags | PT_UPDATERECT);
-		index = brkn + 1;
+		newindex = brkn + 1;
 		w -= brkw;
 	    } else {
-		if (skip)
-		    --skip;
-		else
-		    drawtext(&area, text + index, n - index,
-			     flags | PT_UPDATERECT);
-		index = n;
+		newindex = n;
+		brkn = n;
 		w = sdlg.font.w[text[n]];
 	    }
+	}
+	if (newindex) {
+	    if (skip)
+		--skip;
+	    else
+		drawtext(&area, text + index, brkn - index,
+			 flags | PT_UPDATERECT);
+	    index = newindex;
+	    newindex = 0;
 	    brkw = 0;
 	}
     }

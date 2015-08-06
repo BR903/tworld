@@ -14,13 +14,10 @@
 
 /* Parse a file into an array of messages. Each message consists of a
  * numerical tag and a sequence of paragraphs, the latter being stored
- * as an array of strings, one paragraph per string. Paragraphs are
- * separated by blank lines, i.e. two or more line break characters in
- * a row. Single line breaks within a paragraph are replaced with
- * spaces. (Line breaks at the beginning or end of a message are
- * dropped.) Since this only runs when a level set is being loaded
- * into memory, the code doesn't try to consolidate memory, but
- * allocates each array separately, reallocating each as it grows.
+ * as an array of strings, one paragraph per string. Since this
+ * function is only run when a level set is being loaded into memory,
+ * the code doesn't try to allocate memory efficiently, but just
+ * reallocates each memory buffer as it grows.
  */
 taggedtext *readmessagesfile(char const *filename)
 {
@@ -72,7 +69,13 @@ taggedtext *readmessagesfile(char const *filename)
 	    xalloc(line, linelen + buflen + 1);
 	    memcpy(line + linelen, buf, buflen);
 	    linelen += buflen;
-	    line[linelen++] = ' ';
+	    if (buflen > 2 && buf[buflen - 2] == ' '
+			   && buf[buflen - 1] == ' ') {
+		--linelen;
+		line[linelen - 1] = '\n';
+	    } else {
+		line[linelen++] = ' ';
+	    }
 	}
     }
 
