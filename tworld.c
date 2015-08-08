@@ -39,6 +39,14 @@ typedef	struct gamespec {
     int		melindacount;	/* count for Melinda's free pass */
 } gamespec;
 
+/* Structure used to hold the complete list of available series.
+ */
+typedef	struct seriesdata {
+    gameseries *list;		/* the array of available series */
+    int		count;		/* size of arary */
+    tablespec	table;		/* table for displaying the array */
+} seriesdata;
+
 /* Structure used to hold data collected by initoptionswithcmdline().
  */
 typedef	struct startupdata {
@@ -64,25 +72,21 @@ typedef	struct startupdata {
     unsigned char	readonly;	/* TRUE to suppress all file writes */
 } startupdata;
 
-/* Structure used to hold the complete list of available series.
+/* Name of the user's initialization file.
  */
-typedef	struct seriesdata {
-    gameseries *list;		/* the array of available series */
-    int		count;		/* size of arary */
-    tablespec	table;		/* table for displaying the array */
-} seriesdata;
+static char const      *initfilename = "init";
 
 /* TRUE suppresses sound and the console bell.
  */
-static int	silence = FALSE;
+static int		silence = FALSE;
 
 /* FALSE suppresses all password checking.
  */
-static int	usepasswds = TRUE;
+static int		usepasswds = TRUE;
 
 /* The top of the stack of subtitles.
  */
-static void   **subtitlestack = NULL;
+static void	      **subtitlestack = NULL;
 
 /*
  * Text-mode output functions.
@@ -1694,7 +1698,7 @@ static int getsettingsfrominitfile(startupdata *start)
     int			f;
 
     clearfileinfo(&file);
-    if (!openfileindir(&file, savedir, "rc", "r", NULL))
+    if (!openfileindir(&file, savedir, initfilename, "r", NULL))
 	return TRUE;
 
     rcstart.selectfilename = NULL;
@@ -1725,7 +1729,7 @@ static int writeinitfile(char const *lastseries)
     if (haspathname(lastseries))
 	return TRUE;
     clearfileinfo(&file);
-    if (!openfileindir(&file, savedir, "rc", "w", "unknown error"))
+    if (!openfileindir(&file, savedir, initfilename, "w", "unknown error"))
 	return FALSE;
     fprintf(file.fp, "initial-levelset=%s\n", lastseries);
     fprintf(file.fp, "volume=%d\n", getvolume());
