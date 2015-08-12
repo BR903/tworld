@@ -79,7 +79,7 @@ typedef	struct solutioninfo {
 #define	MOUSERANGEMAX	+9
 #define	MOUSERANGE	19
 
-/* The complete list of commands that the user can given.
+/* The complete list of commands that the user can give.
  */
 enum {
     CmdNone = NIL,
@@ -122,17 +122,17 @@ enum {
     CmdSubStepping,
     CmdRndSlideDir,
     CmdProceed,
+    CmdPreserve,
+    CmdQuit,
     CmdDebugCmd1,
     CmdDebugCmd2,
-    CmdQuit,
-    CmdPreserve,
     CmdCheatNorth,
     CmdCheatWest,
     CmdCheatSouth,
     CmdCheatEast,
     CmdCheatHome,
     CmdCheatStuff,
-    CmdCount
+    CmdInvalid
 };
 
 /* True if cmd is a simple directional command, i.e. a single
@@ -204,9 +204,9 @@ typedef	struct gamesetup {
 /* A structure for storing a message text.
  */
 typedef struct taggedtext {
-    int		tag;
-    int		linecount;
-    char      **lines;
+    int		tag;			/* number of the associated level */
+    int		linecount;		/* size of the following array */
+    char      **lines;			/* the text, one paragraph per line */
 } taggedtext;
 
 /* The collection of data maintained for each series.
