@@ -64,7 +64,8 @@ struct lxstate {
     unsigned char	stuck;		/* Chip is stuck on a teleport */
     unsigned char	pushing;	/* Chip is pushing against something */
     unsigned char	couldntmove;	/* can't-move sound has been played */
-    unsigned char	mapbreached;	/* Border of map has been breached */
+    unsigned char	mapbreached;	/* border of map has been breached */
+    creature		creaturearray[MAX_CREATURES + 1];  /* all creatures */
 };
 
 /* Pedantic mode flag. (Having this variable defined here is a hack,
@@ -89,10 +90,6 @@ static int		lastrndslidedir = NORTH;
 /* The most recently used stepping phase value.
  */
 static int		laststepping = 0;
-
-/* The memory used to hold the list of creatures.
- */
-static creature	       *creaturearray = NULL;
 
 /* A pointer to the game state, used so that it doesn't have to be
  * passed to every single function.
@@ -139,6 +136,7 @@ static gamestate       *state;
 
 #define	getlxstate()		((struct lxstate*)state->localstateinfo)
 
+#define	creaturearray()		(getlxstate()->creaturearray)
 #define	completed()		(getlxstate()->completed)
 #define	togglestate()		(getlxstate()->togglestate)
 #define	couldntmove()		(getlxstate()->couldntmove)
@@ -1660,7 +1658,7 @@ static int initgame(gamelogic *logic)
 
     setstate(logic);
     num = state->game->number;
-    creaturelist() = creaturearray + 1;
+    creaturelist() = creaturearray() + 1;
     cr = creaturelist();
 
     if (pedanticmode)
@@ -1873,8 +1871,6 @@ static int endgame(gamelogic *logic)
 static void shutdown(gamelogic *logic)
 {
     (void)logic;
-    free(creaturearray);
-    creaturearray = NULL;
 }
 
 /* The exported function: Initialize and return the module's gamelogic
@@ -1884,9 +1880,6 @@ gamelogic *lynxlogicstartup(void)
 {
     static gamelogic	logic;
 
-    creaturearray = calloc(MAX_CREATURES + 1, sizeof *creaturearray);
-    if (!creaturearray)
-	memerrexit();
     lastrndslidedir = NORTH;
     laststepping = 0;
 
