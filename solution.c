@@ -151,11 +151,16 @@ static int const idxdir8[8] = {
 
 /* The path of the directory containing the user's solution files.
  */
-char	       *savedir = NULL;
+static char const      *savedir = NULL;
 
 /* TRUE if file modification is prohibited.
  */
-static int	readonly = FALSE;
+static int		readonly = FALSE;
+
+/* Getting and setting the save directory.
+ */
+char const *getsavedir(void)		{ return savedir; }
+void setsavedir(char const *dir)	{ savedir = dir; }
 
 /* Put the system in read-only mode.
  */
@@ -581,7 +586,7 @@ static int opensolutionfile(fileinfo *file, char const *datname, int mode)
 	if (!savedirchecked && savedir && *savedir && !haspathname(filename)) {
 	    savedirchecked = TRUE;
 	    if (!finddir(savedir)) {
-		*savedir = '\0';
+		setsavedir("");
 		fileerr(file, "can't access directory");
 	    }
 	}

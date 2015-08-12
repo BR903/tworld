@@ -9,13 +9,15 @@
 
 #include	"defs.h"
 
-/* The directory containing the series files.
+/* Get and set the series directory.
  */
-extern char    *seriesdir;
+extern char const *getseriesdir(void);
+extern void setseriesdir(char const *dir);
 
-/* The directory containing the configured data files.
+/* Get and set the series data directory.
  */
-extern char    *seriesdatdir;
+extern char const *getseriesdatdir(void);
+extern void setseriesdatdir(char const *dir);
 
 /* Load all levels of the given series.
  */

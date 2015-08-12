@@ -278,10 +278,10 @@ void printtable(FILE *out, tablespec const *table)
  */
 static void printdirectories(void)
 {
-    printf("Resource files read from:        %s\n", resdir);
-    printf("Level sets read from:            %s\n", seriesdir);
-    printf("Configured data files read from: %s\n", seriesdatdir);
-    printf("Solution files saved in:         %s\n", savedir);
+    printf("Resource files read from:        %s\n", getresdir());
+    printf("Level sets read from:            %s\n", getseriesdir());
+    printf("Configured data files read from: %s\n", getseriesdatdir());
+    printf("Solution files saved in:         %s\n", getsavedir());
 }
 
 /*
@@ -1044,12 +1044,7 @@ static int playgame(gamespec *gs, int firstcmd)
 		break;
 	      case CmdCheatNorth:     case CmdCheatWest:	break;
 	      case CmdCheatSouth:     case CmdCheatEast:	break;
-	      case CmdCheatHome:				break;
-	      case CmdCheatKeyRed:    case CmdCheatKeyBlue:	break;
-	      case CmdCheatKeyYellow: case CmdCheatKeyGreen:	break;
-	      case CmdCheatBootsIce:  case CmdCheatBootsSlide:	break;
-	      case CmdCheatBootsFire: case CmdCheatBootsWater:	break;
-	      case CmdCheatICChip:				break;
+	      case CmdCheatHome:      case CmdCheatStuff:	break;
 	      default:
 		cmd = CmdNone;
 		break;
@@ -1226,7 +1221,7 @@ static int runcurrentlevel(gamespec *gs)
     }
 
     valid = initgamestate(gs->series.games + gs->currentgame,
-			  gs->series.ruleset);
+			  gs->series.ruleset, TRUE);
     changesubtitle(gs->series.games[gs->currentgame].name);
     passwordseen(gs, gs->currentgame);
     if (!islastinseries(gs, gs->currentgame))
@@ -1267,12 +1262,10 @@ static int batchverify(gameseries *series, int display)
     int		valid = 0, invalid = 0;
     int		i, f;
 
-    batchmode = TRUE;
-
     for (i = 0, game = series->games ; i < series->count ; ++i, ++game) {
 	if (!hassolution(game))
 	    continue;
-	if (initgamestate(game, series->ruleset) && prepareplayback()) {
+	if (initgamestate(game, series->ruleset, FALSE) && prepareplayback()) {
 	    setgameplaymode(BeginVerify);
 	    while (!(f = doturn(CmdNone)))
 		advancetick();
@@ -1429,6 +1422,22 @@ static int rememberlastlevel(gamespec *gs)
  * Initialization functions.
  */
 
+/* Allocate and assemble a directory path based on a root location, a
+ * default subdirectory name, and an optional override value.
+ */
+static char const *choosepath(char const *root, char const *dirname,
+			      char const *override)
+{
+    char       *dir;
+
+    dir = getpathbuffer();
+    if (override && *override)
+	strcpy(dir, override);
+    else
+	combinepath(dir, root, dirname);
+    return dir;
+}
+
 /* Set the four directories that the program uses (the series
  * directory, the series data directory, the resource directory, and
  * the save directory).  Any or all of the arguments can be NULL,
@@ -1488,38 +1497,17 @@ static void initdirs(char const *series, char const *seriesdat,
 	}
     }
 
-    resdir = getpathbuffer();
-    if (res)
-	strcpy(resdir, res);
-    else
-	combinepath(resdir, root, "res");
-
-    seriesdir = getpathbuffer();
-    if (series)
-	strcpy(seriesdir, series);
-    else
-	combinepath(seriesdir, root, "sets");
-
-    seriesdatdir = getpathbuffer();
-    if (seriesdat)
-	strcpy(seriesdatdir, seriesdat);
-    else
-	combinepath(seriesdatdir, root, "data");
-
-    savedir = getpathbuffer();
-    if (!save) {
+    setresdir(choosepath(root, "res", res));
+    setseriesdir(choosepath(root, "sets", series));
+    setseriesdatdir(choosepath(root, "data", seriesdat));
 #ifdef SAVEDIR
-	save = SAVEDIR;
+    setsavedir(choosepath(SAVEDIR, ".", save));
 #else
-	if ((dir = getenv("HOME")) && *dir && strlen(dir) < maxpath - 8)
-	    combinepath(savedir, dir, ".tworld");
-	else
-	    combinepath(savedir, root, "save");
-
+    if ((dir = getenv("HOME")) && *dir && strlen(dir) < maxpath - 8)
+	setsavedir(choosepath(dir, ".tworld", save));
+    else
+	setsavedir(choosepath(root, "save", save));
 #endif
-    } else {
-	strcpy(savedir, save);
-    }
 }
 
 /* Basic number-parsing function that silently clamps input to a valid
@@ -1698,7 +1686,7 @@ static int getsettingsfrominitfile(startupdata *start)
     int			f;
 
     clearfileinfo(&file);
-    if (!openfileindir(&file, savedir, initfilename, "r", NULL))
+    if (!openfileindir(&file, getsavedir(), initfilename, "r", NULL))
 	return TRUE;
 
     rcstart.selectfilename = NULL;
@@ -1729,7 +1717,7 @@ static int writeinitfile(char const *lastseries)
     if (haspathname(lastseries))
 	return TRUE;
     clearfileinfo(&file);
-    if (!openfileindir(&file, savedir, initfilename, "w", "unknown error"))
+    if (!openfileindir(&file, getsavedir(), initfilename, "w", "write error"))
 	return FALSE;
     fprintf(file.fp, "initial-levelset=%s\n", lastseries);
     fprintf(file.fp, "volume=%d\n", getvolume());
@@ -1778,10 +1766,6 @@ static void shutdownsystem(void)
 {
     shutdowngamestate();
     freeallresources();
-    free(resdir);
-    free(seriesdir);
-    free(seriesdatdir);
-    free(savedir);
 }
 
 /* Determine what to play. A list of available series is drawn up; if

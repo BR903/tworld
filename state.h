@@ -236,6 +236,7 @@ typedef struct gamestate {
 #define	SF_SHOWHINT		0x0008		/* display the hint text */
 #define	SF_NOANIMATION		0x0010		/* suppress tile animation */
 #define	SF_SHUTTERED		0x0020		/* hide map view */
+#define	SF_PEDANTIC		0x0040		/* use pedantic ruleset */
 
 /* Macros for the keys and boots.
  */

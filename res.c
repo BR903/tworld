@@ -125,7 +125,12 @@ static int		currentruleset = Ruleset_None;
 
 /* The directory containing all the resource files.
  */
-char		       *resdir = NULL;
+static char const      *resdir = NULL;
+
+/* Getting and setting the resource directory.
+ */
+char const *getresdir(void)		{ return resdir; }
+void setresdir(char const *dir)		{ resdir = dir; }
 
 /* A few resources have non-empty default values.
  */

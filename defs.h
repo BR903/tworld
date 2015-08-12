@@ -131,15 +131,7 @@ enum {
     CmdCheatSouth,
     CmdCheatEast,
     CmdCheatHome,
-    CmdCheatKeyRed,
-    CmdCheatKeyBlue,
-    CmdCheatKeyYellow,
-    CmdCheatKeyGreen,
-    CmdCheatBootsIce,
-    CmdCheatBootsSlide,
-    CmdCheatBootsFire,
-    CmdCheatBootsWater,
-    CmdCheatICChip,
+    CmdCheatStuff,
     CmdCount
 };
 

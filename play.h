@@ -17,19 +17,15 @@ enum {
     BeginInput, EndInput, BeginVerify, EndVerify
 };
 
-/* TRUE if the program is running without a user interface.
- */
-extern int batchmode;
-
 /* Change the current gameplay mode. This affects the running of the
  * timer and the handling of the keyboard.
  */
 extern void setgameplaymode(int mode);
 
-/* Initialize the current state to the starting position of the
- * given level.
+/* Initialize the current state to the starting position of the given
+ * level. If withgui is FALSE, the user interface is not created.
  */
-extern int initgamestate(gamesetup *game, int ruleset);
+extern int initgamestate(gamesetup *game, int ruleset, int withgui);
 
 /* Set up the current state to play from its prerecorded solution.
  * FALSE is returned if no solution is available for playback.
@@ -110,8 +106,9 @@ extern int deletesolution(void);
  */
 extern int checksolution(void);
 
-/* Turn pedantic mode on. The ruleset will be slightly changed to be
- * as faithful as possible to the original source material.
+/* Turn pedantic mode on. The ruleset simulation will forgo "standard
+ * play" in favor of being as true as possible to the original source
+ * material.
  */
 extern void setpedanticmode(void);
 

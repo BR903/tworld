@@ -7,9 +7,10 @@
 #ifndef	_res_h_
 #define _res_h_
 
-/* The directory containing all the resource files.
+/* Get and set the directory containing all the resource files.
  */
-extern char	       *resdir;
+extern char const *getresdir(void);
+extern void setresdir(char const *dir);
 
 /* Parse the rc file and initialize the resources that are needed at
  * the start of the program (i.e., the font and color settings).

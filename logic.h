@@ -27,10 +27,4 @@ struct gamelogic {
 extern gamelogic *lynxlogicstartup(void);
 extern gamelogic *mslogicstartup(void);
 
-/* The high simluation fidelity flag: if true, the simulation should
- * forgo "standard play" in favor of being as true as possible to the
- * original source material.
- */
-extern int	pedanticmode;
-
 #endif

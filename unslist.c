@@ -253,13 +253,13 @@ int loadunslistfromfile(char const *filename)
     fileinfo	file;
 
     memset(&file, 0, sizeof file);
-    if (openfileindir(&file, resdir, filename, "r", NULL)) {
+    if (openfileindir(&file, getresdir(), filename, "r", NULL)) {
 	readunslist(&file);
 	fileclose(&file, NULL);
     }
     if (!haspathname(filename)) {
 	memset(&file, 0, sizeof file);
-	if (openfileindir(&file, savedir, filename, "r", NULL)) {
+	if (openfileindir(&file, getsavedir(), filename, "r", NULL)) {
 	    readunslist(&file);
 	    fileclose(&file, NULL);
 	}

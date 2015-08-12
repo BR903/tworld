@@ -40,11 +40,21 @@ typedef	struct seriesdata {
 /* The directory containing the series files (data files and
  * configuration files).
  */
-char	       *seriesdir = NULL;
+static char const      *seriesdir = NULL;
 
 /* The directory containing the configured data files.
  */
-char	       *seriesdatdir = NULL;
+static char const      *seriesdatdir = NULL;
+
+/* Getting and setting the series directory.
+ */
+char const *getseriesdir(void)		{ return seriesdir; }
+void setseriesdir(char const *dir)	{ seriesdir = dir; }
+
+/* Getting and setting the series data directory.
+ */
+char const *getseriesdatdir(void)	{ return seriesdatdir; }
+void setseriesdatdir(char const *dir)	{ seriesdatdir = dir; }
 
 /* Calculate a hash value for the given block of data.
  */
@@ -570,7 +580,7 @@ static int getseriesfiles(char const *preferred, gameseries **list, int *count)
 	    errmsg(preferred, "couldn't read data file");
 	    return FALSE;
 	}
-	*seriesdir = '\0';
+	setseriesdir("");
 	s.list[0].gsflags |= GSF_NODEFAULTSAVE;
     } else {
 	if (!*seriesdir)

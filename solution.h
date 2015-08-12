@@ -10,9 +10,10 @@
 #include	"defs.h"
 #include	"fileio.h"
 
-/* The path of the directory containing the user's solution files.
+/* Get and set the directory containing the user's solution files.
  */
-extern char    *savedir;
+extern char const *getsavedir(void);
+extern void setsavedir(char const *dir);
 
 /* No file modification will be done after this function is called.
  */
