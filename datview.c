@@ -14,7 +14,7 @@ typedef	unsigned long	_ulong;
 #undef ulong
 #define ulong		_ulong
 
-#define	DEFAULTDIR	"/usr/local/share/tworld/sets/"
+#define	DEFAULTDIR	"/usr/share/games/tworld/sets/"
 
 #define	readval(var)	(fread(&(var), sizeof(var), 1, fp) == 1)
 
@@ -551,8 +551,9 @@ int main(int argc, char *argv[])
 	to = atoi(argv[3]);
     }
 
-    if (chdir(DEFAULTDIR))
-	return 1;
+    if (!strchr(argv[1], '/'))
+	if (chdir(DEFAULTDIR))
+	    fprintf(stderr, "warn: data directory missing: %s\n", DEFAULTDIR);
     fp = fopen(argv[1], "r");
     if (!fp)
 	return 1;
