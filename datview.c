@@ -245,21 +245,23 @@ static int readlevel(FILE *fp, cclevelhead *lhead, field fields[16])
     fields[1].type = 1;
     fields[1].size = off;
     fields[1].data = malloc(off);
-    fread(fields[1].data, off, 1, fp);
+    if (fread(fields[1].data, off, 1, fp) != 1)
+	return 4;
     n -= sizeof fieldnum + sizeof off + off;
     if (!readval(off))
-	return 4;
+	return 5;
     fields[2].type = 2;
     fields[2].size = off;
     fields[2].data = malloc(off);
-    fread(fields[2].data, off, 1, fp);
+    if (fread(fields[2].data, off, 1, fp) != 1)
+	return 6;
     n -= sizeof off + off;
 
     if (!readval(off))
-	return 5;
+	return 7;
     n -= sizeof off;
     if (off != n)
-	return 6;
+	return 8;
 
     while (n > 0) {
 	fieldnum = (unsigned char)fgetc(fp);
@@ -267,11 +269,12 @@ static int readlevel(FILE *fp, cclevelhead *lhead, field fields[16])
 	fields[fieldnum].type = fieldnum;
 	fields[fieldnum].size = off;
 	fields[fieldnum].data = malloc(off);
-	fread(fields[fieldnum].data, off, 1, fp);
+	if (fread(fields[fieldnum].data, off, 1, fp) != 1)
+	    return 9;
 	n -= 2 + off;
     }
     if (n < 0)
-	return 7;
+	return 10;
 
     return 0;
 }
@@ -548,7 +551,8 @@ int main(int argc, char *argv[])
 	to = atoi(argv[3]);
     }
 
-    chdir(DEFAULTDIR);
+    if (chdir(DEFAULTDIR))
+	return 1;
     fp = fopen(argv[1], "r");
     if (!fp)
 	return 1;
