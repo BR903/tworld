@@ -904,6 +904,8 @@ static int endinput(gamespec *gs)
 
     for (;;) {
 	switch (input(TRUE)) {
+	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
+	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdPrev10:	changecurrentgame(gs, -10);	return TRUE;
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	return TRUE;
 	  case CmdPrev:		changecurrentgame(gs, -1);	return TRUE;
