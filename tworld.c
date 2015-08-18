@@ -1094,18 +1094,14 @@ static int playbackgame(gamespec *gs)
 	    break;
 	render = waitfortick();
 	switch (input(FALSE)) {
+	  case CmdVolumeUp:	changevolume(+2, TRUE);		break;
+	  case CmdVolumeDown:	changevolume(-2, TRUE);		break;
 	  case CmdPrevLevel:	changecurrentgame(gs, -1);	goto quitloop;
 	  case CmdNextLevel:	changecurrentgame(gs, +1);	goto quitloop;
 	  case CmdSameLevel:					goto quitloop;
 	  case CmdPlayback:					goto quitloop;
 	  case CmdQuitLevel:					goto quitloop;
 	  case CmdQuit:						exit(0);
-	  case CmdVolumeUp:
-	    changevolume(+2, TRUE);
-	    break;
-	  case CmdVolumeDown:
-	    changevolume(-2, TRUE);
-	    break;
 	  case CmdPauseGame:
 	    setgameplaymode(SuspendPlay);
 	    setdisplaymsg("(paused)", 1, 1);
