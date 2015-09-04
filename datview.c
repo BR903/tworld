@@ -80,22 +80,22 @@ static char const *objects[] = {
 /* 03 water			*/	"\033[36;44m=\033[0m",
 /* 04 fire			*/	"\033[31mx\033[0m",
 /* 05 invisible wall, perm.	*/	"\033[7mx\033[0m",
-/* 06 blocked north		*/	"\033(0o\033(B",
-/* 07 blocked west		*/	"(", /* "\033(U\303\235\033(B", */
-/* 08 blocked south		*/	"_",
-/* 09 blocked east		*/	")", /* "\033(U\303\236\033(B", */
+/* 06 blocked north		*/	"\342\226\224",
+/* 07 blocked west		*/	"\342\226\217",
+/* 08 blocked south		*/	"\342\226\201",
+/* 09 blocked east		*/	"\342\226\225",
 /* 0A block			*/	"O",
 /* 0B dirt			*/	"\033[33m\033(0a\033(B\033[0m",
 /* 0C ice			*/	"\033[36m\033(0a\033(B\033[0m",
-/* 0D force south		*/	"\033[32mv\033[0m",
+/* 0D force south		*/	"\033[32m\342\207\243\033[0m",
 /* 0E cloning block north	*/	"O",
 /* 0F cloning block west	*/	"O",
 /* 10 cloning block south	*/	"O",
 /* 11 cloning block east	*/	"O",
-/* 12 force north		*/	"\033[32m^\033[0m",
-/* 13 force east		*/	"\033[32m\302\273\033[0m",
-/* 14 force west		*/	"\033[32m\302\253\033[0m",
-/* 15 exit			*/	"\033[44m@\033[0m",
+/* 12 force north		*/	"\033[32m\342\207\241\033[0m",
+/* 13 force east		*/	"\033[32m\342\207\242\033[0m",
+/* 14 force west		*/	"\033[32m\342\207\240\033[0m",
+/* 15 exit			*/	"\033[34;46m\342\226\253\033[0m",
 /* 16 blue door			*/	"\033[36m0\033[0m",
 /* 17 red door			*/	"\033[31m0\033[0m",
 /* 18 green door		*/	"\033[32m0\033[0m",
@@ -111,8 +111,8 @@ static char const *objects[] = {
 /* 22 socket			*/	"H",
 /* 23 green button		*/	"\033[32m.\033[0m",
 /* 24 red button		*/	"\033[31m.\033[0m",
-/* 25 switch block, closed	*/	"\033[7;32mO\033[0m",
-/* 26 switch block, open	*/	"\033[32mO\033[0m",
+/* 25 switch block, closed	*/	"\033[7;32m\342\254\232\033[0m",
+/* 26 switch block, open	*/	"\033[32m\342\254\232\033[0m",
 /* 27 brown button		*/	"\033[33m.\033[0m",
 /* 28 blue button		*/	"\033[1;34m.\033[0m",
 /* 29 teleport			*/	"\033[36m*\033[0m",
@@ -534,6 +534,7 @@ int main(int argc, char *argv[])
     cclevelhead	lhead;
     field	fields[16];
     ushrt	levelcount;
+    int		floor, object;
     int		from = 0, to = 0;
     int		i, x, y;
 
@@ -585,8 +586,15 @@ int main(int argc, char *argv[])
 	if (level.num >= from && level.num <= to) {
 	    for (y = 0 ; y < 32 ; ++y) {
 		for (x = 0 ; x < 32 ; ++x) {
-		    fputs(objects[level.map[y][x].floor], stdout);
-		    fputs(objects[level.map[y][x].object], stdout);
+		    floor = level.map[y][x].floor;
+		    object = level.map[y][x].object;
+		    if (object == 0) {
+			fputs(objects[floor], stdout);
+			fputs(" ", stdout);
+		    } else {
+			fputs(objects[object], stdout);
+			fputs(objects[floor], stdout);
+		    }
 		}
 		if (y < level.trapcount)
 		    printf(" %02d %02d -> %02d %02d",
