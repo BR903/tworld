@@ -928,7 +928,7 @@ int displaytiletable(char const *title,
 int displaylist(char const *title, tablespec const *table, int *idx,
 		int (*inputcallback)(int*))
 {
-    SDL_Rect		area;
+    SDL_Rect		area, thumb;
     SDL_Rect	       *cols;
     SDL_Rect	       *colstmp;
     int			linecount, itemcount, topitem, index;
@@ -937,7 +937,7 @@ int displaylist(char const *title, tablespec const *table, int *idx,
     cleardisplay();
     area.x = MARGINW;
     area.y = screenh - MARGINH - sdlg.font.h;
-    area.w = screenw - 2 * MARGINW;
+    area.w = screenw - 4 * MARGINW;
     area.h = sdlg.font.h;
     puttext(&area, title, -1, 0);
     area.h = area.y - MARGINH;
@@ -949,6 +949,11 @@ int displaylist(char const *title, tablespec const *table, int *idx,
     itemcount = table->rows - 1;
     topitem = 0;
     linecount = area.h / sdlg.font.h - 1;
+
+    thumb.x = screenw - 2 * MARGINW;
+    thumb.y = area.y;
+    thumb.w = MARGINW;
+    thumb.h = itemcount <= linecount ? 0 : area.h * linecount / itemcount;
 
     index = *idx;
     n = SCROLL_NOP;
@@ -987,6 +992,12 @@ int displaylist(char const *title, tablespec const *table, int *idx,
 	    drawtablerow(table, NULL, &n, 0);
 	for ( ; j < topitem + linecount && j < itemcount ; ++j)
 	    drawtablerow(table, colstmp, &n, j == index ? PT_HILIGHT : 0);
+	if (itemcount > linecount) {
+	    SDL_FillRect(sdlg.screen, &thumb, bkgndcolor(sdlg.textclr));
+	    thumb.y = area.y
+		    + topitem * (area.h - thumb.h) / (itemcount - linecount);
+	    SDL_FillRect(sdlg.screen, &thumb, halfcolor(sdlg.textclr));
+	}
 	SDL_UpdateRect(sdlg.screen, 0, 0, 0, 0);
 
 	n = SCROLL_NOP;
