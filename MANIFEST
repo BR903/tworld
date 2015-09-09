@@ -19,6 +19,8 @@ help.c
 help.h
 lxlogic.c
 logic.h
+messages.c
+messages.h
 mslogic.c
 oshw.h
 play.c

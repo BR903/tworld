@@ -311,7 +311,7 @@ named on the command line.
 output, and exit.
 . <-F>,_<--full-screen>
 . Run in full-screen mode.
-. <-H>,_<--histogram>
+. <--histogram>
 . Upon exit, display a histogram of idle time on standard output. (This
 option is used for evaluating optimization efforts.)
 . <--h>,_<--help>
@@ -395,6 +395,12 @@ line, the configuration file can contain any of the following lines:
 
 This line permits password-checking to be enabled/disabled when
 playing the levels in the set. The default is <y>.
+
+<messages =>%TEXTFILE%
+
+This line specifies a messages file to provide short textual messages
+to be displayed in between levels during play. %TEXTFILE% names a file
+located in the data directory.
 
 <ruleset = >%ms|lynx%
 

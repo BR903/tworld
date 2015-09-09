@@ -94,6 +94,25 @@ is not required.)
 
 Messages can appear in any order in the messages file.
 
+.Section The User Configuration File
+
+Tile World stores a couple of user-controlled configuration values in
+a text file, to be used as default settings on the next invocation of
+the program. Each entry in this file is a single line of the form
+%NAME%_<=>_%VALUE% and %NAME% typically matches the name of the
+equivalent command-line option.
+
+There are currently two possible values in this file:
+
+<volume = >%N%
+
+This line sets the initial volume level. %N% can be any integer between 0 and
+10.
+
+<initial-levelset = >%LEVELSET%
+
+This line identifies a particular level set to be selected at startup.
+
 .Section The Solution File
 
 Tile World saves its solutions in binary files, typically named with
