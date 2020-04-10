@@ -1479,7 +1479,7 @@ static void initdirs(char const *series, char const *seriesdat,
 	    warn("Value of environment variable TWORLDSAVEDIR is too long");
     }
 
-    if (!res || !series || !seriesdat) {
+    if (!res || !series || !seriesdat || !save) {
 	if ((dir = getenv("TWORLDDIR")) && *dir) {
 	    if (strlen(dir) < maxpath - 8)
 		root = dir;
