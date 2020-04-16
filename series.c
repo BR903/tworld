@@ -193,7 +193,7 @@ static int readleveldata(fileinfo *file, gamesetup *game)
     size = data[0] | (data[1] << 8);
     data += 2;
     if (data + size != dataend)
-	warn("level %d: inconsistent size data (%d vs %d)",
+	warn("level %d: inconsistent size data (%ld vs %d)",
 	     game->number, dataend - data, size);
 
     while (data + 2 < dataend) {
