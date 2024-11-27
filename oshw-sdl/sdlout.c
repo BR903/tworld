@@ -267,7 +267,7 @@ static int createdisplay(void)
     }
     if (sdlg.screen->w != screenw || sdlg.screen->h != screenh)
 	warn("requested a %dx%d display, got %dx%d instead",
-	     sdlg.screen->w, sdlg.screen->h);
+	     screenw, screenh, sdlg.screen->w, sdlg.screen->h);
     return TRUE;
 }
 

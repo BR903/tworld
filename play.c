@@ -186,8 +186,10 @@ void setgameplaymode(int mode)
 	settimer(-1);
 	break;
       case SuspendPlayShuttered:
-	if (state.ruleset == Ruleset_MS)
+	if (state.ruleset == Ruleset_MS) {
 	    state.statusflags |= SF_SHUTTERED;
+	}
+	/* fallthrough */
       case SuspendPlay:
 	setkeyboardrepeat(TRUE);
 	settimer(0);
